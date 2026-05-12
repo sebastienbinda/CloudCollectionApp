@@ -18,7 +18,7 @@ Description:
 
 import unittest
 
-from services.jeux_video import JeuVideoService
+from services.games import GamesService
 from services.validation import WishlistPayloadValidator
 
 
@@ -92,7 +92,7 @@ class WishlistAddServiceTest(unittest.TestCase):
             None: Les dependances ODS sont remplacees par des fakes.
         """
 
-        self.service = JeuVideoService.__new__(JeuVideoService)
+        self.service = GamesService.__new__(GamesService)
         self.service.writer = FakeWishlistWriter()
         self.service.cache = FakeCache()
         self.service.wishlist_validator = WishlistPayloadValidator()

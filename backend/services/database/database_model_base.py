@@ -5,11 +5,19 @@
 #  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
-# Date de creation : 2026-05-03
-# Auteurs : Codex et Binda Sébastien
+# Date de creation : 2026-05-12
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
 #
-"""Exports publics des services metier JeuxVideo."""
+# Description : classe de base ORM SQLAlchemy des modeles database.
 
-from .jeu_video_service import JeuVideoService
+from sqlalchemy.orm import DeclarativeBase
 
-__all__ = ["JeuVideoService"]
+
+class DatabaseModelBase(DeclarativeBase):
+    """Classe de base declarative pour les modeles ORM PostgreSQL.
+
+    Attributes:
+        metadata (sqlalchemy.MetaData): Registre SQLAlchemy partage par tous les
+            modeles de base de donnees, utilise par Alembic pour lire le schema.
+    """

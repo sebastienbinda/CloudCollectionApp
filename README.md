@@ -77,15 +77,15 @@ Technologies :
 Fichiers principaux :
 
 - `backend/app.py` : routes HTTP Flask
-- `backend/services/jeux_video/jeu_video_service.py` : orchestration de la collection jeux video
-- `backend/services/jeux_video/add_game_choice_service.py` : fusion et tri des choix du formulaire d'ajout
+- `backend/services/games/games_service.py` : orchestration de la collection jeux video
+- `backend/services/games/add_game_choice_service.py` : fusion et tri des choix du formulaire d'ajout
 - `backend/services/ods/` : lecture, ecriture, sauvegarde et validation du fichier ODS
 - `backend/services/auth/` : emission et validation des tokens Bearer
 - `backend/services/validation/` : validation des payloads collection et liste de souhaits
 - `backend/models/jeu_video.py` : normalisation des lignes de jeux video
 - `backend/models/collection_types.py` : types de collections supportes
 
-Le service `JeuVideoService` lit les donnees dans le fichier ODS. Pour les
+Le service `GamesService` lit les donnees dans le fichier ODS. Pour les
 onglets de plateformes, les colonnes de jeux sont lues dans la plage logique
 `F:M`, avec la ligne d'en-tete a l'index 5.
 
@@ -544,7 +544,7 @@ Voir aussi `documentation/ci.md`.
 - Les dossiers `node_modules/`, `dist/`, `.venv/` et les caches Python sont ignores par Git.
 - L'ajout de jeu modifie le fichier ODS sur disque : verifier la sauvegarde si une modification doit etre annulee.
 - Les sauvegardes ODS sont creees avant les ajouts, modifications et suppressions.
-- Si la structure du fichier ODS change fortement, il faudra adapter les services `backend/services/ods/` et `JeuVideoService`.
+- Si la structure du fichier ODS change fortement, il faudra adapter les services `backend/services/ods/` et `GamesService`.
 
 ## Documentation Fonctionnelle
 

@@ -12,7 +12,7 @@
 # Description : environnement Alembic programme par le service database.
 
 from alembic import context
-from services.database.database_models import DatabaseModelBase
+from services.database import DatabaseModelBase
 
 config = context.config
 target_metadata = DatabaseModelBase.metadata

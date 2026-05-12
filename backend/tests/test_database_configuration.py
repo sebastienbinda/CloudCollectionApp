@@ -14,8 +14,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from services.database import DatabaseConfiguration
-from services.database.database_models import DatabaseModelBase
+from services.database import DatabaseConfiguration, DatabaseModelBase
 
 
 class DatabaseConfigurationTest(unittest.TestCase):

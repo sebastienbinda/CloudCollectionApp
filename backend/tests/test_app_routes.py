@@ -11,7 +11,7 @@
 import unittest
 from pathlib import Path
 import app as app_module
-class FakeJeuVideoService:
+class FakeGamesService:
     def __init__(self):
         """Initialise un service JeuxVideo factice.
         Args:
@@ -181,8 +181,8 @@ class AppRoutesTest(unittest.TestCase):
         Returns:
             None: Le client Flask est prepare pour chaque test.
         """
-        self.original_service = app_module.JeuVideoService
-        app_module.JeuVideoService = FakeJeuVideoService
+        self.original_service = app_module.GamesService
+        app_module.GamesService = FakeGamesService
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
     def tearDown(self):
@@ -192,7 +192,7 @@ class AppRoutesTest(unittest.TestCase):
         Returns:
             None: Les modifications globales du test sont annulees.
         """
-        app_module.JeuVideoService = self.original_service
+        app_module.GamesService = self.original_service
     def get_auth_headers(self):
         """Construit un header Bearer valide pour les routes protegees.
         Args:

@@ -12,7 +12,23 @@
 """Exports publics du domaine database."""
 
 from .database_configuration import DatabaseConfiguration
-from .database_models import DatabaseModelBase
+from .database_model_base import DatabaseModelBase
 from .database_schema_service import DatabaseSchemaService
+from .game import Game
+from .platform import Platform
+from .schema_version import SchemaVersion
+from .studio import Studio
+from .user import User
+from .user_collection import UserCollection
 
-__all__ = ["DatabaseConfiguration", "DatabaseModelBase", "DatabaseSchemaService"]
+__all__ = [
+    "DatabaseConfiguration",
+    "DatabaseModelBase",
+    "DatabaseSchemaService",
+    "Game",
+    "Platform",
+    "SchemaVersion",
+    "Studio",
+    "User",
+    "UserCollection",
+]

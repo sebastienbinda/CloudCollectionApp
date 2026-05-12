@@ -24,6 +24,12 @@ class DatabaseConfiguration:
     La configuration reste volontairement minimale : l'URL de connexion, le
     schema PostgreSQL cible et la version applicative a inscrire dans la table
     `t_schema_version`.
+
+    Attributes:
+        database_url (Optional[str]): URL SQLAlchemy de connexion a PostgreSQL.
+        schema_name (str): Nom du schema PostgreSQL gere par l'application.
+        application_version (str): Version applicative inscrite dans
+            `t_schema_version`.
     """
 
     database_url: Optional[str]

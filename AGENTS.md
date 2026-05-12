@@ -8,6 +8,7 @@
 - Before creating new code, always search for existing similar implementations in the project.
 - Reuse existing patterns and utilities whenever possible.
 - Avoid introducing new frameworks or dependencies unless necessary. If it is necessary ask for confirmation before adding any new framework or dependency.
+- Always use English for files and class names.
 
 ## Architecture
 
@@ -15,6 +16,7 @@
 - Organize code by feature/domain.
 - Keep business logic in the backend whenever possible.
 - Frontend should mainly handle display and user interactions.
+- For database models, use one class and one file for each model in the backend ORM.
 
 ## Size Constraints
 

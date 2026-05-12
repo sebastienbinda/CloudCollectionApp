@@ -8,18 +8,8 @@
 # Date de creation : 2026-05-03
 # Auteurs : Codex et Binda Sébastien
 #
-"""Exports publics des services backend."""
+"""Exports publics des services metier de gestion des jeux."""
 
-from .auth import AuthGuard, AuthTokenService
-from .database import DatabaseConfiguration, DatabaseSchemaService
-from .games import GamesService
-from .routing import RouteDiscoveryService
+from .games_service import GamesService
 
-__all__ = [
-    "AuthGuard",
-    "AuthTokenService",
-    "DatabaseConfiguration",
-    "DatabaseSchemaService",
-    "GamesService",
-    "RouteDiscoveryService",
-]
+__all__ = ["GamesService"]

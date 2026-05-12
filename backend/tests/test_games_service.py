@@ -12,7 +12,7 @@ import unittest
 
 import pandas as pd
 
-from services.jeux_video import JeuVideoService
+from services.games import GamesService
 from services.validation import GamePayloadValidator, WishlistPayloadValidator
 
 
@@ -179,7 +179,7 @@ class FakeCache:
         return 3
 
 
-class JeuVideoServiceTest(unittest.TestCase):
+class GamesServiceTest(unittest.TestCase):
     def setUp(self):
         """Prepare une facade de service avec dependances factices.
 
@@ -190,7 +190,7 @@ class JeuVideoServiceTest(unittest.TestCase):
             None: L'instance est stockee sur le test.
         """
 
-        self.service = JeuVideoService.__new__(JeuVideoService)
+        self.service = GamesService.__new__(GamesService)
         self.service.reader = FakeReader()
         self.service.writer = FakeWriter()
         self.service.cache = FakeCache()

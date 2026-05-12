@@ -27,7 +27,14 @@ MigrationRunner = Callable[[Engine, DatabaseConfiguration, Path], None]
 
 
 class DatabaseSchemaService:
-    """Prepare le schema PostgreSQL et applique les migrations Alembic."""
+    """Prepare le schema PostgreSQL et applique les migrations Alembic.
+
+    Attributes:
+        configuration (DatabaseConfiguration): Configuration de connexion et de schema.
+        migrations_path (Path): Dossier contenant l'environnement Alembic.
+        engine_factory (EngineFactory): Fabrique de moteur SQLAlchemy.
+        migration_runner (MigrationRunner): Fonction chargee d'executer Alembic.
+    """
 
     def __init__(
         self,

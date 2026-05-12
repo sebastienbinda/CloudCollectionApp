@@ -29,7 +29,7 @@ from .add_game_choice_service import AddGameChoiceService
 WISHLIST_SHEET = "Liste de souhaits"
 
 
-class JeuVideoService:
+class GamesService:
     def __init__(self, ods_path: Optional[str] = None):
         """Initialise le service d'acces au fichier ODS.
 
