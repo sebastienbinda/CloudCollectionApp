@@ -13,11 +13,43 @@ import os
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from models import CollectionTypes, Film
-from services import AuthGuard, AuthTokenService, JeuVideoService, RouteDiscoveryService
+from services import (
+    AuthGuard,
+    AuthTokenService,
+    DatabaseConfiguration,
+    DatabaseSchemaService,
+    JeuVideoService,
+    RouteDiscoveryService,
+)
 app = Flask(__name__)
 CORS(app)
 auth_token_service = AuthTokenService()
 auth_guard = AuthGuard(auth_token_service)
+
+
+def initialize_database_schema_on_startup() -> None:
+    """Initialise le schema PostgreSQL configure au demarrage Flask.
+
+    Args:
+        Aucun.
+
+    Returns:
+        None: La fonction ne retourne aucune valeur.
+
+    Raises:
+        ValueError: Si la configuration de base de donnees est invalide.
+        sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse l'initialisation.
+    """
+
+    configuration = DatabaseConfiguration.from_environment()
+    if not configuration.is_database_enabled():
+        app.logger.info("DATABASE_URL absent : initialisation SQL ignoree.")
+        return
+    DatabaseSchemaService(configuration).initialize_database_schema()
+    app.logger.info("Schema PostgreSQL initialise : %s.", configuration.schema_name)
+
+
+initialize_database_schema_on_startup()
 
 
 COLLECTION_ITEMS = {

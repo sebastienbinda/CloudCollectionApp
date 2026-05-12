@@ -51,6 +51,8 @@ services:
       AUTH_ENV_ENCRYPTION_KEY: ${AUTH_ENV_ENCRYPTION_KEY:-}
       AUTH_PASSWORD_ENCRYPTED: ${AUTH_PASSWORD_ENCRYPTED:-}
       AUTH_SECRET_KEY_ENCRYPTED: ${AUTH_SECRET_KEY_ENCRYPTED:-}
+      APP_VERSION: ${APP_VERSION:-0.1}
+      DB_SCHEMA_NAME: ${DB_SCHEMA_NAME:-cloudcollectionapp}
       DATABASE_URL: ${DATABASE_URL:-}
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods

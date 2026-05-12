@@ -1,54 +1,125 @@
-TABLE t_plateform
- - id : big int not null
- - name : Varchar2(64) not null
- - release_date : Datetime 
- - manufacturer : Varchar2(128)
- - description : jsonb
- - status : Varchar2(16) not null
-Primary Key : id
+<!--
+    ____ _                 _  ____      _ _           _   _             ___
+   / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+  | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+  | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+   \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+                                                                             |_|   |_|
+  Projet : CloudCollectionApp
+  Date de creation : 2026-05-03
+  Auteurs : Codex et Binda Sébastien
+-->
+# Schema de base de donnees
 
-SEQUENCE s_platforme
- - t_platform->id
+## Conventions
 
-t_game
- - id : big int not null
- - name : Varchar2(256) not null
- - release_date : Datetime 
- - developper : clef étrangere t_studio->id
- - editor : clef étrangere t_studio->id
- - platform : clef étrangere t_platform->id not null
- - description : jsonb
-Primary Key : id
-Unique Key : name/platform
+- Base cible : PostgreSQL
+- Les noms de tables, colonnes, sequences et contraintes sont en `snake_case`.
+- Les identifiants techniques sont de type `BIGINT`.
+- Les champs JSON utilisent le type PostgreSQL `JSONB`.
+- Les dates utilisent le type `TIMESTAMP`.
 
-SEQUENCE s_game
- - t_game->id
+## Tables
 
-t_studio
- - id : big int not null
- - name : Varchar2(256) not null
- - country : Varchar2(256)
- - city : Varchar2(256)
- - creation_date : Datetime
- - status : Varchar2(16) not null
+### t_schema_version
 
-SEQUENCE s_studio
- - t_studio->id
+| Colonne | Type | Null | Description |
+| --- | --- | --- | --- |
+| `version` | `VARCHAR(5)` | Non | Version applicative inscrite apres initialisation du schema. |
+| `date_creation` | `TIMESTAMP` | Non | Date de premiere creation du schema. |
+| `update_date` | `TIMESTAMP` | Oui | Date de derniere mise a jour de la version applicative. |
 
-t_user
- - id : big int
- - email : Varchar2(256) not null
- - password_encrypter : Varchar2(512) not null
- - creation_date : Datetime not null
- - last_connexion_date : Datetime 
- - collection_file_path : Varchar2(512) 
- - collection_file_description : Jsonb
+Contraintes :
 
-SEQUENCE s_user
- - t_user->id
+- Cle primaire : `version`
 
-t_user_collection
- - user_id : big int
- - game_id : big_int
- - game_additional_name : Varchar2(256)
- - collection_file_location : 
+### t_platform
+
+| Colonne | Type | Null | Description |
+| --- | --- | --- | --- |
+| `id` | `BIGINT` | Non | Identifiant technique genere par `s_platform`. |
+| `name` | `VARCHAR(64)` | Non | Nom de la plateforme. |
+| `release_date` | `TIMESTAMP` | Oui | Date de sortie de la plateforme. |
+| `manufacturer` | `VARCHAR(128)` | Oui | Fabricant de la plateforme. |
+| `description` | `JSONB` | Oui | Description structuree de la plateforme. |
+| `status` | `VARCHAR(16)` | Non | Statut fonctionnel de la plateforme. |
+
+Contraintes :
+
+- Cle primaire : `id`
+
+### t_studio
+
+| Colonne | Type | Null | Description |
+| --- | --- | --- | --- |
+| `id` | `BIGINT` | Non | Identifiant technique genere par `s_studio`. |
+| `name` | `VARCHAR(256)` | Non | Nom du studio. |
+| `country` | `VARCHAR(256)` | Oui | Pays du studio. |
+| `city` | `VARCHAR(256)` | Oui | Ville du studio. |
+| `creation_date` | `TIMESTAMP` | Oui | Date de creation du studio. |
+| `status` | `VARCHAR(16)` | Non | Statut fonctionnel du studio. |
+
+Contraintes :
+
+- Cle primaire : `id`
+- Cle unique : `name`
+
+### t_game
+
+| Colonne | Type | Null | Description |
+| --- | --- | --- | --- |
+| `id` | `BIGINT` | Non | Identifiant technique genere par `s_game`. |
+| `name` | `VARCHAR(256)` | Non | Nom du jeu. |
+| `release_date` | `TIMESTAMP` | Oui | Date de sortie du jeu. |
+| `developper` | `BIGINT` | Oui | Studio de developpement du jeu. |
+| `editor` | `BIGINT` | Oui | Studio editeur du jeu. |
+| `platform` | `BIGINT` | Non | Plateforme du jeu. |
+| `description` | `JSONB` | Oui | Description structuree du jeu. |
+
+Contraintes :
+
+- Cle primaire : `id`
+- Cle unique : `name`, `platform`
+- Cle etrangere : `developper` -> `t_studio.id`
+- Cle etrangere : `editor` -> `t_studio.id`
+- Cle etrangere : `platform` -> `t_platform.id`
+
+### t_user
+
+| Colonne | Type | Null | Description |
+| --- | --- | --- | --- |
+| `id` | `BIGINT` | Non | Identifiant technique genere par `s_user`. |
+| `email` | `VARCHAR(256)` | Non | Adresse email de l'utilisateur. |
+| `password_encrypted` | `VARCHAR(512)` | Non | Mot de passe chiffre. |
+| `creation_date` | `TIMESTAMP` | Non | Date de creation de l'utilisateur. |
+| `last_connexion_date` | `TIMESTAMP` | Oui | Date de derniere connexion. |
+| `collection_file_path` | `VARCHAR(512)` | Oui | Chemin du fichier de collection rattache. |
+| `collection_file_description` | `JSONB` | Oui | Description structuree du fichier de collection. |
+
+Contraintes :
+
+- Cle primaire : `id`
+- Cle unique : `email`
+
+### t_user_collection
+
+| Colonne | Type | Null | Description |
+| --- | --- | --- | --- |
+| `user_id` | `BIGINT` | Non | Utilisateur proprietaire de l'entree de collection. |
+| `game_id` | `BIGINT` | Non | Jeu rattache a l'utilisateur. |
+| `game_additional_name` | `VARCHAR(256)` | Oui | Nom complementaire du jeu dans la collection utilisateur. |
+
+Contraintes :
+
+- Cle primaire : `user_id`, `game_id`
+- Cle etrangere : `user_id` -> `t_user.id`
+- Cle etrangere : `game_id` -> `t_game.id`
+
+## Sequences
+
+| Sequence | Table | Colonne |
+| --- | --- | --- |
+| `s_platform` | `t_platform` | `id` |
+| `s_studio` | `t_studio` | `id` |
+| `s_game` | `t_game` | `id` |
+| `s_user` | `t_user` | `id` |

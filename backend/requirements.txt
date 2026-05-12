@@ -10,7 +10,10 @@
 #
 Flask
 Flask-Cors
+SQLAlchemy
+alembic
 cryptography
 gunicorn
 pandas
 odfpy
+psycopg[binary]

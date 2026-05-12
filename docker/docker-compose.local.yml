@@ -28,6 +28,8 @@ services:
       AUTH_ENV_ENCRYPTION_KEY: ${AUTH_ENV_ENCRYPTION_KEY:-}
       AUTH_PASSWORD_ENCRYPTED: ${AUTH_PASSWORD_ENCRYPTED:-}
       AUTH_SECRET_KEY_ENCRYPTED: ${AUTH_SECRET_KEY_ENCRYPTED:-}
+      APP_VERSION: ${APP_VERSION:-0.1}
+      DB_SCHEMA_NAME: ${DB_SCHEMA_NAME:-cloudcollectionapp}
       DATABASE_URL: postgresql://${POSTGRES_USER:-cloudcollectionapp}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD doit etre defini}@database:5432/${POSTGRES_DB:-cloudcollectionapp}
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods

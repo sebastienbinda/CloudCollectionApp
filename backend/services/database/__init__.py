@@ -5,21 +5,14 @@
 #  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
-# Date de creation : 2026-05-03
-# Auteurs : Codex et Binda Sébastien
+# Date de creation : 2026-05-12
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
 #
-"""Exports publics des services backend."""
+"""Exports publics du domaine database."""
 
-from .auth import AuthGuard, AuthTokenService
-from .database import DatabaseConfiguration, DatabaseSchemaService
-from .jeux_video import JeuVideoService
-from .routing import RouteDiscoveryService
+from .database_configuration import DatabaseConfiguration
+from .database_models import DatabaseModelBase
+from .database_schema_service import DatabaseSchemaService
 
-__all__ = [
-    "AuthGuard",
-    "AuthTokenService",
-    "DatabaseConfiguration",
-    "DatabaseSchemaService",
-    "JeuVideoService",
-    "RouteDiscoveryService",
-]
+__all__ = ["DatabaseConfiguration", "DatabaseModelBase", "DatabaseSchemaService"]

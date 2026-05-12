@@ -288,6 +288,9 @@ Seul le fichier ODS defini par `JEUXVIDEO_ODS_FILE` est monte dans le conteneur 
 Les fichiers temporaires sont ecrits dans un `tmpfs` conteneur sur `/project/tmp`.
 Les sauvegardes sont ecrites dans le repertoire monte `JEUXVIDEO_BACKUP_DIR`, disponible dans le conteneur sur `/project/backup`.
 PostgreSQL n'expose aucun port vers l'hote. Le backend recoit `DATABASE_URL` avec l'hote Docker interne `database`.
+Au demarrage, le backend cree le schema PostgreSQL configure par `DB_SCHEMA_NAME`
+s'il n'existe pas, applique les migrations Alembic, puis inscrit `APP_VERSION`
+et la date de creation conservee dans `t_schema_version`.
 Dans `docker/.env`, la valeur locale pointe vers `../collection.ods`.
 Dans `docker/.env.example`, la valeur versionnable pointe vers `../collection-example.ods`.
 
@@ -304,6 +307,8 @@ Variables Docker principales :
 | `AUTH_PASSWORD_ENCRYPTED` | Mot de passe applicatif chiffre |
 | `AUTH_SECRET_KEY_ENCRYPTED` | Secret de signature des tokens chiffre |
 | `AUTH_TOKEN_TTL_SECONDS` | Duree de validite des tokens Bearer |
+| `APP_VERSION` | Version applicative inscrite dans `t_schema_version` |
+| `DB_SCHEMA_NAME` | Schema PostgreSQL cree et migre au demarrage du backend |
 | `POSTGRES_DB` | Nom de la base PostgreSQL |
 | `POSTGRES_USER` | Utilisateur PostgreSQL |
 | `POSTGRES_PASSWORD` | Mot de passe PostgreSQL utilise par Docker |
@@ -321,6 +326,8 @@ Adapter ensuite `docker/.env` si besoin :
 WEB_PORT=8080
 JEUXVIDEO_ODS_FILE=../collection.ods
 JEUXVIDEO_BACKUP_DIR=../backup
+APP_VERSION=0.1
+DB_SCHEMA_NAME=cloudcollectionapp
 POSTGRES_DB=cloudcollectionapp
 POSTGRES_USER=cloudcollectionapp
 POSTGRES_PASSWORD=changer-ce-mot-de-passe
