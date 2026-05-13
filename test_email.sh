@@ -77,7 +77,7 @@ fi
 
 command_args=(
   python
-  scripts/send_test_email.py
+  -
   --to "$RECIPIENT_EMAIL"
   --subject "$EMAIL_SUBJECT"
 )
@@ -86,4 +86,5 @@ if [ -n "$EMAIL_BODY" ]; then
   command_args+=(--body "$EMAIL_BODY")
 fi
 
-docker compose -f "$COMPOSE_FILE" exec -T backend "${command_args[@]}"
+docker compose -f "$COMPOSE_FILE" exec -T backend "${command_args[@]}" \
+  < "${SCRIPT_DIR}/backend/scripts/send_test_email.py"
