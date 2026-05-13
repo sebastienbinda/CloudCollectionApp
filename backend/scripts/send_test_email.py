@@ -15,6 +15,11 @@ import argparse
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
+
+SCRIPT_BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPT_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_BACKEND_DIR))
 
 from services.email import EmailConfiguration, EmailSenderFactory
 
