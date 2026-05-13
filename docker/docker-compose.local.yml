@@ -23,6 +23,12 @@ services:
       JEUXVIDEO_ODS_TMP_DIR: /project/tmp
       JEUXVIDEO_ODS_BACKUP_DIR: /project/backup
       ODS_FORMULA_RECALCULATION: required
+      BACKEND_LOG_LEVEL: ${BACKEND_LOG_LEVEL:-INFO}
+      BACKEND_LOG_FILE_ENABLED: ${BACKEND_LOG_FILE_ENABLED:-true}
+      BACKEND_LOG_DIR: /app/logs
+      BACKEND_LOG_FILE_NAME: ${BACKEND_LOG_FILE_NAME:-backend.log}
+      BACKEND_LOG_FILE_MAX_BYTES: ${BACKEND_LOG_FILE_MAX_BYTES:-10485760}
+      BACKEND_LOG_FILE_BACKUP_COUNT: ${BACKEND_LOG_FILE_BACKUP_COUNT:-30}
       AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-3600}
       AUTH_USERNAME: ${AUTH_USERNAME:-admin}
       AUTH_ENV_ENCRYPTION_KEY: ${AUTH_ENV_ENCRYPTION_KEY:-}
@@ -31,9 +37,19 @@ services:
       APP_VERSION: ${APP_VERSION:-0.1}
       DB_SCHEMA_NAME: ${DB_SCHEMA_NAME:-cloudcollectionapp}
       DATABASE_URL: postgresql://${POSTGRES_USER:-cloudcollectionapp}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD doit etre defini}@database:5432/${POSTGRES_DB:-cloudcollectionapp}
+      BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL:-http://localhost:${WEB_PORT:-8080}}
+      EMAIL_DELIVERY_MODE: ${EMAIL_DELIVERY_MODE:-console}
+      EMAIL_VERIFICATION_TOKEN_TTL_HOURS: ${EMAIL_VERIFICATION_TOKEN_TTL_HOURS:-24}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@cloudcollectionapp.local}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods
       - ${JEUXVIDEO_BACKUP_DIR:-../backup}:/project/backup
+      - ${BACKEND_LOG_HOST_DIR:-../logs}:/app/logs
     tmpfs:
       - /project/tmp
     expose:

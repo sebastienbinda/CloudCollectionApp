@@ -13,5 +13,30 @@
 
 from .auth_guard import AuthGuard
 from .auth_token_service import AuthTokenService
+from .email_verification_service import (
+    EmailVerificationService,
+    EmailVerificationToken,
+    InvalidEmailVerificationTokenError,
+    VerifiedUser,
+)
+from .password_hash_service import PasswordHashService
+from .user_registration_service import (
+    DuplicateUserEmailError,
+    PasswordPolicyError,
+    RegisteredUser,
+    UserRegistrationService,
+)
 
-__all__ = ["AuthGuard", "AuthTokenService"]
+__all__ = [
+    "AuthGuard",
+    "AuthTokenService",
+    "DuplicateUserEmailError",
+    "EmailVerificationService",
+    "EmailVerificationToken",
+    "InvalidEmailVerificationTokenError",
+    "PasswordPolicyError",
+    "PasswordHashService",
+    "RegisteredUser",
+    "UserRegistrationService",
+    "VerifiedUser",
+]

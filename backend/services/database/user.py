@@ -14,7 +14,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, DateTime, Sequence, String, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, Sequence, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,7 +27,11 @@ class User(DatabaseModelBase):
     Attributes:
         id (int): Identifiant technique genere par la sequence `s_user`.
         email (str): Adresse email unique de l'utilisateur.
-        password_encrypted (str): Mot de passe chiffre.
+        password_hash (str): Empreinte non reversible du mot de passe.
+        is_email_verified (bool): Indique si l'adresse email a ete validee.
+        email_verification_token_hash (Optional[str]): Empreinte du token de validation email.
+        email_verification_expires_at (Optional[datetime]): Date d'expiration du token.
+        email_verified_at (Optional[datetime]): Date de validation de l'adresse email.
         creation_date (datetime): Date de creation de l'utilisateur.
         last_connexion_date (Optional[datetime]): Date de derniere connexion.
         collection_file_path (Optional[str]): Chemin du fichier de collection.
@@ -44,7 +48,14 @@ class User(DatabaseModelBase):
         primary_key=True,
     )
     email: Mapped[str] = mapped_column(String(256), nullable=False)
-    password_encrypted: Mapped[str] = mapped_column(String(512), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
+    is_email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    email_verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    email_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     last_connexion_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     collection_file_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)

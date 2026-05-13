@@ -20,6 +20,7 @@ from .schema_version import SchemaVersion
 from .studio import Studio
 from .user import User
 from .user_collection import UserCollection
+from .user_repository import SqlAlchemyUserRepository
 
 __all__ = [
     "DatabaseConfiguration",
@@ -29,6 +30,7 @@ __all__ = [
     "Platform",
     "SchemaVersion",
     "Studio",
+    "SqlAlchemyUserRepository",
     "User",
     "UserCollection",
 ]

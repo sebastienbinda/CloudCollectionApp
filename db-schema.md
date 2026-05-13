@@ -90,7 +90,11 @@ Contraintes :
 | --- | --- | --- | --- |
 | `id` | `BIGINT` | Non | Identifiant technique genere par `s_user`. |
 | `email` | `VARCHAR(256)` | Non | Adresse email de l'utilisateur. |
-| `password_encrypted` | `VARCHAR(512)` | Non | Mot de passe chiffre. |
+| `password_hash` | `VARCHAR(512)` | Non | Empreinte non reversible du mot de passe. |
+| `is_email_verified` | `BOOLEAN` | Non | Indique si l'adresse email a ete validee. |
+| `email_verification_token_hash` | `VARCHAR(64)` | Oui | Empreinte SHA-256 du token de validation email. |
+| `email_verification_expires_at` | `TIMESTAMP` | Oui | Date d'expiration du token de validation email. |
+| `email_verified_at` | `TIMESTAMP` | Oui | Date de validation de l'adresse email. |
 | `creation_date` | `TIMESTAMP` | Non | Date de creation de l'utilisateur. |
 | `last_connexion_date` | `TIMESTAMP` | Oui | Date de derniere connexion. |
 | `collection_file_path` | `VARCHAR(512)` | Oui | Chemin du fichier de collection rattache. |

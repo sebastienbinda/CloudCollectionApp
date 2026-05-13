@@ -9,8 +9,80 @@
 # Auteurs : Codex et Binda Sébastien
 #
 import unittest
+from datetime import datetime
 from pathlib import Path
 import app as app_module
+from services.auth import (
+    DuplicateUserEmailError,
+    InvalidEmailVerificationTokenError,
+    PasswordPolicyError,
+    RegisteredUser,
+)
+from services.auth.email_verification_service import EmailVerificationService, VerifiedUser
+
+
+class FakeSqlAlchemyUserRepository:
+    def __init__(self, configuration):
+        """Initialise un repository utilisateur factice.
+        Args:
+            configuration (DatabaseConfiguration): Configuration ignoree en test.
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.configuration = configuration
+
+    def verify_email_by_token_hash(self, token_hash, verified_at):
+        """Valide un token factice.
+        Args:
+            token_hash (str): Empreinte du token.
+            verified_at (datetime): Date de validation.
+        Returns:
+            VerifiedUser: Utilisateur valide factice.
+        """
+
+        if token_hash == EmailVerificationService.hash_token("invalid-token"):
+            raise InvalidEmailVerificationTokenError("Le token de validation est invalide ou expire.")
+        return VerifiedUser(id=7, email="user@example.com", email_verified_at=verified_at)
+
+
+class FakeUserRegistrationService:
+    def __init__(self, user_repository, email_verification_service):
+        """Initialise un service d'inscription factice.
+        Args:
+            user_repository (object): Repository injecte par la route.
+            email_verification_service (object): Service de validation email injecte par la route.
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.user_repository = user_repository
+        self.email_verification_service = email_verification_service
+
+    def register_user(self, email, password):
+        """Retourne un utilisateur factice ou leve une erreur controlee.
+        Args:
+            email (str): Email fourni par la route.
+            password (str): Mot de passe fourni par la route.
+        Returns:
+            RegisteredUser: Utilisateur public factice.
+        """
+
+        if email == "duplicate@example.com":
+            raise DuplicateUserEmailError("Un compte existe deja pour cet email.")
+        if not email:
+            raise ValueError("L'email est obligatoire.")
+        if password != "VeryStrongPassword123!":
+            raise PasswordPolicyError(
+                "Le mot de passe doit contenir au moins 8 caracteres, au moins un chiffre, "
+                "un caractere special, une minuscule et une majuscule."
+            )
+        return RegisteredUser(
+            id=7,
+            email=str(email).strip().lower(),
+            creation_date=datetime(2026, 5, 13, 12, 0, 0),
+            is_email_verified=False,
+        )
 class FakeGamesService:
     def __init__(self):
         """Initialise un service JeuxVideo factice.
@@ -182,7 +254,11 @@ class AppRoutesTest(unittest.TestCase):
             None: Le client Flask est prepare pour chaque test.
         """
         self.original_service = app_module.GamesService
+        self.original_user_repository = app_module.SqlAlchemyUserRepository
+        self.original_registration_service = app_module.UserRegistrationService
         app_module.GamesService = FakeGamesService
+        app_module.SqlAlchemyUserRepository = FakeSqlAlchemyUserRepository
+        app_module.UserRegistrationService = FakeUserRegistrationService
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
     def tearDown(self):
@@ -193,6 +269,8 @@ class AppRoutesTest(unittest.TestCase):
             None: Les modifications globales du test sont annulees.
         """
         app_module.GamesService = self.original_service
+        app_module.SqlAlchemyUserRepository = self.original_user_repository
+        app_module.UserRegistrationService = self.original_registration_service
     def get_auth_headers(self):
         """Construit un header Bearer valide pour les routes protegees.
         Args:
@@ -231,18 +309,147 @@ class AppRoutesTest(unittest.TestCase):
         self.assertIn("invalides", response.get_json()["error"])
     def test_routes_route_requires_authentication(self):
         """Verifie que le catalogue des routes exige un token.
+
         Args:
             Aucun.
+
         Returns:
             None: Les assertions valident la reponse HTTP.
         """
         response = self.client.get("/api/routes")
         self.assertEqual(403, response.status_code)
         self.assertIn("Bearer", response.get_json()["error"])
-    def test_platforms_route_requires_authentication(self):
-        """Verifie que la liste des plateformes exige un token.
+    def test_register_user_route_requires_authentication(self):
+        """Verifie que l'inscription utilisateur exige un token.
+
         Args:
             Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+        response = self.client.post(
+            "/api/auth/register",
+            json={"email": "user@example.com", "password": "VeryStrongPassword123!"},
+        )
+        self.assertEqual(403, response.status_code)
+        self.assertIn("Bearer", response.get_json()["error"])
+    def test_register_user_route_returns_public_user(self):
+        """Verifie la creation d'un utilisateur authentifie.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+        response = self.client.post(
+            "/api/auth/register",
+            json={"email": " USER@Example.COM ", "password": "VeryStrongPassword123!"},
+            headers=self.get_auth_headers(),
+        )
+        data = response.get_json()
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(7, data["user"]["id"])
+        self.assertEqual("user@example.com", data["user"]["email"])
+        self.assertFalse(data["user"]["is_email_verified"])
+        self.assertNotIn("password", data["user"])
+        self.assertNotIn("password_hash", data["user"])
+    def test_register_user_route_rejects_duplicate_email(self):
+        """Verifie la reponse HTTP pour un email deja utilise.
+        Args:
+            Aucun.
+        Returns:
+            None: Les assertions valident le statut 409.
+        """
+        response = self.client.post(
+            "/api/auth/register",
+            json={"email": "duplicate@example.com", "password": "VeryStrongPassword123!"},
+            headers=self.get_auth_headers(),
+        )
+        self.assertEqual(409, response.status_code)
+        self.assertIn("existe deja", response.get_json()["error"])
+    def test_register_user_route_rejects_invalid_payload(self):
+        """Verifie la reponse HTTP pour une inscription invalide.
+        Args:
+            Aucun.
+        Returns:
+            None: Les assertions valident le statut 400.
+        """
+        response = self.client.post(
+            "/api/auth/register",
+            json={"email": "user@example.com", "password": "short"},
+            headers=self.get_auth_headers(),
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertIn("8 caracteres", response.get_json()["error"])
+        self.assertIn("un chiffre", response.get_json()["error"])
+        self.assertIn("un caractere special", response.get_json()["error"])
+        self.assertIn("une minuscule", response.get_json()["error"])
+        self.assertIn("une majuscule", response.get_json()["error"])
+    def test_verify_email_route_requires_authentication(self):
+        """Verifie que la validation email exige un token Bearer.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+        response = self.client.get("/api/auth/verify-email?token=valid-token")
+        self.assertEqual(403, response.status_code)
+        self.assertIn("Bearer", response.get_json()["error"])
+    def test_verify_email_route_returns_verified_user(self):
+        """Verifie la validation d'email depuis un token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+        response = self.client.get(
+            "/api/auth/verify-email?token=valid-token",
+            headers=self.get_auth_headers(),
+        )
+        data = response.get_json()
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(7, data["user"]["id"])
+        self.assertEqual("user@example.com", data["user"]["email"])
+        self.assertIn("email_verified_at", data["user"])
+    def test_verify_email_route_rejects_missing_token(self):
+        """Verifie le refus d'une validation sans token.
+        Args:
+            Aucun.
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+        response = self.client.get(
+            "/api/auth/verify-email",
+            headers=self.get_auth_headers(),
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertIn("obligatoire", response.get_json()["error"])
+    def test_verify_email_route_rejects_invalid_token(self):
+        """Verifie le refus d'un token invalide.
+        Args:
+            Aucun.
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+        response = self.client.post(
+            "/api/auth/verify-email",
+            json={"token": "invalid-token"},
+            headers=self.get_auth_headers(),
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertIn("invalide", response.get_json()["error"])
+    def test_platforms_route_requires_authentication(self):
+        """Verifie que la liste des plateformes exige un token.
+
+        Args:
+            Aucun.
+
         Returns:
             None: Les assertions valident la reponse HTTP.
         """
@@ -359,6 +566,8 @@ class AppRoutesTest(unittest.TestCase):
         }
         self.assertEqual(200, response.status_code)
         self.assertFalse(routes_by_key[("/auth/token", ("POST",))]["requires_auth"])
+        self.assertTrue(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
+        self.assertTrue(routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"])
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/platforms", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["requires_auth"])

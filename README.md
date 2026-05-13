@@ -232,6 +232,57 @@ appels aux routes protegees doivent ensuite envoyer :
 Authorization: Bearer <access_token>
 ```
 
+### Inscription utilisateur
+
+`POST /api/auth/register` cree un utilisateur avec un mot de passe stocke sous
+forme d'empreinte non reversible et une adresse email non validee.
+Comme les autres routes applicatives, cette route et la validation email exigent
+un en-tete `Authorization: Bearer <access_token>`.
+
+Exemple :
+
+```json
+{
+  "email": "user@example.com",
+  "password": "VeryStrongPassword123!"
+}
+```
+
+Le backend genere un token de validation email, stocke uniquement son empreinte
+SHA-256 en base, puis envoie un lien vers :
+
+```http
+GET /api/auth/verify-email?token=<token>
+```
+
+Variables utiles :
+
+```bash
+export BACKEND_PUBLIC_URL=https://api.example.com
+export EMAIL_DELIVERY_MODE=smtp
+export EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
+export SMTP_FROM_EMAIL=noreply@example.com
+export SMTP_HOST=smtp.example.com
+export SMTP_PORT=587
+export SMTP_USERNAME=...
+export SMTP_PASSWORD=...
+export SMTP_USE_TLS=true
+```
+
+En developpement, `EMAIL_DELIVERY_MODE=console` journalise l'email genere.
+
+Tester l'envoi avec le conteneur backend deja demarre :
+
+```bash
+./test_email.sh --to destinataire@example.com
+```
+
+Pour tester la stack de production :
+
+```bash
+./test_email.sh -p --to destinataire@example.com
+```
+
 ### Routes Disponibles
 
 `GET /api/routes` retourne les routes backend et indique celles qui sont
@@ -287,6 +338,11 @@ Le projet peut tourner avec trois conteneurs :
 Seul le fichier ODS defini par `JEUXVIDEO_ODS_FILE` est monte dans le conteneur backend, sans monter tout son dossier parent.
 Les fichiers temporaires sont ecrits dans un `tmpfs` conteneur sur `/project/tmp`.
 Les sauvegardes sont ecrites dans le repertoire monte `JEUXVIDEO_BACKUP_DIR`, disponible dans le conteneur sur `/project/backup`.
+Les logs backend sont ecrits sur la sortie standard Docker et, si active,
+dans le repertoire hote `BACKEND_LOG_HOST_DIR`, monte dans le conteneur sur
+`/app/logs`. Le fichier actif tourne au changement de jour ou lorsque sa taille
+depasse `BACKEND_LOG_FILE_MAX_BYTES`; `BACKEND_LOG_FILE_BACKUP_COUNT` limite le
+nombre d'archives conservees.
 PostgreSQL n'expose aucun port vers l'hote. Le backend recoit `DATABASE_URL` avec l'hote Docker interne `database`.
 Au demarrage, le backend cree le schema PostgreSQL configure par `DB_SCHEMA_NAME`
 s'il n'existe pas, applique les migrations Alembic, puis inscrit `APP_VERSION`
@@ -302,6 +358,19 @@ Variables Docker principales :
 | `APP_HOME_TITLE` | Titre affiche dans l'interface |
 | `JEUXVIDEO_ODS_FILE` | Fichier ODS monte dans le backend |
 | `JEUXVIDEO_BACKUP_DIR` | Repertoire hote recevant les sauvegardes ODS |
+| `BACKEND_LOG_LEVEL` | Niveau de log Python du backend |
+| `BACKEND_LOG_FILE_ENABLED` | Active l'ecriture des logs backend sur disque |
+| `BACKEND_LOG_HOST_DIR` | Repertoire hote recevant les logs backend |
+| `BACKEND_LOG_FILE_NAME` | Nom du fichier de log actif dans le conteneur |
+| `BACKEND_LOG_FILE_MAX_BYTES` | Taille maximale du fichier actif avant rotation |
+| `BACKEND_LOG_FILE_BACKUP_COUNT` | Nombre maximal d'archives de logs conservees |
+| `EMAIL_DELIVERY_MODE` | Mode email, `console` en local ou `smtp` en production |
+| `SMTP_FROM_EMAIL` | Adresse expediteur des emails transactionnels |
+| `SMTP_HOST` | Serveur SMTP du fournisseur transactionnel |
+| `SMTP_PORT` | Port SMTP |
+| `SMTP_USERNAME` | Identifiant SMTP du fournisseur transactionnel |
+| `SMTP_PASSWORD` | Mot de passe ou cle SMTP du fournisseur transactionnel |
+| `SMTP_USE_TLS` | Active STARTTLS pour l'envoi SMTP |
 | `AUTH_USERNAME` | Identifiant autorise pour les actions protegees |
 | `AUTH_ENV_ENCRYPTION_KEY` | Cle Fernet pour dechiffrer les secrets applicatifs |
 | `AUTH_PASSWORD_ENCRYPTED` | Mot de passe applicatif chiffre |
@@ -326,6 +395,19 @@ Adapter ensuite `docker/.env` si besoin :
 WEB_PORT=8080
 JEUXVIDEO_ODS_FILE=../collection.ods
 JEUXVIDEO_BACKUP_DIR=../backup
+BACKEND_LOG_LEVEL=INFO
+BACKEND_LOG_FILE_ENABLED=true
+BACKEND_LOG_HOST_DIR=../logs
+BACKEND_LOG_FILE_NAME=backend.log
+BACKEND_LOG_FILE_MAX_BYTES=10485760
+BACKEND_LOG_FILE_BACKUP_COUNT=30
+EMAIL_DELIVERY_MODE=smtp
+SMTP_FROM_EMAIL=noreply@cloud-collection-app.fr
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=remplacer-par-identifiant-smtp
+SMTP_PASSWORD=remplacer-par-mot-de-passe-smtp
+SMTP_USE_TLS=true
 APP_VERSION=0.1
 DB_SCHEMA_NAME=cloudcollectionapp
 POSTGRES_DB=cloudcollectionapp

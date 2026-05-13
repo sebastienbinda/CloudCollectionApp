@@ -10,16 +10,35 @@
 #
 """Exports publics des services backend."""
 
-from .auth import AuthGuard, AuthTokenService
-from .database import DatabaseConfiguration, DatabaseSchemaService
+from .auth import (
+    AuthGuard,
+    AuthTokenService,
+    DuplicateUserEmailError,
+    EmailVerificationService,
+    InvalidEmailVerificationTokenError,
+    PasswordPolicyError,
+    UserRegistrationService,
+)
+from .database import DatabaseConfiguration, DatabaseSchemaService, SqlAlchemyUserRepository
+from .email import EmailConfiguration, EmailSenderFactory
 from .games import GamesService
+from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
 
 __all__ = [
     "AuthGuard",
     "AuthTokenService",
+    "BackendLoggingService",
     "DatabaseConfiguration",
     "DatabaseSchemaService",
+    "DuplicateUserEmailError",
+    "EmailConfiguration",
+    "EmailSenderFactory",
+    "EmailVerificationService",
     "GamesService",
+    "InvalidEmailVerificationTokenError",
+    "PasswordPolicyError",
     "RouteDiscoveryService",
+    "SqlAlchemyUserRepository",
+    "UserRegistrationService",
 ]
