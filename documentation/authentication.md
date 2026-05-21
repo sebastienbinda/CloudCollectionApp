@@ -2,7 +2,8 @@
 
 ## Key Points
 
-- Every backend endpoint is protected except `POST /auth/token`.
+- Every backend endpoint is protected except explicitly documented public
+  authentication and registration endpoints.
 - Without a Bearer token: `403`; invalid or expired token: `401`.
 - The frontend only sends or clears the token; security remains in the backend.
 - Every protected call must use `Authorization: Bearer <access_token>`.
@@ -22,9 +23,14 @@ avoid unnecessary calls, but all real protection must remain on the backend side
 
 ## Backend Contract
 
-- All application backend endpoints must require a valid Bearer token.
-- The only public application route is `POST /auth/token`, used to obtain a
-  token.
+- All application backend endpoints must require a valid Bearer token unless
+  they are explicitly listed as public below.
+- Public backend routes are:
+  - `POST /auth/token`, used to obtain a token.
+  - `POST /api/auth/register`, used to create an account before the user can
+    own a Bearer token.
+  - `GET /api/auth/verify-email` and `POST /api/auth/verify-email`, used from
+    an email verification link before sign-in.
 - CORS `OPTIONS` requests remain exempt to allow preflights.
 - Routes must be protected globally with `AuthGuard.protect_all_routes`.
 - Do not add a new public route without an explicit decision and without
@@ -66,6 +72,20 @@ Expected response:
 
 Invalid credentials return `401` with a
 `WWW-Authenticate: Bearer realm="CloudCollectionApp"`.
+
+## Registration And Email Verification
+
+Registration and email verification are public by design because they happen
+before the user can authenticate.
+
+- `POST /api/auth/register` creates an unverified user and sends a verification
+  link.
+- `GET /api/auth/verify-email?token=<token>` validates an email from a link.
+- `POST /api/auth/verify-email` validates an email from an API payload.
+
+These routes must not expose collection data, password hashes, raw passwords,
+verification token hashes, or raw verification tokens. Detailed implementation
+rules are in `documentation/register.md`.
 
 ## Protected Calls
 
@@ -136,6 +156,8 @@ The routes returned by this catalog must correctly indicate:
 
 Every protected route must announce `requires_auth: true` and `auth_schemes:
 ["Bearer"]`.
+Public routes must announce `requires_auth: false`, `access: "public"` and
+`auth_schemes: []`.
 
 ## Tests to Maintain
 
@@ -143,6 +165,10 @@ Any authentication change must update or add backend tests covering at least:
 
 - `POST /auth/token` with valid credentials.
 - `POST /auth/token` with invalid credentials.
+- `POST /api/auth/register` without a Bearer token preserving registration
+  behavior.
+- `GET` or `POST /api/auth/verify-email` without a Bearer token preserving
+  verification behavior.
 - A protected endpoint without a token returning `403`.
 - A protected endpoint with an invalid token returning `401`.
 - A protected endpoint with a valid token preserving its business behavior.
@@ -162,6 +188,8 @@ the Docker daemon is available.
 - Never expose collection data from the backend without a token.
 - Never reintroduce a public read mode that only hides some fields on the backend
   side.
+- Keep registration and email verification public, but limited to account
+  creation and email validation behavior.
 - Never hardcode a secret, token, password, or signing key.
 - Do not add an external authentication dependency without strong justification.
 - Prefer extending `AuthGuard` and `AuthTokenService` over scattered checks.

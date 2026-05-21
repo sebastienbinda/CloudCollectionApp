@@ -96,7 +96,7 @@ def issue_auth_token():
 
 @app.post("/api/auth/register")
 def register_user():
-    """Enregistre un nouvel utilisateur applicatif protege par Bearer.
+    """Enregistre un nouvel utilisateur applicatif public.
 
     Args:
         Aucun.
@@ -565,7 +565,14 @@ def list_jeux_video_add_game_choices():
         return jsonify({"error": f"Unable to read ODS choices: {exc}"}), 500
 
 
-auth_guard.protect_all_routes(app, exempt_endpoints={"issue_auth_token"})
+auth_guard.protect_all_routes(
+    app,
+    exempt_endpoints={
+        "issue_auth_token",
+        "register_user",
+        "verify_user_email",
+    },
+)
 
 
 if __name__ == "__main__":

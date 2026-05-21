@@ -50,6 +50,7 @@
 ## Functional Documentation to Respect
 
 - Before changing authentication, backend route protection, frontend session handling, or access control, read and respect `documentation/authentication.md`.
+- Before changing user registration, password hashing, email verification, or registration route exposure, read and respect `documentation/register.md`.
 - Before changing the main navigation menu, responsive menu behavior, or shared menu actions, read and respect `documentation/menu.md`.
 - Before changing the public About page, its route, copy, image, or responsive layout, read and respect `documentation/about.md`.
 - Before adding or modifying any frontend page, read and respect `documentation/site-plan.md`.
@@ -57,6 +58,7 @@
 ## Change Governance
 
 - Ask for explicit confirmation before making any modification that changes a paradigm, invariant, or expected behavior described in any related `documentation/*.md` file.
+- Ask for explicit confirmation before modifying an existing `documentation/*.md` file when the change contradicts, replaces, or weakens a rule already documented in that file.
 - When adding or modifying any frontend page, explicitly state whether the rules from `documentation/site-plan.md` were respected for every site page.
 - When adding a new feature, propose updates to existing `documentation/*.md` files if the feature changes an already documented area, and wait for confirmation before applying those documentation changes.
 - When adding a new feature that creates a completely new functional block, propose creating a new `documentation/*.md` file for that block, and wait for confirmation before creating it.

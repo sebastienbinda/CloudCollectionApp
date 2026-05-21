@@ -319,23 +319,8 @@ class AppRoutesTest(unittest.TestCase):
         response = self.client.get("/api/routes")
         self.assertEqual(403, response.status_code)
         self.assertIn("Bearer", response.get_json()["error"])
-    def test_register_user_route_requires_authentication(self):
-        """Verifie que l'inscription utilisateur exige un token.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident la reponse HTTP.
-        """
-        response = self.client.post(
-            "/api/auth/register",
-            json={"email": "user@example.com", "password": "VeryStrongPassword123!"},
-        )
-        self.assertEqual(403, response.status_code)
-        self.assertIn("Bearer", response.get_json()["error"])
     def test_register_user_route_returns_public_user(self):
-        """Verifie la creation d'un utilisateur authentifie.
+        """Verifie la creation publique d'un utilisateur.
 
         Args:
             Aucun.
@@ -346,7 +331,6 @@ class AppRoutesTest(unittest.TestCase):
         response = self.client.post(
             "/api/auth/register",
             json={"email": " USER@Example.COM ", "password": "VeryStrongPassword123!"},
-            headers=self.get_auth_headers(),
         )
         data = response.get_json()
         self.assertEqual(201, response.status_code)
@@ -365,7 +349,6 @@ class AppRoutesTest(unittest.TestCase):
         response = self.client.post(
             "/api/auth/register",
             json={"email": "duplicate@example.com", "password": "VeryStrongPassword123!"},
-            headers=self.get_auth_headers(),
         )
         self.assertEqual(409, response.status_code)
         self.assertIn("existe deja", response.get_json()["error"])
@@ -379,7 +362,6 @@ class AppRoutesTest(unittest.TestCase):
         response = self.client.post(
             "/api/auth/register",
             json={"email": "user@example.com", "password": "short"},
-            headers=self.get_auth_headers(),
         )
         self.assertEqual(400, response.status_code)
         self.assertIn("8 caracteres", response.get_json()["error"])
@@ -387,8 +369,8 @@ class AppRoutesTest(unittest.TestCase):
         self.assertIn("un caractere special", response.get_json()["error"])
         self.assertIn("une minuscule", response.get_json()["error"])
         self.assertIn("une majuscule", response.get_json()["error"])
-    def test_verify_email_route_requires_authentication(self):
-        """Verifie que la validation email exige un token Bearer.
+    def test_verify_email_route_returns_verified_user(self):
+        """Verifie la validation publique d'email depuis un token.
 
         Args:
             Aucun.
@@ -397,21 +379,6 @@ class AppRoutesTest(unittest.TestCase):
             None: Les assertions valident la reponse HTTP.
         """
         response = self.client.get("/api/auth/verify-email?token=valid-token")
-        self.assertEqual(403, response.status_code)
-        self.assertIn("Bearer", response.get_json()["error"])
-    def test_verify_email_route_returns_verified_user(self):
-        """Verifie la validation d'email depuis un token.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident la reponse HTTP.
-        """
-        response = self.client.get(
-            "/api/auth/verify-email?token=valid-token",
-            headers=self.get_auth_headers(),
-        )
         data = response.get_json()
         self.assertEqual(200, response.status_code)
         self.assertEqual(7, data["user"]["id"])
@@ -424,10 +391,7 @@ class AppRoutesTest(unittest.TestCase):
         Returns:
             None: Les assertions valident la reponse HTTP.
         """
-        response = self.client.get(
-            "/api/auth/verify-email",
-            headers=self.get_auth_headers(),
-        )
+        response = self.client.get("/api/auth/verify-email")
         self.assertEqual(400, response.status_code)
         self.assertIn("obligatoire", response.get_json()["error"])
     def test_verify_email_route_rejects_invalid_token(self):
@@ -437,11 +401,7 @@ class AppRoutesTest(unittest.TestCase):
         Returns:
             None: Les assertions valident la reponse HTTP.
         """
-        response = self.client.post(
-            "/api/auth/verify-email",
-            json={"token": "invalid-token"},
-            headers=self.get_auth_headers(),
-        )
+        response = self.client.post("/api/auth/verify-email", json={"token": "invalid-token"})
         self.assertEqual(400, response.status_code)
         self.assertIn("invalide", response.get_json()["error"])
     def test_platforms_route_requires_authentication(self):
@@ -566,8 +526,9 @@ class AppRoutesTest(unittest.TestCase):
         }
         self.assertEqual(200, response.status_code)
         self.assertFalse(routes_by_key[("/auth/token", ("POST",))]["requires_auth"])
-        self.assertTrue(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
-        self.assertTrue(routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"])
+        self.assertFalse(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
+        self.assertFalse(routes_by_key[("/api/auth/verify-email", ("GET",))]["requires_auth"])
+        self.assertFalse(routes_by_key[("/api/auth/verify-email", ("POST",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/platforms", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["requires_auth"])

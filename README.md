@@ -188,8 +188,8 @@ Les images affichees dans l'interface sont extraites directement des images emba
 
 ### Authentification
 
-Tous les endpoints backend applicatifs exigent un token Bearer OAuth2, sauf la
-route publique `POST /auth/token` :
+Tous les endpoints backend applicatifs exigent un token Bearer OAuth2, sauf les
+routes publiques d'authentification et d'inscription :
 
 ```http
 POST /auth/token
@@ -236,8 +236,8 @@ Authorization: Bearer <access_token>
 
 `POST /api/auth/register` cree un utilisateur avec un mot de passe stocke sous
 forme d'empreinte non reversible et une adresse email non validee.
-Comme les autres routes applicatives, cette route et la validation email exigent
-un en-tete `Authorization: Bearer <access_token>`.
+Cette route et la validation email sont publiques, car l'utilisateur n'a pas
+encore de compte valide et ne peut pas encore posseder de token Bearer.
 
 Exemple :
 
@@ -309,10 +309,11 @@ Routes principales :
 | `GET` | `/collections/JeuxVideo/ods/download` | Telecharge le fichier ODS |
 
 Toutes les routes du tableau exigent `Authorization: Bearer <access_token>`.
-Seule `POST /auth/token` est publique. Les choix du formulaire d'ajout sont
-fusionnes cote backend entre collection et liste de souhaits, dedoublonnes en
-ignorant casse et espaces, nettoyes des valeurs invalides comme `nan`, puis
-tries alphabetiquement.
+Les routes publiques sont `POST /auth/token`, `POST /api/auth/register`,
+`GET /api/auth/verify-email` et `POST /api/auth/verify-email`. Les choix du
+formulaire d'ajout sont fusionnes cote backend entre collection et liste de
+souhaits, dedoublonnes en ignorant casse et espaces, nettoyes des valeurs
+invalides comme `nan`, puis tries alphabetiquement.
 
 Le formulaire `/add-game` reutilise la meme page pour ajouter vers la collection
 ou vers la liste de souhaits. En mode liste de souhaits, le champ plateforme est
@@ -633,6 +634,7 @@ Voir aussi `documentation/ci.md`.
 Les documents fonctionnels a maintenir sont dans `documentation/` :
 
 - `documentation/authentication.md` : authentification, routes protegees et session frontend
+- `documentation/register.md` : inscription utilisateur et validation email
 - `documentation/site-plan.md` : redirection des pages sans session
 - `documentation/about.md` : page About publique
 - `documentation/menu.md` : menu principal
