@@ -13,7 +13,7 @@
  * Description : modale objet de reconnexion apres expiration du token frontend.
  */
 import { Component } from "react";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import AuthApi from "../services/AuthApi";
 
 /**
  * Modale globale proposant une reconnexion sans quitter la page courante.
@@ -57,7 +57,7 @@ class AuthSessionModal extends Component {
     this.setState({ error: "", isSubmitting: true });
 
     try {
-      await JeuxVideoApi.authenticate(this.state.username, this.state.password);
+      await AuthApi.authenticate(this.state.username, this.state.password);
       this.setState({ password: "", isSubmitting: false });
       this.props.onAuthenticated();
     } catch (error) {

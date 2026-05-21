@@ -49,7 +49,8 @@ L'objectif est de garder le fichier ODS comme source de verite tout en offrant u
 - Modification et suppression des jeux de collection ou de liste de souhaits
 - Tableau de bord administrateur avec telechargement ODS et reinitialisation du cache
 - Page About publique pour les visiteurs non connectes
-- Authentification Bearer pour toutes les routes backend sauf `POST /auth/token`
+- Creation de compte depuis la page d'authentification avec validation email
+- Authentification Bearer pour toutes les routes backend hors authentification et inscription publiques
 - Barres de progression pendant les chargements et actions longues
 - Ecriture backend dans le fichier ODS avec sauvegarde automatique avant modification
 - Pipeline GitHub Actions avec tests, build frontend et publication des images Docker
@@ -76,7 +77,8 @@ Technologies :
 
 Fichiers principaux :
 
-- `backend/app.py` : routes HTTP Flask
+- `backend/app.py` : assemblage Flask, routes de collection et protection globale
+- `backend/controllers/` : controleurs HTTP transverses, dont authentification et inscription
 - `backend/services/games/games_service.py` : orchestration de la collection jeux video
 - `backend/services/games/add_game_choice_service.py` : fusion et tri des choix du formulaire d'ajout
 - `backend/services/ods/` : lecture, ecriture, sauvegarde et validation du fichier ODS

@@ -13,6 +13,7 @@
  * Description : hook chargeant les permissions d'actions depuis les routes backend.
  */
 import { useEffect, useState } from "react";
+import AuthApi from "../services/AuthApi";
 import BackendRouteAccessService from "../services/BackendRouteAccessService";
 import JeuxVideoApi from "../services/JeuxVideoApi";
 
@@ -38,8 +39,8 @@ function useBackendActionPermissions() {
     };
 
     fetchBackendRoutes();
-    window.addEventListener(JeuxVideoApi.authChangeEventName, fetchBackendRoutes);
-    return () => window.removeEventListener(JeuxVideoApi.authChangeEventName, fetchBackendRoutes);
+    window.addEventListener(AuthApi.authChangeEventName, fetchBackendRoutes);
+    return () => window.removeEventListener(AuthApi.authChangeEventName, fetchBackendRoutes);
   }, []);
 
   return actionPermissions;

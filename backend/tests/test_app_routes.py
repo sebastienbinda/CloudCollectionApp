@@ -254,11 +254,15 @@ class AppRoutesTest(unittest.TestCase):
             None: Le client Flask est prepare pour chaque test.
         """
         self.original_service = app_module.GamesService
-        self.original_user_repository = app_module.SqlAlchemyUserRepository
-        self.original_registration_service = app_module.UserRegistrationService
+        self.original_user_repository = app_module.authentication_controller.user_repository_class
+        self.original_registration_service = (
+            app_module.authentication_controller.user_registration_service_class
+        )
         app_module.GamesService = FakeGamesService
-        app_module.SqlAlchemyUserRepository = FakeSqlAlchemyUserRepository
-        app_module.UserRegistrationService = FakeUserRegistrationService
+        app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
+        app_module.authentication_controller.user_registration_service_class = (
+            FakeUserRegistrationService
+        )
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
     def tearDown(self):
@@ -269,8 +273,10 @@ class AppRoutesTest(unittest.TestCase):
             None: Les modifications globales du test sont annulees.
         """
         app_module.GamesService = self.original_service
-        app_module.SqlAlchemyUserRepository = self.original_user_repository
-        app_module.UserRegistrationService = self.original_registration_service
+        app_module.authentication_controller.user_repository_class = self.original_user_repository
+        app_module.authentication_controller.user_registration_service_class = (
+            self.original_registration_service
+        )
     def get_auth_headers(self):
         """Construit un header Bearer valide pour les routes protegees.
         Args:
@@ -527,8 +533,9 @@ class AppRoutesTest(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertFalse(routes_by_key[("/auth/token", ("POST",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
-        self.assertFalse(routes_by_key[("/api/auth/verify-email", ("GET",))]["requires_auth"])
-        self.assertFalse(routes_by_key[("/api/auth/verify-email", ("POST",))]["requires_auth"])
+        self.assertFalse(
+            routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"]
+        )
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/platforms", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["requires_auth"])

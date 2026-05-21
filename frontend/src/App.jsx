@@ -21,6 +21,7 @@ import useOdsDownload from "./hooks/useOdsDownload";
 import usePlatformGameMutations from "./hooks/usePlatformGameMutations";
 import useWishlistGameMutations from "./hooks/useWishlistGameMutations";
 import AddGameChoicesApi from "./services/AddGameChoicesApi";
+import AuthApi from "./services/AuthApi";
 import JeuxVideoApi from "./services/JeuxVideoApi";
 import WishlistAddApi from "./services/WishlistAddApi";
 const initialGameForm = AppRouting.createInitialGameForm();
@@ -70,14 +71,14 @@ function App() {
     (platform) => platform.sheet_name === selectedPlatform
   );
   const authenticatedUsername = actionPermissions.isAuthenticated
-    ? JeuxVideoApi.getAuthenticatedUsername()
+    ? AuthApi.getAuthenticatedUsername()
     : "";
   const reloadOds = () => setOdsReloadKey((previous) => previous + 1);
   const reloadGames = () => setGamesReloadKey((previous) => previous + 1);
   const gameMutations = usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames);
   const wishlistMutations = useWishlistGameMutations(reloadOds, reloadGames);
   const odsDownload = useOdsDownload();
-  const hasAccessToken = JeuxVideoApi.getAccessToken().trim().length > 0;
+  const hasAccessToken = AuthApi.getAccessToken().trim().length > 0;
   /**
    * Synchronise l'URL avec la plateforme selectionnee.
    *
@@ -566,7 +567,7 @@ function App() {
         deleteGameMessage: gameMutations.deleteGameMessage, deleteGameError: gameMutations.deleteGameError,
         downloadError: odsDownload.downloadError, isDownloadingOds: odsDownload.isDownloadingOds,
         openAddGamePage, openAdminDashboard, openAbout, openWishlist, openPlatform, setHomeSearchQuery,
-        logout: JeuxVideoApi.confirmAndClearAccessToken, searchGamesByName, closeHomeSearch,
+        logout: AuthApi.confirmAndClearAccessToken, searchGamesByName, closeHomeSearch,
         resetOdsCache, downloadOdsFile: odsDownload.downloadOdsFile, goHome, submitNewGame,
         updateGameFormValue, addWishlistGameToPlatform, deleteWishlistGame, toggleSort, setColumnFilters,
         openEditGame: gameMutations.openEditGame, saveEditedGame: gameMutations.saveEditedGame, cancelEditGame: gameMutations.cancelEditGame,

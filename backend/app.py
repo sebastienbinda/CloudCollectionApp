@@ -12,6 +12,7 @@ from io import BytesIO
 import os
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from controllers import AuthenticationController
 from models import CollectionTypes, Film
 from services import (
     AuthGuard,
@@ -19,22 +20,16 @@ from services import (
     BackendLoggingService,
     DatabaseConfiguration,
     DatabaseSchemaService,
-    DuplicateUserEmailError,
-    EmailConfiguration,
-    EmailSenderFactory,
-    EmailVerificationService,
     GamesService,
-    InvalidEmailVerificationTokenError,
-    PasswordPolicyError,
     RouteDiscoveryService,
-    SqlAlchemyUserRepository,
-    UserRegistrationService,
 )
 BackendLoggingService.configure_from_environment()
 app = Flask(__name__)
 CORS(app)
 auth_token_service = AuthTokenService()
+authentication_controller = AuthenticationController(auth_token_service)
 auth_guard = AuthGuard(auth_token_service)
+authentication_controller.register_routes(app)
 
 
 def initialize_database_schema_on_startup() -> None:
@@ -69,116 +64,6 @@ COLLECTION_ITEMS = {
         Film(id=3, name="Le Seigneur des Anneaux"),
     ],
 }
-@app.post("/auth/token")
-def issue_auth_token():
-    """Retourne un token Bearer compatible OAuth2 pour les routes protegees.
-    Args:
-        Aucun.
-    Form or JSON Body:
-        username (str): Identifiant backend, ou `client_id` en flux client credentials.
-        password (str): Mot de passe backend, ou `client_secret` en flux client credentials.
-    Returns:
-        tuple[flask.Response, int] | flask.Response: Token OAuth2 ou erreur JSON 401.
-    """
-    payload = request.get_json(silent=True) or request.form
-    username = payload.get("username") or payload.get("client_id") or ""
-    password = payload.get("password") or payload.get("client_secret") or ""
-    try:
-        token_response = auth_token_service.issue_token(username, password)
-        return jsonify(token_response)
-    except ValueError as exc:
-        return (
-            jsonify({"error": str(exc)}),
-            401,
-            {"WWW-Authenticate": 'Bearer realm="CloudCollectionApp"'},
-        )
-
-
-@app.post("/api/auth/register")
-def register_user():
-    """Enregistre un nouvel utilisateur applicatif public.
-
-    Args:
-        Aucun.
-
-    JSON Body:
-        email (str): Adresse email du compte a creer.
-        password (str): Mot de passe brut a hacher avant stockage.
-
-    Returns:
-        tuple[flask.Response, int]: Donnees publiques utilisateur ou erreur JSON.
-    """
-    payload = request.get_json(silent=True) or {}
-    email = payload.get("email", "")
-    password = payload.get("password", "")
-    app.logger.info("Demande d'inscription utilisateur recue.")
-    try:
-        user_repository = SqlAlchemyUserRepository(DatabaseConfiguration.from_environment())
-        email_sender = EmailSenderFactory.create(EmailConfiguration.from_environment())
-        email_verification_service = EmailVerificationService(user_repository, email_sender)
-        registration_service = UserRegistrationService(
-            user_repository,
-            email_verification_service,
-        )
-        registered_user = registration_service.register_user(email=email, password=password)
-        app.logger.info("Utilisateur inscrit avec succes: id=%s.", registered_user.id)
-        return jsonify({"user": registered_user.to_public_dict()}), 201
-    except DuplicateUserEmailError as exc:
-        app.logger.warning("Inscription refusee: email deja utilise.")
-        return jsonify({"error": str(exc)}), 409
-    except PasswordPolicyError as exc:
-        app.logger.warning("Inscription refusee: regles de mot de passe non respectees.")
-        return jsonify({"error": str(exc)}), 400
-    except ValueError as exc:
-        app.logger.warning("Inscription refusee: %s", str(exc))
-        if "DATABASE_URL" in str(exc):
-            return jsonify({"error": str(exc)}), 503
-        return jsonify({"error": str(exc)}), 400
-    except Exception:
-        app.logger.exception("Erreur inattendue pendant l'inscription utilisateur.")
-        return jsonify({"error": "Unable to register user."}), 500
-
-
-@app.get("/api/auth/verify-email")
-@app.post("/api/auth/verify-email")
-def verify_user_email():
-    """Valide l'adresse email d'un utilisateur depuis un token applicatif.
-
-    Args:
-        Aucun.
-
-    Query Args:
-        token (str): Token de validation transmis dans le lien email.
-
-    JSON Body:
-        token (str): Token de validation pour les clients API.
-
-    Returns:
-        tuple[flask.Response, int]: Donnees publiques de validation ou erreur JSON.
-    """
-    payload = request.get_json(silent=True) or {}
-    raw_token = request.args.get("token") or payload.get("token") or ""
-    app.logger.info("Demande de validation email recue.")
-    try:
-        user_repository = SqlAlchemyUserRepository(DatabaseConfiguration.from_environment())
-        email_sender = EmailSenderFactory.create(EmailConfiguration.from_environment())
-        email_verification_service = EmailVerificationService(user_repository, email_sender)
-        verified_user = email_verification_service.verify_email(raw_token)
-        app.logger.info("Email utilisateur valide avec succes: id=%s.", verified_user.id)
-        return jsonify({"user": verified_user.to_public_dict()})
-    except InvalidEmailVerificationTokenError as exc:
-        app.logger.warning("Validation email refusee: token invalide ou expire.")
-        return jsonify({"error": str(exc)}), 400
-    except ValueError as exc:
-        app.logger.warning("Validation email refusee: %s", str(exc))
-        if "DATABASE_URL" in str(exc):
-            return jsonify({"error": str(exc)}), 503
-        return jsonify({"error": str(exc)}), 400
-    except Exception:
-        app.logger.exception("Erreur inattendue pendant la validation email.")
-        return jsonify({"error": "Unable to verify email."}), 500
-
-
 @app.get("/api/routes")
 def list_accessible_routes():
     """Liste les routes backend et indique celles qui exigent un token.
@@ -567,11 +452,7 @@ def list_jeux_video_add_game_choices():
 
 auth_guard.protect_all_routes(
     app,
-    exempt_endpoints={
-        "issue_auth_token",
-        "register_user",
-        "verify_user_email",
-    },
+    exempt_endpoints=authentication_controller.get_public_endpoint_names(),
 )
 
 
