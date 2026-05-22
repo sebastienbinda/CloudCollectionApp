@@ -69,6 +69,7 @@ class AppViewSwitch {
       <AboutView
         isAuthenticated={props.actionPermissions.isAuthenticated}
         authenticatedUsername={props.authenticatedUsername}
+        authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
         selectedPlatform={props.selectedPlatform}
         onOpenAbout={props.openAbout}
@@ -102,6 +103,7 @@ class AppViewSwitch {
         homeSearchError={props.homeSearchError}
         isAuthenticated={props.actionPermissions.isAuthenticated}
         authenticatedUsername={props.authenticatedUsername}
+        authenticatedProfile={props.authenticatedProfile}
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
         onOpenAdminDashboard={props.openAdminDashboard}

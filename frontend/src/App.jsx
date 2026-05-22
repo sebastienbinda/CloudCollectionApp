@@ -25,6 +25,22 @@ import AuthApi from "./services/AuthApi";
 import JeuxVideoApi from "./services/JeuxVideoApi";
 import WishlistAddApi from "./services/WishlistAddApi";
 const initialGameForm = AppRouting.createInitialGameForm();
+
+/**
+ * Retourne l'identite authentifiee stockee cote navigateur.
+ *
+ * @param {void} Aucun - Lit le token local via les services frontend existants.
+ * @returns {Object} Etat local de session avec presence, nom et profil.
+ */
+function getLocalAuthenticatedIdentity() {
+  const hasLocalAccessToken = AuthApi.getAccessToken().trim().length > 0;
+  return {
+    isAuthenticated: hasLocalAccessToken,
+    username: hasLocalAccessToken ? AuthApi.getAuthenticatedUsername() : "",
+    profile: hasLocalAccessToken ? JeuxVideoApi.getAuthenticatedProfile() : "",
+  };
+}
+
 /** Composant racine React. @param {void} Aucun. @returns {import("react").JSX.Element} Interface. */
 function App() {
   const [currentView, setCurrentView] = useState(AppRouting.getViewFromUrl);
@@ -50,6 +66,7 @@ function App() {
   const [cacheResetMessage, setCacheResetMessage] = useState("");
   const [cacheResetError, setCacheResetError] = useState("");
   const [platformImageObjectUrls, setPlatformImageObjectUrls] = useState({});
+  const [authenticatedIdentity, setAuthenticatedIdentity] = useState(getLocalAuthenticatedIdentity);
   const actionPermissions = useBackendActionPermissions();
   const [isLoadingHome, setIsLoadingHome] = useState(true);
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
@@ -80,8 +97,11 @@ function App() {
   const selectedPlatformStats = homeStatsWithAuthenticatedImages?.platforms?.find(
     (platform) => platform.sheet_name === selectedPlatform
   );
-  const authenticatedUsername = actionPermissions.isAuthenticated
-    ? AuthApi.getAuthenticatedUsername()
+  const authenticatedUsername = authenticatedIdentity.isAuthenticated
+    ? authenticatedIdentity.username
+    : "";
+  const authenticatedProfile = authenticatedIdentity.isAuthenticated
+    ? authenticatedIdentity.profile
     : "";
   const reloadOds = () => setOdsReloadKey((previous) => previous + 1);
   const reloadGames = () => setGamesReloadKey((previous) => previous + 1);
@@ -89,6 +109,16 @@ function App() {
   const wishlistMutations = useWishlistGameMutations(reloadOds, reloadGames);
   const odsDownload = useOdsDownload();
   const hasAccessToken = AuthApi.getAccessToken().trim().length > 0;
+
+  useEffect(() => {
+    const updateAuthenticatedIdentity = () => {
+      setAuthenticatedIdentity(getLocalAuthenticatedIdentity());
+    };
+
+    window.addEventListener(AuthApi.authChangeEventName, updateAuthenticatedIdentity);
+    updateAuthenticatedIdentity();
+    return () => window.removeEventListener(AuthApi.authChangeEventName, updateAuthenticatedIdentity);
+  }, []);
   /**
    * Synchronise l'URL avec la plateforme selectionnee.
    *
@@ -610,7 +640,7 @@ function App() {
         homeSearchQuery, homeSearchResults, homeSearchError, cacheResetMessage, cacheResetError, isResettingCache,
         gameForm, addGameColumnValues, addGameError, addGameMessage, isAddingGame, namedGames, columns,
         valuesByColumn, columnFilters, sortConfig, sortedGames, filteredGames, isLoadingGames, isLoadingPlatforms,
-        actionPermissions, authenticatedUsername, selectedPlatformStats, studioCount: getStudioCount(namedGames),
+        actionPermissions, authenticatedUsername, authenticatedProfile, selectedPlatformStats, studioCount: getStudioCount(namedGames),
         isSavingGame: gameMutations.isSavingGame, editingGame: gameMutations.editingGame, editingWishlistGame: wishlistMutations.editingWishlistGame,
         isSavingWishlistGame: wishlistMutations.isSavingWishlistGame,
         deleteGameMessage: gameMutations.deleteGameMessage, deleteGameError: gameMutations.deleteGameError,

@@ -386,6 +386,17 @@
   background: #115e59;
 }
 
+.authButtonProfileADMIN {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #ffffff;
+}
+
+.authButtonProfileADMIN:hover {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
 .authStatusIcon {
   fill: currentColor;
   height: 1.1rem;

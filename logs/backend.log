@@ -83,3 +83,15 @@
 2026-05-22 07:52:22,321 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
 2026-05-22 07:52:22,322 INFO [alembic.runtime.migration] Will assume transactional DDL.
 2026-05-22 07:52:22,326 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 14:53:31,324 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 14:53:31,324 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 14:53:31,332 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 14:53:48,339 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 14:53:48,339 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 14:53:48,343 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 14:57:30,675 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 14:57:30,675 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 14:57:30,680 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 14:59:46,283 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 14:59:46,283 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 14:59:46,288 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.

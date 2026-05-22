@@ -22,6 +22,7 @@ function HomeView({
   homeSearchError,
   isAuthenticated,
   authenticatedUsername,
+  authenticatedProfile,
   onOpenAbout,
   onOpenHome,
   onOpenAdminDashboard,
@@ -44,6 +45,7 @@ function HomeView({
         <MainMenu
           isAuthenticated={isAuthenticated}
           username={authenticatedUsername}
+          profile={authenticatedProfile}
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
