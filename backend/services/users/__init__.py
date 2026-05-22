@@ -5,13 +5,24 @@
 #  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
-# Date de creation : 2026-05-21
+# Date de creation : 2026-05-22
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : exports publics des controleurs HTTP backend.
+# Description : exports publics du domaine de gestion des utilisateurs.
 
-from .authentication_controller import AuthenticationController
-from .user_controller import UserController
+from .user_management_service import (
+    UserManagementService,
+    UserNotFoundError,
+    UserSearchCriteria,
+    UserSummary,
+)
+from .user_status import UserStatus
 
-__all__ = ["AuthenticationController", "UserController"]
+__all__ = [
+    "UserManagementService",
+    "UserNotFoundError",
+    "UserSearchCriteria",
+    "UserStatus",
+    "UserSummary",
+]

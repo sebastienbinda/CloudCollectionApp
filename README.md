@@ -215,7 +215,8 @@ correspond a l'email verifie.
 Le token contient aussi le profil applicatif. Le compte configure par
 `AUTH_USERNAME` / `AUTH_PASSWORD_ENCRYPTED` recoit le profil `ADMIN`. Les
 utilisateurs inscrits en base recoivent le profil `USER` par defaut. Les droits
-sont hierarchiques : `ADMIN` herite des routes autorisees a `USER`.
+sont hierarchiques : `ADMIN` herite des routes autorisees a `USER`. Un
+utilisateur en base avec le statut `LOCKED` ne peut plus obtenir de token.
 
 Configurer les valeurs d'authentification technique avec `AUTH_USERNAME`,
 `AUTH_PASSWORD_ENCRYPTED`, `AUTH_SECRET_KEY_ENCRYPTED`,
@@ -325,8 +326,13 @@ Routes principales :
 | `DELETE` | `/collections/JeuxVideo/wishlist/games` | Supprime un jeu de la liste de souhaits |
 | `POST` | `/collections/JeuxVideo/cache/reset` | Vide le cache ODS |
 | `GET` | `/collections/JeuxVideo/ods/download` | Telecharge le fichier ODS |
+| `GET` | `/api/users` | Recherche les utilisateurs par nom, dates et statut |
+| `DELETE` | `/api/users/<id>` | Supprime un utilisateur |
+| `POST` | `/api/users/<id>/lock` | Bloque un utilisateur avec le statut `LOCKED` |
+| `POST` | `/api/users/<id>/unlock` | Debloque un utilisateur avec le statut `ACTIVE` |
 
 Toutes les routes du tableau exigent `Authorization: Bearer <access_token>`.
+Les routes `/api/users` exigent le profil `ADMIN`.
 Les routes publiques sont `POST /auth/token`, `POST /api/auth/register`,
 `GET /api/auth/verify-email` et `POST /api/auth/verify-email`. Les choix du
 formulaire d'ajout sont fusionnes cote backend entre collection et liste de
@@ -336,6 +342,11 @@ invalides comme `nan`, puis tries alphabetiquement.
 Le formulaire `/add-game` reutilise la meme page pour ajouter vers la collection
 ou vers la liste de souhaits. En mode liste de souhaits, le champ plateforme est
 affiche sous le libelle `Plateforme`.
+
+La page frontend `/users` est accessible depuis la section `Gerer les
+utilisateurs` du dashboard admin. Cette section est masquee pour le profil
+`USER`. La page propose des filtres par email, date de connexion, date de
+creation et verification email.
 
 Avant chaque ecriture, une sauvegarde est creee dans le repertoire de backup
 configure par `JEUXVIDEO_ODS_BACKUP_DIR` :

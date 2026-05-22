@@ -18,13 +18,14 @@ from services.auth import (
     AuthTokenService,
     PasswordHashService,
     UserProfile,
+    UserStatus,
 )
 
 
 class FakeUserRepository:
     """Repository utilisateur factice pour les tests d'authentification."""
 
-    def __init__(self, password_hash):
+    def __init__(self, password_hash, status=UserStatus.ACTIVE.value):
         """Initialise les identifiants utilisateur factices.
 
         Args:
@@ -35,6 +36,7 @@ class FakeUserRepository:
         """
 
         self.password_hash = password_hash
+        self.status = status
         self.last_connexion_user_id = None
 
     def find_verified_user_credentials_by_email(self, email):
@@ -54,6 +56,7 @@ class FakeUserRepository:
             email=email,
             password_hash=self.password_hash,
             profile=UserProfile.USER.value,
+            status=self.status,
         )
 
     def update_last_connexion_date(self, user_id, last_connexion_date):
@@ -207,6 +210,24 @@ class AuthTokenServiceTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.service.issue_token("unknown@example.com", "VeryStrongPassword123!", repository)
+
+    def test_issue_token_rejects_locked_database_user(self):
+        """Verifie le refus d'un utilisateur bloque.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur et l'absence de trace connexion.
+        """
+
+        password_hash = PasswordHashService().hash_password("VeryStrongPassword123!")
+        repository = FakeUserRepository(password_hash, status=UserStatus.LOCKED.value)
+
+        with self.assertRaises(ValueError):
+            self.service.issue_token("user@example.com", "VeryStrongPassword123!", repository)
+
+        self.assertIsNone(repository.last_connexion_user_id)
 
     def test_validate_access_token_rejects_invalid_signature(self):
         """Verifie le refus d'un token modifie.

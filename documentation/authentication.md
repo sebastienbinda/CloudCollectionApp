@@ -75,10 +75,11 @@ The endpoint accepts both authentication sources:
 - the configured backend credentials from `AUTH_USERNAME` and
   `AUTH_PASSWORD_ENCRYPTED`, which receive the `ADMIN` profile;
 - registered database users, using their verified email as `username`, only
-  after email verification has succeeded, which receive their database profile.
+  after email verification has succeeded and while their status is not `LOCKED`,
+  which receive their database profile.
 
-Invalid credentials, unknown users, unverified users or wrong passwords return
-`401` with a `WWW-Authenticate: Bearer realm="CloudCollectionApp"`.
+Invalid credentials, unknown users, unverified users, locked users or wrong
+passwords return `401` with a `WWW-Authenticate: Bearer realm="CloudCollectionApp"`.
 
 ## Profiles And Route Rights
 

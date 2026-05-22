@@ -19,6 +19,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from services.auth.user_profile import UserProfile
+from services.users import UserStatus
 
 from .database_model_base import DatabaseModelBase
 
@@ -31,6 +32,7 @@ class User(DatabaseModelBase):
         email (str): Adresse email unique de l'utilisateur.
         password_hash (str): Empreinte non reversible du mot de passe.
         profile (str): Profil applicatif de l'utilisateur.
+        status (str): Statut fonctionnel de l'utilisateur.
         is_email_verified (bool): Indique si l'adresse email a ete validee.
         email_verification_token_hash (Optional[str]): Empreinte du token de validation email.
         email_verification_expires_at (Optional[datetime]): Date d'expiration du token.
@@ -53,6 +55,7 @@ class User(DatabaseModelBase):
     email: Mapped[str] = mapped_column(String(256), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
     profile: Mapped[str] = mapped_column(String(16), nullable=False, default=UserProfile.USER.value)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default=UserStatus.ACTIVE.value)
     is_email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     email_verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(

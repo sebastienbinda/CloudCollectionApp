@@ -22,6 +22,7 @@ from services.auth import (
     RegisteredUser,
     UserRegistrationService,
     UserProfile,
+    UserStatus,
 )
 
 
@@ -80,6 +81,7 @@ class FakeUserRepository:
             creation_date=creation_date,
             is_email_verified=False,
             profile=profile,
+            status=UserStatus.ACTIVE.value,
         )
 
 
@@ -150,6 +152,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         self.assertEqual("user@example.com", repository.created_email)
         self.assertFalse(user.is_email_verified)
         self.assertEqual(UserProfile.USER.value, user.profile)
+        self.assertEqual(UserStatus.ACTIVE.value, user.status)
         self.assertEqual(UserProfile.USER.value, repository.created_profile)
         self.assertNotEqual("VeryStrongPassword123!", repository.created_password_hash)
         self.assertTrue(repository.created_password_hash.startswith("scrypt:"))

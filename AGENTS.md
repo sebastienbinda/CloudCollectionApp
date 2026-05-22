@@ -51,6 +51,7 @@
 
 - Before changing authentication, backend route protection, frontend session handling, or access control, read and respect `documentation/authentication.md`.
 - Before changing user registration, password hashing, email verification, or registration route exposure, read and respect `documentation/register.md`.
+- Before changing backend user administration, user search, user deletion, user locking, or user status, read and respect `documentation/users.md`.
 - Before changing the main navigation menu, responsive menu behavior, or shared menu actions, read and respect `documentation/menu.md`.
 - Before changing the public About page, its route, copy, image, or responsive layout, read and respect `documentation/about.md`.
 - Before adding or modifying any frontend page, read and respect `documentation/site-plan.md`.

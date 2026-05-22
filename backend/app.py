@@ -12,7 +12,7 @@ from io import BytesIO
 import os
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
-from controllers import AuthenticationController
+from controllers import AuthenticationController, UserController
 from models import CollectionTypes, Film
 from services import (
     AuthGuard,
@@ -29,7 +29,9 @@ CORS(app)
 auth_token_service = AuthTokenService()
 authentication_controller = AuthenticationController(auth_token_service)
 auth_guard = AuthGuard(auth_token_service)
+user_controller = UserController(auth_guard)
 authentication_controller.register_routes(app)
+user_controller.register_routes(app)
 
 
 def initialize_database_schema_on_startup() -> None:

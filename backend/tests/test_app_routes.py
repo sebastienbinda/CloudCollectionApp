@@ -20,8 +20,10 @@ from services.auth import (
     PasswordPolicyError,
     RegisteredUser,
     UserProfile,
+    UserStatus,
 )
 from services.auth.email_verification_service import EmailVerificationService, VerifiedUser
+from services.users import UserSummary
 
 
 class FakeSqlAlchemyUserRepository:
@@ -55,6 +57,7 @@ class FakeSqlAlchemyUserRepository:
             email=email,
             password_hash=self.user_password_hash,
             profile=UserProfile.USER.value,
+            status=UserStatus.ACTIVE.value,
         )
 
     def update_last_connexion_date(self, user_id, last_connexion_date):
@@ -69,6 +72,114 @@ class FakeSqlAlchemyUserRepository:
         """
 
         self.last_connexion_user_id = user_id
+
+    def search_users(self, criteria):
+        """Retourne des utilisateurs factices filtres par criteres.
+
+        Args:
+            criteria (UserSearchCriteria): Criteres de recherche utilisateur.
+
+        Returns:
+            list[UserSummary]: Utilisateurs factices correspondant aux filtres.
+        """
+
+        users = [
+            UserSummary(
+                id=7,
+                email="user@example.com",
+                profile=UserProfile.USER.value,
+                status=UserStatus.ACTIVE.value,
+                is_email_verified=True,
+                creation_date=datetime(2026, 5, 13, 12, 0, 0),
+                last_connexion_date=datetime(2026, 5, 22, 8, 30, 0),
+            ),
+            UserSummary(
+                id=8,
+                email="locked@example.com",
+                profile=UserProfile.USER.value,
+                status=UserStatus.LOCKED.value,
+                is_email_verified=True,
+                creation_date=datetime(2026, 5, 20, 12, 0, 0),
+                last_connexion_date=None,
+            ),
+        ]
+        if criteria.name:
+            users = [user for user in users if criteria.name.lower() in user.email.lower()]
+        if criteria.creation_date_from:
+            users = [user for user in users if user.creation_date >= criteria.creation_date_from]
+        if criteria.creation_date_to:
+            users = [user for user in users if user.creation_date <= criteria.creation_date_to]
+        if criteria.last_connexion_date_from:
+            users = [
+                user for user in users
+                if user.last_connexion_date
+                and user.last_connexion_date >= criteria.last_connexion_date_from
+            ]
+        if criteria.last_connexion_date_to:
+            users = [
+                user for user in users
+                if user.last_connexion_date
+                and user.last_connexion_date <= criteria.last_connexion_date_to
+            ]
+        if criteria.status:
+            users = [user for user in users if user.status == criteria.status]
+        return users
+
+    def delete_user(self, user_id):
+        """Supprime un utilisateur factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            bool: `True` pour l'utilisateur de test supprimable.
+        """
+
+        return user_id == 7
+
+    def lock_user(self, user_id):
+        """Bloque un utilisateur factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            UserSummary | None: Utilisateur bloque ou absent.
+        """
+
+        if user_id != 7:
+            return None
+        return UserSummary(
+            id=7,
+            email="user@example.com",
+            profile=UserProfile.USER.value,
+            status=UserStatus.LOCKED.value,
+            is_email_verified=True,
+            creation_date=datetime(2026, 5, 13, 12, 0, 0),
+            last_connexion_date=datetime(2026, 5, 22, 8, 30, 0),
+        )
+
+    def unlock_user(self, user_id):
+        """Debloque un utilisateur factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            UserSummary | None: Utilisateur debloque ou absent.
+        """
+
+        if user_id != 7:
+            return None
+        return UserSummary(
+            id=7,
+            email="user@example.com",
+            profile=UserProfile.USER.value,
+            status=UserStatus.ACTIVE.value,
+            is_email_verified=True,
+            creation_date=datetime(2026, 5, 13, 12, 0, 0),
+            last_connexion_date=datetime(2026, 5, 22, 8, 30, 0),
+        )
 
     def verify_email_by_token_hash(self, token_hash, verified_at):
         """Valide un token factice.
@@ -323,6 +434,10 @@ class AppRoutesTest(unittest.TestCase):
         """
         self.original_service = app_module.GamesService
         self.original_user_repository = app_module.authentication_controller.user_repository_class
+        self.original_user_controller_repository = app_module.user_controller.user_repository_class
+        self.original_user_controller_database_configuration = (
+            app_module.user_controller.database_configuration_class
+        )
         self.original_registration_service = (
             app_module.authentication_controller.user_registration_service_class
         )
@@ -331,6 +446,8 @@ class AppRoutesTest(unittest.TestCase):
         )
         app_module.GamesService = FakeGamesService
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
+        app_module.user_controller.user_repository_class = FakeSqlAlchemyUserRepository
+        app_module.user_controller.database_configuration_class = FakeDatabaseConfiguration
         app_module.authentication_controller.user_registration_service_class = (
             FakeUserRegistrationService
         )
@@ -346,6 +463,10 @@ class AppRoutesTest(unittest.TestCase):
         """
         app_module.GamesService = self.original_service
         app_module.authentication_controller.user_repository_class = self.original_user_repository
+        app_module.user_controller.user_repository_class = self.original_user_controller_repository
+        app_module.user_controller.database_configuration_class = (
+            self.original_user_controller_database_configuration
+        )
         app_module.authentication_controller.user_registration_service_class = (
             self.original_registration_service
         )
@@ -360,6 +481,22 @@ class AppRoutesTest(unittest.TestCase):
             dict[str, str]: En-tetes HTTP contenant le token d'authentification.
         """
         token = app_module.auth_token_service.create_access_token("admin")
+        return {"Authorization": f"Bearer {token}"}
+
+    def get_admin_auth_headers(self):
+        """Construit un header Bearer administrateur valide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict[str, str]: En-tetes HTTP contenant un token ADMIN.
+        """
+
+        token = app_module.auth_token_service.create_access_token(
+            "admin",
+            UserProfile.ADMIN.value,
+        )
         return {"Authorization": f"Bearer {token}"}
     def test_auth_token_route_returns_bearer_token(self):
         """Verifie la generation d'un token OAuth2 Bearer.
@@ -409,6 +546,190 @@ class AppRoutesTest(unittest.TestCase):
         self.assertEqual("Bearer", data["token_type"])
         self.assertEqual("user@example.com", payload["sub"])
         self.assertEqual(UserProfile.USER.value, payload["profile"])
+
+    def test_user_search_route_requires_authentication(self):
+        """Verifie que la recherche utilisateur exige un token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.get("/api/users")
+
+        self.assertEqual(403, response.status_code)
+        self.assertIn("Bearer", response.get_json()["error"])
+
+    def test_user_search_route_requires_admin_profile(self):
+        """Verifie que la recherche utilisateur exige le profil administrateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.get("/api/users", headers=self.get_auth_headers())
+
+        self.assertEqual(403, response.status_code)
+        self.assertIn("Profil", response.get_json()["error"])
+
+    def test_user_search_route_filters_users(self):
+        """Verifie les filtres de recherche utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les utilisateurs retournes.
+        """
+
+        response = self.client.get(
+            "/api/users?name=user&creation_date_from=2026-05-01T00:00:00"
+            "&last_connexion_date_to=2026-05-23T00:00:00&status=ACTIVE",
+            headers=self.get_admin_auth_headers(),
+        )
+        data = response.get_json()
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(data["users"]))
+        self.assertEqual("user@example.com", data["users"][0]["email"])
+        self.assertEqual(UserStatus.ACTIVE.value, data["users"][0]["status"])
+        self.assertNotIn("password", data["users"][0])
+        self.assertNotIn("password_hash", data["users"][0])
+
+    def test_user_search_route_rejects_invalid_status(self):
+        """Verifie le refus d'un statut de recherche invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.get(
+            "/api/users?status=DISABLED",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("statut", response.get_json()["error"])
+
+    def test_user_search_route_rejects_invalid_date(self):
+        """Verifie le refus d'une date de recherche invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.get(
+            "/api/users?creation_date_from=not-a-date",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("date ISO", response.get_json()["error"])
+
+    def test_delete_user_route_deletes_user(self):
+        """Verifie la suppression d'un utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.delete("/api/users/7", headers=self.get_admin_auth_headers())
+
+        self.assertEqual(204, response.status_code)
+
+    def test_delete_user_route_returns_not_found(self):
+        """Verifie la suppression d'un utilisateur absent.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.delete("/api/users/404", headers=self.get_admin_auth_headers())
+
+        self.assertEqual(404, response.status_code)
+        self.assertIn("introuvable", response.get_json()["error"])
+
+    def test_lock_user_route_locks_user(self):
+        """Verifie le blocage d'un utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut retourne.
+        """
+
+        response = self.client.post("/api/users/7/lock", headers=self.get_admin_auth_headers())
+        data = response.get_json()
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(7, data["user"]["id"])
+        self.assertEqual(UserStatus.LOCKED.value, data["user"]["status"])
+
+    def test_lock_user_route_returns_not_found(self):
+        """Verifie le blocage d'un utilisateur absent.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.post("/api/users/404/lock", headers=self.get_admin_auth_headers())
+
+        self.assertEqual(404, response.status_code)
+        self.assertIn("introuvable", response.get_json()["error"])
+
+    def test_unlock_user_route_unlocks_user(self):
+        """Verifie le deblocage d'un utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut retourne.
+        """
+
+        response = self.client.post("/api/users/7/unlock", headers=self.get_admin_auth_headers())
+        data = response.get_json()
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(7, data["user"]["id"])
+        self.assertEqual(UserStatus.ACTIVE.value, data["user"]["status"])
+
+    def test_unlock_user_route_returns_not_found(self):
+        """Verifie le deblocage d'un utilisateur absent.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.post("/api/users/404/unlock", headers=self.get_admin_auth_headers())
+
+        self.assertEqual(404, response.status_code)
+        self.assertIn("introuvable", response.get_json()["error"])
+
     def test_routes_route_requires_authentication(self):
         """Verifie que le catalogue des routes exige un token.
 
@@ -649,6 +970,14 @@ class AppRoutesTest(unittest.TestCase):
             routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"]
         )
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])
+        self.assertTrue(routes_by_key[("/api/users", ("GET",))]["requires_auth"])
+        self.assertTrue(routes_by_key[("/api/users/<int:user_id>", ("DELETE",))]["requires_auth"])
+        self.assertTrue(
+            routes_by_key[("/api/users/<int:user_id>/lock", ("POST",))]["requires_auth"]
+        )
+        self.assertTrue(
+            routes_by_key[("/api/users/<int:user_id>/unlock", ("POST",))]["requires_auth"]
+        )
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/platforms", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["requires_auth"])
         self.assertTrue(
@@ -661,6 +990,14 @@ class AppRoutesTest(unittest.TestCase):
         self.assertEqual(
             [UserProfile.USER.value, UserProfile.ADMIN.value],
             routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["required_profiles"],
+        )
+        self.assertEqual(
+            [UserProfile.ADMIN.value],
+            routes_by_key[("/api/users", ("GET",))]["required_profiles"],
+        )
+        self.assertEqual(
+            [UserProfile.ADMIN.value],
+            routes_by_key[("/api/users/<int:user_id>/unlock", ("POST",))]["required_profiles"],
         )
     def test_cache_reset_route_returns_removed_entries(self):
         """Verifie l'endpoint de reset du cache.

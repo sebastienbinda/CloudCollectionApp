@@ -26,6 +26,7 @@ email verification.
 - Store only non-reversible password hashes.
 - Store only the email verification token hash in database.
 - Registered users must receive the `USER` profile by default.
+- Registered users must receive the `ACTIVE` status by default.
 - Treat duplicate email, invalid password and invalid verification token as
   controlled business errors.
 - Do not hardcode SMTP secrets, passwords, tokens or signing keys.

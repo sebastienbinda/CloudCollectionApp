@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from services.security import EnvSecretCipher
+from services.users import UserStatus
 
 from .password_hash_service import PasswordHashService
 from .user_profile import UserProfile
@@ -36,12 +37,14 @@ class AuthenticatedUserCredentials:
         email (str): Email normalise utilise comme sujet du token.
         password_hash (str): Empreinte non reversible du mot de passe.
         profile (str): Profil applicatif associe a l'utilisateur.
+        status (str): Statut fonctionnel du compte.
     """
 
     id: int
     email: str
     password_hash: str
     profile: str = UserProfile.USER.value
+    status: str = UserStatus.ACTIVE.value
 
 
 @dataclass(frozen=True)
@@ -212,6 +215,8 @@ class AuthTokenService:
 
         database_user = user_repository.find_verified_user_credentials_by_email(normalized_email)
         if not database_user:
+            return None
+        if UserStatus.normalize(database_user.status) is UserStatus.LOCKED:
             return None
         if not self.password_hash_service.verify_password(database_user.password_hash, password):
             return None

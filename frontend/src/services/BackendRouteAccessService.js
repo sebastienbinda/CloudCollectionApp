@@ -30,6 +30,10 @@ class BackendRouteAccessService {
       canDeleteWishlistGame: false,
       canDownloadOds: false,
       canResetCache: false,
+      canSearchUsers: false,
+      canDeleteUser: false,
+      canLockUser: false,
+      canUnlockUser: false,
       isAuthenticated,
     };
   }
@@ -160,6 +164,10 @@ class BackendRouteAccessService {
       canDeleteWishlistGame: this.canAccess("DELETE", "/collections/JeuxVideo/wishlist/games"),
       canDownloadOds: this.canAccess("GET", "/collections/JeuxVideo/ods/download"),
       canResetCache: this.canAccess("POST", "/collections/JeuxVideo/cache/reset"),
+      canSearchUsers: this.canAccess("GET", "/api/users"),
+      canDeleteUser: this.canAccess("DELETE", "/api/users/<int:user_id>"),
+      canLockUser: this.canAccess("POST", "/api/users/<int:user_id>/lock"),
+      canUnlockUser: this.canAccess("POST", "/api/users/<int:user_id>/unlock"),
     };
   }
 }

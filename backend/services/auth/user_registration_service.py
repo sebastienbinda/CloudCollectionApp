@@ -19,6 +19,7 @@ from typing import Protocol
 from .email_verification_service import EmailVerificationService, EmailVerificationToken
 from .password_hash_service import PasswordHashService
 from .user_profile import UserProfile
+from services.users import UserStatus
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,7 @@ class RegisteredUser:
         creation_date (datetime): Date de creation du compte.
         is_email_verified (bool): Indique si l'adresse email a ete validee.
         profile (str): Profil applicatif attribue au compte.
+        status (str): Statut fonctionnel attribue au compte.
     """
 
     id: int
@@ -38,6 +40,7 @@ class RegisteredUser:
     creation_date: datetime
     is_email_verified: bool
     profile: str = UserProfile.USER.value
+    status: str = UserStatus.ACTIVE.value
 
     def to_public_dict(self) -> dict[str, object]:
         """Convertit l'utilisateur en dictionnaire JSON public.
@@ -55,6 +58,7 @@ class RegisteredUser:
             "creation_date": self.creation_date.isoformat(),
             "is_email_verified": self.is_email_verified,
             "profile": self.profile,
+            "status": self.status,
         }
 
 

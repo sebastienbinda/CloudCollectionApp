@@ -31,6 +31,7 @@ from .user_registration_service import (
     UserRegistrationService,
 )
 from .user_profile import UserProfile
+from services.users import UserStatus
 
 __all__ = [
     "AuthGuard",
@@ -46,5 +47,6 @@ __all__ = [
     "RegisteredUser",
     "UserRegistrationService",
     "UserProfile",
+    "UserStatus",
     "VerifiedUser",
 ]

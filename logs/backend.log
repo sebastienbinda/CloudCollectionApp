@@ -95,3 +95,22 @@
 2026-05-22 14:59:46,283 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
 2026-05-22 14:59:46,283 INFO [alembic.runtime.migration] Will assume transactional DDL.
 2026-05-22 14:59:46,288 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 15:14:09,772 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 15:14:09,774 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 15:14:09,777 INFO [alembic.runtime.migration] Running upgrade 20260522_0003 -> 20260522_0004, Ajoute le statut fonctionnel des utilisateurs.
+2026-05-22 15:14:09,787 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 15:19:18,780 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 15:19:18,780 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 15:19:18,785 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 15:26:31,280 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 15:26:31,281 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 15:26:31,285 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 15:35:33,521 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 15:35:33,521 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 15:35:33,525 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 15:37:54,526 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 15:37:54,526 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 15:37:54,531 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.
+2026-05-22 15:39:15,487 INFO [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-05-22 15:39:15,487 INFO [alembic.runtime.migration] Will assume transactional DDL.
+2026-05-22 15:39:15,492 INFO [app] Schema PostgreSQL initialise : cloudcollectionapp.

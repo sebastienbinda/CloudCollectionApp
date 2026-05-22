@@ -196,6 +196,18 @@ function App() {
     setCurrentView("adminDashboard");
     window.history.pushState({}, "", "/admin-dashboard");
   };
+
+  /**
+   * Ouvre la page de gestion des utilisateurs.
+   *
+   * @param {void} Aucun - Utilise l'etat React et l'historique navigateur.
+   * @returns {void} Affiche la vue utilisateurs.
+   */
+  const openUsersPage = () => {
+    clearDeleteGameFeedback();
+    setCurrentView("users");
+    window.history.pushState({}, "", "/users");
+  };
   /**
    * Ouvre la vue detail d'une plateforme.
    *
@@ -393,6 +405,10 @@ function App() {
         setCurrentView("adminDashboard");
         return;
       }
+      if (pathname === "/users") {
+        setCurrentView("users");
+        return;
+      }
       if (pathname === "/wishlist") {
         setSelectedPlatform(AppRouting.wishlistSheetName);
         setCurrentView("wishlist");
@@ -504,6 +520,14 @@ function App() {
     setCurrentView("about");
     window.history.replaceState({}, "", "/about");
   }, [currentView, hasAccessToken]);
+
+  useEffect(() => {
+    if (currentView !== "users" || authenticatedProfile === "ADMIN") {
+      return;
+    }
+    setCurrentView("home");
+    window.history.replaceState({}, "", "/accueil");
+  }, [authenticatedProfile, currentView]);
 
   useEffect(() => {
     if (!hasAccessToken || currentView !== "home" || window.location.pathname !== "/") {
@@ -645,7 +669,7 @@ function App() {
         isSavingWishlistGame: wishlistMutations.isSavingWishlistGame,
         deleteGameMessage: gameMutations.deleteGameMessage, deleteGameError: gameMutations.deleteGameError,
         downloadError: odsDownload.downloadError, isDownloadingOds: odsDownload.isDownloadingOds,
-        openAddGamePage, openAdminDashboard, openAbout, openWishlist, openPlatform, setHomeSearchQuery,
+        openAddGamePage, openAdminDashboard, openUsersPage, openAbout, openWishlist, openPlatform, setHomeSearchQuery,
         logout: AuthApi.confirmAndClearAccessToken, searchGamesByName, closeHomeSearch,
         resetOdsCache, downloadOdsFile: odsDownload.downloadOdsFile, goHome, submitNewGame,
         updateGameFormValue, addWishlistGameToPlatform, deleteWishlistGame, toggleSort, setColumnFilters,

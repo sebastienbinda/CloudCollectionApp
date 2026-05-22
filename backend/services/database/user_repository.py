@@ -24,6 +24,7 @@ from services.auth.email_verification_service import (
 )
 from services.auth.user_registration_service import DuplicateUserEmailError, RegisteredUser
 from services.auth.user_profile import UserProfile
+from services.users import UserSearchCriteria, UserStatus, UserSummary
 
 from .database_configuration import DatabaseConfiguration
 
@@ -98,17 +99,18 @@ class SqlAlchemyUserRepository:
                 row = connection.execute(
                     text(
                         f'INSERT INTO "{schema_name}".t_user '
-                        "(email, password_hash, profile, is_email_verified, "
+                        "(email, password_hash, profile, status, is_email_verified, "
                         "email_verification_token_hash, email_verification_expires_at, "
                         "creation_date) "
-                        "VALUES (:email, :password_hash, :profile, false, :token_hash, "
+                        "VALUES (:email, :password_hash, :profile, :status, false, :token_hash, "
                         ":token_expires_at, :creation_date) "
-                        "RETURNING id, email, creation_date, is_email_verified, profile"
+                        "RETURNING id, email, creation_date, is_email_verified, profile, status"
                     ),
                     {
                         "email": email,
                         "password_hash": password_hash,
                         "profile": UserProfile.normalize(profile).value,
+                        "status": UserStatus.ACTIVE.value,
                         "token_hash": verification_token.token_hash,
                         "token_expires_at": verification_token.expires_at,
                         "creation_date": creation_date,
@@ -123,6 +125,7 @@ class SqlAlchemyUserRepository:
             creation_date=row["creation_date"],
             is_email_verified=bool(row["is_email_verified"]),
             profile=str(row["profile"]),
+            status=str(row["status"]),
         )
 
     def find_verified_user_credentials_by_email(
@@ -142,7 +145,7 @@ class SqlAlchemyUserRepository:
         with self.engine.connect() as connection:
             row = connection.execute(
                 text(
-                    f'SELECT id, email, password_hash, profile FROM "{schema_name}".t_user '
+                    f'SELECT id, email, password_hash, profile, status FROM "{schema_name}".t_user '
                     "WHERE email = :email AND is_email_verified = true"
                 ),
                 {"email": email},
@@ -156,7 +159,121 @@ class SqlAlchemyUserRepository:
             email=str(row["email"]),
             password_hash=str(row["password_hash"]),
             profile=str(row["profile"]),
+            status=str(row["status"]),
         )
+
+    def search_users(self, criteria: UserSearchCriteria) -> list[UserSummary]:
+        """Recherche les utilisateurs selon des criteres optionnels.
+
+        Args:
+            criteria (UserSearchCriteria): Criteres de filtrage utilisateur.
+
+        Returns:
+            list[UserSummary]: Utilisateurs correspondant aux criteres.
+        """
+
+        schema_name = self.configuration.schema_name
+        where_clauses = []
+        parameters = {}
+        if criteria.name:
+            where_clauses.append("LOWER(email) LIKE :name")
+            parameters["name"] = f"%{criteria.name.strip().lower()}%"
+        if criteria.creation_date_from:
+            where_clauses.append("creation_date >= :creation_date_from")
+            parameters["creation_date_from"] = criteria.creation_date_from
+        if criteria.creation_date_to:
+            where_clauses.append("creation_date <= :creation_date_to")
+            parameters["creation_date_to"] = criteria.creation_date_to
+        if criteria.last_connexion_date_from:
+            where_clauses.append("last_connexion_date >= :last_connexion_date_from")
+            parameters["last_connexion_date_from"] = criteria.last_connexion_date_from
+        if criteria.last_connexion_date_to:
+            where_clauses.append("last_connexion_date <= :last_connexion_date_to")
+            parameters["last_connexion_date_to"] = criteria.last_connexion_date_to
+        if criteria.status:
+            where_clauses.append("status = :status")
+            parameters["status"] = UserStatus.normalize(criteria.status).value
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    f'SELECT id, email, profile, status, is_email_verified, creation_date, '
+                    f'last_connexion_date FROM "{schema_name}".t_user '
+                    f"{where_sql} ORDER BY creation_date DESC, id DESC"
+                ),
+                parameters,
+            ).mappings().all()
+        return [self._map_user_summary(row) for row in rows]
+
+    def delete_user(self, user_id: int) -> bool:
+        """Supprime un utilisateur et ses rattachements de collection.
+
+        Args:
+            user_id (int): Identifiant technique du compte a supprimer.
+
+        Returns:
+            bool: `True` si un compte a ete supprime.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(f'DELETE FROM "{schema_name}".t_user_collection WHERE user_id = :user_id'),
+                {"user_id": user_id},
+            )
+            result = connection.execute(
+                text(f'DELETE FROM "{schema_name}".t_user WHERE id = :user_id'),
+                {"user_id": user_id},
+            )
+        return result.rowcount > 0
+
+    def lock_user(self, user_id: int) -> UserSummary | None:
+        """Passe un utilisateur au statut `LOCKED`.
+
+        Args:
+            user_id (int): Identifiant technique du compte a bloquer.
+
+        Returns:
+            UserSummary | None: Utilisateur bloque, ou `None` si absent.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.begin() as connection:
+            row = connection.execute(
+                text(
+                    f'UPDATE "{schema_name}".t_user '
+                    "SET status = :status "
+                    "WHERE id = :user_id "
+                    "RETURNING id, email, profile, status, is_email_verified, "
+                    "creation_date, last_connexion_date"
+                ),
+                {"user_id": user_id, "status": UserStatus.LOCKED.value},
+            ).mappings().first()
+        return self._map_user_summary(row) if row else None
+
+    def unlock_user(self, user_id: int) -> UserSummary | None:
+        """Passe un utilisateur au statut `ACTIVE`.
+
+        Args:
+            user_id (int): Identifiant technique du compte a debloquer.
+
+        Returns:
+            UserSummary | None: Utilisateur debloque, ou `None` si absent.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.begin() as connection:
+            row = connection.execute(
+                text(
+                    f'UPDATE "{schema_name}".t_user '
+                    "SET status = :status "
+                    "WHERE id = :user_id "
+                    "RETURNING id, email, profile, status, is_email_verified, "
+                    "creation_date, last_connexion_date"
+                ),
+                {"user_id": user_id, "status": UserStatus.ACTIVE.value},
+            ).mappings().first()
+        return self._map_user_summary(row) if row else None
 
     def update_last_connexion_date(
         self,
@@ -225,4 +342,24 @@ class SqlAlchemyUserRepository:
             id=int(row["id"]),
             email=str(row["email"]),
             email_verified_at=row["email_verified_at"],
+        )
+
+    def _map_user_summary(self, row) -> UserSummary:
+        """Convertit une ligne SQL utilisateur en objet public.
+
+        Args:
+            row (Mapping): Ligne SQLAlchemy mappee.
+
+        Returns:
+            UserSummary: Donnees utilisateur sans secret.
+        """
+
+        return UserSummary(
+            id=int(row["id"]),
+            email=str(row["email"]),
+            profile=str(row["profile"]),
+            status=str(row["status"]),
+            is_email_verified=bool(row["is_email_verified"]),
+            creation_date=row["creation_date"],
+            last_connexion_date=row["last_connexion_date"],
         )

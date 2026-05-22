@@ -18,6 +18,7 @@ import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import HomeView from "./HomeView";
 import PlatformDetailView from "./PlatformDetailView";
+import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
 
 /**
@@ -49,6 +50,10 @@ class AppViewSwitch {
 
     if (props.currentView === "adminDashboard") {
       return this.renderAdminDashboard(props);
+    }
+
+    if (props.currentView === "users") {
+      return this.renderUsers(props);
     }
 
     if (props.currentView === "wishlist") {
@@ -127,10 +132,12 @@ class AppViewSwitch {
     return (
       <AdminDashboardView
         username={props.authenticatedUsername}
+        authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
         canAddGame={props.actionPermissions.canAddGame}
         canResetCache={props.actionPermissions.canResetCache}
         canDownloadOds={props.actionPermissions.canDownloadOds}
+        canSearchUsers={props.actionPermissions.canSearchUsers}
         cacheResetMessage={props.cacheResetMessage}
         cacheResetError={props.cacheResetError}
         isResettingCache={props.isResettingCache}
@@ -138,8 +145,28 @@ class AppViewSwitch {
         isDownloadingOds={props.isDownloadingOds}
         onBack={props.goHome}
         onAddGame={props.openAddGamePage}
+        onOpenUsers={props.openUsersPage}
         onResetCache={props.resetOdsCache}
         onDownloadOds={props.downloadOdsFile}
+      />
+    );
+  }
+
+  /**
+   * Rend la page de gestion des utilisateurs.
+   *
+   * @param {Object} props - Etat et callbacks d'administration utilisateur.
+   * @returns {import("react").JSX.Element} Vue utilisateurs.
+   */
+  static renderUsers(props) {
+    return (
+      <UsersView
+        authenticatedProfile={props.authenticatedProfile}
+        canSearchUsers={props.actionPermissions.canSearchUsers}
+        canDeleteUser={props.actionPermissions.canDeleteUser}
+        canLockUser={props.actionPermissions.canLockUser}
+        canUnlockUser={props.actionPermissions.canUnlockUser}
+        onBack={props.openAdminDashboard}
       />
     );
   }

@@ -18,12 +18,14 @@ from .auth import (
     InvalidEmailVerificationTokenError,
     PasswordPolicyError,
     UserRegistrationService,
+    UserProfile,
 )
 from .database import DatabaseConfiguration, DatabaseSchemaService, SqlAlchemyUserRepository
 from .email import EmailConfiguration, EmailSenderFactory
 from .games import GamesService
 from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
+from .users import UserManagementService, UserNotFoundError, UserSearchCriteria, UserStatus, UserSummary
 
 __all__ = [
     "AuthGuard",
@@ -41,4 +43,10 @@ __all__ = [
     "RouteDiscoveryService",
     "SqlAlchemyUserRepository",
     "UserRegistrationService",
+    "UserProfile",
+    "UserManagementService",
+    "UserNotFoundError",
+    "UserSearchCriteria",
+    "UserStatus",
+    "UserSummary",
 ]
