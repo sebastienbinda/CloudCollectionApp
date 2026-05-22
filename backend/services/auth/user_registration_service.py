@@ -18,6 +18,7 @@ from typing import Protocol
 
 from .email_verification_service import EmailVerificationService, EmailVerificationToken
 from .password_hash_service import PasswordHashService
+from .user_profile import UserProfile
 
 
 @dataclass(frozen=True)
@@ -29,12 +30,14 @@ class RegisteredUser:
         email (str): Adresse email normalisee.
         creation_date (datetime): Date de creation du compte.
         is_email_verified (bool): Indique si l'adresse email a ete validee.
+        profile (str): Profil applicatif attribue au compte.
     """
 
     id: int
     email: str
     creation_date: datetime
     is_email_verified: bool
+    profile: str = UserProfile.USER.value
 
     def to_public_dict(self) -> dict[str, object]:
         """Convertit l'utilisateur en dictionnaire JSON public.
@@ -51,6 +54,7 @@ class RegisteredUser:
             "email": self.email,
             "creation_date": self.creation_date.isoformat(),
             "is_email_verified": self.is_email_verified,
+            "profile": self.profile,
         }
 
 
@@ -77,6 +81,7 @@ class UserRepository(Protocol):
         password_hash: str,
         creation_date: datetime,
         verification_token: EmailVerificationToken,
+        profile: str,
     ) -> RegisteredUser:
         """Persiste un nouvel utilisateur.
 
@@ -85,6 +90,7 @@ class UserRepository(Protocol):
             password_hash (str): Empreinte non reversible du mot de passe.
             creation_date (datetime): Date de creation du compte.
             verification_token (EmailVerificationToken): Token de validation email a stocker.
+            profile (str): Profil applicatif initial du compte.
 
         Returns:
             RegisteredUser: Donnees publiques de l'utilisateur cree.
@@ -163,6 +169,7 @@ class UserRegistrationService:
             password_hash=password_hash,
             creation_date=creation_date,
             verification_token=verification_token,
+            profile=UserProfile.USER.value,
         )
         self.email_verification_service.send_verification_email(
             email=registered_user.email,

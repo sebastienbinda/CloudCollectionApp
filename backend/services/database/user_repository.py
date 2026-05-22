@@ -16,12 +16,14 @@ from datetime import datetime
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
+from services.auth.auth_token_service import AuthenticatedUserCredentials
 from services.auth.email_verification_service import (
     EmailVerificationToken,
     InvalidEmailVerificationTokenError,
     VerifiedUser,
 )
 from services.auth.user_registration_service import DuplicateUserEmailError, RegisteredUser
+from services.auth.user_profile import UserProfile
 
 from .database_configuration import DatabaseConfiguration
 
@@ -72,6 +74,7 @@ class SqlAlchemyUserRepository:
         password_hash: str,
         creation_date: datetime,
         verification_token: EmailVerificationToken,
+        profile: str = UserProfile.USER.value,
     ) -> RegisteredUser:
         """Cree un utilisateur en stockant uniquement l'empreinte du mot de passe.
 
@@ -80,6 +83,7 @@ class SqlAlchemyUserRepository:
             password_hash (str): Empreinte non reversible du mot de passe.
             creation_date (datetime): Date de creation du compte.
             verification_token (EmailVerificationToken): Token de validation email a stocker.
+            profile (str): Profil applicatif initial du compte.
 
         Returns:
             RegisteredUser: Donnees publiques de l'utilisateur cree.
@@ -94,16 +98,17 @@ class SqlAlchemyUserRepository:
                 row = connection.execute(
                     text(
                         f'INSERT INTO "{schema_name}".t_user '
-                        "(email, password_hash, is_email_verified, "
+                        "(email, password_hash, profile, is_email_verified, "
                         "email_verification_token_hash, email_verification_expires_at, "
                         "creation_date) "
-                        "VALUES (:email, :password_hash, false, :token_hash, "
+                        "VALUES (:email, :password_hash, :profile, false, :token_hash, "
                         ":token_expires_at, :creation_date) "
-                        "RETURNING id, email, creation_date, is_email_verified"
+                        "RETURNING id, email, creation_date, is_email_verified, profile"
                     ),
                     {
                         "email": email,
                         "password_hash": password_hash,
+                        "profile": UserProfile.normalize(profile).value,
                         "token_hash": verification_token.token_hash,
                         "token_expires_at": verification_token.expires_at,
                         "creation_date": creation_date,
@@ -117,7 +122,67 @@ class SqlAlchemyUserRepository:
             email=str(row["email"]),
             creation_date=row["creation_date"],
             is_email_verified=bool(row["is_email_verified"]),
+            profile=str(row["profile"]),
         )
+
+    def find_verified_user_credentials_by_email(
+        self,
+        email: str,
+    ) -> AuthenticatedUserCredentials | None:
+        """Retourne les identifiants d'un utilisateur verifie par email.
+
+        Args:
+            email (str): Adresse email normalisee a rechercher.
+
+        Returns:
+            AuthenticatedUserCredentials | None: Donnees d'authentification si le compte est verifie.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                text(
+                    f'SELECT id, email, password_hash, profile FROM "{schema_name}".t_user '
+                    "WHERE email = :email AND is_email_verified = true"
+                ),
+                {"email": email},
+            ).mappings().first()
+
+        if not row:
+            return None
+
+        return AuthenticatedUserCredentials(
+            id=int(row["id"]),
+            email=str(row["email"]),
+            password_hash=str(row["password_hash"]),
+            profile=str(row["profile"]),
+        )
+
+    def update_last_connexion_date(
+        self,
+        user_id: int,
+        last_connexion_date: datetime,
+    ) -> None:
+        """Met a jour la date de derniere connexion d'un utilisateur.
+
+        Args:
+            user_id (int): Identifiant technique de l'utilisateur.
+            last_connexion_date (datetime): Date de connexion a enregistrer.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(
+                    f'UPDATE "{schema_name}".t_user '
+                    "SET last_connexion_date = :last_connexion_date "
+                    "WHERE id = :user_id"
+                ),
+                {"user_id": user_id, "last_connexion_date": last_connexion_date},
+            )
 
     def verify_email_by_token_hash(
         self,

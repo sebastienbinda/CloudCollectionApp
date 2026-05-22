@@ -42,9 +42,10 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             version_table_schema=schema_name,
             include_schemas=True,
+            schema_name=schema_name,
         )
         with context.begin_transaction():
-            context.run_migrations(schema_name=schema_name)
+            context.run_migrations()
 
 
 run_migrations_online()

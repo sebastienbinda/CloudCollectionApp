@@ -14,15 +14,17 @@
 from functools import wraps
 from typing import Callable
 
-from flask import Flask, jsonify, request
+from flask import Flask, current_app, jsonify, request
 
 from .auth_token_service import AuthTokenService
+from .user_profile import UserProfile
 
 
 class AuthGuard:
     """Applique la validation Bearer OAuth2 aux endpoints Flask proteges."""
 
     EXEMPT_METHODS = {"OPTIONS"}
+    DEFAULT_REQUIRED_PROFILE = UserProfile.USER.value
 
     def __init__(self, token_service: AuthTokenService):
         """Initialise le garde d'authentification.
@@ -93,7 +95,27 @@ class AuthGuard:
             return route_handler(*args, **kwargs)
 
         wrapped_route.requires_auth = True
+        wrapped_route.required_profiles = UserProfile.expand_hierarchy(
+            self.DEFAULT_REQUIRED_PROFILE,
+        )
         return wrapped_route
+
+    def require_profile(self, minimum_profile: str) -> Callable:
+        """Retourne un decorateur exigeant un profil minimal.
+
+        Args:
+            minimum_profile (str): Profil minimal requis pour la route.
+
+        Returns:
+            Callable: Decorateur Flask appliquant le profil minimal.
+        """
+
+        def decorator(route_handler: Callable) -> Callable:
+            wrapped_route = self.require_token(route_handler)
+            wrapped_route.required_profiles = UserProfile.expand_hierarchy(minimum_profile)
+            return wrapped_route
+
+        return decorator
 
     def validate_current_request(self):
         """Valide le header `Authorization` de la requete Flask courante.
@@ -110,9 +132,11 @@ class AuthGuard:
             return self._forbidden_response("Token Bearer manquant.")
 
         try:
-            self.token_service.validate_access_token(token)
+            payload = self.token_service.validate_access_token(token)
         except ValueError as exc:
             return self._unauthorized_response(str(exc))
+        if not self._is_profile_allowed(payload.get("profile")):
+            return self._forbidden_response("Profil utilisateur insuffisant.")
         return None
 
     def _mark_protected_routes(self, flask_app: Flask, exempt_endpoints: set[str]) -> None:
@@ -130,6 +154,33 @@ class AuthGuard:
             if endpoint_name == "static" or endpoint_name in exempt_endpoints:
                 continue
             route_handler.requires_auth = True
+            if not hasattr(route_handler, "required_profiles"):
+                route_handler.required_profiles = UserProfile.expand_hierarchy(
+                    self.DEFAULT_REQUIRED_PROFILE,
+                )
+
+    def _is_profile_allowed(self, actual_profile: str | None) -> bool:
+        """Indique si le profil du token est autorise pour la route courante.
+
+        Args:
+            actual_profile (str | None): Profil porte par le token valide.
+
+        Returns:
+            bool: `True` si le profil satisfait la route courante.
+        """
+
+        endpoint_name = request.endpoint or ""
+        if not endpoint_name:
+            return False
+        handler = current_app.view_functions.get(endpoint_name)
+        if handler is None:
+            return True
+        required_profiles = getattr(
+            handler,
+            "required_profiles",
+            UserProfile.expand_hierarchy(self.DEFAULT_REQUIRED_PROFILE),
+        )
+        return UserProfile.can_access(actual_profile, required_profiles)
 
     def _is_request_exempt(self, exempt_endpoints: set[str]) -> bool:
         """Indique si la requete courante doit eviter le controle global.

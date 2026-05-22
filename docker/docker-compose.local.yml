@@ -38,14 +38,14 @@ services:
       DB_SCHEMA_NAME: ${DB_SCHEMA_NAME:-cloudcollectionapp}
       DATABASE_URL: postgresql://${POSTGRES_USER:-cloudcollectionapp}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD doit etre defini}@database:5432/${POSTGRES_DB:-cloudcollectionapp}
       BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL:-http://localhost:${WEB_PORT:-8080}}
-      EMAIL_DELIVERY_MODE: ${EMAIL_DELIVERY_MODE:-console}
+      EMAIL_DELIVERY_MODE: ${LOCAL_EMAIL_DELIVERY_MODE:-smtp}
       EMAIL_VERIFICATION_TOKEN_TTL_HOURS: ${EMAIL_VERIFICATION_TOKEN_TTL_HOURS:-24}
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@cloudcollectionapp.local}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_FROM_EMAIL: ${LOCAL_SMTP_FROM_EMAIL:-noreply@cloudcollectionapp.local}
+      SMTP_HOST: ${LOCAL_SMTP_HOST:-mailpit}
+      SMTP_PORT: ${LOCAL_SMTP_PORT:-1025}
+      SMTP_USERNAME: ${LOCAL_SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${LOCAL_SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${LOCAL_SMTP_USE_TLS:-false}
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods
       - ${JEUXVIDEO_BACKUP_DIR:-../backup}:/project/backup
@@ -57,6 +57,8 @@ services:
     depends_on:
       database:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
       - frontend
       - backend_data
@@ -78,6 +80,16 @@ services:
       timeout: 5s
       retries: 5
     networks:
+      - backend_data
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.30.0
+    ports:
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    networks:
+      - frontend
       - backend_data
     restart: unless-stopped
 

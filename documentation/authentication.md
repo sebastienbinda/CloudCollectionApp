@@ -70,8 +70,38 @@ Expected response:
 }
 ```
 
-Invalid credentials return `401` with a
-`WWW-Authenticate: Bearer realm="CloudCollectionApp"`.
+The endpoint accepts both authentication sources:
+
+- the configured backend credentials from `AUTH_USERNAME` and
+  `AUTH_PASSWORD_ENCRYPTED`, which receive the `ADMIN` profile;
+- registered database users, using their verified email as `username`, only
+  after email verification has succeeded, which receive their database profile.
+
+Invalid credentials, unknown users, unverified users or wrong passwords return
+`401` with a `WWW-Authenticate: Bearer realm="CloudCollectionApp"`.
+
+## Profiles And Route Rights
+
+The supported user profiles are:
+
+- `USER`: default profile for registered users.
+- `ADMIN`: profile reserved for the configured `AUTH_USERNAME` /
+  `AUTH_PASSWORD_ENCRYPTED` account.
+
+Profiles are hierarchical. `ADMIN` inherits every route right granted to `USER`.
+Every protected route currently requires at least `USER`, so both profiles can
+access the existing protected API surface.
+
+The Bearer token payload must contain:
+
+- `sub`: authenticated subject;
+- `profile`: `USER` or `ADMIN`;
+- `iat`: issue timestamp;
+- `exp`: expiration timestamp.
+
+Route authorization must be enforced by `AuthGuard` from the token profile.
+Frontend route permissions may mirror the route catalog, but they must not be
+treated as a security boundary.
 
 ## Registration And Email Verification
 
@@ -80,7 +110,8 @@ before the user can authenticate.
 
 - `POST /api/auth/register` creates an unverified user and sends a verification
   link.
-- `GET /api/auth/verify-email?token=<token>` validates an email from a link.
+- `GET /api/auth/verify-email?token=<token>` validates an email from a browser
+  link and returns an HTML confirmation page with a sign-in action.
 - `POST /api/auth/verify-email` validates an email from an API payload.
 
 These routes must not expose collection data, password hashes, raw passwords,
@@ -108,7 +139,7 @@ The current message for a missing token is `Token Bearer manquant.`.
 
 - Tokens are created by `AuthTokenService`.
 - The internal format is `payload.signature`.
-- The payload contains at least `sub`, `iat`, and `exp`.
+- The payload contains at least `sub`, `profile`, `iat`, and `exp`.
 - The signature uses HMAC SHA-256 with the application secret.
 - The default lifetime is 3600 seconds.
 - Validation must check the structure, signature, and expiration.
@@ -134,11 +165,19 @@ tests, documentation, or scripts.
 - Local expiration is stored under `cloudCollectionAccessTokenExpiresAt`.
 - All protected backend calls must go through `JeuxVideoApi` or reuse
   `JeuxVideoApi.getAuthorizationHeaders()`.
+- Protected media resources used by CSS backgrounds or image tags must first be
+  fetched with an authenticated `fetch` request, then displayed with a local
+  object URL. Direct `url("/protected-route")` references do not send Bearer
+  headers and must not be used for protected resources.
 - The frontend must avoid calling protected endpoints when no token is stored.
 - The public unauthenticated page is `AboutView` on `/about`.
 - The authenticated home page is `HomeView` on `/accueil`.
 - The `/` route functionally redirects to `/about` without a token and to
   `/accueil` with a token.
+- The session indicator in the main menu must stay consistent with the locally
+  stored token, even if route discovery temporarily fails after a local restart.
+  Action buttons must remain disabled until the backend route catalog confirms
+  their availability.
 - If a sent token is rejected (`401` or `403`), the frontend must clear the local
   session and open the sign-in flow again.
 
@@ -153,9 +192,13 @@ The routes returned by this catalog must correctly indicate:
 - `requires_auth`
 - `access`
 - `auth_schemes`
+- `required_profiles`
 
 Every protected route must announce `requires_auth: true` and `auth_schemes:
 ["Bearer"]`.
+Protected routes must announce the profiles that can call them in
+`required_profiles`. A route requiring `USER` must list both `USER` and `ADMIN`
+because `ADMIN` inherits `USER` rights.
 Public routes must announce `requires_auth: false`, `access: "public"` and
 `auth_schemes: []`.
 

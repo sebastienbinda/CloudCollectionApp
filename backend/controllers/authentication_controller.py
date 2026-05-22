@@ -11,6 +11,8 @@
 #
 # Description : controleur HTTP d'authentification, inscription et validation email.
 
+from html import escape
+
 from flask import Flask, current_app, jsonify, request
 
 from services import (
@@ -130,7 +132,11 @@ class AuthenticationController:
         username = payload.get("username") or payload.get("client_id") or ""
         password = payload.get("password") or payload.get("client_secret") or ""
         try:
-            token_response = self.auth_token_service.issue_token(username, password)
+            token_response = self.auth_token_service.issue_token(
+                username,
+                password,
+                self._create_optional_user_repository(),
+            )
             return jsonify(token_response)
         except ValueError as exc:
             return (
@@ -206,18 +212,159 @@ class AuthenticationController:
             email_verification_service = self._create_email_verification_service(user_repository)
             verified_user = email_verification_service.verify_email(raw_token)
             current_app.logger.info("Email utilisateur valide avec succes: id=%s.", verified_user.id)
+            if request.method == "GET":
+                return self._render_email_verification_page(
+                    title="Compte valide",
+                    message="Votre compte CloudCollectionApp est desormais operationnel.",
+                    detail="Vous pouvez maintenant vous connecter avec votre adresse email.",
+                    status_code=200,
+                    action_label="Se connecter",
+                    action_href="/auth",
+                )
             return jsonify({"user": verified_user.to_public_dict()})
         except InvalidEmailVerificationTokenError as exc:
             current_app.logger.warning("Validation email refusee: token invalide ou expire.")
+            if request.method == "GET":
+                return self._render_email_verification_page(
+                    title="Validation impossible",
+                    message="Le lien de validation est invalide ou expire.",
+                    detail=str(exc),
+                    status_code=400,
+                    action_label="Retour a la connexion",
+                    action_href="/auth",
+                )
             return jsonify({"error": str(exc)}), 400
         except ValueError as exc:
             current_app.logger.warning("Validation email refusee: %s", str(exc))
             if "DATABASE_URL" in str(exc):
+                if request.method == "GET":
+                    return self._render_email_verification_page(
+                        title="Service indisponible",
+                        message="La validation email est temporairement indisponible.",
+                        detail=str(exc),
+                        status_code=503,
+                        action_label="Retour a la connexion",
+                        action_href="/auth",
+                    )
                 return jsonify({"error": str(exc)}), 503
+            if request.method == "GET":
+                return self._render_email_verification_page(
+                    title="Validation impossible",
+                    message="La validation email ne peut pas aboutir.",
+                    detail=str(exc),
+                    status_code=400,
+                    action_label="Retour a la connexion",
+                    action_href="/auth",
+                )
             return jsonify({"error": str(exc)}), 400
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant la validation email.")
+            if request.method == "GET":
+                return self._render_email_verification_page(
+                    title="Erreur de validation",
+                    message="Une erreur inattendue empeche la validation email.",
+                    detail="Veuillez reessayer plus tard.",
+                    status_code=500,
+                    action_label="Retour a la connexion",
+                    action_href="/auth",
+                )
             return jsonify({"error": "Unable to verify email."}), 500
+
+    def _render_email_verification_page(
+        self,
+        title: str,
+        message: str,
+        detail: str,
+        status_code: int,
+        action_label: str,
+        action_href: str,
+    ):
+        """Construit la page HTML publique de resultat de validation email.
+
+        Args:
+            title (str): Titre principal de la page.
+            message (str): Message de resultat affiche a l'utilisateur.
+            detail (str): Detail complementaire affiche sous le message.
+            status_code (int): Statut HTTP a retourner.
+            action_label (str): Libelle du lien d'action principal.
+            action_href (str): URL du lien d'action principal.
+
+        Returns:
+            tuple[str, int, dict[str, str]]: Page HTML, statut HTTP et en-tete de contenu.
+        """
+
+        safe_title = escape(title)
+        safe_message = escape(message)
+        safe_detail = escape(detail)
+        safe_action_label = escape(action_label)
+        safe_action_href = escape(action_href, quote=True)
+        html = f"""<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{safe_title} - CloudCollectionApp</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #18202f;
+      background: #f4f7fb;
+    }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }}
+    main {{
+      width: min(100%, 520px);
+      background: #ffffff;
+      border: 1px solid #d9e1ec;
+      border-radius: 8px;
+      padding: 32px;
+      box-shadow: 0 16px 42px rgba(24, 32, 47, 0.12);
+    }}
+    h1 {{
+      margin: 0 0 16px;
+      font-size: 28px;
+      line-height: 1.2;
+    }}
+    p {{
+      margin: 0 0 14px;
+      font-size: 16px;
+      line-height: 1.55;
+    }}
+    a {{
+      display: inline-flex;
+      margin-top: 12px;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border-radius: 6px;
+      background: #2457d6;
+      color: #ffffff;
+      font-weight: 700;
+      text-decoration: none;
+    }}
+    a:focus {{
+      outline: 3px solid #9eb7ff;
+      outline-offset: 3px;
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{safe_title}</h1>
+    <p>{safe_message}</p>
+    <p>{safe_detail}</p>
+    <a href="{safe_action_href}">{safe_action_label}</a>
+  </main>
+</body>
+</html>"""
+        return html, status_code, {"Content-Type": "text/html; charset=utf-8"}
 
     def _create_user_repository(self):
         """Cree le repository utilisateur configure.
@@ -230,6 +377,21 @@ class AuthenticationController:
         """
 
         configuration = self.database_configuration_class.from_environment()
+        return self.user_repository_class(configuration)
+
+    def _create_optional_user_repository(self):
+        """Cree le repository utilisateur si la base est configuree.
+
+        Args:
+            Aucun.
+
+        Returns:
+            object | None: Repository utilisateur SQLAlchemy ou `None` sans base configuree.
+        """
+
+        configuration = self.database_configuration_class.from_environment()
+        if not configuration.is_database_enabled():
+            return None
         return self.user_repository_class(configuration)
 
     def _create_email_verification_service(self, user_repository):

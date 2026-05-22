@@ -207,10 +207,21 @@ Exemple :
 }
 ```
 
-Configurer les valeurs avec `AUTH_USERNAME`, `AUTH_PASSWORD_ENCRYPTED`,
-`AUTH_SECRET_KEY_ENCRYPTED`, `AUTH_ENV_ENCRYPTION_KEY` et `AUTH_TOKEN_TTL_SECONDS`.
-Les anciennes variables `AUTH_PASSWORD` et `AUTH_SECRET_KEY` restent acceptees
-en secours local, mais le fichier `.env` doit utiliser les valeurs chiffrees.
+Le endpoint accepte le couple configure avec `AUTH_USERNAME` et
+`AUTH_PASSWORD_ENCRYPTED`, ainsi que les utilisateurs enregistres en base apres
+validation de leur adresse email. Pour les utilisateurs en base, `username`
+correspond a l'email verifie.
+
+Le token contient aussi le profil applicatif. Le compte configure par
+`AUTH_USERNAME` / `AUTH_PASSWORD_ENCRYPTED` recoit le profil `ADMIN`. Les
+utilisateurs inscrits en base recoivent le profil `USER` par defaut. Les droits
+sont hierarchiques : `ADMIN` herite des routes autorisees a `USER`.
+
+Configurer les valeurs d'authentification technique avec `AUTH_USERNAME`,
+`AUTH_PASSWORD_ENCRYPTED`, `AUTH_SECRET_KEY_ENCRYPTED`,
+`AUTH_ENV_ENCRYPTION_KEY` et `AUTH_TOKEN_TTL_SECONDS`. Les anciennes variables
+`AUTH_PASSWORD` et `AUTH_SECRET_KEY` restent acceptees en secours local, mais le
+fichier `.env` doit utiliser les valeurs chiffrees.
 
 Generer un nouveau mot de passe, une nouvelle cle HMAC, un mot de passe
 PostgreSQL et leurs valeurs chiffrees :
@@ -257,6 +268,10 @@ SHA-256 en base, puis envoie un lien vers :
 GET /api/auth/verify-email?token=<token>
 ```
 
+Ce lien affiche une page HTML confirmant que le compte est operationnel et
+propose de se connecter. Le endpoint `POST /api/auth/verify-email` reste
+disponible pour les clients API qui attendent une reponse JSON.
+
 Variables utiles :
 
 ```bash
@@ -288,7 +303,8 @@ Pour tester la stack de production :
 ### Routes Disponibles
 
 `GET /api/routes` retourne les routes backend et indique celles qui sont
-publiques ou protegees par token Bearer.
+publiques ou protegees par token Bearer, avec les profils autorises dans
+`required_profiles`.
 
 Routes principales :
 
@@ -368,6 +384,15 @@ Variables Docker principales :
 | `BACKEND_LOG_FILE_MAX_BYTES` | Taille maximale du fichier actif avant rotation |
 | `BACKEND_LOG_FILE_BACKUP_COUNT` | Nombre maximal d'archives de logs conservees |
 | `EMAIL_DELIVERY_MODE` | Mode email, `console` en local ou `smtp` en production |
+| `MAILPIT_WEB_PORT` | Port HTTP local de la boite mail de test Mailpit |
+| `MAILPIT_SMTP_PORT` | Port SMTP local expose par Mailpit |
+| `LOCAL_EMAIL_DELIVERY_MODE` | Mode email utilise uniquement par `docker-compose.local.yml` |
+| `LOCAL_SMTP_FROM_EMAIL` | Expediteur local utilise avec Mailpit |
+| `LOCAL_SMTP_HOST` | Hote SMTP local, `mailpit` par defaut dans Docker |
+| `LOCAL_SMTP_PORT` | Port SMTP local, `1025` par defaut |
+| `LOCAL_SMTP_USERNAME` | Identifiant SMTP local optionnel |
+| `LOCAL_SMTP_PASSWORD` | Mot de passe SMTP local optionnel |
+| `LOCAL_SMTP_USE_TLS` | Active STARTTLS en local, `false` avec Mailpit |
 | `SMTP_FROM_EMAIL` | Adresse expediteur des emails transactionnels |
 | `SMTP_HOST` | Serveur SMTP du fournisseur transactionnel |
 | `SMTP_PORT` | Port SMTP |
@@ -404,6 +429,17 @@ BACKEND_LOG_HOST_DIR=../logs
 BACKEND_LOG_FILE_NAME=backend.log
 BACKEND_LOG_FILE_MAX_BYTES=10485760
 BACKEND_LOG_FILE_BACKUP_COUNT=30
+
+MAILPIT_WEB_PORT=8025
+MAILPIT_SMTP_PORT=1025
+LOCAL_EMAIL_DELIVERY_MODE=smtp
+LOCAL_SMTP_FROM_EMAIL=noreply@cloudcollectionapp.local
+LOCAL_SMTP_HOST=mailpit
+LOCAL_SMTP_PORT=1025
+LOCAL_SMTP_USERNAME=
+LOCAL_SMTP_PASSWORD=
+LOCAL_SMTP_USE_TLS=false
+
 EMAIL_DELIVERY_MODE=smtp
 SMTP_FROM_EMAIL=noreply@cloud-collection-app.fr
 SMTP_HOST=smtp.example.com
@@ -437,6 +473,18 @@ L'application sera disponible sur :
 ```text
 http://localhost:8080
 ```
+
+La boite mail de test locale Mailpit sera disponible sur :
+
+```text
+http://localhost:8025
+```
+
+En local Docker, les emails de validation sont envoyes au conteneur `mailpit`
+via `LOCAL_SMTP_HOST=mailpit` et `LOCAL_SMTP_PORT=1025`. Les variables
+`SMTP_HOST`, `SMTP_FROM_EMAIL`, `SMTP_USERNAME`, `SMTP_PASSWORD` et
+`SMTP_USE_TLS` restent reservees au deploiement online et peuvent donc pointer
+vers le domaine et le compte SMTP de production sans impacter le test local.
 
 Depuis un autre appareil du meme Wi-Fi, utiliser l'adresse IP locale du Mac :
 
@@ -640,4 +688,5 @@ Les documents fonctionnels a maintenir sont dans `documentation/` :
 - `documentation/site-plan.md` : redirection des pages sans session
 - `documentation/about.md` : page About publique
 - `documentation/menu.md` : menu principal
+- `documentation/database.md` : structure PostgreSQL, migrations et immutabilite des migrations livrees
 - `documentation/ci.md` : pipeline CI, version Docker et publication des images

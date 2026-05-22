@@ -24,8 +24,8 @@ import JeuxVideoApi from "../services/JeuxVideoApi";
  * @returns {Object} Permissions booleennes par action frontend.
  */
 function useBackendActionPermissions() {
-  const [actionPermissions, setActionPermissions] = useState(
-    BackendRouteAccessService.getDefaultActionPermissions
+  const [actionPermissions, setActionPermissions] = useState(() =>
+    BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getAccessToken())
   );
 
   useEffect(() => {
@@ -34,7 +34,9 @@ function useBackendActionPermissions() {
         const permissions = await BackendRouteAccessService.loadActionPermissions(JeuxVideoApi);
         setActionPermissions(permissions);
       } catch (e) {
-        setActionPermissions(BackendRouteAccessService.getDefaultActionPermissions());
+        setActionPermissions(
+          BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getAccessToken())
+        );
       }
     };
 

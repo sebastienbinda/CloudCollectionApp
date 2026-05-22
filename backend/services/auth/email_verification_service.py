@@ -167,6 +167,13 @@ class EmailVerificationService:
             subject="Validation de votre compte CloudCollectionApp",
             body=(
                 "Bonjour,\n\n"
+                "Merci de vous etre inscrit sur CloudCollectionApp.\n\n"
+                "CloudCollectionApp vous aide a suivre et organiser votre collection "
+                "de jeux video, vos plateformes et votre liste de souhaits dans une "
+                "interface centralisee.\n\n"
+                "Pour finaliser la creation de votre compte, vous devez maintenant "
+                "valider votre adresse email. Cette validation est obligatoire avant "
+                "de pouvoir vous connecter.\n\n"
                 "Veuillez valider votre adresse email avec le lien suivant :\n"
                 f"{verification_link}\n\n"
                 "Si vous n'etes pas a l'origine de cette demande, ignorez cet email."

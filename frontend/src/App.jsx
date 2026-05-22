@@ -49,6 +49,7 @@ function App() {
   const [addGameColumnValues, setAddGameColumnValues] = useState({});
   const [cacheResetMessage, setCacheResetMessage] = useState("");
   const [cacheResetError, setCacheResetError] = useState("");
+  const [platformImageObjectUrls, setPlatformImageObjectUrls] = useState({});
   const actionPermissions = useBackendActionPermissions();
   const [isLoadingHome, setIsLoadingHome] = useState(true);
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
@@ -67,7 +68,16 @@ function App() {
     : [];
   const filteredGames = filterGames(namedGames, columns, columnFilters);
   const sortedGames = sortGames(filteredGames, sortConfig);
-  const selectedPlatformStats = homeStats?.platforms?.find(
+  const homeStatsWithAuthenticatedImages = homeStats
+    ? {
+        ...homeStats,
+        platforms: (homeStats.platforms || []).map((platform) => ({
+          ...platform,
+          image_url: platformImageObjectUrls[platform.image_url] || "",
+        })),
+      }
+    : null;
+  const selectedPlatformStats = homeStatsWithAuthenticatedImages?.platforms?.find(
     (platform) => platform.sheet_name === selectedPlatform
   );
   const authenticatedUsername = actionPermissions.isAuthenticated
@@ -283,6 +293,45 @@ function App() {
 
     fetchPlatforms();
   }, [currentView, odsReloadKey, actionPermissions.isAuthenticated, hasAccessToken]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const createdObjectUrls = [];
+    const imageUrls = Array.from(
+      new Set((homeStats?.platforms || []).map((platform) => platform.image_url).filter(Boolean))
+    );
+
+    setPlatformImageObjectUrls({});
+    if (!hasAccessToken || imageUrls.length === 0) {
+      return () => {};
+    }
+
+    const fetchPlatformImages = async () => {
+      try {
+        const imageEntries = await Promise.all(
+          imageUrls.map(async (imageUrl) => {
+            const objectUrl = await JeuxVideoApi.fetchProtectedImageObjectUrl(imageUrl);
+            createdObjectUrls.push(objectUrl);
+            return [imageUrl, objectUrl];
+          })
+        );
+        if (!isCancelled) {
+          setPlatformImageObjectUrls(Object.fromEntries(imageEntries));
+        }
+      } catch (e) {
+        if (!isCancelled) {
+          setPlatformImageObjectUrls({});
+        }
+      }
+    };
+
+    fetchPlatformImages();
+
+    return () => {
+      isCancelled = true;
+      createdObjectUrls.forEach((objectUrl) => window.URL.revokeObjectURL(objectUrl));
+    };
+  }, [homeStats, hasAccessToken, actionPermissions.isAuthenticated]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -557,7 +606,7 @@ function App() {
   return (
     <AppFrame>
       {AppViewSwitch.render({
-        currentView, homeStats, platforms, selectedPlatform, error, isLoadingHome, isSearchingGames, hasSearchedGames,
+        currentView, homeStats: homeStatsWithAuthenticatedImages, platforms, selectedPlatform, error, isLoadingHome, isSearchingGames, hasSearchedGames,
         homeSearchQuery, homeSearchResults, homeSearchError, cacheResetMessage, cacheResetError, isResettingCache,
         gameForm, addGameColumnValues, addGameError, addGameMessage, isAddingGame, namedGames, columns,
         valuesByColumn, columnFilters, sortConfig, sortedGames, filteredGames, isLoadingGames, isLoadingPlatforms,

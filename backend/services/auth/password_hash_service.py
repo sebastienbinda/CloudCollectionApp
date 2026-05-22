@@ -11,7 +11,7 @@
 #
 # Description : service de hachage non reversible des mots de passe.
 
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class PasswordHashService:
@@ -39,3 +39,23 @@ class PasswordHashService:
         if not password:
             raise ValueError("Le mot de passe est obligatoire.")
         return generate_password_hash(password, method=self.HASH_METHOD)
+
+    def verify_password(self, password_hash: str, password: str) -> bool:
+        """Verifie un mot de passe brut avec son empreinte stockee.
+
+        Args:
+            password_hash (str): Empreinte non reversible stockee en base.
+            password (str): Mot de passe brut fourni par le client.
+
+        Returns:
+            bool: `True` si le mot de passe correspond a l'empreinte.
+
+        Raises:
+            ValueError: Si l'empreinte ou le mot de passe est vide.
+        """
+
+        if not password_hash:
+            raise ValueError("L'empreinte du mot de passe est obligatoire.")
+        if not password:
+            raise ValueError("Le mot de passe est obligatoire.")
+        return check_password_hash(password_hash, password)

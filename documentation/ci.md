@@ -96,6 +96,21 @@ git tag 0.2.1
 git push origin 0.2.1
 ```
 
+## Released Migrations
+
+Release tags matching `X.Y.Z` are production boundaries. A database migration
+script that exists in a released tag must be treated as immutable.
+
+- Do not modify files already released under `backend/migrations/versions/`.
+- If a released migration contains a bug, add a new migration that corrects the
+  live database state without requiring a database reset.
+- If Alembic orchestration must change, update infrastructure code such as
+  `backend/migrations/env.py` instead of rewriting released migration scripts.
+- Before changing an existing migration, check `git tag --list` and compare the
+  migration against released tags.
+- Never use database deletion or volume reset as the production answer to a
+  migration issue.
+
 ## Published Images
 
 The images are published to GitHub Container Registry:
@@ -120,6 +135,7 @@ The workflow requires:
   passed.
 - Publish Docker images only from Git tags matching `X.Y.Z`.
 - Use the release tag as the Docker image version.
+- Treat migrations present in release tags matching `X.Y.Z` as immutable.
 - Do not use `.env` to define the application release version; the release tag is
   the source of truth for published Docker images.
 - Do not hardcode registry credentials in the repository. Use GitHub Actions

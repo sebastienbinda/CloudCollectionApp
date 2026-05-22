@@ -17,20 +17,31 @@ class BackendRouteAccessService {
   /**
    * Retourne les permissions par defaut avant chargement du backend.
    *
-   * @param {void} Aucun - Ne depend pas de l'etat applicatif.
+   * @param {boolean} isAuthenticated - Etat de session a exposer au frontend.
    * @returns {Object} Permissions refusees par defaut.
    */
-  static getDefaultActionPermissions() {
+  static getDefaultActionPermissions(isAuthenticated = false) {
     return {
       canAddGame: false,
       canAddWishlistGame: false,
+      canEditGame: false,
       canDeleteGame: false,
       canEditWishlistGame: false,
       canDeleteWishlistGame: false,
       canDownloadOds: false,
       canResetCache: false,
-      isAuthenticated: false,
+      isAuthenticated,
     };
+  }
+
+  /**
+   * Retourne les permissions de repli basees sur le token local.
+   *
+   * @param {string} accessToken - Token Bearer actuellement stocke cote frontend.
+   * @returns {Object} Permissions refusees avec un etat de session coherent.
+   */
+  static getFallbackActionPermissions(accessToken = "") {
+    return this.getDefaultActionPermissions(String(accessToken || "").trim().length > 0);
   }
 
   /**
@@ -43,7 +54,8 @@ class BackendRouteAccessService {
     const data = await apiClient.fetchRoutes();
     const service = new BackendRouteAccessService(
       data.routes || [],
-      apiClient.getAccessToken()
+      apiClient.getAccessToken(),
+      apiClient.getAuthenticatedProfile ? apiClient.getAuthenticatedProfile() : "USER"
     );
     return service.getActionPermissions();
   }
@@ -53,11 +65,13 @@ class BackendRouteAccessService {
    *
    * @param {Array<Object>} routes - Routes retournees par `/api/routes`.
    * @param {string} accessToken - Token Bearer disponible cote frontend.
+   * @param {string} userProfile - Profil applicatif porte par le token courant.
    * @returns {void} Le constructeur ne retourne aucune valeur.
    */
-  constructor(routes = [], accessToken = "") {
+  constructor(routes = [], accessToken = "", userProfile = "USER") {
     this.routes = Array.isArray(routes) ? routes : [];
     this.accessToken = accessToken || "";
+    this.userProfile = this.normalizeProfile(userProfile);
   }
 
   /**
@@ -65,14 +79,14 @@ class BackendRouteAccessService {
    *
    * @param {string} method - Methode HTTP de l'action.
    * @param {string} path - Chemin exact expose par le backend.
-   * @returns {boolean} `true` si la route est publique ou si un token est present.
+   * @returns {boolean} `true` si la route est publique ou autorisee par profil.
    */
   canAccess(method, path) {
     const route = this.findRoute(method, path);
     if (!route) {
       return false;
     }
-    return !route.requires_auth || this.hasToken();
+    return !route.requires_auth || (this.hasToken() && this.hasRequiredProfile(route));
   }
 
   /**
@@ -105,6 +119,31 @@ class BackendRouteAccessService {
   }
 
   /**
+   * Normalise un profil applicatif frontend.
+   *
+   * @param {string} profile - Profil brut a normaliser.
+   * @returns {string} Profil reconnu par le frontend.
+   */
+  normalizeProfile(profile) {
+    const normalizedProfile = String(profile || "USER").trim().toUpperCase();
+    return ["USER", "ADMIN"].includes(normalizedProfile) ? normalizedProfile : "USER";
+  }
+
+  /**
+   * Indique si le profil courant satisfait une route.
+   *
+   * @param {Object} route - Route retournee par le catalogue backend.
+   * @returns {boolean} `true` si le profil courant est autorise.
+   */
+  hasRequiredProfile(route) {
+    const requiredProfiles = Array.isArray(route.required_profiles)
+      ? route.required_profiles.map((profile) => this.normalizeProfile(profile))
+      : ["USER", "ADMIN"];
+    return requiredProfiles.includes(this.userProfile)
+      || (this.userProfile === "ADMIN" && requiredProfiles.includes("USER"));
+  }
+
+  /**
    * Retourne les permissions utiles aux vues React.
    *
    * @param {void} Aucun - Utilise le catalogue de routes charge.
@@ -112,7 +151,7 @@ class BackendRouteAccessService {
    */
   getActionPermissions() {
     return {
-      ...BackendRouteAccessService.getDefaultActionPermissions(),
+      ...BackendRouteAccessService.getDefaultActionPermissions(this.hasToken()),
       canAddGame: this.canAccess("POST", "/collections/JeuxVideo/games"),
       canAddWishlistGame: this.canAccess("POST", "/collections/JeuxVideo/wishlist/games"),
       canEditGame: this.canAccess("PUT", "/collections/JeuxVideo/games"),
@@ -121,7 +160,6 @@ class BackendRouteAccessService {
       canDeleteWishlistGame: this.canAccess("DELETE", "/collections/JeuxVideo/wishlist/games"),
       canDownloadOds: this.canAccess("GET", "/collections/JeuxVideo/ods/download"),
       canResetCache: this.canAccess("POST", "/collections/JeuxVideo/cache/reset"),
-      isAuthenticated: this.hasToken(),
     };
   }
 }

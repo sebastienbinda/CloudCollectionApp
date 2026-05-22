@@ -129,6 +129,18 @@ class EmailVerificationServiceTest(unittest.TestCase):
 
         self.assertEqual("user@example.com", email_sender.sent_email["recipient_email"])
         self.assertIn(
+            "Merci de vous etre inscrit sur CloudCollectionApp.",
+            email_sender.sent_email["body"],
+        )
+        self.assertIn(
+            "organiser votre collection de jeux video",
+            email_sender.sent_email["body"],
+        )
+        self.assertIn(
+            "obligatoire avant de pouvoir vous connecter",
+            email_sender.sent_email["body"],
+        )
+        self.assertIn(
             "https://api.example.com/api/auth/verify-email?token=raw-token",
             email_sender.sent_email["body"],
         )

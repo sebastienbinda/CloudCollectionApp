@@ -13,15 +13,20 @@ from datetime import datetime
 from pathlib import Path
 import app as app_module
 from services.auth import (
+    AuthenticatedUserCredentials,
     DuplicateUserEmailError,
     InvalidEmailVerificationTokenError,
+    PasswordHashService,
     PasswordPolicyError,
     RegisteredUser,
+    UserProfile,
 )
 from services.auth.email_verification_service import EmailVerificationService, VerifiedUser
 
 
 class FakeSqlAlchemyUserRepository:
+    user_password_hash = PasswordHashService().hash_password("VeryStrongPassword123!")
+
     def __init__(self, configuration):
         """Initialise un repository utilisateur factice.
         Args:
@@ -31,6 +36,39 @@ class FakeSqlAlchemyUserRepository:
         """
 
         self.configuration = configuration
+        self.last_connexion_user_id = None
+
+    def find_verified_user_credentials_by_email(self, email):
+        """Retourne les identifiants d'un utilisateur verifie factice.
+
+        Args:
+            email (str): Email normalise recherche.
+
+        Returns:
+            AuthenticatedUserCredentials | None: Utilisateur verifie ou absent.
+        """
+
+        if email != "user@example.com":
+            return None
+        return AuthenticatedUserCredentials(
+            id=7,
+            email=email,
+            password_hash=self.user_password_hash,
+            profile=UserProfile.USER.value,
+        )
+
+    def update_last_connexion_date(self, user_id, last_connexion_date):
+        """Memorise une date de derniere connexion factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            last_connexion_date (datetime): Date de connexion ignoree.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.last_connexion_user_id = user_id
 
     def verify_email_by_token_hash(self, token_hash, verified_at):
         """Valide un token factice.
@@ -44,6 +82,35 @@ class FakeSqlAlchemyUserRepository:
         if token_hash == EmailVerificationService.hash_token("invalid-token"):
             raise InvalidEmailVerificationTokenError("Le token de validation est invalide ou expire.")
         return VerifiedUser(id=7, email="user@example.com", email_verified_at=verified_at)
+
+
+class FakeDatabaseConfiguration:
+    """Configuration de base factice active pour les tests de route."""
+
+    def is_database_enabled(self):
+        """Indique que la base factice est disponible.
+
+        Args:
+            Aucun.
+
+        Returns:
+            bool: Toujours `True` pour activer le repository factice.
+        """
+
+        return True
+
+    @classmethod
+    def from_environment(cls):
+        """Construit la configuration factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            FakeDatabaseConfiguration: Configuration factice active.
+        """
+
+        return cls()
 
 
 class FakeUserRegistrationService:
@@ -82,6 +149,7 @@ class FakeUserRegistrationService:
             email=str(email).strip().lower(),
             creation_date=datetime(2026, 5, 13, 12, 0, 0),
             is_email_verified=False,
+            profile=UserProfile.USER.value,
         )
 class FakeGamesService:
     def __init__(self):
@@ -258,11 +326,15 @@ class AppRoutesTest(unittest.TestCase):
         self.original_registration_service = (
             app_module.authentication_controller.user_registration_service_class
         )
+        self.original_database_configuration = (
+            app_module.authentication_controller.database_configuration_class
+        )
         app_module.GamesService = FakeGamesService
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.authentication_controller.user_registration_service_class = (
             FakeUserRegistrationService
         )
+        app_module.authentication_controller.database_configuration_class = FakeDatabaseConfiguration
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
     def tearDown(self):
@@ -276,6 +348,9 @@ class AppRoutesTest(unittest.TestCase):
         app_module.authentication_controller.user_repository_class = self.original_user_repository
         app_module.authentication_controller.user_registration_service_class = (
             self.original_registration_service
+        )
+        app_module.authentication_controller.database_configuration_class = (
+            self.original_database_configuration
         )
     def get_auth_headers(self):
         """Construit un header Bearer valide pour les routes protegees.
@@ -300,6 +375,10 @@ class AppRoutesTest(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual("Bearer", response.get_json()["token_type"])
         self.assertTrue(response.get_json()["access_token"])
+        payload = app_module.auth_token_service.validate_access_token(
+            response.get_json()["access_token"],
+        )
+        self.assertEqual(UserProfile.ADMIN.value, payload["profile"])
     def test_auth_token_route_rejects_invalid_credentials(self):
         """Verifie le refus des identifiants invalides.
         Args:
@@ -313,6 +392,23 @@ class AppRoutesTest(unittest.TestCase):
         )
         self.assertEqual(401, response.status_code)
         self.assertIn("invalides", response.get_json()["error"])
+    def test_auth_token_route_accepts_verified_registered_user(self):
+        """Verifie la generation de token pour un utilisateur en base verifie.
+        Args:
+            Aucun.
+        Returns:
+            None: Les assertions valident la reponse HTTP et le sujet du token.
+        """
+        response = self.client.post(
+            "/auth/token",
+            json={"username": "USER@Example.COM", "password": "VeryStrongPassword123!"},
+        )
+        data = response.get_json()
+        payload = app_module.auth_token_service.validate_access_token(data["access_token"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("Bearer", data["token_type"])
+        self.assertEqual("user@example.com", payload["sub"])
+        self.assertEqual(UserProfile.USER.value, payload["profile"])
     def test_routes_route_requires_authentication(self):
         """Verifie que le catalogue des routes exige un token.
 
@@ -343,6 +439,7 @@ class AppRoutesTest(unittest.TestCase):
         self.assertEqual(7, data["user"]["id"])
         self.assertEqual("user@example.com", data["user"]["email"])
         self.assertFalse(data["user"]["is_email_verified"])
+        self.assertEqual(UserProfile.USER.value, data["user"]["profile"])
         self.assertNotIn("password", data["user"])
         self.assertNotIn("password_hash", data["user"])
     def test_register_user_route_rejects_duplicate_email(self):
@@ -376,7 +473,7 @@ class AppRoutesTest(unittest.TestCase):
         self.assertIn("une minuscule", response.get_json()["error"])
         self.assertIn("une majuscule", response.get_json()["error"])
     def test_verify_email_route_returns_verified_user(self):
-        """Verifie la validation publique d'email depuis un token.
+        """Verifie la page publique de validation email depuis un lien.
 
         Args:
             Aucun.
@@ -385,6 +482,19 @@ class AppRoutesTest(unittest.TestCase):
             None: Les assertions valident la reponse HTTP.
         """
         response = self.client.get("/api/auth/verify-email?token=valid-token")
+        self.assertEqual(200, response.status_code)
+        self.assertIn("text/html", response.content_type)
+        self.assertIn("Compte valide", response.get_data(as_text=True))
+        self.assertIn("desormais operationnel", response.get_data(as_text=True))
+        self.assertIn('href="/auth"', response.get_data(as_text=True))
+    def test_verify_email_route_post_returns_verified_user_json(self):
+        """Verifie la validation email API en JSON.
+        Args:
+            Aucun.
+        Returns:
+            None: Les assertions valident la reponse HTTP JSON.
+        """
+        response = self.client.post("/api/auth/verify-email", json={"token": "valid-token"})
         data = response.get_json()
         self.assertEqual(200, response.status_code)
         self.assertEqual(7, data["user"]["id"])
@@ -399,7 +509,9 @@ class AppRoutesTest(unittest.TestCase):
         """
         response = self.client.get("/api/auth/verify-email")
         self.assertEqual(400, response.status_code)
-        self.assertIn("obligatoire", response.get_json()["error"])
+        self.assertIn("text/html", response.content_type)
+        self.assertIn("Validation impossible", response.get_data(as_text=True))
+        self.assertIn("obligatoire", response.get_data(as_text=True))
     def test_verify_email_route_rejects_invalid_token(self):
         """Verifie le refus d'un token invalide.
         Args:
@@ -545,6 +657,10 @@ class AppRoutesTest(unittest.TestCase):
         self.assertEqual(
             ["Bearer"],
             routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["auth_schemes"],
+        )
+        self.assertEqual(
+            [UserProfile.USER.value, UserProfile.ADMIN.value],
+            routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["required_profiles"],
         )
     def test_cache_reset_route_returns_removed_entries(self):
         """Verifie l'endpoint de reset du cache.

@@ -21,6 +21,7 @@ from services.auth import (
     PasswordHashService,
     RegisteredUser,
     UserRegistrationService,
+    UserProfile,
 )
 
 
@@ -41,6 +42,7 @@ class FakeUserRepository:
         self.created_email = None
         self.created_password_hash = None
         self.created_verification_token = None
+        self.created_profile = None
 
     def email_exists(self, email):
         """Indique si l'email existe dans le jeu de test.
@@ -54,7 +56,7 @@ class FakeUserRepository:
 
         return email in self.existing_emails
 
-    def create_user(self, email, password_hash, creation_date, verification_token):
+    def create_user(self, email, password_hash, creation_date, verification_token, profile):
         """Memorise la creation utilisateur factice.
 
         Args:
@@ -62,6 +64,7 @@ class FakeUserRepository:
             password_hash (str): Empreinte du mot de passe.
             creation_date (datetime): Date de creation.
             verification_token (EmailVerificationToken): Token de validation email.
+            profile (str): Profil initial de l'utilisateur.
 
         Returns:
             RegisteredUser: Utilisateur public factice.
@@ -70,11 +73,13 @@ class FakeUserRepository:
         self.created_email = email
         self.created_password_hash = password_hash
         self.created_verification_token = verification_token
+        self.created_profile = profile
         return RegisteredUser(
             id=42,
             email=email,
             creation_date=creation_date,
             is_email_verified=False,
+            profile=profile,
         )
 
 
@@ -144,6 +149,8 @@ class UserRegistrationServiceTest(unittest.TestCase):
         self.assertEqual(42, user.id)
         self.assertEqual("user@example.com", repository.created_email)
         self.assertFalse(user.is_email_verified)
+        self.assertEqual(UserProfile.USER.value, user.profile)
+        self.assertEqual(UserProfile.USER.value, repository.created_profile)
         self.assertNotEqual("VeryStrongPassword123!", repository.created_password_hash)
         self.assertTrue(repository.created_password_hash.startswith("scrypt:"))
         self.assertEqual("hashed-token", repository.created_verification_token.token_hash)
@@ -280,6 +287,22 @@ class PasswordHashServiceTest(unittest.TestCase):
         self.assertTrue(first_hash.startswith("scrypt:"))
         self.assertNotEqual("VeryStrongPassword123!", first_hash)
         self.assertNotEqual(first_hash, second_hash)
+
+    def test_verify_password_accepts_matching_password(self):
+        """Verifie la validation d'un mot de passe avec son empreinte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la comparaison securisee.
+        """
+
+        service = PasswordHashService()
+        password_hash = service.hash_password("VeryStrongPassword123!")
+
+        self.assertTrue(service.verify_password(password_hash, "VeryStrongPassword123!"))
+        self.assertFalse(service.verify_password(password_hash, "WrongPassword123!"))
 
 
 if __name__ == "__main__":

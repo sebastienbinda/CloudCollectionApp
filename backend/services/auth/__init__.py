@@ -12,7 +12,11 @@
 # Description : exports des utilitaires d'authentification backend.
 
 from .auth_guard import AuthGuard
-from .auth_token_service import AuthTokenService
+from .auth_token_service import (
+    AuthenticatedTokenIdentity,
+    AuthenticatedUserCredentials,
+    AuthTokenService,
+)
 from .email_verification_service import (
     EmailVerificationService,
     EmailVerificationToken,
@@ -26,9 +30,12 @@ from .user_registration_service import (
     RegisteredUser,
     UserRegistrationService,
 )
+from .user_profile import UserProfile
 
 __all__ = [
     "AuthGuard",
+    "AuthenticatedTokenIdentity",
+    "AuthenticatedUserCredentials",
     "AuthTokenService",
     "DuplicateUserEmailError",
     "EmailVerificationService",
@@ -38,5 +45,6 @@ __all__ = [
     "PasswordHashService",
     "RegisteredUser",
     "UserRegistrationService",
+    "UserProfile",
     "VerifiedUser",
 ]

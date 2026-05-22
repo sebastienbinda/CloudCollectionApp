@@ -54,6 +54,7 @@
 - Before changing the main navigation menu, responsive menu behavior, or shared menu actions, read and respect `documentation/menu.md`.
 - Before changing the public About page, its route, copy, image, or responsive layout, read and respect `documentation/about.md`.
 - Before adding or modifying any frontend page, read and respect `documentation/site-plan.md`.
+- Before changing database structure, ORM models, SQL repositories, schema initialization, Alembic migrations, or release migration handling, read and respect `documentation/database.md`.
 
 ## Change Governance
 

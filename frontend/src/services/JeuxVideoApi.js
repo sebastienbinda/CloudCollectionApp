@@ -13,6 +13,26 @@ import AuthApi from "./AuthApi";
 
 class JeuxVideoApi {
   /**
+   * Retourne le token Bearer courant.
+   *
+   * @param {void} Aucun - Delegue la lecture a `AuthApi`.
+   * @returns {string} Token d'acces ou chaine vide.
+   */
+  static getAccessToken() {
+    return AuthApi.getAccessToken();
+  }
+
+  /**
+   * Retourne le profil applicatif porte par le token courant.
+   *
+   * @param {void} Aucun - Delegue le decodage a `AuthApi`.
+   * @returns {string} Profil applicatif du token, ou `USER`.
+   */
+  static getAuthenticatedProfile() {
+    return String(AuthApi.getAccessTokenPayload().profile || "USER").trim().toUpperCase();
+  }
+
+  /**
    * Charge le catalogue des routes accessibles expose par le backend.
    *
    * @param {void} Aucun - Appelle l'API backend.
@@ -230,6 +250,29 @@ class JeuxVideoApi {
     const blob = await response.blob();
     const filename = this.getDownloadFilename(response) || "JeuxVideo.ods";
     this.saveBlob(blob, filename);
+  }
+
+  /**
+   * Charge une image protegee et retourne une URL objet utilisable par CSS.
+   *
+   * @param {string} imageUrl - URL backend de l'image protegee.
+   * @returns {Promise<string>} URL objet temporaire creee par le navigateur.
+   */
+  static async fetchProtectedImageObjectUrl(imageUrl) {
+    const requestOptions = {
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const response = await fetch(imageUrl, requestOptions);
+    if (!response.ok) {
+      const data = await this.parseJsonResponse(response, "Impossible de recuperer l'image.");
+      if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
+        AuthApi.handleExpiredSession();
+      }
+      throw new Error(data.error || "Impossible de recuperer l'image.");
+    }
+
+    const blob = await response.blob();
+    return window.URL.createObjectURL(blob);
   }
 
   /**
