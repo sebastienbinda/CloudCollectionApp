@@ -6,7 +6,7 @@ Mettre à jour la documentation impactée par le workflow d'import de collection
 
 ## Étapes
 
-1. Vérifier si `documentation/user_collection_workflow.md` doit devenir la documentation fonctionnelle de référence.
+1. Vérifier si `tasks/user_collection/user_collection_workflow.md` doit devenir la documentation fonctionnelle de référence.
 2. Mettre à jour la documentation backend si de nouveaux services, contrôleurs ou conventions sont ajoutés.
 3. Mettre à jour la documentation frontend si une nouvelle feature ou page est ajoutée.
 4. Mettre à jour la documentation database si le comportement autour de `t_user.collection_file_path`, `t_user_collection`, plateformes, studios ou jeux doit être précisé.

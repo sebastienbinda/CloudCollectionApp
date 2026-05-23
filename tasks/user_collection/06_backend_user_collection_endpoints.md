@@ -36,7 +36,7 @@ Exposer les endpoints nécessaires au frontend pour connaître et importer la co
 
 - Les endpoints ne contiennent pas de logique métier lourde.
 - Les endpoints utilisent les services existants ou nouvellement créés.
-- Les réponses JSON respectent `documentation/user_collection_workflow.md`.
+- Les réponses JSON respectent `tasks/user_collection/user_collection_workflow.md`.
 - Les routes sont protégées conformément à la documentation d'authentification.
 
 ## Validation attendue

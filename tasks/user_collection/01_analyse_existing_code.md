@@ -10,7 +10,7 @@ Le livrable attendu est un fichier Markdown :
 
 ## Étapes
 
-1. Lire `documentation/user_collection_workflow.md`.
+1. Lire `tasks/user_collection/user_collection_workflow.md`.
 2. Lire les documentations concernées :
    - `documentation/database.md`
    - `documentation/authentication.md`
