@@ -27,6 +27,7 @@ from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
 from .users import (
     UserCollectionImportConfiguration,
+    UserCollectionNameNormalizer,
     UserManagementService,
     UserNotFoundError,
     UserSearchCriteria,
@@ -52,6 +53,7 @@ __all__ = [
     "UserRegistrationService",
     "UserProfile",
     "UserCollectionImportConfiguration",
+    "UserCollectionNameNormalizer",
     "UserManagementService",
     "UserNotFoundError",
     "UserSearchCriteria",

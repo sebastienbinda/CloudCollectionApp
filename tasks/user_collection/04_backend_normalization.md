@@ -8,8 +8,8 @@ Ajouter la normalisation métier utilisée pour comparer les plateformes, studio
 
 1. Créer ou réutiliser un utilitaire de normalisation.
 2. Implémenter la valeur stockée :
-   - `trim().lower()`
-   - accents conservés
+   - `trim()`
+   - casse et accents conservés
 3. Implémenter la clé de comparaison :
    - `trim().lower()`
    - accents supprimés par normalisation Unicode
@@ -25,7 +25,7 @@ Ajouter la normalisation métier utilisée pour comparer les plateformes, studio
 
 - Deux valeurs qui ne diffèrent que par les accents sont considérées équivalentes.
 - Deux valeurs qui ne diffèrent que par les espaces externes ou la casse sont considérées équivalentes.
-- La valeur insérée en base garde les accents.
+- La valeur insérée en base garde la casse et les accents de la première occurrence.
 - Les doublons du fichier ne bloquent pas l'import.
 
 ## Validation attendue

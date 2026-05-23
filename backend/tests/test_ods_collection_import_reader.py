@@ -132,7 +132,7 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
                         },
                         {
                             "Nom du jeu": "Mario",
-                            "Studio": "Nintendo",
+                            "Studio": "Retro",
                             "Date de sortie": date(2023, 10, 20),
                         },
                     ]
@@ -154,7 +154,10 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
 
         self.assertEqual(1, fake_reader.cache.reset_count)
         self.assertEqual(["Switch", "PC"], [platform.name for platform in import_data.platforms])
-        self.assertEqual(["Nintendo", "Larian"], [studio.name for studio in import_data.studios])
+        self.assertEqual(
+            ["Nintendo", "Retro", "Larian"],
+            [studio.name for studio in import_data.studios],
+        )
         self.assertEqual(3, len(import_data.games))
         self.assertEqual("Zelda", import_data.games[0].name)
         self.assertEqual("Switch", import_data.games[0].platform_name)
@@ -278,6 +281,103 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
 
         self.assertIsNone(import_data.games[0].release_date)
         self.assertIn("Date de sortie invalide", logs.output[0])
+
+    def test_read_ignores_duplicate_platforms_with_warning(self):
+        """Verifie la deduplication des plateformes du fichier.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la premiere occurrence conservee.
+        """
+
+        logger = logging.getLogger("tests.ods_import_reader.platform_duplicates")
+        fake_reader = FakeOdsReader(
+            ["Switch", " switch ", "PC"],
+            {
+                "Switch": self._dataframe(
+                    [{"Nom du jeu": "Zelda", "Studio": "Nintendo", "Date de sortie": ""}]
+                ),
+                "PC": self._dataframe(
+                    [{"Nom du jeu": "Doom", "Studio": "id Software", "Date de sortie": ""}]
+                ),
+            },
+        )
+        service = self._service_for_reader(fake_reader, logger=logger)
+
+        with self.assertLogs(logger, level="WARNING") as logs:
+            import_data = service.read("/tmp/platform-duplicates.ods")
+
+        self.assertEqual(["Switch", "PC"], [platform.name for platform in import_data.platforms])
+        self.assertEqual(["Zelda", "Doom"], [game.name for game in import_data.games])
+        self.assertIn("Plateforme dupliquee ignoree", logs.output[0])
+
+    def test_read_ignores_duplicate_studios_with_warning(self):
+        """Verifie la deduplication des studios du fichier.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les studios uniques.
+        """
+
+        logger = logging.getLogger("tests.ods_import_reader.studio_duplicates")
+        service = self._service_for_reader(
+            FakeOdsReader(
+                ["Switch"],
+                {
+                    "Switch": self._dataframe(
+                        [
+                            {"Nom du jeu": "Zelda", "Studio": "École", "Date de sortie": ""},
+                            {"Nom du jeu": "Mario", "Studio": "ecole", "Date de sortie": ""},
+                        ]
+                    )
+                },
+            ),
+            logger=logger,
+        )
+
+        with self.assertLogs(logger, level="WARNING") as logs:
+            import_data = service.read("/tmp/studio-duplicates.ods")
+
+        self.assertEqual(["École"], [studio.name for studio in import_data.studios])
+        self.assertEqual(["Zelda", "Mario"], [game.name for game in import_data.games])
+        self.assertIn("Studio duplique ignore", logs.output[0])
+
+    def test_read_ignores_duplicate_games_with_warning(self):
+        """Verifie la deduplication des jeux du fichier.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le premier jeu conserve.
+        """
+
+        logger = logging.getLogger("tests.ods_import_reader.game_duplicates")
+        service = self._service_for_reader(
+            FakeOdsReader(
+                ["Switch"],
+                {
+                    "Switch": self._dataframe(
+                        [
+                            {"Nom du jeu": "École", "Studio": "Studio A", "Date de sortie": ""},
+                            {"Nom du jeu": " ecole ", "Studio": "Studio B", "Date de sortie": ""},
+                        ]
+                    )
+                },
+            ),
+            logger=logger,
+        )
+
+        with self.assertLogs(logger, level="WARNING") as logs:
+            import_data = service.read("/tmp/game-duplicates.ods")
+
+        self.assertEqual(["École"], [game.name for game in import_data.games])
+        self.assertEqual(["Studio A"], [studio.name for studio in import_data.studios])
+        self.assertIn("Jeu duplique ignore", logs.output[0])
 
     def _service_for_reader(self, fake_reader, logger=None):
         """Construit le service d'import avec un lecteur factice.
