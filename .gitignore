@@ -10,3 +10,4 @@ dist/
 collection.ods
 collection.ods.backup-*
 backup/
+logs/
