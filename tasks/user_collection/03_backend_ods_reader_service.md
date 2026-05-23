@@ -19,6 +19,7 @@ Centraliser la lecture des fichiers ODS dans un service dédié et factoriser le
    - jeux
 7. Gérer les dates de sortie vides ou invalides avec une valeur `NULL` et un warning dans les logs.
 8. Préparer le service pour permettre plus tard d'autres formats de fichier.
+9. Vider le cache ODS associé au fichier d'import en fin de lecture, en succès comme en erreur.
 
 ## Critères d'acceptation
 
@@ -27,6 +28,7 @@ Centraliser la lecture des fichiers ODS dans un service dédié et factoriser le
 - Le service ne dépend pas d'un contrôleur HTTP.
 - Un fichier sans onglet plateforme importable est rejeté.
 - Un onglet plateforme importable sans colonnes attendues est rejeté.
+- Le cache ODS du fichier d'import est libéré après le traitement pour éviter de conserver en mémoire des données d'import ponctuelles.
 
 ## Validation attendue
 
@@ -38,3 +40,4 @@ Centraliser la lecture des fichiers ODS dans un service dédié et factoriser le
    - onglet avec colonnes manquantes
    - date vide
    - date invalide
+   - vidage du cache après lecture
