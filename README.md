@@ -111,12 +111,25 @@ Technologies :
 
 Fichiers principaux :
 
-- `frontend/src/App.jsx` : application React, navigation, pages et appels API
+- `frontend/src/App.jsx` : point d'entree React principal et composition du cadre applicatif
 - `frontend/src/components/` : vues, dialogues et composants reutilisables
 - `frontend/src/services/` : clients API et services frontend
-- `frontend/src/hooks/` : logique React partagee pour auth, mutations et telechargement
+- `frontend/src/hooks/` : hooks React organises par domaine applicatif
 - `frontend/src/styles.css` et `frontend/src/styles/` : styles de l'interface
 - `frontend/vite.config.js` : configuration Vite et proxy backend
+
+Architecture des hooks frontend :
+
+- `frontend/src/hooks/app/` : session, droits backend et assemblage du view-model principal
+- `frontend/src/hooks/navigation/` : vue courante, plateforme selectionnee et synchronisation URL
+- `frontend/src/hooks/collection/` : rechargement transversal de la collection et reset du cache ODS
+- `frontend/src/hooks/home/` : tableau de bord d'accueil, images protegees et recherche globale
+- `frontend/src/hooks/platforms/` : chargement et initialisation du catalogue de plateformes
+- `frontend/src/hooks/games/` : collection de jeux par plateforme, tri, filtres et formulaire d'ajout
+- `frontend/src/hooks/wishlist/` : actions specifiques a la liste de souhaits
+
+Les regles d'architecture frontend a respecter sont decrites dans
+`documentation/frontend-arch.md`.
 
 L'application gere les vues principales suivantes :
 
@@ -699,5 +712,6 @@ Les documents fonctionnels a maintenir sont dans `documentation/` :
 - `documentation/site-plan.md` : redirection des pages sans session
 - `documentation/about.md` : page About publique
 - `documentation/menu.md` : menu principal
+- `documentation/frontend-arch.md` : architecture de code React/Vite et responsabilites des hooks frontend
 - `documentation/database.md` : structure PostgreSQL, migrations et immutabilite des migrations livrees
 - `documentation/ci.md` : pipeline CI, version Docker et publication des images

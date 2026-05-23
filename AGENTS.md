@@ -16,6 +16,7 @@
 - Organize code by feature/domain.
 - Keep business logic in the backend whenever possible.
 - Frontend should mainly handle display and user interactions.
+- Frontend React/Vite code must respect the domain hook architecture described in `documentation/frontend-arch.md`.
 - For database models, use one class and one file for each model in the backend ORM.
 
 ## Size Constraints
@@ -55,6 +56,7 @@
 - Before changing the main navigation menu, responsive menu behavior, or shared menu actions, read and respect `documentation/menu.md`.
 - Before changing the public About page, its route, copy, image, or responsive layout, read and respect `documentation/about.md`.
 - Before adding or modifying any frontend page, read and respect `documentation/site-plan.md`.
+- Before changing frontend React/Vite architecture, frontend hooks, frontend services, or shared frontend state orchestration, read and respect `documentation/frontend-arch.md`.
 - Before changing database structure, ORM models, SQL repositories, schema initialization, Alembic migrations, or release migration handling, read and respect `documentation/database.md`.
 
 ## Change Governance
