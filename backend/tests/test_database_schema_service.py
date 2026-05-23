@@ -11,7 +11,11 @@
 #
 
 from datetime import datetime
+from pathlib import Path
 import unittest
+
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 
 from services.database import DatabaseConfiguration, DatabaseSchemaService
 
@@ -151,6 +155,27 @@ class FakeEngine:
 
 
 class DatabaseSchemaServiceTest(unittest.TestCase):
+    def test_migrations_keep_single_standalone_head(self):
+        """Verifie que le dossier Alembic contient une seule migration autonome.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la structure des revisions Alembic.
+        """
+
+        migrations_path = Path(__file__).resolve().parents[1] / "migrations"
+        alembic_configuration = Config()
+        alembic_configuration.set_main_option("script_location", str(migrations_path))
+
+        script_directory = ScriptDirectory.from_config(alembic_configuration)
+        revisions = list(script_directory.walk_revisions())
+
+        self.assertEqual(["20260522_0004"], script_directory.get_heads())
+        self.assertEqual(1, len(revisions))
+        self.assertIsNone(revisions[0].down_revision)
+
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.
 

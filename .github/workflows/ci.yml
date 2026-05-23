@@ -1,9 +1,10 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches:
-      - main
+      - "**"
     tags:
       - "*"
 
@@ -44,13 +45,19 @@ jobs:
             backend_changed=true
             frontend_changed=true
           else
-            before="${{ github.event.before }}"
-            after="${{ github.sha }}"
-
-            if [[ -z "${before}" || "${before}" == "0000000000000000000000000000000000000000" ]]; then
-              changed_files="$(git diff-tree --no-commit-id --name-only -r "${after}")"
+            if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+              changed_files="$(git diff --name-only \
+                "${{ github.event.pull_request.base.sha }}" \
+                "${{ github.event.pull_request.head.sha }}")"
             else
-              changed_files="$(git diff --name-only "${before}" "${after}")"
+              before="${{ github.event.before }}"
+              after="${{ github.sha }}"
+
+              if [[ -z "${before}" || "${before}" == "0000000000000000000000000000000000000000" ]]; then
+                changed_files="$(git diff-tree --no-commit-id --name-only -r "${after}")"
+              else
+                changed_files="$(git diff --name-only "${before}" "${after}")"
+              fi
             fi
 
             if grep -Eq '^(backend/|test_backend\.sh|docker/backend\.Dockerfile|\.github/workflows/ci\.yml)$' <<< "${changed_files}"; then

@@ -5,11 +5,11 @@
 #  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
-# Date de creation : 2026-05-12
+# Date de creation : 2026-05-22
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-"""Cree le schema SQL initial de CloudCollectionApp."""
+"""Cree le schema SQL complet de CloudCollectionApp."""
 
 from typing import Sequence, Union
 
@@ -18,14 +18,14 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 
-revision: str = "20260512_0001"
+revision: str = "20260522_0004"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Cree les tables et sequences initiales dans le schema cible.
+    """Cree les tables, sequences et contraintes du schema cible.
 
     Args:
         Aucun.
@@ -40,7 +40,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Supprime les tables et sequences initiales du schema cible.
+    """Supprime les tables et sequences du schema cible.
 
     Args:
         Aucun.
@@ -78,7 +78,7 @@ def _create_sequences(schema_name: str) -> None:
 
 
 def _create_tables(schema_name: str) -> None:
-    """Cree les tables declarees dans `db-schema.md`.
+    """Cree les tables declarees dans la documentation database.
 
     Args:
         schema_name (str): Nom du schema PostgreSQL cible.
@@ -138,6 +138,8 @@ def _create_tables(schema_name: str) -> None:
         ),
         sa.Column("email", sa.String(length=256), nullable=False),
         sa.Column("password_hash", sa.String(length=512), nullable=False),
+        sa.Column("profile", sa.String(length=16), server_default=sa.text("'USER'"), nullable=False),
+        sa.Column("status", sa.String(length=16), server_default=sa.text("'ACTIVE'"), nullable=False),
         sa.Column("is_email_verified", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column("email_verification_token_hash", sa.String(length=64), nullable=True),
         sa.Column("email_verification_expires_at", sa.DateTime(), nullable=True),
@@ -146,6 +148,8 @@ def _create_tables(schema_name: str) -> None:
         sa.Column("last_connexion_date", sa.DateTime(), nullable=True),
         sa.Column("collection_file_path", sa.String(length=512), nullable=True),
         sa.Column("collection_file_description", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.CheckConstraint("profile IN ('USER', 'ADMIN')", name="ck_t_user_profile"),
+        sa.CheckConstraint("status IN ('ACTIVE', 'LOCKED')", name="ck_t_user_status"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email", name="uq_t_user_email"),
         schema=schema_name,

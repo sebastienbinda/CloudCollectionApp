@@ -7,6 +7,8 @@
   `.github/workflows/validate-pr.yml`.
 - Pull requests are validated for Conventional Commits title format and release
   note labels.
+- The CI workflow runs on pull requests, on every branch push, and on every
+  pushed Git tag.
 - Backend tests run only when backend-related files change, when the workflow
   file changes, and on every pushed Git tag.
 - The frontend production build runs only when frontend-related files change,
@@ -17,9 +19,9 @@
 
 ## Objective
 
-The CI pipeline validates the main branch and tagged releases. Docker images are
-published only for release tags, and the release version is explicit: it is the
-pushed Git tag in `X.Y.Z` format.
+The CI pipeline validates pull requests, branch pushes and tagged releases.
+Docker images are published only for release tags, and the release version is
+explicit: it is the pushed Git tag in `X.Y.Z` format.
 
 ## Push And Release Workflow
 
@@ -33,8 +35,8 @@ The `.github/workflows/ci.yml` workflow contains four jobs:
 - `docker-images`: for Git tags only, builds and pushes the backend and frontend
   Docker images after the validation jobs succeed.
 
-On branch pushes, backend tests run for changes under `backend/`, for
-`test_backend.sh`, for `docker/backend.Dockerfile`, or for
+On pull requests and branch pushes, backend tests run for changes under
+`backend/`, for `test_backend.sh`, for `docker/backend.Dockerfile`, or for
 `.github/workflows/ci.yml`. The frontend build runs for changes under
 `frontend/`, for `docker/frontend.Dockerfile`, or for `.github/workflows/ci.yml`.
 On Git tags, both validations always run before Docker publication.
@@ -53,8 +55,9 @@ version configured in `actions/setup-node`.
 
 ## Pull Request Workflow
 
-The `.github/workflows/validate-pr.yml` workflow runs on pull requests and
-validates PR metadata before merge.
+The `.github/workflows/ci.yml` workflow runs on pull requests to validate code
+changes before merge. The `.github/workflows/validate-pr.yml` workflow also runs
+on pull requests and validates PR metadata before merge.
 
 The PR title must follow Conventional Commits format, for example:
 
@@ -71,8 +74,8 @@ The PR must also have at least one release-note label:
 - `breaking-change`
 - `ignore-for-release`
 
-Configure branch protection on `main` so this workflow is a required status
-check before merging.
+Configure branch protection on `main` so the CI validation jobs and this
+metadata workflow are required status checks before merging.
 
 ## Docker Version
 
