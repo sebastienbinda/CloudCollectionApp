@@ -54,8 +54,8 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
       setIsSubmitting(true);
       await AuthApi.authenticate(username, password);
       setPassword("");
+      await onAuthenticated();
       setMessage("Connexion active.");
-      onAuthenticated();
     } catch (e) {
       setError(e.message || "Identifiants invalides.");
     } finally {

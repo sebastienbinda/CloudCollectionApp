@@ -14,6 +14,7 @@
  */
 import { useRef, useState } from "react";
 import useCollectionRefresh from "../collection/useCollectionRefresh";
+import useUserCollectionOnboarding from "../collection/useUserCollectionOnboarding";
 import useAddGamePage from "../games/useAddGamePage";
 import useGameCollectionPage from "../games/useGameCollectionPage";
 import useHomePage from "../home/useHomePage";
@@ -89,6 +90,15 @@ function useCloudCollectionViewModel() {
     reloadGames: refresh.reloadGames,
   });
   const odsDownload = useOdsDownload();
+  const userCollectionOnboarding = useUserCollectionOnboarding({
+    hasAccessToken: session.hasAccessToken,
+    authenticatedUsername: session.authenticatedUsername,
+    currentView: navigation.currentView,
+    openCollectionOnboarding: navigation.openCollectionOnboarding,
+    goHome: navigation.goHome,
+    reloadOds: refresh.reloadOds,
+    reloadGames: refresh.reloadGames,
+  });
 
   clearDeleteGameFeedbackRef.current = gameCollection.clearDeleteGameFeedback;
 
@@ -123,6 +133,10 @@ function useCloudCollectionViewModel() {
       isSavingWishlistGame: wishlistPage.isSavingWishlistGame,
       downloadError: odsDownload.downloadError,
       isDownloadingOds: odsDownload.isDownloadingOds,
+      selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
+      onboardingError: userCollectionOnboarding.onboardingError,
+      isCheckingCollection: userCollectionOnboarding.isCheckingCollection,
+      isImportingCollection: userCollectionOnboarding.isImportingCollection,
       openAddGamePage: navigation.openAddGamePage,
       openAdminDashboard: navigation.openAdminDashboard,
       openUsersPage: navigation.openUsersPage,
@@ -135,6 +149,9 @@ function useCloudCollectionViewModel() {
       closeHomeSearch: homePage.closeHomeSearch,
       resetOdsCache: refresh.resetOdsCache,
       downloadOdsFile: odsDownload.downloadOdsFile,
+      handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
+      selectCollectionFile: userCollectionOnboarding.selectCollectionFile,
+      importSelectedCollection: userCollectionOnboarding.importSelectedCollection,
       goHome: navigation.goHome,
       submitNewGame: addGamePage.submitNewGame,
       updateGameFormValue: addGamePage.updateGameFormValue,

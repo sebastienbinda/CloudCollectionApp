@@ -87,7 +87,7 @@ Domaines de hooks :
 
 - `hooks/app/` : session, droits backend et view-model principal.
 - `hooks/navigation/` : vue courante, plateforme selectionnee et URL.
-- `hooks/collection/` : rechargement transversal et reset cache ODS.
+- `hooks/collection/` : rechargement transversal, reset cache ODS et onboarding d'import.
 - `hooks/home/` : accueil, images protegees et recherche globale.
 - `hooks/platforms/` : catalogue de plateformes.
 - `hooks/games/` : collection plateforme, tri, filtres et ajout.
