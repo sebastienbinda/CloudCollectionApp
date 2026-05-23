@@ -25,7 +25,14 @@ from .email import EmailConfiguration, EmailSenderFactory
 from .games import GamesService
 from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
-from .users import UserManagementService, UserNotFoundError, UserSearchCriteria, UserStatus, UserSummary
+from .users import (
+    UserCollectionImportConfiguration,
+    UserManagementService,
+    UserNotFoundError,
+    UserSearchCriteria,
+    UserStatus,
+    UserSummary,
+)
 
 __all__ = [
     "AuthGuard",
@@ -44,6 +51,7 @@ __all__ = [
     "SqlAlchemyUserRepository",
     "UserRegistrationService",
     "UserProfile",
+    "UserCollectionImportConfiguration",
     "UserManagementService",
     "UserNotFoundError",
     "UserSearchCriteria",

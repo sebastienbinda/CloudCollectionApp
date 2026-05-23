@@ -30,6 +30,7 @@ from services import (
     BackendLoggingService,
     DatabaseSchemaService,
     GamesService,
+    UserCollectionImportConfiguration,
 )
 
 # 1. Configure les services transverses avant de creer l'application Flask.
@@ -38,6 +39,11 @@ BackendLoggingService.configure_from_environment()
 # 2. Cree l'application HTTP et active les preflights CORS.
 app = Flask(__name__)
 CORS(app)
+user_collection_import_configuration = UserCollectionImportConfiguration.from_environment()
+app.config["MAX_CONTENT_LENGTH"] = user_collection_import_configuration.max_upload_bytes
+app.config["USER_COLLECTION_WORKSPACE_PATH"] = (
+    user_collection_import_configuration.workspace_path
+)
 
 # 3. Prepare le schema SQL avant d'instancier les composants applicatifs.
 DatabaseSchemaService.initialize_database_schema_on_startup(app.logger)

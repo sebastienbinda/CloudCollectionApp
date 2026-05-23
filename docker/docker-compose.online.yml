@@ -45,6 +45,7 @@ services:
       JEUXVIDEO_ODS_PATH: /project/collection.ods
       JEUXVIDEO_ODS_TMP_DIR: /project/tmp
       JEUXVIDEO_ODS_BACKUP_DIR: /project/backup
+      USER_COLLECTION_MAX_UPLOAD_BYTES: ${USER_COLLECTION_MAX_UPLOAD_BYTES:-104857600}
       ODS_FORMULA_RECALCULATION: required
       BACKEND_LOG_LEVEL: ${BACKEND_LOG_LEVEL:-INFO}
       BACKEND_LOG_FILE_ENABLED: ${BACKEND_LOG_FILE_ENABLED:-true}
@@ -72,6 +73,7 @@ services:
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods
       - ${JEUXVIDEO_BACKUP_DIR:-../backup}:/project/backup
+      - ${USERS_WORKSPACE:-../users-workspace}:/users/workspace
       - ${BACKEND_LOG_HOST_DIR:-../logs}:/app/logs
     tmpfs:
       - /project/tmp

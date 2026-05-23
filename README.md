@@ -110,6 +110,8 @@ Variables principales :
 - `JEUXVIDEO_ODS_BACKUP_DIR` : repertoire des sauvegardes.
 - `JEUXVIDEO_ODS_TMP_DIR` : repertoire temporaire d'ecriture.
 - `ODS_FORMULA_RECALCULATION` : politique de recalcul des formules.
+- `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
+- `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection utilisateur.
 
 Un fichier exemple versionnable est fourni :
 
