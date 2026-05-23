@@ -13,7 +13,7 @@
  * Description : hook de pilotage global de la modale de session expiree.
  */
 import { useEffect, useState } from "react";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import AuthApi from "../services/AuthApi";
 
 /**
  * Gere l'ouverture de la modale de reconnexion sur expiration du token.
@@ -35,9 +35,9 @@ function useAuthSessionModal() {
       setIsOpen(true);
     };
 
-    window.addEventListener(JeuxVideoApi.sessionExpiredEventName, openExpiredSessionModal);
+    window.addEventListener(AuthApi.sessionExpiredEventName, openExpiredSessionModal);
     return () => window.removeEventListener(
-      JeuxVideoApi.sessionExpiredEventName,
+      AuthApi.sessionExpiredEventName,
       openExpiredSessionModal
     );
   }, []);
@@ -50,19 +50,19 @@ function useAuthSessionModal() {
      * @returns {number|null} Identifiant de timer ou `null`.
      */
     const scheduleSessionExpiration = () => {
-      const accessToken = JeuxVideoApi.getAccessToken();
+      const accessToken = AuthApi.getAccessToken();
       if (!accessToken) {
         return null;
       }
 
-      const timeToLiveMs = JeuxVideoApi.getAccessTokenTimeToLiveMs();
+      const timeToLiveMs = AuthApi.getAccessTokenTimeToLiveMs();
       if (timeToLiveMs <= 0) {
-        JeuxVideoApi.handleExpiredSession();
+        AuthApi.handleExpiredSession();
         return null;
       }
 
       return window.setTimeout(() => {
-        JeuxVideoApi.handleExpiredSession();
+        AuthApi.handleExpiredSession();
       }, timeToLiveMs);
     };
 
@@ -74,12 +74,12 @@ function useAuthSessionModal() {
       expirationTimer = scheduleSessionExpiration();
     };
 
-    window.addEventListener(JeuxVideoApi.authChangeEventName, resetSessionExpirationTimer);
+    window.addEventListener(AuthApi.authChangeEventName, resetSessionExpirationTimer);
     return () => {
       if (expirationTimer) {
         window.clearTimeout(expirationTimer);
       }
-      window.removeEventListener(JeuxVideoApi.authChangeEventName, resetSessionExpirationTimer);
+      window.removeEventListener(AuthApi.authChangeEventName, resetSessionExpirationTimer);
     };
   }, []);
 

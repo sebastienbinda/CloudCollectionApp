@@ -60,6 +60,7 @@ class RouteDiscoveryService:
 
         route_handler = self.flask_app.view_functions[rule.endpoint]
         requires_auth = bool(getattr(route_handler, "requires_auth", False))
+        required_profiles = list(getattr(route_handler, "required_profiles", []))
         methods = sorted(method for method in rule.methods if method not in self.IGNORED_METHODS)
         return {
             "path": rule.rule,
@@ -68,4 +69,5 @@ class RouteDiscoveryService:
             "requires_auth": requires_auth,
             "access": "bearer_token" if requires_auth else "public",
             "auth_schemes": ["Bearer"] if requires_auth else [],
+            "required_profiles": required_profiles if requires_auth else [],
         }

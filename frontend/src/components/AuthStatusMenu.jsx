@@ -58,13 +58,16 @@ class AuthStatusMenu {
    * @returns {import("react").JSX.Element} Menu de session connectee.
    */
   static renderAuthenticatedMenu(props) {
+    const normalizedProfile = this.normalizeProfile(props.profile);
+    const profileClassName = `authButtonProfile${normalizedProfile}`;
     return (
       <div className="authStatusMenu pageHeaderAuthButton">
         <button
-          className="authButtonLink authButtonConnected authStatusTrigger"
+          className={`authButtonLink authButtonConnected ${profileClassName} authStatusTrigger`}
           type="button"
           aria-haspopup="true"
-          aria-label={`Connecte en tant que ${props.username || "utilisateur"}`}
+          aria-label={`Connecte en tant que ${props.username || "utilisateur"} avec le profil ${normalizedProfile}`}
+          title={`Profil ${normalizedProfile}`}
         >
           <svg aria-hidden="true" className="authStatusIcon" viewBox="0 0 24 24">
             <path d="M12 2a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v3h6V7a3 3 0 0 0-3-3Zm1 11.73A2 2 0 1 0 11 15.73V19h2v-3.27Z" />
@@ -81,6 +84,17 @@ class AuthStatusMenu {
         </div>
       </div>
     );
+  }
+
+  /**
+   * Normalise le profil applicatif recu depuis l'etat de session.
+   *
+   * @param {string} profile - Profil brut porte par le token frontend.
+   * @returns {string} Profil reconnu pour le rendu visuel du bouton.
+   */
+  static normalizeProfile(profile) {
+    const normalizedProfile = String(profile || "USER").trim().toUpperCase();
+    return ["USER", "ADMIN"].includes(normalizedProfile) ? normalizedProfile : "USER";
   }
 }
 

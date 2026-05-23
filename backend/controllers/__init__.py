@@ -5,11 +5,13 @@
 #  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
-# Date de creation : 2026-05-03
-# Auteurs : Codex et Binda Sébastien
+# Date de creation : 2026-05-21
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
 #
-"""Exports publics des services metier JeuxVideo."""
+# Description : exports publics des controleurs HTTP backend.
 
-from .jeu_video_service import JeuVideoService
+from .authentication_controller import AuthenticationController
+from .user_controller import UserController
 
-__all__ = ["JeuVideoService"]
+__all__ = ["AuthenticationController", "UserController"]

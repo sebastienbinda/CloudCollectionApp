@@ -24,6 +24,7 @@ import AuthStatusMenu from "./AuthStatusMenu";
 function MainMenu({
   isAuthenticated,
   username,
+  profile,
   platforms,
   selectedPlatform,
   onOpenAbout,
@@ -162,6 +163,7 @@ function MainMenu({
       {AuthStatusMenu.render({
         isAuthenticated,
         username,
+        profile,
         onOpenAdminDashboard,
         onLogout,
       })}

@@ -18,7 +18,7 @@ Description:
 
 import unittest
 
-from services.jeux_video import JeuVideoService
+from services.games import GamesService
 
 
 class FakeChoiceReader:
@@ -69,7 +69,7 @@ class AddGameChoicesTest(unittest.TestCase):
             None: Le lecteur ODS est remplace par un fake.
         """
 
-        self.service = JeuVideoService.__new__(JeuVideoService)
+        self.service = GamesService.__new__(GamesService)
         self.service.reader = FakeChoiceReader()
 
     def test_list_add_game_choices_merges_platforms_case_and_spaces(self):

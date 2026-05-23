@@ -23,10 +23,12 @@ import ProjectIcon from "./ProjectIcon";
  */
 function AdminDashboardView({
   username,
+  authenticatedProfile,
   platforms,
   canAddGame,
   canResetCache,
   canDownloadOds,
+  canSearchUsers,
   cacheResetMessage,
   cacheResetError,
   isResettingCache,
@@ -34,9 +36,12 @@ function AdminDashboardView({
   isDownloadingOds,
   onBack,
   onAddGame,
+  onOpenUsers,
   onResetCache,
   onDownloadOds,
 }) {
+  const isAdmin = authenticatedProfile === "ADMIN";
+
   return (
     <main className="container adminDashboard">
       <button className="backButton" type="button" onClick={onBack}>
@@ -102,6 +107,22 @@ function AdminDashboardView({
           </button>
           {isDownloadingOds ? <ProgressBar label="Telechargement ODS en cours" /> : null}
         </article>
+
+        {isAdmin ? (
+          <article className="adminActionCard">
+            <span>Utilisateurs</span>
+            <h2>Gerer les utilisateurs</h2>
+            <p>Consulte les comptes applicatifs et leurs statuts.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onOpenUsers}
+              disabled={!canSearchUsers}
+            >
+              Gerer les utilisateurs
+            </button>
+          </article>
+        ) : null}
       </section>
     </main>
   );

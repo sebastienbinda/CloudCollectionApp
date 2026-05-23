@@ -21,9 +21,26 @@ import useOdsDownload from "./hooks/useOdsDownload";
 import usePlatformGameMutations from "./hooks/usePlatformGameMutations";
 import useWishlistGameMutations from "./hooks/useWishlistGameMutations";
 import AddGameChoicesApi from "./services/AddGameChoicesApi";
+import AuthApi from "./services/AuthApi";
 import JeuxVideoApi from "./services/JeuxVideoApi";
 import WishlistAddApi from "./services/WishlistAddApi";
 const initialGameForm = AppRouting.createInitialGameForm();
+
+/**
+ * Retourne l'identite authentifiee stockee cote navigateur.
+ *
+ * @param {void} Aucun - Lit le token local via les services frontend existants.
+ * @returns {Object} Etat local de session avec presence, nom et profil.
+ */
+function getLocalAuthenticatedIdentity() {
+  const hasLocalAccessToken = AuthApi.getAccessToken().trim().length > 0;
+  return {
+    isAuthenticated: hasLocalAccessToken,
+    username: hasLocalAccessToken ? AuthApi.getAuthenticatedUsername() : "",
+    profile: hasLocalAccessToken ? JeuxVideoApi.getAuthenticatedProfile() : "",
+  };
+}
+
 /** Composant racine React. @param {void} Aucun. @returns {import("react").JSX.Element} Interface. */
 function App() {
   const [currentView, setCurrentView] = useState(AppRouting.getViewFromUrl);
@@ -48,6 +65,8 @@ function App() {
   const [addGameColumnValues, setAddGameColumnValues] = useState({});
   const [cacheResetMessage, setCacheResetMessage] = useState("");
   const [cacheResetError, setCacheResetError] = useState("");
+  const [platformImageObjectUrls, setPlatformImageObjectUrls] = useState({});
+  const [authenticatedIdentity, setAuthenticatedIdentity] = useState(getLocalAuthenticatedIdentity);
   const actionPermissions = useBackendActionPermissions();
   const [isLoadingHome, setIsLoadingHome] = useState(true);
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
@@ -66,18 +85,40 @@ function App() {
     : [];
   const filteredGames = filterGames(namedGames, columns, columnFilters);
   const sortedGames = sortGames(filteredGames, sortConfig);
-  const selectedPlatformStats = homeStats?.platforms?.find(
+  const homeStatsWithAuthenticatedImages = homeStats
+    ? {
+        ...homeStats,
+        platforms: (homeStats.platforms || []).map((platform) => ({
+          ...platform,
+          image_url: platformImageObjectUrls[platform.image_url] || "",
+        })),
+      }
+    : null;
+  const selectedPlatformStats = homeStatsWithAuthenticatedImages?.platforms?.find(
     (platform) => platform.sheet_name === selectedPlatform
   );
-  const authenticatedUsername = actionPermissions.isAuthenticated
-    ? JeuxVideoApi.getAuthenticatedUsername()
+  const authenticatedUsername = authenticatedIdentity.isAuthenticated
+    ? authenticatedIdentity.username
+    : "";
+  const authenticatedProfile = authenticatedIdentity.isAuthenticated
+    ? authenticatedIdentity.profile
     : "";
   const reloadOds = () => setOdsReloadKey((previous) => previous + 1);
   const reloadGames = () => setGamesReloadKey((previous) => previous + 1);
   const gameMutations = usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames);
   const wishlistMutations = useWishlistGameMutations(reloadOds, reloadGames);
   const odsDownload = useOdsDownload();
-  const hasAccessToken = JeuxVideoApi.getAccessToken().trim().length > 0;
+  const hasAccessToken = AuthApi.getAccessToken().trim().length > 0;
+
+  useEffect(() => {
+    const updateAuthenticatedIdentity = () => {
+      setAuthenticatedIdentity(getLocalAuthenticatedIdentity());
+    };
+
+    window.addEventListener(AuthApi.authChangeEventName, updateAuthenticatedIdentity);
+    updateAuthenticatedIdentity();
+    return () => window.removeEventListener(AuthApi.authChangeEventName, updateAuthenticatedIdentity);
+  }, []);
   /**
    * Synchronise l'URL avec la plateforme selectionnee.
    *
@@ -154,6 +195,18 @@ function App() {
     clearDeleteGameFeedback();
     setCurrentView("adminDashboard");
     window.history.pushState({}, "", "/admin-dashboard");
+  };
+
+  /**
+   * Ouvre la page de gestion des utilisateurs.
+   *
+   * @param {void} Aucun - Utilise l'etat React et l'historique navigateur.
+   * @returns {void} Affiche la vue utilisateurs.
+   */
+  const openUsersPage = () => {
+    clearDeleteGameFeedback();
+    setCurrentView("users");
+    window.history.pushState({}, "", "/users");
   };
   /**
    * Ouvre la vue detail d'une plateforme.
@@ -284,6 +337,45 @@ function App() {
   }, [currentView, odsReloadKey, actionPermissions.isAuthenticated, hasAccessToken]);
 
   useEffect(() => {
+    let isCancelled = false;
+    const createdObjectUrls = [];
+    const imageUrls = Array.from(
+      new Set((homeStats?.platforms || []).map((platform) => platform.image_url).filter(Boolean))
+    );
+
+    setPlatformImageObjectUrls({});
+    if (!hasAccessToken || imageUrls.length === 0) {
+      return () => {};
+    }
+
+    const fetchPlatformImages = async () => {
+      try {
+        const imageEntries = await Promise.all(
+          imageUrls.map(async (imageUrl) => {
+            const objectUrl = await JeuxVideoApi.fetchProtectedImageObjectUrl(imageUrl);
+            createdObjectUrls.push(objectUrl);
+            return [imageUrl, objectUrl];
+          })
+        );
+        if (!isCancelled) {
+          setPlatformImageObjectUrls(Object.fromEntries(imageEntries));
+        }
+      } catch (e) {
+        if (!isCancelled) {
+          setPlatformImageObjectUrls({});
+        }
+      }
+    };
+
+    fetchPlatformImages();
+
+    return () => {
+      isCancelled = true;
+      createdObjectUrls.forEach((objectUrl) => window.URL.revokeObjectURL(objectUrl));
+    };
+  }, [homeStats, hasAccessToken, actionPermissions.isAuthenticated]);
+
+  useEffect(() => {
     const handlePopState = () => {
       clearDeleteGameFeedback();
       const pathname = window.location.pathname;
@@ -311,6 +403,10 @@ function App() {
       }
       if (pathname === "/admin-dashboard") {
         setCurrentView("adminDashboard");
+        return;
+      }
+      if (pathname === "/users") {
+        setCurrentView("users");
         return;
       }
       if (pathname === "/wishlist") {
@@ -424,6 +520,14 @@ function App() {
     setCurrentView("about");
     window.history.replaceState({}, "", "/about");
   }, [currentView, hasAccessToken]);
+
+  useEffect(() => {
+    if (currentView !== "users" || authenticatedProfile === "ADMIN") {
+      return;
+    }
+    setCurrentView("home");
+    window.history.replaceState({}, "", "/accueil");
+  }, [authenticatedProfile, currentView]);
 
   useEffect(() => {
     if (!hasAccessToken || currentView !== "home" || window.location.pathname !== "/") {
@@ -556,17 +660,17 @@ function App() {
   return (
     <AppFrame>
       {AppViewSwitch.render({
-        currentView, homeStats, platforms, selectedPlatform, error, isLoadingHome, isSearchingGames, hasSearchedGames,
+        currentView, homeStats: homeStatsWithAuthenticatedImages, platforms, selectedPlatform, error, isLoadingHome, isSearchingGames, hasSearchedGames,
         homeSearchQuery, homeSearchResults, homeSearchError, cacheResetMessage, cacheResetError, isResettingCache,
         gameForm, addGameColumnValues, addGameError, addGameMessage, isAddingGame, namedGames, columns,
         valuesByColumn, columnFilters, sortConfig, sortedGames, filteredGames, isLoadingGames, isLoadingPlatforms,
-        actionPermissions, authenticatedUsername, selectedPlatformStats, studioCount: getStudioCount(namedGames),
+        actionPermissions, authenticatedUsername, authenticatedProfile, selectedPlatformStats, studioCount: getStudioCount(namedGames),
         isSavingGame: gameMutations.isSavingGame, editingGame: gameMutations.editingGame, editingWishlistGame: wishlistMutations.editingWishlistGame,
         isSavingWishlistGame: wishlistMutations.isSavingWishlistGame,
         deleteGameMessage: gameMutations.deleteGameMessage, deleteGameError: gameMutations.deleteGameError,
         downloadError: odsDownload.downloadError, isDownloadingOds: odsDownload.isDownloadingOds,
-        openAddGamePage, openAdminDashboard, openAbout, openWishlist, openPlatform, setHomeSearchQuery,
-        logout: JeuxVideoApi.confirmAndClearAccessToken, searchGamesByName, closeHomeSearch,
+        openAddGamePage, openAdminDashboard, openUsersPage, openAbout, openWishlist, openPlatform, setHomeSearchQuery,
+        logout: AuthApi.confirmAndClearAccessToken, searchGamesByName, closeHomeSearch,
         resetOdsCache, downloadOdsFile: odsDownload.downloadOdsFile, goHome, submitNewGame,
         updateGameFormValue, addWishlistGameToPlatform, deleteWishlistGame, toggleSort, setColumnFilters,
         openEditGame: gameMutations.openEditGame, saveEditedGame: gameMutations.saveEditedGame, cancelEditGame: gameMutations.cancelEditGame,

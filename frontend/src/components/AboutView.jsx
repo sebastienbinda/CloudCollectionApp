@@ -24,6 +24,7 @@ import ProjectIcon from "./ProjectIcon";
 function AboutView({
   isAuthenticated,
   authenticatedUsername,
+  authenticatedProfile,
   platforms,
   selectedPlatform,
   onOpenAbout,
@@ -44,6 +45,7 @@ function AboutView({
         <MainMenu
           isAuthenticated={isAuthenticated}
           username={authenticatedUsername}
+          profile={authenticatedProfile}
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}

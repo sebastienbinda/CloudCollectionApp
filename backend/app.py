@@ -12,12 +12,51 @@ from io import BytesIO
 import os
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from controllers import AuthenticationController, UserController
 from models import CollectionTypes, Film
-from services import AuthGuard, AuthTokenService, JeuVideoService, RouteDiscoveryService
+from services import (
+    AuthGuard,
+    AuthTokenService,
+    BackendLoggingService,
+    DatabaseConfiguration,
+    DatabaseSchemaService,
+    GamesService,
+    RouteDiscoveryService,
+)
+BackendLoggingService.configure_from_environment()
 app = Flask(__name__)
 CORS(app)
 auth_token_service = AuthTokenService()
+authentication_controller = AuthenticationController(auth_token_service)
 auth_guard = AuthGuard(auth_token_service)
+user_controller = UserController(auth_guard)
+authentication_controller.register_routes(app)
+user_controller.register_routes(app)
+
+
+def initialize_database_schema_on_startup() -> None:
+    """Initialise le schema PostgreSQL configure au demarrage Flask.
+
+    Args:
+        Aucun.
+
+    Returns:
+        None: La fonction ne retourne aucune valeur.
+
+    Raises:
+        ValueError: Si la configuration de base de donnees est invalide.
+        sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse l'initialisation.
+    """
+
+    configuration = DatabaseConfiguration.from_environment()
+    if not configuration.is_database_enabled():
+        app.logger.info("DATABASE_URL absent : initialisation SQL ignoree.")
+        return
+    DatabaseSchemaService(configuration).initialize_database_schema()
+    app.logger.info("Schema PostgreSQL initialise : %s.", configuration.schema_name)
+
+
+initialize_database_schema_on_startup()
 
 
 COLLECTION_ITEMS = {
@@ -27,29 +66,6 @@ COLLECTION_ITEMS = {
         Film(id=3, name="Le Seigneur des Anneaux"),
     ],
 }
-@app.post("/auth/token")
-def issue_auth_token():
-    """Retourne un token Bearer compatible OAuth2 pour les routes protegees.
-    Args:
-        Aucun.
-    Form or JSON Body:
-        username (str): Identifiant backend, ou `client_id` en flux client credentials.
-        password (str): Mot de passe backend, ou `client_secret` en flux client credentials.
-    Returns:
-        tuple[flask.Response, int] | flask.Response: Token OAuth2 ou erreur JSON 401.
-    """
-    payload = request.get_json(silent=True) or request.form
-    username = payload.get("username") or payload.get("client_id") or ""
-    password = payload.get("password") or payload.get("client_secret") or ""
-    try:
-        token_response = auth_token_service.issue_token(username, password)
-        return jsonify(token_response)
-    except ValueError as exc:
-        return (
-            jsonify({"error": str(exc)}),
-            401,
-            {"WWW-Authenticate": 'Bearer realm="CloudCollectionApp"'},
-        )
 @app.get("/api/routes")
 def list_accessible_routes():
     """Liste les routes backend et indique celles qui exigent un token.
@@ -87,7 +103,7 @@ def search_collection_items(collection_type):
     if collection_enum == CollectionTypes.JeuxVideo:
         platform = request.args.get("platform", "Playstation").strip() or "Playstation"
         try:
-            items = JeuVideoService().search(platform=platform, query=search_query)
+            items = GamesService().search(platform=platform, query=search_query)
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError:
@@ -123,7 +139,7 @@ def list_jeux_video_platforms():
         tuple[flask.Response, int] | flask.Response: Objet JSON avec `type` (str) et `platforms` (list[str]).
     """
     try:
-        platforms = JeuVideoService().list_platforms()
+        platforms = GamesService().list_platforms()
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "platforms": platforms})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -138,7 +154,7 @@ def get_jeux_video_home():
         tuple[flask.Response, int] | flask.Response: Donnees JSON du tableau de bord ou erreur JSON.
     """
     try:
-        stats = JeuVideoService().get_home_stats()
+        stats = GamesService().get_home_stats()
         return jsonify({"type": CollectionTypes.JeuxVideo.value, **stats})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -163,7 +179,7 @@ def reset_jeux_video_cache():
         tuple[flask.Response, int] | flask.Response: Statut JSON avec le nombre d'entrees supprimees.
     """
     try:
-        removed_entries = JeuVideoService().reset_cache()
+        removed_entries = GamesService().reset_cache()
         return jsonify(
             {
                 "type": CollectionTypes.JeuxVideo.value,
@@ -185,7 +201,7 @@ def download_jeux_video_ods():
         flask.Response | tuple[flask.Response, int]: Fichier ODS ou erreur JSON.
     """
     try:
-        ods_path, filename = JeuVideoService().get_ods_download()
+        ods_path, filename = GamesService().get_ods_download()
         return send_file(
             ods_path,
             mimetype="application/vnd.oasis.opendocument.spreadsheet",
@@ -214,7 +230,7 @@ def search_jeux_video_games():
     except ValueError:
         parsed_limit = 50
     try:
-        items = JeuVideoService().search_by_game_name(
+        items = GamesService().search_by_game_name(
             query=search_query,
             limit=parsed_limit,
         )
@@ -243,7 +259,7 @@ def add_jeux_video_game():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        item = JeuVideoService().add_game(payload)
+        item = GamesService().add_game(payload)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item}), 201
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -264,7 +280,7 @@ def delete_jeux_video_game():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        item = JeuVideoService().delete_game(payload)
+        item = GamesService().delete_game(payload)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -285,7 +301,7 @@ def update_jeux_video_game():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        item = JeuVideoService().update_game(payload)
+        item = GamesService().update_game(payload)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -306,7 +322,7 @@ def delete_jeux_video_wishlist_game():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        item = JeuVideoService().delete_wishlist_game(payload)
+        item = GamesService().delete_wishlist_game(payload)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -327,7 +343,7 @@ def add_jeux_video_wishlist_game():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        item = JeuVideoService().add_wishlist_game(payload)
+        item = GamesService().add_wishlist_game(payload)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item}), 201
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -348,7 +364,7 @@ def update_jeux_video_wishlist_game():
     """
     payload = request.get_json(silent=True) or {}
     try:
-        item = JeuVideoService().update_wishlist_game(payload)
+        item = GamesService().update_wishlist_game(payload)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -365,7 +381,7 @@ def get_jeux_video_platform_image(platform):
         flask.Response | tuple[flask.Response, int]: Flux image avec son MIME type, ou erreur JSON.
     """
     try:
-        image_bytes, mime_type, filename = JeuVideoService().get_platform_image(platform)
+        image_bytes, mime_type, filename = GamesService().get_platform_image(platform)
         response = send_file(
             BytesIO(image_bytes),
             mimetype=mime_type,
@@ -392,7 +408,7 @@ def list_jeux_video_column_values():
     """
     platform = request.args.get("platform", "Playstation").strip() or "Playstation"
     try:
-        values = JeuVideoService().list_column_values(platform=platform)
+        values = GamesService().list_column_values(platform=platform)
         return jsonify(
             {
                 "type": CollectionTypes.JeuxVideo.value,
@@ -426,7 +442,7 @@ def list_jeux_video_add_game_choices():
     """
     platform = request.args.get("platform", "").strip()
     try:
-        choices = JeuVideoService().list_add_game_choices(platform=platform)
+        choices = GamesService().list_add_game_choices(platform=platform)
         return jsonify({"type": CollectionTypes.JeuxVideo.value, **choices})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 500
@@ -436,7 +452,10 @@ def list_jeux_video_add_game_choices():
         return jsonify({"error": f"Unable to read ODS choices: {exc}"}), 500
 
 
-auth_guard.protect_all_routes(app, exempt_endpoints={"issue_auth_token"})
+auth_guard.protect_all_routes(
+    app,
+    exempt_endpoints=authentication_controller.get_public_endpoint_names(),
+)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@
  * Description : hook chargeant les permissions d'actions depuis les routes backend.
  */
 import { useEffect, useState } from "react";
+import AuthApi from "../services/AuthApi";
 import BackendRouteAccessService from "../services/BackendRouteAccessService";
 import JeuxVideoApi from "../services/JeuxVideoApi";
 
@@ -23,8 +24,8 @@ import JeuxVideoApi from "../services/JeuxVideoApi";
  * @returns {Object} Permissions booleennes par action frontend.
  */
 function useBackendActionPermissions() {
-  const [actionPermissions, setActionPermissions] = useState(
-    BackendRouteAccessService.getDefaultActionPermissions
+  const [actionPermissions, setActionPermissions] = useState(() =>
+    BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getAccessToken())
   );
 
   useEffect(() => {
@@ -33,13 +34,15 @@ function useBackendActionPermissions() {
         const permissions = await BackendRouteAccessService.loadActionPermissions(JeuxVideoApi);
         setActionPermissions(permissions);
       } catch (e) {
-        setActionPermissions(BackendRouteAccessService.getDefaultActionPermissions());
+        setActionPermissions(
+          BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getAccessToken())
+        );
       }
     };
 
     fetchBackendRoutes();
-    window.addEventListener(JeuxVideoApi.authChangeEventName, fetchBackendRoutes);
-    return () => window.removeEventListener(JeuxVideoApi.authChangeEventName, fetchBackendRoutes);
+    window.addEventListener(AuthApi.authChangeEventName, fetchBackendRoutes);
+    return () => window.removeEventListener(AuthApi.authChangeEventName, fetchBackendRoutes);
   }, []);
 
   return actionPermissions;

@@ -17,9 +17,47 @@ import hmac
 import json
 import os
 import time
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from services.security import EnvSecretCipher
+from services.users import UserStatus
+
+from .password_hash_service import PasswordHashService
+from .user_profile import UserProfile
+
+
+@dataclass(frozen=True)
+class AuthenticatedUserCredentials:
+    """Represente les informations minimales pour authentifier un utilisateur en base.
+
+    Attributes:
+        id (int): Identifiant technique de l'utilisateur.
+        email (str): Email normalise utilise comme sujet du token.
+        password_hash (str): Empreinte non reversible du mot de passe.
+        profile (str): Profil applicatif associe a l'utilisateur.
+        status (str): Statut fonctionnel du compte.
+    """
+
+    id: int
+    email: str
+    password_hash: str
+    profile: str = UserProfile.USER.value
+    status: str = UserStatus.ACTIVE.value
+
+
+@dataclass(frozen=True)
+class AuthenticatedTokenIdentity:
+    """Represente l'identite autorisee a recevoir un token.
+
+    Attributes:
+        subject (str): Sujet place dans le token.
+        profile (str): Profil applicatif place dans le token.
+    """
+
+    subject: str
+    profile: str
 
 
 class AuthTokenService:
@@ -37,6 +75,7 @@ class AuthTokenService:
         password: Optional[str] = None,
         secret_key: Optional[str] = None,
         token_ttl_seconds: Optional[int] = None,
+        password_hash_service: Optional[PasswordHashService] = None,
     ):
         """Initialise le service d'authentification.
 
@@ -45,6 +84,7 @@ class AuthTokenService:
             password (Optional[str]): Mot de passe autorise, sinon l'environnement chiffre.
             secret_key (Optional[str]): Cle HMAC, sinon l'environnement chiffre.
             token_ttl_seconds (Optional[int]): Duree de vie du token en secondes.
+            password_hash_service (Optional[PasswordHashService]): Service de verification injecte.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -64,23 +104,29 @@ class AuthTokenService:
         self.token_ttl_seconds = token_ttl_seconds or int(
             os.getenv("AUTH_TOKEN_TTL_SECONDS", str(self.DEFAULT_TOKEN_TTL_SECONDS))
         )
+        self.password_hash_service = password_hash_service or PasswordHashService()
 
-    def issue_token(self, username: str, password: str) -> dict[str, Any]:
+    def issue_token(self, username: str, password: str, user_repository=None) -> dict[str, Any]:
         """Cree une reponse OAuth2 si les identifiants sont valides.
 
         Args:
             username (str): Identifiant utilisateur fourni par le client.
             password (str): Mot de passe fourni par le client.
+            user_repository (object | None): Repository optionnel des utilisateurs en base.
 
         Returns:
             dict[str, Any]: Reponse contenant `access_token`, `token_type` et `expires_in`.
         """
 
-        if not self.validate_credentials(username, password):
+        authenticated_identity = self.get_authenticated_identity(username, password, user_repository)
+        if not authenticated_identity:
             raise ValueError("Identifiants invalides.")
 
         return {
-            "access_token": self.create_access_token(username),
+            "access_token": self.create_access_token(
+                authenticated_identity.subject,
+                authenticated_identity.profile,
+            ),
             "token_type": "Bearer",
             "expires_in": self.token_ttl_seconds,
         }
@@ -98,11 +144,94 @@ class AuthTokenService:
 
         return secrets_equal(username, self.username) and secrets_equal(password, self.password)
 
-    def create_access_token(self, subject: str) -> str:
+    def get_authenticated_identity(
+        self,
+        username: str,
+        password: str,
+        user_repository=None,
+    ) -> AuthenticatedTokenIdentity | None:
+        """Retourne l'identite authentifiee via la configuration ou la base.
+
+        Args:
+            username (str): Identifiant utilisateur fourni par le client.
+            password (str): Mot de passe fourni par le client.
+            user_repository (object | None): Repository optionnel des utilisateurs en base.
+
+        Returns:
+            AuthenticatedTokenIdentity | None: Identite a placer dans le token, ou `None`.
+        """
+
+        if self.validate_credentials(username, password):
+            return AuthenticatedTokenIdentity(subject=username, profile=UserProfile.ADMIN.value)
+        database_user = None
+        if user_repository:
+            database_user = self.validate_registered_user_credentials(
+                username,
+                password,
+                user_repository,
+            )
+        if database_user:
+            return AuthenticatedTokenIdentity(
+                subject=database_user.email,
+                profile=UserProfile.normalize(database_user.profile).value,
+            )
+        return None
+
+    def get_authenticated_subject(self, username: str, password: str, user_repository=None) -> str:
+        """Retourne le sujet authentifie via la configuration ou la base.
+
+        Args:
+            username (str): Identifiant utilisateur fourni par le client.
+            password (str): Mot de passe fourni par le client.
+            user_repository (object | None): Repository optionnel des utilisateurs en base.
+
+        Returns:
+            str: Sujet a placer dans le token, ou chaine vide si les identifiants sont invalides.
+        """
+
+        identity = self.get_authenticated_identity(username, password, user_repository)
+        return identity.subject if identity else ""
+
+    def validate_registered_user_credentials(
+        self,
+        username: str,
+        password: str,
+        user_repository,
+    ) -> AuthenticatedUserCredentials | None:
+        """Retourne un utilisateur enregistre si ses identifiants sont valides.
+
+        Args:
+            username (str): Email utilisateur fourni par le client.
+            password (str): Mot de passe brut fourni par le client.
+            user_repository (object): Repository exposant la recherche utilisateur verifie.
+
+        Returns:
+            AuthenticatedUserCredentials | None: Utilisateur verifie ou `None`.
+        """
+
+        normalized_email = str(username or "").strip().lower()
+        if not normalized_email or not password:
+            return None
+
+        database_user = user_repository.find_verified_user_credentials_by_email(normalized_email)
+        if not database_user:
+            return None
+        if UserStatus.normalize(database_user.status) is UserStatus.LOCKED:
+            return None
+        if not self.password_hash_service.verify_password(database_user.password_hash, password):
+            return None
+        user_repository.update_last_connexion_date(
+            database_user.id,
+            datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        return database_user
+
+    def create_access_token(self, subject: str, profile: str | None = None) -> str:
         """Cree un token Bearer signe et limite dans le temps.
 
         Args:
             subject (str): Sujet du token, generalement l'identifiant utilisateur.
+            profile (str | None): Profil applicatif a inclure dans le token.
 
         Returns:
             str: Token signe au format `payload.signature`.
@@ -111,6 +240,7 @@ class AuthTokenService:
         issued_at = int(time.time())
         payload = {
             "sub": subject,
+            "profile": UserProfile.normalize(profile).value,
             "iat": issued_at,
             "exp": issued_at + self.token_ttl_seconds,
         }

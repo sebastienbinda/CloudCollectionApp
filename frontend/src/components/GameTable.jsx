@@ -14,57 +14,18 @@
  */
 import { Component } from "react";
 import {
-  formatCellValue,
-  formatMonthYearValue,
   getColumnClassName,
   getDateYearOptions,
   isDateColumn,
   isSelectFilterColumn,
 } from "../collectionUtils";
+import TableColumnFormatService from "../services/TableColumnFormatService.jsx";
 import SortIcon from "./SortIcon";
 
 /**
  * Tableau generique des jeux avec filtres par colonne.
  */
 class GameTable extends Component {
-  /**
-   * Rend des pictogrammes de region/version pour une cellule `Version`.
-   *
-   * @param {unknown} value - Valeur brute de version, par exemple `PAL FR`.
-   * @returns {string|import("react").JSX.Element} Tiret si vide, sinon span avec les pictogrammes.
-   */
-  renderVersionValue(value) {
-    if (value === null || value === undefined || value === "") {
-      return "-";
-    }
-
-    const versionText = String(value);
-    const normalized = versionText.toLowerCase();
-    const icons = [];
-
-    if (normalized.includes("pal")) {
-      icons.push("🌍");
-    }
-    if (normalized.includes("ntsc")) {
-      icons.push("📺");
-    }
-    if (normalized.includes("jap")) {
-      icons.push("🇯🇵");
-    }
-    if (normalized.includes("us")) {
-      icons.push("🇺🇸");
-    }
-    if (normalized.includes("fr")) {
-      icons.push("🇫🇷");
-    }
-
-    if (icons.length === 0) {
-      return "-";
-    }
-
-    return <span className="versionIcons">{icons.join(" ")}</span>;
-  }
-
   /**
    * Met a jour un filtre textuel ou select pour une colonne.
    *
@@ -243,21 +204,7 @@ class GameTable extends Component {
    */
   renderCellValue(game, column) {
     const value = this.getCellValue(game, column);
-
-    if (column === "Version") {
-      return this.renderVersionValue(value);
-    }
-
-    if (isDateColumn(column)) {
-      return (
-        <>
-          <span className="dateValueFull">{formatCellValue(column, value)}</span>
-          <span className="dateValueCompact">{formatMonthYearValue(value)}</span>
-        </>
-      );
-    }
-
-    return formatCellValue(column, value);
+    return TableColumnFormatService.formatGameValue(column, value);
   }
 
   /**

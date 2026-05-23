@@ -13,7 +13,7 @@
  * Description : page React d'authentification et de gestion du token Bearer.
  */
 import { useState } from "react";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import AuthApi from "../services/AuthApi";
 import ProjectIcon from "./ProjectIcon";
 
 /**
@@ -23,16 +23,21 @@ import ProjectIcon from "./ProjectIcon";
  * @returns {import("react").JSX.Element} Formulaire de connexion.
  */
 function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
+  const [activeMode, setActiveMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [registrationEmail, setRegistrationEmail] = useState("");
+  const [registrationPassword, setRegistrationPassword] = useState("");
+  const [registrationPasswordConfirmation, setRegistrationPasswordConfirmation] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("reason") === JeuxVideoApi.expiredSessionQuery
+    return params.get("reason") === AuthApi.expiredSessionQuery
       ? "Votre session a expire. Veuillez vous reconnecter."
       : "";
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   /**
    * Soumet les identifiants au backend et stocke le token retourne.
@@ -47,7 +52,7 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
 
     try {
       setIsSubmitting(true);
-      await JeuxVideoApi.authenticate(username, password);
+      await AuthApi.authenticate(username, password);
       setPassword("");
       setMessage("Connexion active.");
       onAuthenticated();
@@ -59,14 +64,59 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
   };
 
   /**
+   * Soumet la demande de creation de compte au backend.
+   *
+   * @param {React.FormEvent<HTMLFormElement>} event - Evenement de soumission.
+   * @returns {Promise<void>} Affiche le resultat de l'inscription.
+   */
+  const submitRegistrationForm = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+
+    if (registrationPassword !== registrationPasswordConfirmation) {
+      setError("Les mots de passe saisis ne correspondent pas.");
+      return;
+    }
+
+    try {
+      setIsRegistering(true);
+      const data = await AuthApi.registerUser(registrationEmail, registrationPassword);
+      const createdEmail = data.user?.email || registrationEmail;
+      setRegistrationEmail("");
+      setRegistrationPassword("");
+      setRegistrationPasswordConfirmation("");
+      setActiveMode("login");
+      setUsername(createdEmail);
+      setMessage("Compte cree. Consultez votre email pour valider votre adresse avant connexion.");
+    } catch (e) {
+      setError(e.message || "Inscription impossible.");
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  /**
    * Deconnecte le frontend en supprimant le token local.
    *
    * @param {void} Aucun - Utilise le client API.
    * @returns {void} Vide le token et affiche un message.
    */
   const logout = () => {
-    JeuxVideoApi.clearAccessToken();
+    AuthApi.clearAccessToken();
     setMessage("Connexion fermee.");
+    setError("");
+  };
+
+  /**
+   * Change le formulaire affiche et remet a zero les messages.
+   *
+   * @param {"login"|"register"} nextMode - Mode de formulaire cible.
+   * @returns {void} Met a jour le mode courant.
+   */
+  const switchMode = (nextMode) => {
+    setActiveMode(nextMode);
+    setMessage("");
     setError("");
   };
 
@@ -89,38 +139,95 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
       {error ? <p className="error">{error}</p> : null}
       {message ? <p className="success">{message}</p> : null}
 
-      <form className="authForm" onSubmit={submitAuthForm}>
-        <label>
-          Identifiant
-          <input
-            autoComplete="username"
-            type="text"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Mot de passe
-          <input
-            autoComplete="current-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
-        <div className="formActions">
-          {isAuthenticated ? (
-            <button className="secondaryButton" type="button" onClick={logout}>
-              Deconnexion
+      <div className="authModeSelector" aria-label="Choix du formulaire">
+        <button
+          className={activeMode === "login" ? "active" : ""}
+          type="button"
+          onClick={() => switchMode("login")}
+        >
+          Connexion
+        </button>
+        <button
+          className={activeMode === "register" ? "active" : ""}
+          type="button"
+          onClick={() => switchMode("register")}
+        >
+          Creation de compte
+        </button>
+      </div>
+
+      {activeMode === "login" ? (
+        <form className="authForm" onSubmit={submitAuthForm}>
+          <label>
+            Identifiant
+            <input
+              autoComplete="username"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Mot de passe
+            <input
+              autoComplete="current-password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
+          <div className="formActions">
+            {isAuthenticated ? (
+              <button className="secondaryButton" type="button" onClick={logout}>
+                Deconnexion
+              </button>
+            ) : null}
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Connexion..." : "Se connecter"}
             </button>
-          ) : null}
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Connexion..." : "Se connecter"}
-          </button>
-        </div>
-      </form>
+          </div>
+        </form>
+      ) : (
+        <form className="authForm" onSubmit={submitRegistrationForm}>
+          <label>
+            Email
+            <input
+              autoComplete="email"
+              type="email"
+              value={registrationEmail}
+              onChange={(event) => setRegistrationEmail(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Mot de passe
+            <input
+              autoComplete="new-password"
+              type="password"
+              value={registrationPassword}
+              onChange={(event) => setRegistrationPassword(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Confirmation du mot de passe
+            <input
+              autoComplete="new-password"
+              type="password"
+              value={registrationPasswordConfirmation}
+              onChange={(event) => setRegistrationPasswordConfirmation(event.target.value)}
+              required
+            />
+          </label>
+          <div className="formActions">
+            <button type="submit" disabled={isRegistering}>
+              {isRegistering ? "Creation..." : "Creer le compte"}
+            </button>
+          </div>
+        </form>
+      )}
     </main>
   );
 }
