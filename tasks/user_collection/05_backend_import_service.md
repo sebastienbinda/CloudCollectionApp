@@ -22,6 +22,13 @@ Créer le service métier responsable de l'import complet de la collection utili
 14. Mettre à jour `t_user.collection_file_path` en fin d'import réussi.
 15. Garantir l'atomicité de l'import en base.
 16. Supprimer le fichier copié si l'import échoue.
+17. Découper la persistance SQL par entité :
+   - repository plateformes pour `t_platform`
+   - repository studios pour `t_studio`
+   - repository jeux pour `t_game`
+   - repository associations pour `t_user_collection`
+   - repository fichier utilisateur pour `t_user.collection_file_path`
+18. Conserver un orchestrateur transactionnel d'import uniquement pour coordonner ces repositories dans une même transaction.
 
 ## Critères d'acceptation
 
@@ -34,6 +41,8 @@ Créer le service métier responsable de l'import complet de la collection utili
    - jeux créés
    - jeux associés
 - Le service ne dépend pas directement de la couche HTTP.
+- Les requêtes SQL métier sont portées par des repositories dédiés par entité.
+- Le repository d'import global ne contient que l'orchestration transactionnelle.
 
 ## Validation attendue
 

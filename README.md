@@ -24,6 +24,7 @@ une interface web de consultation, recherche, administration et edition.
 - Navigation par plateforme et consultation d'une liste de souhaits.
 - Recherche globale par nom de jeu.
 - Filtres, tris, ajout, modification et suppression de jeux apres authentification.
+- Import de collection ODS personnelle pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec validation email.
 - Administration utilisateur, telechargement ODS et reset du cache.
 - Sauvegarde automatique du fichier ODS avant chaque ecriture.

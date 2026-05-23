@@ -69,6 +69,24 @@ class SqlAlchemyUserRepository:
             ).scalar_one()
         return int(existing_count) > 0
 
+    def find_user_id_by_email(self, email: str) -> int | None:
+        """Retourne l'identifiant technique d'un utilisateur par email.
+
+        Args:
+            email (str): Adresse email normalisee.
+
+        Returns:
+            int | None: Identifiant utilisateur, ou `None` si absent.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.connect() as connection:
+            user_id = connection.execute(
+                text(f'SELECT id FROM "{schema_name}".t_user WHERE email = :email'),
+                {"email": email},
+            ).scalar_one_or_none()
+        return int(user_id) if user_id is not None else None
+
     def create_user(
         self,
         email: str,

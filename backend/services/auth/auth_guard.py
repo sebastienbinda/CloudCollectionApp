@@ -139,6 +139,24 @@ class AuthGuard:
             return self._forbidden_response("Profil utilisateur insuffisant.")
         return None
 
+    def get_current_token_payload(self) -> dict:
+        """Retourne le payload du token Bearer courant.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Payload du token valide.
+
+        Raises:
+            ValueError: Si le token est absent, invalide ou expire.
+        """
+
+        token = self._extract_bearer_token()
+        if not token:
+            raise ValueError("Token Bearer manquant.")
+        return self.token_service.validate_access_token(token)
+
     def _mark_protected_routes(self, flask_app: Flask, exempt_endpoints: set[str]) -> None:
         """Marque les vues Flask protegees pour la decouverte des routes.
 

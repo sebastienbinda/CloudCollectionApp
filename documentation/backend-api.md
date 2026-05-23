@@ -237,6 +237,52 @@ Supported search query parameters:
 - `last_connexion_date_to`;
 - `status`.
 
+## User Collection Import Routes
+
+The routes in this section require a Bearer token with at least profile `USER`.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/users/me/collection` | Returns whether the connected user already has an imported collection. |
+| `POST` | `/api/users/import` | Imports the connected user's ODS collection from `multipart/form-data`. |
+
+### Current User Collection Status Response
+
+```json
+{
+  "has_collection": false
+}
+```
+
+### Import User Collection Payload
+
+```http
+POST /api/users/import
+Content-Type: multipart/form-data
+```
+
+Field:
+
+- `collection_file`: ODS file to import.
+
+Successful response:
+
+```json
+{
+  "created_platforms": 3,
+  "created_studios": 12,
+  "created_games": 42,
+  "associated_games": 58
+}
+```
+
+Import errors use:
+
+- `400` for a missing, invalid or unreadable ODS file;
+- `409` when the connected user already has a collection;
+- `413` when the uploaded file exceeds `USER_COLLECTION_MAX_UPLOAD_BYTES`;
+- `500` for an unexpected import failure.
+
 ## ODS Write Behavior
 
 Before every write, the backend creates a backup in
