@@ -15,11 +15,22 @@ from .database_configuration import DatabaseConfiguration
 from .database_model_base import DatabaseModelBase
 from .database_schema_service import DatabaseSchemaService
 from .game import Game
+from .game_repository import SqlAlchemyGameRepository
 from .platform import Platform
+from .platform_repository import SqlAlchemyPlatformRepository
 from .schema_version import SchemaVersion
 from .studio import Studio
+from .studio_repository import SqlAlchemyStudioRepository
 from .user import User
 from .user_collection import UserCollection
+from .user_collection_file_repository import SqlAlchemyUserCollectionFileRepository
+from .user_collection_import_repository import (
+    SqlAlchemyUserCollectionImportRepository,
+    UserCollectionAlreadyImportedError,
+    UserCollectionImportPersistenceResult,
+    UserCollectionImportUserNotFoundError,
+)
+from .user_collection_repository import SqlAlchemyUserCollectionRepository
 from .user_repository import SqlAlchemyUserRepository
 
 __all__ = [
@@ -27,10 +38,19 @@ __all__ = [
     "DatabaseModelBase",
     "DatabaseSchemaService",
     "Game",
+    "SqlAlchemyGameRepository",
     "Platform",
+    "SqlAlchemyPlatformRepository",
     "SchemaVersion",
     "Studio",
+    "SqlAlchemyStudioRepository",
+    "SqlAlchemyUserCollectionFileRepository",
+    "SqlAlchemyUserCollectionImportRepository",
+    "SqlAlchemyUserCollectionRepository",
     "SqlAlchemyUserRepository",
     "User",
+    "UserCollectionAlreadyImportedError",
     "UserCollection",
+    "UserCollectionImportPersistenceResult",
+    "UserCollectionImportUserNotFoundError",
 ]

@@ -1,0 +1,383 @@
+#   ____ _                 _  ____      _ _           _   _             ___
+#  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+# | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+#                                                                            |_|   |_|
+# Projet : CloudCollectionApp
+# Date de creation : 2026-05-23
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
+#
+# Description : tests unitaires du service d'import de collection utilisateur.
+
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from services.database.user_collection_import_repository import (
+    UserCollectionAlreadyImportedError,
+    UserCollectionImportPersistenceResult,
+)
+from services.ods import (
+    OdsCollectionImportData,
+    OdsCollectionImportGame,
+    OdsCollectionImportPlatform,
+    OdsCollectionImportReadError,
+    OdsCollectionImportStudio,
+)
+from services.users.user_collection_import_configuration import (
+    UserCollectionImportConfiguration,
+)
+from services.users.user_collection_import_service import (
+    UserCollectionImportConflictError,
+    UserCollectionImportInvalidFileError,
+    UserCollectionImportService,
+    UserCollectionImportTooLargeError,
+    UserCollectionImportUnexpectedError,
+)
+
+
+class FakeUserCollectionImportRepository:
+    """Simule le repository d'import de collection utilisateur."""
+
+    def __init__(self, has_collection=False, result=None, import_error=None):
+        """Initialise le repository factice.
+
+        Args:
+            has_collection (bool): Indique si une collection existe deja.
+            result (UserCollectionImportPersistenceResult | None): Resultat retourne.
+            import_error (Exception | None): Erreur levee pendant la persistance.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.has_collection = has_collection
+        self.result = result or UserCollectionImportPersistenceResult(1, 1, 1, 1)
+        self.import_error = import_error
+        self.import_calls = []
+
+    def user_has_collection(self, user_id):
+        """Indique si l'utilisateur a deja une collection.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            bool: Valeur configuree pour le test.
+        """
+
+        return self.has_collection
+
+    def import_collection(self, user_id, collection_file_path, import_data):
+        """Memorise l'appel de persistance ou leve une erreur.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            collection_file_path (str): Chemin final du fichier.
+            import_data (OdsCollectionImportData): Donnees importees.
+
+        Returns:
+            UserCollectionImportPersistenceResult: Resultat configure.
+
+        Raises:
+            Exception: Erreur configuree pour le test.
+        """
+
+        self.import_calls.append((user_id, collection_file_path, import_data))
+        if self.import_error:
+            raise self.import_error
+        return self.result
+
+
+class FakeOdsCollectionImportReader:
+    """Simule le lecteur ODS d'import."""
+
+    def __init__(self, import_data=None, error=None):
+        """Initialise le lecteur factice.
+
+        Args:
+            import_data (OdsCollectionImportData | None): Donnees retournees.
+            error (Exception | None): Erreur levee pendant la lecture.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.import_data = import_data or OdsCollectionImportData(
+            platforms=[OdsCollectionImportPlatform("Switch")],
+            studios=[OdsCollectionImportStudio("Nintendo")],
+            games=[
+                OdsCollectionImportGame(
+                    name="Zelda",
+                    platform_name="Switch",
+                    studio_name="Nintendo",
+                    release_date=None,
+                )
+            ],
+        )
+        self.error = error
+        self.read_paths = []
+
+    def read(self, ods_path):
+        """Lit le fichier ODS factice.
+
+        Args:
+            ods_path (str): Chemin du fichier copie.
+
+        Returns:
+            OdsCollectionImportData: Donnees configurees.
+
+        Raises:
+            Exception: Erreur configuree pour le test.
+        """
+
+        self.read_paths.append(ods_path)
+        if self.error:
+            raise self.error
+        return self.import_data
+
+
+class UserCollectionImportServiceTest(unittest.TestCase):
+    """Valide le service metier d'import de collection utilisateur."""
+
+    def test_import_collection_copies_file_and_returns_counts(self):
+        """Verifie l'import nominal et les compteurs retournes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la copie et le resultat.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(directory)
+
+            result = service.import_collection(7, str(source_file), "collection.ods")
+
+            target_file = Path(directory) / "workspace" / "7" / "7-collection.ods"
+            self.assertTrue(target_file.exists())
+            self.assertEqual(0o440, target_file.stat().st_mode & 0o777)
+            self.assertEqual(str(target_file), reader.read_paths[0])
+            self.assertEqual((1, 1, 1, 1), (
+                result.created_platforms,
+                result.created_studios,
+                result.created_games,
+                result.associated_games,
+            ))
+            self.assertEqual(str(target_file), repository.import_calls[0][1])
+
+    def test_import_collection_rejects_existing_collection(self):
+        """Verifie le refus d'une collection deja importee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur de conflit.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(has_collection=True),
+            )
+
+            with self.assertRaises(UserCollectionImportConflictError):
+                service.import_collection(7, str(source_file), "collection.ods")
+
+            self.assertEqual([], repository.import_calls)
+            self.assertEqual([], reader.read_paths)
+
+    def test_import_collection_rejects_invalid_file_type(self):
+        """Verifie le refus d'un fichier non ODS.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur de fichier invalide.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                source_filename="collection.txt",
+            )
+
+            with self.assertRaises(UserCollectionImportInvalidFileError):
+                service.import_collection(7, str(source_file), "collection.txt")
+
+            self.assertEqual([], repository.import_calls)
+            self.assertEqual([], reader.read_paths)
+
+    def test_import_collection_rejects_too_large_file(self):
+        """Verifie le refus d'un fichier trop volumineux.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur de taille.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                max_upload_bytes=2,
+                source_content=b"123",
+            )
+
+            with self.assertRaises(UserCollectionImportTooLargeError):
+                service.import_collection(7, str(source_file), "collection.ods")
+
+            self.assertEqual([], repository.import_calls)
+            self.assertEqual([], reader.read_paths)
+
+    def test_import_collection_deletes_copied_file_when_ods_reader_fails(self):
+        """Verifie la suppression du fichier copie si la lecture ODS echoue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le nettoyage fichier.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                reader=FakeOdsCollectionImportReader(error=OdsCollectionImportReadError("bad")),
+            )
+
+            with self.assertRaises(UserCollectionImportInvalidFileError):
+                service.import_collection(7, str(source_file), "collection.ods")
+
+            self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
+            self.assertEqual([], repository.import_calls)
+            self.assertEqual(1, len(reader.read_paths))
+
+    def test_import_collection_deletes_copied_file_when_repository_rolls_back(self):
+        """Verifie le nettoyage fichier si la persistance echoue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le nettoyage apres rollback SQL.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(import_error=RuntimeError("db")),
+            )
+
+            with self.assertRaises(UserCollectionImportUnexpectedError):
+                service.import_collection(7, str(source_file), "collection.ods")
+
+            self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+
+    def test_import_collection_deletes_copied_file_when_repository_detects_conflict(self):
+        """Verifie le conflit detecte dans la transaction SQL.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le nettoyage apres conflit.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(
+                    import_error=UserCollectionAlreadyImportedError("conflict")
+                ),
+            )
+
+            with self.assertRaises(UserCollectionImportConflictError):
+                service.import_collection(7, str(source_file), "collection.ods")
+
+            self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+
+    def test_import_collection_returns_existing_game_association_counts(self):
+        """Verifie les compteurs quand les jeux existent deja.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les compteurs de rattachement.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(
+                    result=UserCollectionImportPersistenceResult(
+                        created_platforms=0,
+                        created_studios=0,
+                        created_games=0,
+                        associated_games=2,
+                    )
+                ),
+            )
+
+            result = service.import_collection(7, str(source_file), "collection.ods")
+
+            self.assertEqual(0, result.created_games)
+            self.assertEqual(2, result.associated_games)
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+
+    def _build_service(
+        self,
+        directory,
+        repository=None,
+        reader=None,
+        max_upload_bytes=104857600,
+        source_filename="collection.ods",
+        source_content=b"ods-content",
+    ):
+        """Construit un service d'import et ses dependances factices.
+
+        Args:
+            directory (str): Repertoire temporaire de test.
+            repository (FakeUserCollectionImportRepository | None): Repository factice.
+            reader (FakeOdsCollectionImportReader | None): Lecteur factice.
+            max_upload_bytes (int): Taille maximale configuree.
+            source_filename (str): Nom du fichier source.
+            source_content (bytes): Contenu du fichier source.
+
+        Returns:
+            tuple: Service, repository, lecteur et chemin source.
+        """
+
+        source_file = Path(directory) / source_filename
+        source_file.write_bytes(source_content)
+        repository = repository or FakeUserCollectionImportRepository()
+        reader = reader or FakeOdsCollectionImportReader()
+        configuration = UserCollectionImportConfiguration(
+            workspace_path=str(Path(directory) / "workspace"),
+            max_upload_bytes=max_upload_bytes,
+        )
+        return (
+            UserCollectionImportService(configuration, repository, reader),
+            repository,
+            reader,
+            source_file,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
