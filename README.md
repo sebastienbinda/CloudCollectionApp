@@ -77,7 +77,7 @@ Technologies :
 
 Fichiers principaux :
 
-- `backend/app.py` : assemblage Flask, routes de collection et protection globale
+- `backend/app.py` : point d'entree Flask et composition des services/controllers
 - `backend/controllers/` : controleurs HTTP transverses, dont authentification et inscription
 - `backend/services/games/games_service.py` : orchestration de la collection jeux video
 - `backend/services/games/add_game_choice_service.py` : fusion et tri des choix du formulaire d'ajout
@@ -86,6 +86,24 @@ Fichiers principaux :
 - `backend/services/validation/` : validation des payloads collection et liste de souhaits
 - `backend/models/jeu_video.py` : normalisation des lignes de jeux video
 - `backend/models/collection_types.py` : types de collections supportes
+
+Architecture backend :
+
+- `backend/app.py` configure Flask, initialise l'infrastructure, enregistre les
+  controllers et applique la protection globale des routes.
+- `backend/controllers/` contient les endpoints HTTP, la lecture des payloads et
+  la conversion des erreurs metier en reponses HTTP.
+- `backend/services/` contient les workflows metier et services
+  d'infrastructure organises par domaine.
+- `backend/services/database/` contient la configuration SQLAlchemy, les modeles
+  ORM, repositories et l'initialisation du schema.
+- `backend/services/ods/` contient la lecture, l'ecriture, les sauvegardes et le
+  cache du fichier ODS.
+- `backend/tests/` contient les tests par couche : routes, services, ODS,
+  authentification, database et utilitaires.
+
+Les regles d'architecture backend a respecter sont decrites dans
+`documentation/backend-arch.md`.
 
 Le service `GamesService` lit les donnees dans le fichier ODS. Pour les
 onglets de plateformes, les colonnes de jeux sont lues dans la plage logique
@@ -712,6 +730,7 @@ Les documents fonctionnels a maintenir sont dans `documentation/` :
 - `documentation/site-plan.md` : redirection des pages sans session
 - `documentation/about.md` : page About publique
 - `documentation/menu.md` : menu principal
+- `documentation/backend-arch.md` : architecture Flask/backend et responsabilites par couche
 - `documentation/frontend-arch.md` : architecture de code React/Vite et responsabilites des hooks frontend
 - `documentation/database.md` : structure PostgreSQL, migrations et immutabilite des migrations livrees
 - `documentation/ci.md` : pipeline CI, version Docker et publication des images
