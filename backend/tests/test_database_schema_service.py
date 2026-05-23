@@ -154,6 +154,35 @@ class FakeEngine:
         return FakeTransaction(self.connection)
 
 
+class FakeLogger:
+    """Journal factice capturant les messages d'information."""
+
+    def __init__(self):
+        """Initialise le journal factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.info_messages = []
+
+    def info(self, message, *args):
+        """Capture un message d'information.
+
+        Args:
+            message (str): Message journalise.
+            *args (tuple): Parametres de formatage du message.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.info_messages.append((message, args))
+
+
 class DatabaseSchemaServiceTest(unittest.TestCase):
     def test_migrations_keep_single_standalone_head(self):
         """Verifie que le dossier Alembic contient une seule migration autonome.
@@ -202,6 +231,34 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         self.assertFalse(service.initialize_database_schema())
         self.assertFalse(engine_factory_called)
+
+    def test_initialize_database_schema_on_startup_logs_skip_without_database_url(self):
+        """Verifie que l'initialisation de demarrage trace une base absente.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le message journalise.
+        """
+
+        logger = FakeLogger()
+        configuration = DatabaseConfiguration(
+            database_url=None,
+            schema_name="collection",
+            application_version="1.0",
+        )
+
+        initialized = DatabaseSchemaService.initialize_database_schema_on_startup(
+            logger,
+            configuration=configuration,
+        )
+
+        self.assertFalse(initialized)
+        self.assertEqual(
+            ("DATABASE_URL absent : initialisation SQL ignoree.", ()),
+            logger.info_messages[0],
+        )
 
     def test_initialize_database_schema_creates_schema_and_updates_version(self):
         """Verifie l'orchestration schema, migration et version applicative.

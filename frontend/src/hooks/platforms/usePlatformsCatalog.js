@@ -1,0 +1,71 @@
+/*
+ *   ____ _                 _  ____      _ _           _   _             ___
+ *  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+ * | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+ * | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+ *  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+ *                                                                            |_|   |_|
+ * Projet : CloudCollectionApp
+ * Date de creation : 2026-05-23
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+ * Licence : Apache 2.0
+ *
+ * Description : hook React du catalogue de plateformes jeux video.
+ */
+import { useEffect, useState } from "react";
+import AppRouting from "../../appRouting";
+import JeuxVideoApi from "../../services/JeuxVideoApi";
+
+/**
+ * Charge les plateformes et synchronise la selection initiale.
+ *
+ * @param {Object} options - Dependances de chargement des plateformes.
+ * @returns {Object} Plateformes disponibles et etat de chargement.
+ */
+function usePlatformsCatalog(options) {
+  const [platforms, setPlatforms] = useState([]);
+  const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
+
+  useEffect(() => {
+    const fetchPlatforms = async () => {
+      if (!options.hasAccessToken) {
+        setPlatforms([]);
+        setIsLoadingPlatforms(false);
+        return;
+      }
+
+      try {
+        setIsLoadingPlatforms(true);
+        options.setError("");
+        const data = await JeuxVideoApi.fetchPlatforms();
+        const loadedPlatforms = (data.platforms || [])
+          .filter((platform) => !["Accueil", "Liste de souhaits"].includes(platform));
+        setPlatforms(loadedPlatforms);
+
+        const platformFromUrl = AppRouting.getPlatformFromUrl();
+        if (options.currentView === "wishlist") {
+          options.setSelectedPlatform(AppRouting.wishlistSheetName);
+        } else if (platformFromUrl) {
+          options.setSelectedPlatform(platformFromUrl);
+          options.setCurrentView("games");
+        } else if (loadedPlatforms.length > 0) {
+          options.setSelectedPlatform(loadedPlatforms[0]);
+          options.setGameForm((previous) => ({
+            ...previous,
+            platform: previous.platform || loadedPlatforms[0],
+          }));
+        }
+      } catch (e) {
+        options.setError("Impossible de charger les plateformes depuis le backend.");
+      } finally {
+        setIsLoadingPlatforms(false);
+      }
+    };
+
+    fetchPlatforms();
+  }, [options.currentView, options.odsReloadKey, options.isAuthenticated, options.hasAccessToken]);
+
+  return { platforms, isLoadingPlatforms };
+}
+
+export default usePlatformsCatalog;

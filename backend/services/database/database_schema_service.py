@@ -12,6 +12,7 @@
 # Description : service d'initialisation du schema PostgreSQL au demarrage.
 
 from datetime import datetime, timezone
+from logging import Logger
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -86,6 +87,34 @@ class DatabaseSchemaService:
 
         self.migration_runner(engine, self.configuration, self.migrations_path)
         self._upsert_schema_version(engine)
+        return True
+
+    @classmethod
+    def initialize_database_schema_on_startup(
+        cls,
+        logger: Logger,
+        configuration: Optional[DatabaseConfiguration] = None,
+    ) -> bool:
+        """Initialise le schema PostgreSQL au demarrage applicatif si necessaire.
+
+        Args:
+            logger (Logger): Journal applicatif utilise pour tracer l'initialisation.
+            configuration (Optional[DatabaseConfiguration]): Configuration injectable en test.
+
+        Returns:
+            bool: `True` si le schema a ete initialise, sinon `False`.
+
+        Raises:
+            ValueError: Si la configuration de base de donnees est invalide.
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse l'initialisation.
+        """
+
+        resolved_configuration = configuration or DatabaseConfiguration.from_environment()
+        service = cls(resolved_configuration)
+        if not service.initialize_database_schema():
+            logger.info("DATABASE_URL absent : initialisation SQL ignoree.")
+            return False
+        logger.info("Schema PostgreSQL initialise : %s.", resolved_configuration.schema_name)
         return True
 
     def _upsert_schema_version(self, engine: Engine) -> None:
