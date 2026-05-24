@@ -225,6 +225,17 @@ class TableComponent extends Component {
   }
 
   /**
+   * Indique si une colonne peut declencher un tri.
+   *
+   * @param {string} column - Nom technique de la colonne.
+   * @returns {boolean} `true` si la colonne est triable.
+   */
+  isSortableColumn(column) {
+    const { sortableColumns } = this.props;
+    return !sortableColumns || sortableColumns.includes(column);
+  }
+
+  /**
    * Retourne la cle React d'une ligne.
    *
    * @param {Object} row - Ligne affichee.
@@ -331,7 +342,7 @@ class TableComponent extends Component {
                     className={this.getColumnClassNames(column)}
                     data-column={this.getColumnDataName(column)}
                   >
-                    {onToggleSort ? (
+                    {onToggleSort && this.isSortableColumn(column) ? (
                       <button
                         className="sortButton"
                         type="button"

@@ -36,6 +36,9 @@ Use the following domain folders for new or modified hooks:
   selection initialization.
 - `frontend/src/hooks/games/`: platform game collection, game filtering,
   sorting, editing and add-game form workflows.
+- `frontend/src/hooks/library/`: public Library counters, public entity search,
+  server-side pagination and backend-driven sorting for platforms, studios and
+  games.
 - `frontend/src/hooks/wishlist/`: wishlist-specific mutations and transfer
   actions.
 
@@ -93,6 +96,16 @@ Use the following domain folders for new or modified hooks:
 - Own table filters, sorting and derived game collections.
 - Own add-game form state, suggestions and submit workflow.
 - Use services for backend calls and utilities for pure transforms.
+
+### `hooks/library`
+
+- Own public Library counters and entity list loading.
+- Own Library search input state, applied search criteria, pagination state and
+  backend sort state.
+- Keep `/api/library/*` calls in `frontend/src/services/LibraryApi.js`.
+- Provide pagination metadata and callbacks to `TableComponent`; pages must not
+  render their own table pagination controls.
+- Do not add authentication headers to public Library endpoints.
 
 ### `hooks/wishlist`
 
