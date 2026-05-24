@@ -29,7 +29,7 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/navigation/`: current view, URL synchronization,
   history handling and route redirection.
 - `frontend/src/hooks/collection/`: cross-page collection refresh and cache
-  actions.
+  actions, plus connected-user collection onboarding and import state.
 - `frontend/src/hooks/home/`: home dashboard data, protected home images and
   home search.
 - `frontend/src/hooks/platforms/`: platform catalog loading and platform
@@ -63,6 +63,17 @@ Use the following domain folders for new or modified hooks:
 - Own browser history updates and `popstate` behavior.
 - Preserve unauthenticated redirection rules from `documentation/site-plan.md`.
 - Do not fetch backend data.
+
+### `hooks/collection`
+
+- Own cross-page collection refresh and ODS cache reset behavior.
+- Own the connected-user collection onboarding workflow.
+- Call `GET /api/users/me/collection` after sign-in to decide whether the user
+  can continue to `/accueil` or must visit `/collection/import`.
+- Call `POST /api/users/import` with `FormData` from the import view and let the
+  backend own all import validation and persistence decisions.
+- Redirect to `/accueil` only after a successful import or when the status route
+  confirms `has_collection: true`.
 
 ### `hooks/home`
 

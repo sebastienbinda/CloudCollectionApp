@@ -24,9 +24,11 @@ RUN npm run build
 FROM nginx:1.27-alpine
 
 ARG APP_VERSION=dev
+ENV USER_COLLECTION_MAX_UPLOAD_BYTES=104857600
+ENV NGINX_ENVSUBST_FILTER="^USER_COLLECTION_MAX_UPLOAD_BYTES$"
 LABEL org.opencontainers.image.version="${APP_VERSION}"
 
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

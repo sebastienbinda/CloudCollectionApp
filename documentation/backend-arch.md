@@ -78,6 +78,8 @@ Use one controller per functional area when possible, for example:
 - `AuthenticationController` for authentication, registration and email
   verification routes;
 - `UserController` for administrative user management;
+- `UserCollectionImportController` for connected-user collection status and
+  ODS import routes;
 - `RouteController` for `/api/routes`;
 - `UserGamesCollectionController` for platform game collection routes;
 - `UserWishListController` for wishlist routes;
@@ -99,7 +101,8 @@ Use domain folders under `backend/services/`:
 - `ods/`: ODS reading, writing, backup, cache, path resolution and formulas;
 - `routing/`: route catalog discovery;
 - `security/`: secret encryption utilities;
-- `users/`: user administration workflows and status;
+- `users/`: user administration workflows, user status and connected-user
+  collection import orchestration;
 - `validation/`: payload validation rules.
 
 Services may compose other services, validators and repositories. Keep service
@@ -129,6 +132,12 @@ ODS code must preserve the file as the current collection source of truth.
 - Validators reject invalid payloads before writer calls.
 
 Do not bypass these services from controllers.
+
+The user collection import workflow must use a dedicated ODS reader under
+`backend/services/ods/` and a domain service under `backend/services/users/`.
+Controllers may save the multipart upload to a temporary file, but parsing,
+copying to the user workspace, transaction orchestration and cleanup on failure
+belong to services and repositories.
 
 ### Authentication And Authorization
 

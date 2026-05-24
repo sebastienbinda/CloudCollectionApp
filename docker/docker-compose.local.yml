@@ -99,6 +99,8 @@ services:
     build:
       context: ..
       dockerfile: docker/frontend.Dockerfile
+    environment:
+      USER_COLLECTION_MAX_UPLOAD_BYTES: ${USER_COLLECTION_MAX_UPLOAD_BYTES:-104857600}
     depends_on:
       - backend
     ports:
