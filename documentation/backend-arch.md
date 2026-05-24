@@ -97,6 +97,8 @@ Use domain folders under `backend/services/`:
 - `email/`: email configuration and sending;
 - `formatting/`: value formatting helpers;
 - `games/`: game collection workflows and add-game choices;
+- `library/`: public read-only consultation of global reference games,
+  platforms and studios;
 - `logging/`: backend logging setup and handlers;
 - `ods/`: ODS reading, writing, backup, cache, path resolution and formulas;
 - `routing/`: route catalog discovery;

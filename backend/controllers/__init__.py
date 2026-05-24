@@ -12,8 +12,10 @@
 # Description : exports publics des controleurs HTTP backend.
 
 from .authentication_controller import AuthenticationController
+from .game_controller import GameController
 from .platform_controller import PlatformController
 from .route_controller import RouteController
+from .studio_controller import StudioController
 from .user_collection_import_controller import UserCollectionImportController
 from .user_games_collection_controller import UserGamesCollectionController
 from .user_controller import UserController
@@ -21,8 +23,10 @@ from .user_wishlist_controller import UserWishListController
 
 __all__ = [
     "AuthenticationController",
+    "GameController",
     "PlatformController",
     "RouteController",
+    "StudioController",
     "UserController",
     "UserCollectionImportController",
     "UserGamesCollectionController",

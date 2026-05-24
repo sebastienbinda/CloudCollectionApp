@@ -31,6 +31,10 @@ avoid unnecessary calls, but all real protection must remain on the backend side
     own a Bearer token.
   - `GET /api/auth/verify-email` and `POST /api/auth/verify-email`, used from
     an email verification link before sign-in.
+  - `GET /api/library/entities`, used to expose public reference entity counts.
+  - `GET /api/library/platforms`, used to expose public reference platforms.
+  - `GET /api/library/studios`, used to expose public reference studios.
+  - `GET /api/library/games`, used to expose public reference games.
 - CORS `OPTIONS` requests remain exempt to allow preflights.
 - Routes must be protected globally with `AuthGuard.protect_all_routes`.
 - Do not add a new public route without an explicit decision and without
