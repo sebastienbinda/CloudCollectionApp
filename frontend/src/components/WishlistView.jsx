@@ -17,9 +17,10 @@ import { formatCellValue, formatNumber } from "../collectionUtils";
 import WishlistSortService from "../services/WishlistSortService";
 import WishlistTransferService from "../services/WishlistTransferService";
 import EditWishlistDialog from "./EditWishlistDialog";
-import GameTable from "./GameTable";
 import ProgressBar from "./ProgressBar";
 import ProjectIcon from "./ProjectIcon";
+import TableComponent from "./TableComponent";
+import WishlistTableActions from "./WishlistTableActions";
 /**
  * Vue dediee a l'onglet ODS `Liste de souhaits`.
  */
@@ -386,8 +387,8 @@ class WishlistView extends Component {
               </select>
               <span>{formatNumber(filteredVisibleGames.length)} jeux affiches</span>
             </section>
-            <GameTable
-              games={namedGames}
+            <TableComponent
+              rows={namedGames}
               columns={wishlistColumns}
               columnLabels={{ Console: "Plateforme" }}
               getCellValue={(game, column) => this.getWishlistCellValue(game, column)}
@@ -396,59 +397,26 @@ class WishlistView extends Component {
               valuesByColumn={valuesByColumn}
               columnFilters={columnFilters}
               sortConfig={sortConfig}
-              sortedGames={filteredSortedGames}
+              sortedRows={filteredSortedGames}
               onToggleSort={onToggleSort}
               onColumnFiltersChange={onColumnFiltersChange}
               getRowClassName={(game) => this.getWishlistRowClassName(game)}
               renderRowActions={
                 canAddGame || canEditWishlistGame || canDeleteWishlistGame
                   ? (game) => (
-                      <div className="wishlistActionGroup">
-                        {canEditWishlistGame ? (
-                          <button
-                            className="wishlistIconButton"
-                            type="button"
-                            aria-label={`Modifier ${game["Nom du jeu"] || "ce jeu"} dans la wishlist`}
-                            title="Modifier dans la wishlist"
-                            onClick={() => onEditWishlistGame(game)}
-                          >
-                            <svg aria-hidden="true" className="wishlistActionIcon" viewBox="0 0 24 24">
-                              <path d="M4 17.5V21h3.5L18.1 10.4l-3.5-3.5L4 17.5Z" />
-                              <path d="m16 5.5 1.6-1.6a1.2 1.2 0 0 1 1.7 0l.8.8a1.2 1.2 0 0 1 0 1.7L18.5 8 16 5.5Z" />
-                            </svg>
-                          </button>
-                        ) : null}
-                        {canAddGame ? (
-                          <button
-                            className="wishlistIconButton"
-                            type="button"
-                            aria-label={`Ajouter ${game["Nom du jeu"] || "ce jeu"} a la bibliotheque`}
-                            title="Ajouter a la bibliotheque"
-                            onClick={() => this.openTransferDialog(game)}
-                          >
-                            <svg aria-hidden="true" className="wishlistActionIcon" viewBox="0 0 24 24">
-                              <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H9v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z" />
-                              <path d="M10 3h4v16h-4V3Z" />
-                              <path d="M15 3h2.5A2.5 2.5 0 0 1 20 5.5v16a2.5 2.5 0 0 0-2.5-2.5H15V3Z" />
-                              <path d="M6 7h1.5v2H6V7Zm10.5 0H18v2h-1.5V7Z" />
-                            </svg>
-                          </button>
-                        ) : null}
-                        {canDeleteWishlistGame ? (
-                          <button
-                            className="wishlistIconButton dangerIconButton"
-                            type="button"
-                            aria-label={`Supprimer ${game["Nom du jeu"] || "ce jeu"} de la wishlist`}
-                            title="Supprimer de la wishlist"
-                            onClick={() => this.deleteWishlistGame(game)}
-                          >
-                            <svg aria-hidden="true" className="wishlistActionIcon" viewBox="0 0 24 24">
-                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z" />
-                              <path d="M6 9h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z" />
-                            </svg>
-                          </button>
-                        ) : null}
-                      </div>
+                      <WishlistTableActions
+                        game={game}
+                        canAddGame={canAddGame}
+                        canEditWishlistGame={canEditWishlistGame}
+                        canDeleteWishlistGame={canDeleteWishlistGame}
+                        onEditWishlistGame={onEditWishlistGame}
+                        onOpenTransferDialog={(selectedGame) =>
+                          this.openTransferDialog(selectedGame)
+                        }
+                        onDeleteWishlistGame={(selectedGame) =>
+                          this.deleteWishlistGame(selectedGame)
+                        }
+                      />
                     )
                   : null
               }

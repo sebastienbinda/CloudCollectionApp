@@ -14,9 +14,9 @@ import {
   formatNumber,
 } from "../collectionUtils";
 import EditGameDialog from "./EditGameDialog";
-import GameTable from "./GameTable";
 import ProgressBar from "./ProgressBar";
 import ProjectIcon from "./ProjectIcon";
+import TableComponent from "./TableComponent";
 
 /**
  * Page de detail d'une plateforme avec statistiques, filtres et tableau de jeux.
@@ -158,13 +158,13 @@ function PlatformDetailView({
       ) : null}
 
       {!isLoadingGames && games.length > 0 ? (
-        <GameTable
-          games={games}
+        <TableComponent
+          rows={games}
           columns={columns}
           valuesByColumn={valuesByColumn}
           columnFilters={columnFilters}
           sortConfig={sortConfig}
-          sortedGames={sortedGames}
+          sortedRows={sortedGames}
           onToggleSort={onToggleSort}
           onColumnFiltersChange={onColumnFiltersChange}
           getRowClassName={(game) =>
