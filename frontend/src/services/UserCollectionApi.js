@@ -13,6 +13,7 @@
  * Description : client frontend dedie a la collection de l'utilisateur connecte.
  */
 import AuthApi from "./AuthApi";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
 
 /**
  * Represente une erreur exploitable par l'interface de collection utilisateur.
@@ -102,7 +103,7 @@ class UserCollectionApi {
    * @throws {UserCollectionApiError} Si la reponse HTTP est en erreur ou invalide.
    */
   static async fetchJson(url, fallbackMessage, options = {}) {
-    const response = await fetch(url, options);
+    const response = await BackendAvailabilityGuard.fetch(url, options);
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       throw this.createErrorFromResponse(response, data, fallbackMessage, options);

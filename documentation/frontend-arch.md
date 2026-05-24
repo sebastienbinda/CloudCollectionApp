@@ -102,8 +102,41 @@ Use the following domain folders for new or modified hooks:
 ### `services`
 
 - Keep HTTP details, URLs, headers and response normalization in services.
+- Use the shared backend availability guard for calls to backend routes so a
+  stopped backend or proxy `502`/`503`/`504` responses cannot trigger unbounded
+  automatic request loops.
 - Do not put React state in services.
 - Do not duplicate token logic outside existing auth/API services.
+
+## Architecture Decisions
+
+### Backend Availability Guard
+
+Frontend backend calls must go through a shared availability guard in
+`frontend/src/services/`. The guard is a frontend resilience mechanism, not a
+security boundary.
+
+The guard must:
+
+- wrap every direct `fetch` call to application backend routes;
+- count consecutive transport failures and proxy/backend unavailable responses
+  such as `502`, `503` and `504`;
+- temporarily stop automatic backend calls after the configured failure
+  threshold is reached;
+- reset its failure state after a successful backend response;
+- stay independent from React state so it can be reused by every API service.
+
+Hooks and components must not implement their own retry loops, polling loops or
+backend-down throttling. They should call domain services and display the
+normalized error state they receive. User-triggered actions may still attempt a
+backend call after the guard cooldown has elapsed.
+
+The guard must not:
+
+- clear or validate Bearer tokens;
+- decide user permissions;
+- hide authorization errors such as `401` or `403`;
+- replace backend route protection or backend rate limiting.
 
 ## Validation
 

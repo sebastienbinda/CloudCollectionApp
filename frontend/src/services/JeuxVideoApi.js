@@ -10,6 +10,7 @@
  * Auteurs : Codex et Binda Sébastien
  */
 import AuthApi from "./AuthApi";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
 
 class JeuxVideoApi {
   /**
@@ -239,7 +240,10 @@ class JeuxVideoApi {
     const requestOptions = {
       headers: AuthApi.getAuthorizationHeaders(),
     };
-    const response = await fetch("/collections/JeuxVideo/ods/download", requestOptions);
+    const response = await BackendAvailabilityGuard.fetch(
+      "/collections/JeuxVideo/ods/download",
+      requestOptions
+    );
     if (!response.ok) {
       const data = await this.parseJsonResponse(response, "Impossible de telecharger le fichier ODS.");
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
@@ -262,7 +266,7 @@ class JeuxVideoApi {
     const requestOptions = {
       headers: AuthApi.getAuthorizationHeaders(),
     };
-    const response = await fetch(imageUrl, requestOptions);
+    const response = await BackendAvailabilityGuard.fetch(imageUrl, requestOptions);
     if (!response.ok) {
       const data = await this.parseJsonResponse(response, "Impossible de recuperer l'image.");
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
@@ -314,7 +318,7 @@ class JeuxVideoApi {
    * @returns {Promise<any>} Corps JSON retourne par l'API.
    */
   static async fetchJson(url, fallbackMessage, options = {}) {
-    const response = await fetch(url, options);
+    const response = await BackendAvailabilityGuard.fetch(url, options);
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       if (AuthApi.isExpiredAuthenticatedResponse(response, options)) {

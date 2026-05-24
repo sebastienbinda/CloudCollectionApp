@@ -13,6 +13,7 @@
  * Description : client frontend dedie a l'administration des utilisateurs.
  */
 import AuthApi from "./AuthApi";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
 import JeuxVideoApi from "./JeuxVideoApi";
 
 /**
@@ -50,7 +51,10 @@ class UsersApi {
       method: "DELETE",
       headers: AuthApi.getAuthorizationHeaders(),
     };
-    const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, requestOptions);
+    const response = await BackendAvailabilityGuard.fetch(
+      `/api/users/${encodeURIComponent(userId)}`,
+      requestOptions
+    );
     if (!response.ok) {
       const data = await JeuxVideoApi.parseJsonResponse(
         response,

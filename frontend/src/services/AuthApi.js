@@ -12,6 +12,7 @@
  *
  * Description : client frontend dedie a l'authentification et a l'inscription.
  */
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
 
 /**
  * Regroupe les appels et l'etat frontend lies a l'authentification.
@@ -256,7 +257,7 @@ class AuthApi {
    * @returns {Promise<any>} Corps JSON retourne par l'API.
    */
   static async fetchJson(url, fallbackMessage, options = {}) {
-    const response = await fetch(url, options);
+    const response = await BackendAvailabilityGuard.fetch(url, options);
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       throw new Error(data.error || fallbackMessage);
