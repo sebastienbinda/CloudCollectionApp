@@ -64,14 +64,21 @@ class AppRouting {
    * @returns {boolean} `true` si le chemin est public.
    */
   static isPublicPath(pathname) {
-    return ["/about", "/auth"].includes(pathname);
+    return [
+      "/about",
+      "/auth",
+      "/bibliotheque",
+      "/bibliotheque/plateformes",
+      "/bibliotheque/studios",
+      "/bibliotheque/jeux",
+    ].includes(pathname);
   }
 
   /**
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"addGame"|"adminDashboard"|"auth"|"users"|"wishlist"|"collectionOnboarding"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"addGame"|"adminDashboard"|"auth"|"users"|"wishlist"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"} Identifiant de vue.
    */
   static getViewFromUrl() {
     if (window.location.pathname === "/about") {
@@ -79,6 +86,18 @@ class AppRouting {
     }
     if (window.location.pathname === "/auth") {
       return "auth";
+    }
+    if (window.location.pathname === "/bibliotheque") {
+      return "library";
+    }
+    if (window.location.pathname === "/bibliotheque/plateformes") {
+      return "libraryPlatforms";
+    }
+    if (window.location.pathname === "/bibliotheque/studios") {
+      return "libraryStudios";
+    }
+    if (window.location.pathname === "/bibliotheque/jeux") {
+      return "libraryGames";
     }
     if (!AppRouting.hasStoredAccessToken()) {
       return "about";

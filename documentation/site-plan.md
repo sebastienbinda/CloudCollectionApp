@@ -2,13 +2,17 @@
 
 ## Key Points
 
-- Any unauthenticated user is redirected to the About page from every site page
-  except the sign-in page.
+- Any unauthenticated user is redirected to the About page from every private
+  site page.
 
 ## Public Routes
 
 - `/about`: public About page for unauthenticated visitors.
 - `/auth`: sign-in page.
+- `/bibliotheque`: public Library landing page with global entity counters.
+- `/bibliotheque/plateformes`: public paginated platform reference list.
+- `/bibliotheque/studios`: public paginated studio reference list.
+- `/bibliotheque/jeux`: public paginated game reference list.
 - `/`: redirects to `/about` without a token and to `/accueil` with a token.
 
 ## Authenticated Routes

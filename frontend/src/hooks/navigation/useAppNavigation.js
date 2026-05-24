@@ -71,6 +71,10 @@ function useAppNavigation(options) {
       const mappedView = {
         "/about": "about",
         "/auth": "auth",
+        "/bibliotheque": "library",
+        "/bibliotheque/plateformes": "libraryPlatforms",
+        "/bibliotheque/studios": "libraryStudios",
+        "/bibliotheque/jeux": "libraryGames",
         "/accueil": "home",
         "/add-game": "addGame",
         "/admin-dashboard": "adminDashboard",
@@ -103,7 +107,7 @@ function useAppNavigation(options) {
   }, []);
 
   useEffect(() => {
-    if (options.hasAccessToken || currentView === "about" || currentView === "auth") return;
+    if (options.hasAccessToken || AppRouting.isPublicPath(window.location.pathname)) return;
     setCurrentView("about");
     window.history.replaceState({}, "", "/about");
   }, [currentView, options.hasAccessToken]);
@@ -131,6 +135,10 @@ function useAppNavigation(options) {
     setSelectedPlatform,
     goHome: () => openView("home", "/accueil"),
     openAbout: () => openView("about", "/about"),
+    openLibrary: () => openView("library", "/bibliotheque"),
+    openLibraryPlatforms: () => openView("libraryPlatforms", "/bibliotheque/plateformes"),
+    openLibraryStudios: () => openView("libraryStudios", "/bibliotheque/studios"),
+    openLibraryGames: () => openView("libraryGames", "/bibliotheque/jeux"),
     openAddGamePage,
     openAdminDashboard: () => openView("adminDashboard", "/admin-dashboard"),
     openUsersPage: () => openView("users", "/users"),

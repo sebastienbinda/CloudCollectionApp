@@ -17,6 +17,8 @@ import AdminDashboardView from "./AdminDashboardView";
 import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import HomeView from "./HomeView";
+import LibraryEntityListView from "./LibraryEntityListView";
+import LibraryHomeView from "./LibraryHomeView";
 import PlatformDetailView from "./PlatformDetailView";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
@@ -65,6 +67,22 @@ class AppViewSwitch {
       return this.renderCollectionOnboarding(props);
     }
 
+    if (props.currentView === "library") {
+      return this.renderLibrary(props);
+    }
+
+    if (props.currentView === "libraryPlatforms") {
+      return this.renderLibraryList(props, "Plateformes", "Plateformes du referentiel commun.", props.libraryPlatforms);
+    }
+
+    if (props.currentView === "libraryStudios") {
+      return this.renderLibraryList(props, "Studios", "Studios du referentiel commun.", props.libraryStudios);
+    }
+
+    if (props.currentView === "libraryGames") {
+      return this.renderLibraryList(props, "Jeux", "Jeux du referentiel commun.", props.libraryGames);
+    }
+
     return this.renderPlatform(props);
   }
 
@@ -84,6 +102,7 @@ class AppViewSwitch {
         selectedPlatform={props.selectedPlatform}
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
+        onOpenLibrary={props.openLibrary}
         onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onOpenAdminDashboard={props.openAdminDashboard}
@@ -116,6 +135,7 @@ class AppViewSwitch {
         authenticatedProfile={props.authenticatedProfile}
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
+        onOpenLibrary={props.openLibrary}
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}
         onOpenWishlist={props.openWishlist}
@@ -236,6 +256,7 @@ class AppViewSwitch {
         isAuthenticated={props.actionPermissions.isAuthenticated}
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
+        onOpenLibrary={props.openLibrary}
         onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onOpenAdminDashboard={props.openAdminDashboard}
@@ -278,6 +299,68 @@ class AppViewSwitch {
         onCancelEditWishlistGame={props.cancelEditWishlistGame}
         onToggleSort={props.toggleSort}
         onColumnFiltersChange={props.setColumnFilters}
+      />
+    );
+  }
+
+  /**
+   * Rend la page d'accueil Bibliotheque publique.
+   *
+   * @param {Object} props - Etat et callbacks Bibliotheque.
+   * @returns {import("react").JSX.Element} Vue Bibliotheque.
+   */
+  static renderLibrary(props) {
+    return (
+      <LibraryHomeView
+        entities={props.libraryEntities.entities}
+        entitiesError={props.libraryEntities.entitiesError}
+        isLoadingEntities={props.libraryEntities.isLoadingEntities}
+        isAuthenticated={props.actionPermissions.isAuthenticated}
+        authenticatedUsername={props.authenticatedUsername}
+        authenticatedProfile={props.authenticatedProfile}
+        platforms={props.platforms}
+        selectedPlatform={props.selectedPlatform}
+        onOpenAbout={props.openAbout}
+        onOpenHome={props.goHome}
+        onOpenLibrary={props.openLibrary}
+        onOpenLibraryPlatforms={props.openLibraryPlatforms}
+        onOpenLibraryStudios={props.openLibraryStudios}
+        onOpenLibraryGames={props.openLibraryGames}
+        onOpenWishlist={props.openWishlist}
+        onOpenPlatform={props.openPlatform}
+        onOpenAdminDashboard={props.openAdminDashboard}
+        onLogout={props.logout}
+      />
+    );
+  }
+
+  /**
+   * Rend une liste d'entite Bibliotheque publique.
+   *
+   * @param {Object} props - Etat et callbacks Bibliotheque.
+   * @param {string} title - Titre de la liste.
+   * @param {string} subtitle - Sous-titre de la liste.
+   * @param {Object} listState - Etat de liste fourni par le hook Bibliotheque.
+   * @returns {import("react").JSX.Element} Vue de liste Bibliotheque.
+   */
+  static renderLibraryList(props, title, subtitle, listState) {
+    return (
+      <LibraryEntityListView
+        title={title}
+        subtitle={subtitle}
+        listState={listState}
+        isAuthenticated={props.actionPermissions.isAuthenticated}
+        authenticatedUsername={props.authenticatedUsername}
+        authenticatedProfile={props.authenticatedProfile}
+        platforms={props.platforms}
+        selectedPlatform={props.selectedPlatform}
+        onOpenAbout={props.openAbout}
+        onOpenHome={props.goHome}
+        onOpenLibrary={props.openLibrary}
+        onOpenWishlist={props.openWishlist}
+        onOpenPlatform={props.openPlatform}
+        onOpenAdminDashboard={props.openAdminDashboard}
+        onLogout={props.logout}
       />
     );
   }

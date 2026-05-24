@@ -29,6 +29,7 @@ function HomeView({
   authenticatedProfile,
   onOpenAbout,
   onOpenHome,
+  onOpenLibrary,
   onOpenAdminDashboard,
   onLogout,
   onOpenWishlist,
@@ -54,6 +55,7 @@ function HomeView({
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
+          onOpenLibrary={onOpenLibrary}
           onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}

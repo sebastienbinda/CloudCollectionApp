@@ -31,11 +31,14 @@ pages. It must not contain business logic: it triggers callbacks provided by
 ## Access Constraints
 
 - `About` always remains accessible.
+- `Bibliotheque` always remains accessible.
 - `Accueil` requires an active local session.
 - `Liste de souhaits` requires an active local session.
 - `Voir les jeux` requires an active local session and a target platform.
 - Inaccessible entries must use `disabled`.
 - The session menu remains managed by `AuthStatusMenu`.
+- The Library entry opens `/bibliotheque` and must remain available for
+  unauthenticated visitors.
 
 ## Responsiveness
 

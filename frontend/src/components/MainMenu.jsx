@@ -29,6 +29,7 @@ function MainMenu({
   selectedPlatform,
   onOpenAbout,
   onOpenHome,
+  onOpenLibrary,
   onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
@@ -141,6 +142,13 @@ function MainMenu({
             disabled={!isAuthenticated}
           >
             Accueil
+          </button>
+          <button
+            className="secondaryButton"
+            type="button"
+            onClick={() => runMenuAction(onOpenLibrary)}
+          >
+            Bibliotheque
           </button>
           <button
             className="secondaryButton"

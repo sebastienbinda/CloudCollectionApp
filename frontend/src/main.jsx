@@ -15,6 +15,7 @@ import App from "./App";
 import "./styles.css";
 import "./styles/home.css";
 import "./styles/table-components.css";
+import "./styles/library.css";
 import "./styles/admin.css";
 import "./styles/editorial-views.css";
 import "./styles/collection-onboarding.css";

@@ -35,6 +35,7 @@ function UserCollectionOnboardingView({
   isAuthenticated,
   onOpenAbout,
   onOpenHome,
+  onOpenLibrary,
   onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
@@ -76,6 +77,7 @@ function UserCollectionOnboardingView({
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
+          onOpenLibrary={onOpenLibrary}
           onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}

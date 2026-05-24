@@ -18,6 +18,10 @@ import useUserCollectionOnboarding from "../collection/useUserCollectionOnboardi
 import useAddGamePage from "../games/useAddGamePage";
 import useGameCollectionPage from "../games/useGameCollectionPage";
 import useHomePage from "../home/useHomePage";
+import useLibraryEntities from "../library/useLibraryEntities";
+import useLibraryGames from "../library/useLibraryGames";
+import useLibraryPlatforms from "../library/useLibraryPlatforms";
+import useLibraryStudios from "../library/useLibraryStudios";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
 import useWishlistPage from "../wishlist/useWishlistPage";
@@ -89,6 +93,18 @@ function useCloudCollectionViewModel() {
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
   });
+  const libraryEntities = useLibraryEntities({
+    enabled: navigation.currentView === "library",
+  });
+  const libraryPlatforms = useLibraryPlatforms({
+    enabled: navigation.currentView === "libraryPlatforms",
+  });
+  const libraryStudios = useLibraryStudios({
+    enabled: navigation.currentView === "libraryStudios",
+  });
+  const libraryGames = useLibraryGames({
+    enabled: navigation.currentView === "libraryGames",
+  });
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
     hasAccessToken: session.hasAccessToken,
@@ -139,6 +155,10 @@ function useCloudCollectionViewModel() {
       isImportingCollection: userCollectionOnboarding.isImportingCollection,
       openAddGamePage: navigation.openAddGamePage,
       openAdminDashboard: navigation.openAdminDashboard,
+      openLibrary: navigation.openLibrary,
+      openLibraryPlatforms: navigation.openLibraryPlatforms,
+      openLibraryStudios: navigation.openLibraryStudios,
+      openLibraryGames: navigation.openLibraryGames,
       openUsersPage: navigation.openUsersPage,
       openAbout: navigation.openAbout,
       openWishlist: navigation.openWishlist,
@@ -160,6 +180,10 @@ function useCloudCollectionViewModel() {
       openEditWishlistGame: wishlistPage.openEditWishlistGame,
       saveEditedWishlistGame: wishlistPage.saveEditedWishlistGame,
       cancelEditWishlistGame: wishlistPage.cancelEditWishlistGame,
+      libraryEntities,
+      libraryPlatforms,
+      libraryStudios,
+      libraryGames,
     },
     authModalProps: session.authModalProps,
   };

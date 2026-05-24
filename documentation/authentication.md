@@ -184,7 +184,8 @@ tests, documentation, or scripts.
   object URL. Direct `url("/protected-route")` references do not send Bearer
   headers and must not be used for protected resources.
 - The frontend must avoid calling protected endpoints when no token is stored.
-- The public unauthenticated page is `AboutView` on `/about`.
+- Public unauthenticated frontend pages are `AboutView` on `/about` and the
+  Library consultation pages under `/bibliotheque`.
 - The authenticated home page is `HomeView` on `/accueil`.
 - The `/` route functionally redirects to `/about` without a token and to
   `/accueil` with a token.
