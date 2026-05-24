@@ -14,12 +14,22 @@
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from services.library import LibraryQueryCriteria
 from services.ods import OdsCollectionImportGame
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
+
+from .library_query_sql_builder import LibraryQuerySqlBuilder
 
 
 class SqlAlchemyGameRepository:
     """Persiste les jeux de collection dans `t_game`."""
+
+    LIBRARY_SORT_COLUMNS = {
+        "name": "game.name",
+        "release_date": "game.release_date",
+        "developer": "developer_studio.name",
+        "platform": "platform.name",
+    }
 
     def __init__(self, schema_name: str, name_normalizer: UserCollectionNameNormalizer):
         """Initialise le repository des jeux.
@@ -107,3 +117,89 @@ class SqlAlchemyGameRepository:
             self.name_normalizer.comparison_key(game.platform_name),
             self.name_normalizer.comparison_key(game.name),
         )
+
+    def count_public_library_games(self, connection: Connection) -> int:
+        """Compte tous les jeux globaux de reference.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            int: Nombre total de jeux globaux.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        return int(connection.execute(
+            text(f'SELECT COUNT(*) FROM "{self.schema_name}".t_game')
+        ).scalar_one())
+
+    def count_public_library_games_by_criteria(
+        self,
+        connection: Connection,
+        criteria: LibraryQueryCriteria,
+    ) -> int:
+        """Compte les jeux globaux correspondant aux criteres publics.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            criteria (LibraryQueryCriteria): Criteres de recherche Bibliotheque.
+
+        Returns:
+            int: Nombre de jeux correspondant aux criteres.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        parameters: dict[str, object] = {}
+        where_clause = LibraryQuerySqlBuilder.build_name_filter(criteria, "game.name", parameters)
+        return int(connection.execute(
+            text(
+                f'SELECT COUNT(*) FROM "{self.schema_name}".t_game game '
+                f"{where_clause}"
+            ),
+            parameters,
+        ).scalar_one())
+
+    def list_public_library_games(
+        self,
+        connection: Connection,
+        criteria: LibraryQueryCriteria,
+    ) -> list[dict[str, object]]:
+        """Liste les jeux globaux pages pour la Bibliotheque.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            criteria (LibraryQueryCriteria): Criteres de recherche, tri et pagination.
+
+        Returns:
+            list[dict[str, object]]: Jeux publics avec noms de studios et plateforme.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        parameters: dict[str, object] = LibraryQuerySqlBuilder.build_pagination_parameters(criteria)
+        where_clause = LibraryQuerySqlBuilder.build_name_filter(criteria, "game.name", parameters)
+        order_by_clause = LibraryQuerySqlBuilder.build_order_by(criteria, self.LIBRARY_SORT_COLUMNS)
+        rows = connection.execute(
+            text(
+                "SELECT "
+                "game.id, game.name, game.release_date, game.description, "
+                "developer_studio.name AS developer, editor_studio.name AS editor, "
+                "platform.name AS platform "
+                f'FROM "{self.schema_name}".t_game game '
+                f'LEFT JOIN "{self.schema_name}".t_studio developer_studio '
+                "ON developer_studio.id = game.developer "
+                f'LEFT JOIN "{self.schema_name}".t_studio editor_studio '
+                "ON editor_studio.id = game.editor "
+                f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
+                f"{where_clause} "
+                f"{order_by_clause} "
+                "LIMIT :limit OFFSET :offset"
+            ),
+            parameters,
+        ).mappings()
+        return [dict(row) for row in rows]

@@ -1,0 +1,1 @@
+Ajouter un mécanisme d'export des noms de jeux de la base que l'on peut fournir a une IA pour réaliser une vérification des doublons et générer un fichier de mise a jour que l'on peut fournir a un nouveau endpoint d'admin pour réaliser la  mise a jour des doublons.

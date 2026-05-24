@@ -23,6 +23,12 @@ from .auth import (
 from .database import DatabaseConfiguration, DatabaseSchemaService, SqlAlchemyUserRepository
 from .email import EmailConfiguration, EmailSenderFactory
 from .games import GamesService
+from .library import (
+    LibraryPageRequest,
+    LibraryQueryCriteria,
+    LibraryQueryParser,
+    LibrarySortRule,
+)
 from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
 from .users import (
@@ -47,6 +53,10 @@ __all__ = [
     "EmailVerificationService",
     "GamesService",
     "InvalidEmailVerificationTokenError",
+    "LibraryPageRequest",
+    "LibraryQueryCriteria",
+    "LibraryQueryParser",
+    "LibrarySortRule",
     "PasswordPolicyError",
     "RouteDiscoveryService",
     "SqlAlchemyUserRepository",
