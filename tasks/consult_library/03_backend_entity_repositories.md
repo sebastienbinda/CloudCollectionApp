@@ -12,8 +12,7 @@ trier et paginer les plateformes, studios et jeux de la base globale.
 2. Etendre `SqlAlchemyStudioRepository` pour la consultation publique des
    studios.
 3. Etendre `SqlAlchemyGameRepository` pour la consultation publique des jeux.
-4. Verifier que la colonne et le modele jeu utilisent `developer`, pas
-   `developper`.
+4. Verifier que la colonne et le modele jeu utilisent `developer`.
 5. Ajouter le comptage global des entites :
    - plateformes ;
    - studios ;

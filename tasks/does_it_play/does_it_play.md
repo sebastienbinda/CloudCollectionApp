@@ -1,0 +1,1 @@
+Ajouter un lien vers le site does it play pour chaque jeu de la base commune.

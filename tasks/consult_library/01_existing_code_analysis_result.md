@@ -1,5 +1,13 @@
 # 01 - Rapport d'analyse du code existant
 
+## Statut de la tache
+
+Tache realisee le 2026-05-24.
+
+Cette analyse n'introduit aucune modification fonctionnelle. Elle confirme les
+points d'extension a utiliser pour les taches suivantes et les documentations a
+respecter avant tout developpement de la Bibliotheque publique.
+
 ## Synthese
 
 La fonctionnalite Bibliotheque peut etre developpee sans changement de schema
@@ -68,16 +76,14 @@ Champs utiles :
 - `id`
 - `name`
 - `release_date`
-- `developper`
+- `developer`
 - `editor`
 - `platform`
 - `description`
 
-Point d'attention bloquant : le champ ORM existant est `developper` avec deux
-`p`. La regle cible est d'utiliser l'orthographe anglaise correcte
-`developer` partout. L'existant doit donc etre corrige par la tache
-`00_backend_developer_naming_cleanup.md` avant d'implementer les endpoints
-Bibliotheque.
+Le champ ORM expose maintenant `developer`, avec l'orthographe anglaise correcte.
+La tache `00_backend_developer_naming_cleanup.md` a leve le point bloquant
+identifie avant les endpoints Bibliotheque.
 
 ## Repositories backend existants
 
@@ -139,7 +145,7 @@ Limite actuelle :
 - ne contient pas de lecture paginee ;
 - ne joint pas les noms de developpeur, editeur et plateforme pour une API de
   consultation.
-- utilise encore la colonne SQL `developper`, a corriger vers `developer`.
+- utilise la colonne SQL `developer`, conforme au contrat Bibliotheque.
 
 Conclusion : etendre ce repository d'entite existant avec des methodes de
 consultation publique dediees, apres correction du nommage `developer`.
@@ -350,17 +356,37 @@ Documentation :
 
 ## Points d'attention avant implementation
 
-1. Corriger l'existant `developper` vers `developer` avant les endpoints
+1. Le nommage `developer` est requis et doit etre conserve dans les endpoints
    Bibliotheque.
 2. Les routes publiques `/api/library/*` doivent etre ajoutees aux exemptions
    d'authentification globale.
 3. Les colonnes de tri doivent rester limitees aux allowlists de `consult.md`.
 
+## Validation des criteres d'acceptation
+
+- Fichiers backend a reutiliser ou etendre : listes dans les sections
+  "Modeles backend existants", "Repositories backend existants",
+  "Services backend reutilisables", "Controleurs backend existants" et
+  "Fichiers probablement a modifier".
+- Fichiers frontend a reutiliser ou etendre : listes dans les sections
+  "Frontend existant a reutiliser" et "Fichiers probablement a modifier".
+- Nouveaux repositories, services, hooks ou composants : un repository
+  transverse n'est pas recommande ; les repositories d'entite existants doivent
+  etre etendus, un service de domaine Bibliotheque, des hooks `library`, des
+  pages Bibliotheque et des composants reutilisables de cartes/tableau sont
+  necessaires.
+- Routes Bibliotheque publiques et lecture seule : confirme. Les routes
+  `/api/library/*` doivent rester accessibles sans authentification, ne faire
+  que des lectures sur les tables globales de reference et ne jamais exposer de
+  donnees utilisateur ou de collection privee.
+- Validation attendue : aucune modification fonctionnelle n'a ete realisee dans
+  cette tache d'analyse.
+
 ## Conclusion
 
-Le developpement Bibliotheque peut demarrer apres la correction de nommage
-`developer`. La meilleure approche est ensuite de creer un domaine Bibliotheque
-dedie, en lecture seule, qui orchestre les repositories d'entite existants. Les
+Le developpement Bibliotheque peut demarrer avec le nommage `developer`.
+La meilleure approche est ensuite de creer un domaine Bibliotheque dedie, en
+lecture seule, qui orchestre les repositories d'entite existants. Les
 repositories `SqlAlchemyPlatformRepository`, `SqlAlchemyStudioRepository` et
 `SqlAlchemyGameRepository` doivent etre etendus avec des methodes de
 consultation publique plutot que remplaces par un repository transverse.

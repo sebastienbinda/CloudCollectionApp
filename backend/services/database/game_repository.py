@@ -82,13 +82,13 @@ class SqlAlchemyGameRepository:
         return int(connection.execute(
             text(
                 f'INSERT INTO "{self.schema_name}".t_game '
-                "(name, release_date, developper, editor, platform, description) "
-                "VALUES (:name, :release_date, :developper, NULL, :platform, NULL) RETURNING id"
+                "(name, release_date, developer, editor, platform, description) "
+                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL) RETURNING id"
             ),
             {
                 "name": game.name,
                 "release_date": game.release_date,
-                "developper": studio_id,
+                "developer": studio_id,
                 "platform": platform_id,
             },
         ).scalar_one())

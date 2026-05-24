@@ -51,7 +51,7 @@ Le livrable attendu est un fichier Markdown :
 
 - Le fichier `tasks/user_collection/01_existing_code_analysis_result.md` existe.
 - Les fichiers existants à modifier ou réutiliser y sont listés.
-- Les modèles et champs réels de la base y sont confirmés, notamment `developer` ou `developper`.
+- Les modèles et champs réels de la base y sont confirmés, notamment `developer`.
 - Le lecteur ODS existant à factoriser y est identifié.
 - Les conventions de test à suivre y sont identifiées.
 - Les risques techniques et points d'attention y sont listés.
