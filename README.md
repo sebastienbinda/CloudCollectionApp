@@ -11,12 +11,15 @@
 -->
 # CloudCollectionApp
 
-Application web personnelle pour consulter, rechercher et maintenir une
-collection de jeux video stockee dans un fichier LibreOffice Calc `.ods`.
+Application web personnelle qui transforme un fichier de collection LibreOffice
+Calc `.ods` en site en ligne accessible a tout moment. Chaque utilisateur garde
+sa collection privee rattachee a son compte, tout en contribuant a enrichir une
+base commune de jeux, plateformes et studios.
 
-Le fichier ODS reste la source de verite de la collection. Le backend expose une
-API securisee pour lire et modifier ce fichier, tandis que le frontend fournit
-une interface web de consultation, recherche, administration et edition.
+Le fichier ODS importe initialise la collection personnelle. Le backend expose
+une API securisee pour proteger les donnees utilisateur et alimenter le
+referentiel commun, tandis que le frontend fournit une interface web de
+consultation, recherche, import et edition.
 
 ## Fonctionnalites
 

@@ -24,7 +24,7 @@ import UserCollectionApi from "../../services/UserCollectionApi";
  */
 function getUserCollectionErrorMessage(error) {
   const messagesByCode = {
-    invalid_file: "Le fichier selectionne doit etre un fichier ODS valide.",
+    invalid_file: "Le fichier selectionne doit etre un fichier de collection valide.",
     file_too_large: "Le fichier selectionne depasse la taille maximale autorisee.",
     collection_already_imported: "Une collection est deja associee a ce compte.",
     unauthorized: "Votre session ne permet pas d'importer cette collection.",
@@ -115,7 +115,7 @@ function useUserCollectionOnboarding(options) {
   const importSelectedCollection = useCallback(async () => {
     if (!selectedCollectionFile || importInProgressRef.current) {
       if (!selectedCollectionFile) {
-        setOnboardingError("Selectionnez un fichier ODS avant de lancer l'import.");
+        setOnboardingError("Selectionnez un fichier de collection avant de lancer l'import.");
       }
       return;
     }

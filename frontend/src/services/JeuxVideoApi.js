@@ -245,11 +245,14 @@ class JeuxVideoApi {
       requestOptions
     );
     if (!response.ok) {
-      const data = await this.parseJsonResponse(response, "Impossible de telecharger le fichier ODS.");
+      const data = await this.parseJsonResponse(
+        response,
+        "Impossible de telecharger le fichier de collection."
+      );
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
         AuthApi.handleExpiredSession();
       }
-      throw new Error(data.error || "Impossible de telecharger le fichier ODS.");
+      throw new Error(data.error || "Impossible de telecharger le fichier de collection.");
     }
     const blob = await response.blob();
     const filename = this.getDownloadFilename(response) || "JeuxVideo.ods";

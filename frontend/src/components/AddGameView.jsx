@@ -51,7 +51,7 @@ function AddGameView({
         </h1>
         <p className="subtitle">
           Le jeu sera ajoute dans la collection ou dans la liste de souhaits, en conservant
-          le style du fichier ODS choisi.
+          la presentation de votre fichier de collection.
         </p>
       </section>
 

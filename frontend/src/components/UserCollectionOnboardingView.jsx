@@ -95,12 +95,12 @@ function UserCollectionOnboardingView({
         </div>
       </header>
 
-      <section className="collectionOnboardingContent" aria-label="Import de collection ODS">
+      <section className="collectionOnboardingContent" aria-label="Import de collection">
         <div className="collectionOnboardingSteps" aria-label="Parcours d'import">
           <article>
             <span>1</span>
             <h2>Selectionner</h2>
-            <p>Choisissez le fichier ODS qui contient votre collection.</p>
+            <p>Choisissez le fichier qui contient votre collection.</p>
           </article>
           <article>
             <span>2</span>

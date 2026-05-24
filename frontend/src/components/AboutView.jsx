@@ -66,7 +66,7 @@ function AboutView({
           </h1>
           <p className="subtitle">
             Transformez votre fichier de collection personnel en site en ligne, disponible a tout
-            moment, avec un simple import ODS. Votre collection reste privee, la base de jeux
+            moment, avec un simple import. Votre collection reste privee, la base de jeux
             s'enrichit avec la communaute.
           </p>
         </div>
@@ -77,9 +77,10 @@ function AboutView({
           <h2>Ce que permet l'application</h2>
           <p>
             CloudCollectionApp transforme un tableur local en espace web personnel. Apres
-            inscription, importez votre fichier ODS et retrouvez votre collection depuis n'importe
-            quel appareil. Vos jeux restent rattaches a votre compte, pendant que le catalogue commun
-            des plateformes, studios et jeux progresse grace aux imports de tous les utilisateurs.
+            inscription, importez votre fichier de collection et retrouvez votre collection depuis
+            n'importe quel appareil. Vos jeux restent rattaches a votre compte, pendant que le
+            catalogue commun des plateformes, studios et jeux progresse grace aux imports de tous
+            les utilisateurs.
           </p>
         </div>
 
@@ -87,8 +88,9 @@ function AboutView({
           <article>
             <h3>Du fichier au site</h3>
             <p>
-              Importez votre collection ODS une seule fois et accedez ensuite a vos plateformes,
-              jeux et indicateurs depuis une interface en ligne claire.
+              Importez votre fichier de collection une seule fois et accedez ensuite a vos
+              plateformes, jeux et indicateurs depuis une interface en ligne claire. Vous pouvez
+              ensuite telecharger un fichier mis a jour avec les modifications faites sur le site.
             </p>
           </article>
           <article>
@@ -103,6 +105,53 @@ function AboutView({
             <p>
               Chaque import aide a enrichir le referentiel commun des jeux, plateformes et studios,
               pour rendre la recherche et les futures collections plus utiles.
+            </p>
+          </article>
+        </div>
+
+        <div className="aboutIntro">
+          <h2>Les points cles au quotidien</h2>
+          <p>
+            Une fois la collection importee, l'application devient un tableau de bord personnel
+            pour consulter, suivre et faire evoluer votre collection sans revenir au fichier source
+            pour chaque action.
+          </p>
+        </div>
+
+        <div className="aboutFeatureGrid">
+          <article>
+            <h3>Explorer la collection</h3>
+            <p>
+              Parcourez vos jeux par plateforme et retrouvez rapidement une entree grace aux vues de
+              detail, aux filtres et a la recherche.
+            </p>
+          </article>
+          <article>
+            <h3>Suivre la liste des envies</h3>
+            <p>
+              Gardez une liste de souhaits separee pour preparer vos prochains ajouts et suivre les
+              jeux qui vous interessent.
+            </p>
+          </article>
+          <article>
+            <h3>Piloter les mises a jour</h3>
+            <p>
+              Ajoutez, modifiez ou transferez des jeux avec les actions autorisees par votre profil
+              et recuperez ensuite un fichier de collection coherent avec vos changements.
+            </p>
+          </article>
+          <article>
+            <h3>Afficher les statistiques</h3>
+            <p>
+              Consultez les indicateurs de collection pour garder une vision claire des plateformes,
+              volumes et informations importantes.
+            </p>
+          </article>
+          <article>
+            <h3>Libre et open source</h3>
+            <p>
+              Profitez d'une application gratuite, libre et open source, pensee pour rester
+              transparente et evoluer avec sa communaute.
             </p>
           </article>
         </div>

@@ -100,7 +100,7 @@ function PlatformDetailView({
               <span>{selectedPlatformStats?.name || selectedPlatform || "CloudCollectionApp"}</span>
             </span>
           </h1>
-          <p className="subtitle">Filtrer la liste par plateforme (onglet ODS)</p>
+          <p className="subtitle">Filtrer la liste par plateforme</p>
         </div>
         <div
           className={`platformDetailStats ${
