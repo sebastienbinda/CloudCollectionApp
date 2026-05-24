@@ -23,11 +23,14 @@ from .auth import (
 from .database import DatabaseConfiguration, DatabaseSchemaService, SqlAlchemyUserRepository
 from .email import EmailConfiguration, EmailSenderFactory
 from .games import GamesService
-from .library import (
+from .library.library_query_contract import (
     LibraryPageRequest,
     LibraryQueryCriteria,
     LibraryQueryParser,
     LibrarySortRule,
+)
+from .library.library_service import (
+    LibraryService,
 )
 from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
@@ -56,6 +59,7 @@ __all__ = [
     "LibraryPageRequest",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
+    "LibraryService",
     "LibrarySortRule",
     "PasswordPolicyError",
     "RouteDiscoveryService",

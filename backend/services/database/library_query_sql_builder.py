@@ -13,7 +13,7 @@
 
 from typing import Any
 
-from services.library import LibraryQueryCriteria
+from services.library.library_query_contract import LibraryQueryCriteria
 
 
 class LibraryQuerySqlBuilder:

@@ -14,7 +14,7 @@
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from services.library import LibraryQueryCriteria
+from services.library.library_query_contract import LibraryQueryCriteria
 from services.ods import OdsCollectionImportGame
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
