@@ -86,7 +86,7 @@ function UserCollectionOnboardingView({
           <h1>
             <span className="pageTitleWithIcon">
               <ProjectIcon />
-              <span>Importer votre fichier ODS</span>
+              <span>Importer votre collection</span>
             </span>
           </h1>
           <p className="subtitle">

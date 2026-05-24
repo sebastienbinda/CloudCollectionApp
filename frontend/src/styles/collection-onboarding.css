@@ -21,7 +21,13 @@
   border: 1px solid #dbe4f0;
   border-radius: 8px;
   margin-bottom: 1.25rem;
-  padding: 1.25rem;
+  padding: 4.4rem 1.25rem 1.25rem;
+}
+
+.collectionOnboardingHeader .pageHeaderTopActions {
+  left: 1.25rem;
+  right: 1.25rem;
+  top: 1.25rem;
 }
 
 .collectionOnboardingContent {
@@ -104,6 +110,16 @@
 }
 
 @media (max-width: 760px) {
+  .collectionOnboardingHeader {
+    padding-top: 3.75rem;
+  }
+
+  .collectionOnboardingHeader .pageHeaderTopActions {
+    left: 0.9rem;
+    right: 0.9rem;
+    top: 0.9rem;
+  }
+
   .collectionOnboardingSteps {
     grid-template-columns: 1fr;
   }
