@@ -237,6 +237,79 @@ Supported search query parameters:
 - `last_connexion_date_to`;
 - `status`.
 
+## User Collection Import Routes
+
+The routes in this section require a Bearer token with at least profile `USER`.
+They are self-service routes for the connected account and must not expose or
+modify another user's collection.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/users/me/collection` | Returns whether the connected user already has an imported collection. |
+| `POST` | `/api/users/import` | Imports the connected user's ODS collection from `multipart/form-data`. |
+
+### Current User Collection Status Response
+
+The status is derived from `t_user.collection_file_path`. The response must not
+return the stored filesystem path.
+
+```json
+{
+  "has_collection": false
+}
+```
+
+### Import User Collection Payload
+
+```http
+POST /api/users/import
+Content-Type: multipart/form-data
+```
+
+Field:
+
+- `collection_file`: ODS file to import.
+
+The upload is accepted only once per user. If `t_user.collection_file_path` is
+already set, the backend returns `409` and does not replace the existing
+collection data.
+
+The backend copies the uploaded file to
+`/users/workspace/<user_id>/<user_id>-collection.ods`, stores this complete path
+in `t_user.collection_file_path` only after a successful import, and removes the
+copied file if the import fails. The copied file is chmod `0440`.
+
+Only ODS platform sheets are imported. Technical sheets such as `Accueil` and
+`Liste de souhaits` are ignored by the import workflow. Missing platforms,
+studios and games are created; existing records are reused. User-game
+associations are inserted in `t_user_collection` when missing and ignored when
+already present. No existing platform, studio, game or user association is
+updated by this endpoint.
+
+Successful response:
+
+```json
+{
+  "created_platforms": 3,
+  "created_studios": 12,
+  "created_games": 42,
+  "associated_games": 58
+}
+```
+
+The `associated_games` counter is the number of games attached to the user after
+the import payload is processed, including games that already existed before the
+request.
+
+Import errors use:
+
+- `400` for a missing, invalid or unreadable ODS file;
+- `409` when the connected user already has a collection;
+- `413` when the multipart request exceeds `USER_COLLECTION_MAX_UPLOAD_BYTES`
+  at the proxy or Flask layer, or when the uploaded file exceeds the same
+  configured limit during import validation;
+- `500` for an unexpected import failure.
+
 ## ODS Write Behavior
 
 Before every write, the backend creates a backup in

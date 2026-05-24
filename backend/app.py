@@ -20,6 +20,7 @@ from controllers import (
     AuthenticationController,
     PlatformController,
     RouteController,
+    UserCollectionImportController,
     UserController,
     UserGamesCollectionController,
     UserWishListController,
@@ -30,6 +31,7 @@ from services import (
     BackendLoggingService,
     DatabaseSchemaService,
     GamesService,
+    UserCollectionImportConfiguration,
 )
 
 # 1. Configure les services transverses avant de creer l'application Flask.
@@ -38,6 +40,11 @@ BackendLoggingService.configure_from_environment()
 # 2. Cree l'application HTTP et active les preflights CORS.
 app = Flask(__name__)
 CORS(app)
+user_collection_import_configuration = UserCollectionImportConfiguration.from_environment()
+app.config["MAX_CONTENT_LENGTH"] = user_collection_import_configuration.max_upload_bytes
+app.config["USER_COLLECTION_WORKSPACE_PATH"] = (
+    user_collection_import_configuration.workspace_path
+)
 
 # 3. Prepare le schema SQL avant d'instancier les composants applicatifs.
 DatabaseSchemaService.initialize_database_schema_on_startup(app.logger)
@@ -48,6 +55,7 @@ auth_guard = AuthGuard(auth_token_service)
 authentication_controller = AuthenticationController(auth_token_service)
 route_controller = RouteController()
 user_controller = UserController(auth_guard)
+user_collection_import_controller = UserCollectionImportController(auth_guard)
 user_games_collection_controller = UserGamesCollectionController(
     auth_guard,
     games_service_factory=lambda: GamesService(),
@@ -62,6 +70,7 @@ platform_controller = PlatformController(games_service_factory=lambda: GamesServ
 authentication_controller.register_routes(app)
 route_controller.register_routes(app)
 user_controller.register_routes(app)
+user_collection_import_controller.register_routes(app)
 user_games_collection_controller.register_routes(app)
 user_wishlist_controller.register_routes(app)
 platform_controller.register_routes(app)

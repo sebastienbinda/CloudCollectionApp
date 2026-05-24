@@ -12,6 +12,17 @@
 
 from .ods_archive_reader import OdsArchiveReader
 from .ods_cache import OdsCache
+from .ods_collection_import_models import (
+    OdsCollectionImportData,
+    OdsCollectionImportGame,
+    OdsCollectionImportPlatform,
+    OdsCollectionImportStudio,
+)
+from .ods_collection_import_reader import (
+    OdsCollectionImportReadError,
+    OdsCollectionImportReader,
+    OdsCollectionImportValidationError,
+)
 from .ods_formula_recalculator import OdsFormulaRecalculator
 from .ods_image_reader import OdsImageReader
 from .ods_namespaces import OdsNamespaces
@@ -23,6 +34,13 @@ from .ods_xml_reader import OdsXmlReader
 __all__ = [
     "OdsArchiveReader",
     "OdsCache",
+    "OdsCollectionImportData",
+    "OdsCollectionImportGame",
+    "OdsCollectionImportPlatform",
+    "OdsCollectionImportReadError",
+    "OdsCollectionImportReader",
+    "OdsCollectionImportStudio",
+    "OdsCollectionImportValidationError",
     "OdsFormulaRecalculator",
     "OdsImageReader",
     "OdsNamespaces",

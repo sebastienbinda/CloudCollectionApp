@@ -17,9 +17,13 @@ from .user_management_service import (
     UserSearchCriteria,
     UserSummary,
 )
+from .user_collection_import_configuration import UserCollectionImportConfiguration
+from .user_collection_name_normalizer import UserCollectionNameNormalizer
 from .user_status import UserStatus
 
 __all__ = [
+    "UserCollectionImportConfiguration",
+    "UserCollectionNameNormalizer",
     "UserManagementService",
     "UserNotFoundError",
     "UserSearchCriteria",

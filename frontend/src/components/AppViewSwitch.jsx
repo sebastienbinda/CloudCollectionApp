@@ -18,6 +18,7 @@ import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import HomeView from "./HomeView";
 import PlatformDetailView from "./PlatformDetailView";
+import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
 
@@ -58,6 +59,10 @@ class AppViewSwitch {
 
     if (props.currentView === "wishlist") {
       return this.renderWishlist(props);
+    }
+
+    if (props.currentView === "collectionOnboarding") {
+      return this.renderCollectionOnboarding(props);
     }
 
     return this.renderPlatform(props);
@@ -205,8 +210,38 @@ class AppViewSwitch {
     return (
       <AuthView
         isAuthenticated={props.actionPermissions.isAuthenticated}
-        onAuthenticated={props.goHome}
+        onAuthenticated={props.handleAuthenticatedUser}
         onBack={props.openAbout}
+      />
+    );
+  }
+
+  /**
+   * Rend le parcours d'import initial de collection utilisateur.
+   *
+   * @param {Object} props - Etat et callbacks d'onboarding collection.
+   * @returns {import("react").JSX.Element} Vue d'onboarding collection.
+   */
+  static renderCollectionOnboarding(props) {
+    return (
+      <UserCollectionOnboardingView
+        authenticatedUsername={props.authenticatedUsername}
+        authenticatedProfile={props.authenticatedProfile}
+        platforms={props.platforms}
+        selectedPlatform={props.selectedPlatform}
+        selectedCollectionFileName={props.selectedCollectionFileName}
+        onboardingError={props.onboardingError}
+        isCheckingCollection={props.isCheckingCollection}
+        isImportingCollection={props.isImportingCollection}
+        isAuthenticated={props.actionPermissions.isAuthenticated}
+        onOpenAbout={props.openAbout}
+        onOpenHome={props.goHome}
+        onOpenWishlist={props.openWishlist}
+        onOpenPlatform={props.openPlatform}
+        onOpenAdminDashboard={props.openAdminDashboard}
+        onLogout={props.logout}
+        onFileChange={props.selectCollectionFile}
+        onSubmitImport={props.importSelectedCollection}
       />
     );
   }

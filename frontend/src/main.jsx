@@ -16,6 +16,7 @@ import "./styles.css";
 import "./styles/home.css";
 import "./styles/admin.css";
 import "./styles/editorial-views.css";
+import "./styles/collection-onboarding.css";
 
 /**
  * Monte l'application React dans le noeud HTML racine.

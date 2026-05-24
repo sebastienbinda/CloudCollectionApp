@@ -68,7 +68,7 @@ function AdminDashboardView({
         <article className="adminActionCard">
           <span>Collection</span>
           <h2>Ajouter un jeu</h2>
-          <p>Ouvre le formulaire d'ajout dans le fichier ODS.</p>
+          <p>Ouvre le formulaire d'ajout dans la collection.</p>
           <button
             type="button"
             onClick={onAddGame}
@@ -81,7 +81,7 @@ function AdminDashboardView({
         <article className="adminActionCard">
           <span>Cache</span>
           <h2>Reset cache</h2>
-          <p>Force le backend a relire les donnees ODS.</p>
+          <p>Force le backend a relire les donnees de collection.</p>
           <button
             className="secondaryButton"
             type="button"
@@ -95,7 +95,7 @@ function AdminDashboardView({
 
         <article className="adminActionCard">
           <span>Export</span>
-          <h2>Telecharger ODS</h2>
+          <h2>Telecharger la collection</h2>
           <p>Recupere le fichier source de la collection.</p>
           <button
             className="downloadOdsButton"
@@ -103,9 +103,9 @@ function AdminDashboardView({
             onClick={onDownloadOds}
             disabled={!canDownloadOds || isDownloadingOds}
           >
-            Telecharger ODS
+            Telecharger la collection
           </button>
-          {isDownloadingOds ? <ProgressBar label="Telechargement ODS en cours" /> : null}
+          {isDownloadingOds ? <ProgressBar label="Telechargement de la collection en cours" /> : null}
         </article>
 
         {isAdmin ? (

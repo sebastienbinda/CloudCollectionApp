@@ -11,12 +11,15 @@
 -->
 # CloudCollectionApp
 
-Application web personnelle pour consulter, rechercher et maintenir une
-collection de jeux video stockee dans un fichier LibreOffice Calc `.ods`.
+Application web personnelle qui transforme un fichier de collection LibreOffice
+Calc `.ods` en site en ligne accessible a tout moment. Chaque utilisateur garde
+sa collection privee rattachee a son compte, tout en contribuant a enrichir une
+base commune de jeux, plateformes et studios.
 
-Le fichier ODS reste la source de verite de la collection. Le backend expose une
-API securisee pour lire et modifier ce fichier, tandis que le frontend fournit
-une interface web de consultation, recherche, administration et edition.
+Le fichier ODS importe initialise la collection personnelle. Le backend expose
+une API securisee pour proteger les donnees utilisateur et alimenter le
+referentiel commun, tandis que le frontend fournit une interface web de
+consultation, recherche, import et edition.
 
 ## Fonctionnalites
 
@@ -24,6 +27,7 @@ une interface web de consultation, recherche, administration et edition.
 - Navigation par plateforme et consultation d'une liste de souhaits.
 - Recherche globale par nom de jeu.
 - Filtres, tris, ajout, modification et suppression de jeux apres authentification.
+- Import de collection ODS personnelle pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec validation email.
 - Administration utilisateur, telechargement ODS et reset du cache.
 - Sauvegarde automatique du fichier ODS avant chaque ecriture.
@@ -86,7 +90,7 @@ Domaines de hooks :
 
 - `hooks/app/` : session, droits backend et view-model principal.
 - `hooks/navigation/` : vue courante, plateforme selectionnee et URL.
-- `hooks/collection/` : rechargement transversal et reset cache ODS.
+- `hooks/collection/` : rechargement transversal, reset cache ODS et onboarding d'import.
 - `hooks/home/` : accueil, images protegees et recherche globale.
 - `hooks/platforms/` : catalogue de plateformes.
 - `hooks/games/` : collection plateforme, tri, filtres et ajout.
@@ -110,6 +114,9 @@ Variables principales :
 - `JEUXVIDEO_ODS_BACKUP_DIR` : repertoire des sauvegardes.
 - `JEUXVIDEO_ODS_TMP_DIR` : repertoire temporaire d'ecriture.
 - `ODS_FORMULA_RECALCULATION` : politique de recalcul des formules.
+- `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
+- `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
+  utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
 
 Un fichier exemple versionnable est fourni :
 
@@ -229,6 +236,7 @@ Documents fonctionnels et techniques principaux :
 - `documentation/backend-arch.md` : architecture Flask/backend.
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.
+- `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
 - `documentation/register.md` : inscription utilisateur et validation email.
 - `documentation/users.md` : administration des utilisateurs.
 - `documentation/site-plan.md` : navigation et redirections frontend.

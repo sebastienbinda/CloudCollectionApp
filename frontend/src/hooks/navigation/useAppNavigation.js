@@ -75,6 +75,7 @@ function useAppNavigation(options) {
         "/add-game": "addGame",
         "/admin-dashboard": "adminDashboard",
         "/users": "users",
+        "/collection/import": "collectionOnboarding",
       }[pathname];
 
       if (mappedView) {
@@ -133,6 +134,7 @@ function useAppNavigation(options) {
     openAddGamePage,
     openAdminDashboard: () => openView("adminDashboard", "/admin-dashboard"),
     openUsersPage: () => openView("users", "/users"),
+    openCollectionOnboarding: () => openView("collectionOnboarding", "/collection/import"),
     openPlatform,
     openWishlist,
   };

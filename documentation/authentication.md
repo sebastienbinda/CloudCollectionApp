@@ -93,6 +93,15 @@ Profiles are hierarchical. `ADMIN` inherits every route right granted to `USER`.
 Every protected route currently requires at least `USER`, so both profiles can
 access the existing protected API surface.
 
+Connected-user collection routes are protected routes with the same minimum
+profile:
+
+- `GET /api/users/me/collection`
+- `POST /api/users/import`
+
+These routes must derive the target user from the validated Bearer token and
+must not accept a user identifier from the request payload or query string.
+
 The Bearer token payload must contain:
 
 - `sub`: authenticated subject;

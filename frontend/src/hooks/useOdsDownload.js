@@ -36,7 +36,7 @@ function useOdsDownload() {
       setIsDownloadingOds(true);
       await JeuxVideoApi.downloadOdsFile();
     } catch (error) {
-      setDownloadError(error.message || "Impossible de telecharger le fichier ODS.");
+      setDownloadError(error.message || "Impossible de telecharger le fichier de collection.");
     } finally {
       setIsDownloadingOds(false);
     }

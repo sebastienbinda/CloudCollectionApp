@@ -29,7 +29,7 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/navigation/`: current view, URL synchronization,
   history handling and route redirection.
 - `frontend/src/hooks/collection/`: cross-page collection refresh and cache
-  actions.
+  actions, plus connected-user collection onboarding and import state.
 - `frontend/src/hooks/home/`: home dashboard data, protected home images and
   home search.
 - `frontend/src/hooks/platforms/`: platform catalog loading and platform
@@ -64,6 +64,17 @@ Use the following domain folders for new or modified hooks:
 - Preserve unauthenticated redirection rules from `documentation/site-plan.md`.
 - Do not fetch backend data.
 
+### `hooks/collection`
+
+- Own cross-page collection refresh and ODS cache reset behavior.
+- Own the connected-user collection onboarding workflow.
+- Call `GET /api/users/me/collection` after sign-in to decide whether the user
+  can continue to `/accueil` or must visit `/collection/import`.
+- Call `POST /api/users/import` with `FormData` from the import view and let the
+  backend own all import validation and persistence decisions.
+- Redirect to `/accueil` only after a successful import or when the status route
+  confirms `has_collection: true`.
+
 ### `hooks/home`
 
 - Own home dashboard loading.
@@ -91,8 +102,41 @@ Use the following domain folders for new or modified hooks:
 ### `services`
 
 - Keep HTTP details, URLs, headers and response normalization in services.
+- Use the shared backend availability guard for calls to backend routes so a
+  stopped backend or proxy `502`/`503`/`504` responses cannot trigger unbounded
+  automatic request loops.
 - Do not put React state in services.
 - Do not duplicate token logic outside existing auth/API services.
+
+## Architecture Decisions
+
+### Backend Availability Guard
+
+Frontend backend calls must go through a shared availability guard in
+`frontend/src/services/`. The guard is a frontend resilience mechanism, not a
+security boundary.
+
+The guard must:
+
+- wrap every direct `fetch` call to application backend routes;
+- count consecutive transport failures and proxy/backend unavailable responses
+  such as `502`, `503` and `504`;
+- temporarily stop automatic backend calls after the configured failure
+  threshold is reached;
+- reset its failure state after a successful backend response;
+- stay independent from React state so it can be reused by every API service.
+
+Hooks and components must not implement their own retry loops, polling loops or
+backend-down throttling. They should call domain services and display the
+normalized error state they receive. User-triggered actions may still attempt a
+backend call after the guard cooldown has elapsed.
+
+The guard must not:
+
+- clear or validate Bearer tokens;
+- decide user permissions;
+- hide authorization errors such as `401` or `403`;
+- replace backend route protection or backend rate limiting.
 
 ## Validation
 

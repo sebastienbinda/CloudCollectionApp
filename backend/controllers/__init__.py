@@ -14,6 +14,7 @@
 from .authentication_controller import AuthenticationController
 from .platform_controller import PlatformController
 from .route_controller import RouteController
+from .user_collection_import_controller import UserCollectionImportController
 from .user_games_collection_controller import UserGamesCollectionController
 from .user_controller import UserController
 from .user_wishlist_controller import UserWishListController
@@ -23,6 +24,7 @@ __all__ = [
     "PlatformController",
     "RouteController",
     "UserController",
+    "UserCollectionImportController",
     "UserGamesCollectionController",
     "UserWishListController",
 ]

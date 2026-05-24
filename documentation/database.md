@@ -113,6 +113,12 @@ Constraints:
 - Check: `profile` in `USER`, `ADMIN`
 - Check: `status` in `ACTIVE`, `LOCKED`
 
+`collection_file_path` is set by the user collection import workflow only after
+a successful import. It stores the complete container path
+`/users/workspace/<user_id>/<user_id>-collection.ods`. A non-null value means the
+user already has an imported collection and a second import must be rejected
+instead of replacing existing data.
+
 #### `t_user_collection`
 
 | Column | Type | Null | Description |
@@ -126,6 +132,26 @@ Constraints:
 - Primary key: `user_id`, `game_id`
 - Foreign key: `user_id` -> `t_user.id`
 - Foreign key: `game_id` -> `t_game.id`
+
+Rows are created by the user collection import workflow for every imported game
+attached to the connected user. Existing `(user_id, game_id)` rows are reused and
+must not be treated as errors. `game_additional_name` remains nullable and is not
+filled by the current import workflow.
+
+### Import Normalization Rules
+
+The user collection import workflow compares platform, studio and game names
+with a normalized key: trim whitespace, lowercase the value, then remove accents
+with Unicode normalization. The stored value preserves accents after trimming and
+lowercasing.
+
+During import:
+
+- platforms are matched by normalized `t_platform.name`;
+- studios are matched by normalized `t_studio.name`;
+- games are matched by normalized `t_game.name` and platform;
+- duplicate rows in the ODS file are ignored after the first normalized match;
+- invalid or empty game release dates are stored as `NULL`.
 
 ### Sequences
 

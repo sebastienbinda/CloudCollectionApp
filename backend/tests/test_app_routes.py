@@ -9,6 +9,7 @@
 # Auteurs : Codex et Binda Sébastien
 #
 import unittest
+from io import BytesIO
 from datetime import datetime
 from pathlib import Path
 import app as app_module
@@ -24,6 +25,16 @@ from services.auth import (
 )
 from services.auth.email_verification_service import EmailVerificationService, VerifiedUser
 from services.users import UserSummary
+from services.database.user_collection_import_repository import (
+    UserCollectionImportPersistenceResult,
+)
+from services.users.user_collection_import_service import (
+    UserCollectionImportConflictError,
+    UserCollectionImportInvalidFileError,
+    UserCollectionImportResult,
+    UserCollectionImportTooLargeError,
+    UserCollectionImportUnexpectedError,
+)
 
 
 class FakeSqlAlchemyUserRepository:
@@ -72,6 +83,20 @@ class FakeSqlAlchemyUserRepository:
         """
 
         self.last_connexion_user_id = user_id
+
+    def find_user_id_by_email(self, email):
+        """Retourne l'identifiant d'un utilisateur factice par email.
+
+        Args:
+            email (str): Email recherche.
+
+        Returns:
+            int | None: Identifiant utilisateur ou absence.
+        """
+
+        if email != "user@example.com":
+            return None
+        return 7
 
     def search_users(self, criteria):
         """Retourne des utilisateurs factices filtres par criteres.
@@ -262,6 +287,107 @@ class FakeUserRegistrationService:
             is_email_verified=False,
             profile=UserProfile.USER.value,
         )
+
+
+class FakeUserCollectionImportRepository:
+    """Repository factice de collection utilisateur pour les routes."""
+
+    has_collection = False
+
+    def __init__(self, configuration):
+        """Initialise le repository factice.
+
+        Args:
+            configuration (object): Configuration ignoree.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.configuration = configuration
+
+    def user_has_collection(self, user_id):
+        """Indique si une collection existe deja.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            bool: Valeur configuree pour le test.
+        """
+
+        return self.has_collection
+
+    def import_collection(self, user_id, collection_file_path, import_data):
+        """Retourne un resultat de persistance factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            collection_file_path (str): Chemin final.
+            import_data (object): Donnees ignorees.
+
+        Returns:
+            UserCollectionImportPersistenceResult: Resultat factice.
+        """
+
+        return UserCollectionImportPersistenceResult(1, 2, 3, 4)
+
+
+class FakeUserCollectionImportService:
+    """Service factice d'import de collection pour les routes."""
+
+    next_error = None
+    last_call = None
+
+    def __init__(self, configuration, repository, ods_reader):
+        """Initialise le service factice.
+
+        Args:
+            configuration (object): Configuration ignoree.
+            repository (object): Repository ignore.
+            ods_reader (object): Lecteur ignore.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.configuration = configuration
+        self.repository = repository
+        self.ods_reader = ods_reader
+
+    def import_collection(self, user_id, source_file_path, original_filename=None):
+        """Retourne un resultat ou leve l'erreur configuree.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            source_file_path (str): Fichier temporaire recu.
+            original_filename (str | None): Nom original.
+
+        Returns:
+            UserCollectionImportResult: Resultat factice.
+
+        Raises:
+            Exception: Erreur configuree.
+        """
+
+        self.__class__.last_call = (user_id, source_file_path, original_filename)
+        if self.next_error:
+            raise self.next_error
+        return UserCollectionImportResult(1, 2, 3, 4)
+
+
+class FakeOdsCollectionImportReader:
+    """Lecteur ODS factice pour construire le service de route."""
+
+    def __init__(self):
+        """Initialise le lecteur factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
 class FakeGamesService:
     def __init__(self):
         """Initialise un service JeuxVideo factice.
@@ -438,6 +564,21 @@ class AppRoutesTest(unittest.TestCase):
         self.original_user_controller_database_configuration = (
             app_module.user_controller.database_configuration_class
         )
+        self.original_collection_user_repository = (
+            app_module.user_collection_import_controller.user_repository_class
+        )
+        self.original_collection_import_repository = (
+            app_module.user_collection_import_controller.import_repository_class
+        )
+        self.original_collection_import_service = (
+            app_module.user_collection_import_controller.import_service_class
+        )
+        self.original_collection_ods_reader = (
+            app_module.user_collection_import_controller.ods_reader_class
+        )
+        self.original_collection_database_configuration = (
+            app_module.user_collection_import_controller.database_configuration_class
+        )
         self.original_registration_service = (
             app_module.authentication_controller.user_registration_service_class
         )
@@ -448,6 +589,22 @@ class AppRoutesTest(unittest.TestCase):
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.database_configuration_class = FakeDatabaseConfiguration
+        app_module.user_collection_import_controller.user_repository_class = (
+            FakeSqlAlchemyUserRepository
+        )
+        app_module.user_collection_import_controller.import_repository_class = (
+            FakeUserCollectionImportRepository
+        )
+        app_module.user_collection_import_controller.import_service_class = (
+            FakeUserCollectionImportService
+        )
+        app_module.user_collection_import_controller.ods_reader_class = FakeOdsCollectionImportReader
+        app_module.user_collection_import_controller.database_configuration_class = (
+            FakeDatabaseConfiguration
+        )
+        FakeUserCollectionImportRepository.has_collection = False
+        FakeUserCollectionImportService.next_error = None
+        FakeUserCollectionImportService.last_call = None
         app_module.authentication_controller.user_registration_service_class = (
             FakeUserRegistrationService
         )
@@ -466,6 +623,21 @@ class AppRoutesTest(unittest.TestCase):
         app_module.user_controller.user_repository_class = self.original_user_controller_repository
         app_module.user_controller.database_configuration_class = (
             self.original_user_controller_database_configuration
+        )
+        app_module.user_collection_import_controller.user_repository_class = (
+            self.original_collection_user_repository
+        )
+        app_module.user_collection_import_controller.import_repository_class = (
+            self.original_collection_import_repository
+        )
+        app_module.user_collection_import_controller.import_service_class = (
+            self.original_collection_import_service
+        )
+        app_module.user_collection_import_controller.ods_reader_class = (
+            self.original_collection_ods_reader
+        )
+        app_module.user_collection_import_controller.database_configuration_class = (
+            self.original_collection_database_configuration
         )
         app_module.authentication_controller.user_registration_service_class = (
             self.original_registration_service
@@ -496,6 +668,22 @@ class AppRoutesTest(unittest.TestCase):
         token = app_module.auth_token_service.create_access_token(
             "admin",
             UserProfile.ADMIN.value,
+        )
+        return {"Authorization": f"Bearer {token}"}
+
+    def get_user_auth_headers(self):
+        """Construit un header Bearer USER valide pour l'utilisateur factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict[str, str]: En-tetes HTTP contenant un token USER.
+        """
+
+        token = app_module.auth_token_service.create_access_token(
+            "user@example.com",
+            UserProfile.USER.value,
         )
         return {"Authorization": f"Bearer {token}"}
     def test_auth_token_route_returns_bearer_token(self):
@@ -978,6 +1166,8 @@ class AppRoutesTest(unittest.TestCase):
         self.assertTrue(
             routes_by_key[("/api/users/<int:user_id>/unlock", ("POST",))]["requires_auth"]
         )
+        self.assertTrue(routes_by_key[("/api/users/me/collection", ("GET",))]["requires_auth"])
+        self.assertTrue(routes_by_key[("/api/users/import", ("POST",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/platforms", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["requires_auth"])
         self.assertTrue(
@@ -999,6 +1189,200 @@ class AppRoutesTest(unittest.TestCase):
             [UserProfile.ADMIN.value],
             routes_by_key[("/api/users/<int:user_id>/unlock", ("POST",))]["required_profiles"],
         )
+        self.assertEqual(
+            [UserProfile.USER.value, UserProfile.ADMIN.value],
+            routes_by_key[("/api/users/me/collection", ("GET",))]["required_profiles"],
+        )
+        self.assertEqual(
+            [UserProfile.USER.value, UserProfile.ADMIN.value],
+            routes_by_key[("/api/users/import", ("POST",))]["required_profiles"],
+        )
+
+    def test_current_user_collection_status_returns_false(self):
+        """Verifie le statut collection absent de l'utilisateur connecte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse JSON.
+        """
+
+        response = self.client.get(
+            "/api/users/me/collection",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"has_collection": False}, response.get_json())
+
+    def test_current_user_collection_status_returns_true(self):
+        """Verifie le statut collection present de l'utilisateur connecte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse JSON.
+        """
+
+        FakeUserCollectionImportRepository.has_collection = True
+
+        response = self.client.get(
+            "/api/users/me/collection",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"has_collection": True}, response.get_json())
+
+    def test_current_user_collection_status_requires_authentication(self):
+        """Verifie que le statut collection exige un token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 403.
+        """
+
+        response = self.client.get("/api/users/me/collection")
+
+        self.assertEqual(403, response.status_code)
+
+    def test_import_current_user_collection_returns_counts(self):
+        """Verifie l'import multipart nominal de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 201 et les compteurs.
+        """
+
+        response = self.client.post(
+            "/api/users/import",
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(
+            {
+                "created_platforms": 1,
+                "created_studios": 2,
+                "created_games": 3,
+                "associated_games": 4,
+            },
+            response.get_json(),
+        )
+        self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
+        self.assertEqual("collection.ods", FakeUserCollectionImportService.last_call[2])
+
+    def test_import_current_user_collection_requires_file(self):
+        """Verifie le refus d'un import sans fichier multipart.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 400.
+        """
+
+        response = self.client.post(
+            "/api/users/import",
+            data={},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("collection_file", response.get_json()["error"])
+
+    def test_import_current_user_collection_maps_conflict(self):
+        """Verifie le mapping 409 d'une collection deja importee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 409.
+        """
+
+        FakeUserCollectionImportService.next_error = UserCollectionImportConflictError("conflit")
+
+        response = self.client.post(
+            "/api/users/import",
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(409, response.status_code)
+
+    def test_import_current_user_collection_maps_invalid_file(self):
+        """Verifie le mapping 400 d'un fichier invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 400.
+        """
+
+        FakeUserCollectionImportService.next_error = UserCollectionImportInvalidFileError("bad")
+
+        response = self.client.post(
+            "/api/users/import",
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_import_current_user_collection_maps_too_large_file(self):
+        """Verifie le mapping 413 d'un fichier trop volumineux.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 413.
+        """
+
+        FakeUserCollectionImportService.next_error = UserCollectionImportTooLargeError("large")
+
+        response = self.client.post(
+            "/api/users/import",
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(413, response.status_code)
+
+    def test_import_current_user_collection_maps_unexpected_error(self):
+        """Verifie le mapping 500 d'une erreur inattendue d'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le code 500.
+        """
+
+        FakeUserCollectionImportService.next_error = UserCollectionImportUnexpectedError("boom")
+
+        response = self.client.post(
+            "/api/users/import",
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(500, response.status_code)
     def test_cache_reset_route_returns_removed_entries(self):
         """Verifie l'endpoint de reset du cache.
         Args:
