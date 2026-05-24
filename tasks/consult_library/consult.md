@@ -34,9 +34,9 @@ Paramètre de recherche :
         {
             "id": 1,
             "name": "platform",
-            "country": "",
-            "city": "",
-            "creation_date": "",
+            "release_date": "",
+            "manufacturer": "",
+            "description": "",
             "status" : "",
             "total_games": 10
         }
@@ -61,9 +61,9 @@ Paramètre de recherche :
         {
             "id": 1,
             "name": "studio",
-            "release_date": "",
-            "manufacturer": "",
-            "description": "",
+            "country": "",
+            "city": "",
+            "creation_date": "",
             "status" : "",
             "editor_total_games": 10,
             "developer_total_games": 10
@@ -116,15 +116,15 @@ Paramètres de pagination :
  - Si les paramètres sont invalides, negatif ou non fourni, les endpoints backend fallback sur  les valeurs par défaut : page=0 & size=500.
 
 Tri des tableau :
- - Tri par défaut des endpoints sur nom et ascendent.
+ - Tri par défaut des endpoints sur name,asc.
  - Possibilité de trier par les autres colonnes.
  - Si le tri en paramètre passé au backend n'est pas asc ou desc alors c'est asc par défaut.
  - Si la colonne demandé n'existe pas le backend realise le tri par défaut sur le nom.
  - Plusieurs tri sont autorisé, alors plusieurs paramètres sort sont passé en paramètre au endpoint de recherche.
- - Colonne de tri autorisé :
-   - studio : name, release_date
-   - plateform : name, country, creation_date
-   - games : name, release_date, developer, plateform
+ - Colonnes de tri autorisées :
+   - platforms : name, release_date, manufacturer
+   - studios : name, country, creation_date
+   - games : name, release_date, developer, platform
 
 Compteurs :
 - La carte Plateformes affiche le nombre total de plateformes.

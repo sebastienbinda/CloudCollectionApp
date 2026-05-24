@@ -15,8 +15,13 @@ Créer les objets ou utilitaires backend nécessaires pour gérer de façon coh�
 5. Gérer un ou plusieurs paramètres `sort`.
 6. Appliquer `asc` lorsque le sens de tri est absent ou invalide.
 7. Revenir au tri `name,asc` lorsque la colonne demandée n'est pas autorisée.
-8. Définir les colonnes de tri autorisées par endpoint selon `consult.md`.
-9. Ajouter ou mettre à jour les tests unitaires backend du parsing de requête.
+8. Définir les colonnes de tri autorisées par endpoint selon `consult.md` :
+   - `platforms` : `name`, `release_date`, `manufacturer` ;
+   - `studios` : `name`, `country`, `creation_date` ;
+   - `games` : `name`, `release_date`, `developer`, `platform`.
+9. Vérifier que le backend utilise déjà `developer` partout grâce à
+   `tasks/consult_library/00_backend_developer_naming_cleanup.md`.
+10. Ajouter ou mettre à jour les tests unitaires backend du parsing de requête.
 
 ## Critères d'acceptation
 
