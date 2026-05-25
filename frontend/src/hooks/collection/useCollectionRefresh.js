@@ -13,7 +13,7 @@
  * Description : hook React de rechargement transversal de collection.
  */
 import { useState } from "react";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 
 /**
  * Gere les cles de rechargement ODS et le reset du cache backend.
@@ -41,7 +41,7 @@ function useCollectionRefresh() {
 
     try {
       setIsResettingCache(true);
-      await JeuxVideoApi.resetCache();
+      await VideoGamesApi.resetCache();
       setCacheResetMessage("Cache reinitialise. Donnees rechargees.");
       reloadOds();
       reloadGames();

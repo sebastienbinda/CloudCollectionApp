@@ -12,7 +12,7 @@
  *
  * Description : hook React de la page liste de souhaits.
  */
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 import useWishlistGameMutations from "../useWishlistGameMutations";
 
 /**
@@ -25,14 +25,14 @@ function useWishlistPage(options) {
   const mutations = useWishlistGameMutations(options.reloadOds, options.reloadGames);
 
   const addWishlistGameToPlatform = async (gamePayload) => {
-    const data = await JeuxVideoApi.addGame(gamePayload);
+    const data = await VideoGamesApi.addGame(gamePayload);
     options.reloadOds();
     options.reloadGames();
     return data;
   };
 
   const deleteWishlistGame = async (game) => {
-    const data = await JeuxVideoApi.deleteWishlistGame(game);
+    const data = await VideoGamesApi.deleteWishlistGame(game);
     options.reloadOds();
     options.reloadGames();
     return data;

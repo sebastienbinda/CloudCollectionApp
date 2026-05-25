@@ -15,9 +15,7 @@ class CollectionTypes(str, Enum):
     """Types de collections exposes par l'API.
 
     Valeurs:
-        JeuxVideo (str): Collection lue depuis le fichier ODS de jeux video.
-        Films (str): Collection d'exemple stockee en memoire.
+        VideoGames (str): Collection lue depuis le fichier ODS de jeux video.
     """
 
-    JeuxVideo = "JeuxVideo"
-    Films = "Films"
+    VideoGames = "VideoGames"

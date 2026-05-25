@@ -121,5 +121,5 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertFalse(routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/library/games", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])
-        self.assertTrue(routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["requires_auth"])
-        self.assertEqual(["Bearer"], routes_by_key[("/collections/JeuxVideo/games", ("POST",))]["auth_schemes"])
+        self.assertTrue(routes_by_key[("/collections/videogames/games", ("POST",))]["requires_auth"])
+        self.assertEqual(["Bearer"], routes_by_key[("/collections/videogames/games", ("POST",))]["auth_schemes"])

@@ -12,7 +12,7 @@
  *
  * Description : client objet des choix fusionnes du formulaire d'ajout.
  */
-import JeuxVideoApi from "./JeuxVideoApi";
+import VideoGamesApi from "./VideoGamesApi";
 
 class AddGameChoicesApi {
   /**
@@ -23,11 +23,11 @@ class AddGameChoicesApi {
    */
   static async fetchChoices(platform) {
     const query = platform ? `?platform=${encodeURIComponent(platform)}` : "";
-    return JeuxVideoApi.fetchJson(
-      `/collections/JeuxVideo/add-game-choices${query}`,
+    return VideoGamesApi.fetchJson(
+      `/collections/videogames/add-game-choices${query}`,
       "Impossible de recuperer les choix du formulaire d'ajout.",
       {
-        headers: JeuxVideoApi.getAuthorizationHeaders(),
+        headers: VideoGamesApi.getAuthorizationHeaders(),
       }
     );
   }

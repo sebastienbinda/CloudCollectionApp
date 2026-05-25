@@ -12,7 +12,7 @@
  *
  * Description : service objet dedie a l'ajout de jeux dans la liste de souhaits.
  */
-import JeuxVideoApi from "./JeuxVideoApi";
+import VideoGamesApi from "./VideoGamesApi";
 
 class WishlistAddApi {
   /**
@@ -22,14 +22,14 @@ class WishlistAddApi {
    * @returns {Promise<Object>} Objet contenant le jeu ajoute.
    */
   static async addWishlistGame(gameForm) {
-    return JeuxVideoApi.fetchJson(
-      "/collections/JeuxVideo/wishlist/games",
+    return VideoGamesApi.fetchJson(
+      "/collections/videogames/wishlist/games",
       "Impossible d'ajouter le jeu a la liste de souhaits.",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...JeuxVideoApi.getAuthorizationHeaders(),
+          ...VideoGamesApi.getAuthorizationHeaders(),
         },
         body: JSON.stringify({ ...gameForm, Console: gameForm.Console || gameForm.platform }),
       }

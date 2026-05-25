@@ -62,27 +62,27 @@ class PlatformController:
         """
 
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/platforms",
-            endpoint="list_jeux_video_platforms",
-            view_func=self._as_view(self.list_jeux_video_platforms),
+            "/collections/videogames/platforms",
+            endpoint="list_video_games_platforms",
+            view_func=self._as_view(self.list_video_games_platforms),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/platform-image/<path:platform>",
-            endpoint="get_jeux_video_platform_image",
-            view_func=self._as_view(self.get_jeux_video_platform_image),
+            "/collections/videogames/platform-image/<path:platform>",
+            endpoint="get_video_games_platform_image",
+            view_func=self._as_view(self.get_video_games_platform_image),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/column-values",
-            endpoint="list_jeux_video_column_values",
-            view_func=self._as_view(self.list_jeux_video_column_values),
+            "/collections/videogames/column-values",
+            endpoint="list_video_games_column_values",
+            view_func=self._as_view(self.list_video_games_column_values),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/add-game-choices",
-            endpoint="list_jeux_video_add_game_choices",
-            view_func=self._as_view(self.list_jeux_video_add_game_choices),
+            "/collections/videogames/add-game-choices",
+            endpoint="list_video_games_add_game_choices",
+            view_func=self._as_view(self.list_video_games_add_game_choices),
             methods=["GET"],
         )
         flask_app.add_url_rule(
@@ -145,7 +145,7 @@ class PlatformController:
         except Exception as exc:
             return jsonify({"error": f"Unable to read library platforms: {exc}"}), 500
 
-    def list_jeux_video_platforms(self):
+    def list_video_games_platforms(self):
         """Liste les plateformes disponibles dans le fichier ODS.
 
         Args:
@@ -157,13 +157,13 @@ class PlatformController:
 
         try:
             platforms = self._create_games_service().list_platforms()
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "platforms": platforms})
+            return jsonify({"type": CollectionTypes.VideoGames.value, "platforms": platforms})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except Exception as exc:
             return jsonify({"error": f"Unable to read ODS file: {exc}"}), 500
 
-    def get_jeux_video_platform_image(self, platform: str):
+    def get_video_games_platform_image(self, platform: str):
         """Retourne l'image embarquee dans l'onglet ODS d'une plateforme.
 
         Args:
@@ -190,7 +190,7 @@ class PlatformController:
         except Exception as exc:
             return jsonify({"error": f"Unable to read ODS image: {exc}"}), 500
 
-    def list_jeux_video_column_values(self):
+    def list_video_games_column_values(self):
         """Liste les valeurs distinctes de chaque colonne pour une plateforme.
 
         Args:
@@ -205,7 +205,7 @@ class PlatformController:
             values = self._create_games_service().list_column_values(platform=platform)
             return jsonify(
                 {
-                    "type": CollectionTypes.JeuxVideo.value,
+                    "type": CollectionTypes.VideoGames.value,
                     "platform": platform,
                     "values_by_column": values,
                 }
@@ -225,7 +225,7 @@ class PlatformController:
         except Exception as exc:
             return jsonify({"error": f"Unable to read ODS file: {exc}"}), 500
 
-    def list_jeux_video_add_game_choices(self):
+    def list_video_games_add_game_choices(self):
         """Liste les choix fusionnes pour le formulaire d'ajout.
 
         Args:
@@ -238,7 +238,7 @@ class PlatformController:
         platform = request.args.get("platform", "").strip()
         try:
             choices = self._create_games_service().list_add_game_choices(platform=platform)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, **choices})
+            return jsonify({"type": CollectionTypes.VideoGames.value, **choices})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:

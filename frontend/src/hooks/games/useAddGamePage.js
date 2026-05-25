@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
 import AddGameChoicesApi from "../../services/AddGameChoicesApi";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 import WishlistAddApi from "../../services/WishlistAddApi";
 
 const initialGameForm = AppRouting.createInitialGameForm();
@@ -79,7 +79,7 @@ function useAddGamePage(options) {
       setIsAddingGame(true);
       const data = isWishlistTarget
         ? await WishlistAddApi.addWishlistGame(gameForm)
-        : await JeuxVideoApi.addGame(gameForm);
+        : await VideoGamesApi.addGame(gameForm);
       setAddGameMessage(
         isWishlistTarget ? "Jeu ajoute a la liste de souhaits." : "Jeu ajoute avec succes."
       );

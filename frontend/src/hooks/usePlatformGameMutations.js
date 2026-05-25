@@ -13,7 +13,7 @@
  * Description : hook de gestion des mutations de jeux d'une plateforme.
  */
 import { useState } from "react";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import VideoGamesApi from "../services/VideoGamesApi";
 
 /**
  * Gere la suppression et la modification des jeux de plateforme.
@@ -70,7 +70,7 @@ function usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames) {
     if (!window.confirm(`Confirmer la suppression de "${gameName}" ?`)) return;
     clearDeleteGameFeedback();
     try {
-      await JeuxVideoApi.deleteGame({ platform: selectedPlatform, ...game });
+      await VideoGamesApi.deleteGame({ platform: selectedPlatform, ...game });
       setDeleteGameMessage(`${gameName} a ete supprime de ${selectedPlatform}.`);
       reloadOds();
       reloadGames();
@@ -92,7 +92,7 @@ function usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames) {
     clearDeleteGameFeedback();
     try {
       setIsSavingGame(true);
-      await JeuxVideoApi.updateGame({ platform: selectedPlatform, original: originalGame, updated: updatedGame });
+      await VideoGamesApi.updateGame({ platform: selectedPlatform, original: originalGame, updated: updatedGame });
       setEditingGame(null);
       setDeleteGameMessage(`${updatedGame["Nom du jeu"]} a ete modifie.`);
       reloadOds();

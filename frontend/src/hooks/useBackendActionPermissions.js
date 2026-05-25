@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import AuthApi from "../services/AuthApi";
 import BackendRouteAccessService from "../services/BackendRouteAccessService";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import VideoGamesApi from "../services/VideoGamesApi";
 
 /**
  * Charge les permissions applicatives exposees par le backend.
@@ -31,7 +31,7 @@ function useBackendActionPermissions() {
   useEffect(() => {
     const fetchBackendRoutes = async () => {
       try {
-        const permissions = await BackendRouteAccessService.loadActionPermissions(JeuxVideoApi);
+        const permissions = await BackendRouteAccessService.loadActionPermissions(VideoGamesApi);
         setActionPermissions(permissions);
       } catch (e) {
         setActionPermissions(

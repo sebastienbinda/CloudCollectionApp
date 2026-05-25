@@ -7,12 +7,23 @@
  *                                                                            |_|   |_|
  * Projet : CloudCollectionApp
  * Date de creation : 2026-05-03
- * Auteurs : Codex et Binda Sébastien
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+ * Licence : Apache 2.0
  */
 import AuthApi from "./AuthApi";
 import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
 
-class JeuxVideoApi {
+class VideoGamesApi {
+  /**
+   * Retourne les en-tetes d'autorisation courants.
+   *
+   * @param {void} Aucun - Delegue la lecture a `AuthApi`.
+   * @returns {Object} En-tetes HTTP d'autorisation.
+   */
+  static getAuthorizationHeaders() {
+    return AuthApi.getAuthorizationHeaders();
+  }
+
   /**
    * Retourne le token Bearer courant.
    *
@@ -52,7 +63,7 @@ class JeuxVideoApi {
    * @returns {Promise<Object>} Donnees du tableau de bord.
    */
   static async fetchHomeStats() {
-    return this.fetchJson("/collections/JeuxVideo/home", "Impossible de recuperer l'accueil.", {
+    return this.fetchJson("/collections/videogames/home", "Impossible de recuperer l'accueil.", {
       headers: AuthApi.getAuthorizationHeaders(),
     });
   }
@@ -65,7 +76,7 @@ class JeuxVideoApi {
    */
   static async fetchPlatforms() {
     return this.fetchJson(
-      "/collections/JeuxVideo/platforms",
+      "/collections/videogames/platforms",
       "Impossible de recuperer les plateformes.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -81,7 +92,7 @@ class JeuxVideoApi {
    */
   static async fetchGames(platform) {
     return this.fetchJson(
-      `/collections/JeuxVideo/search?platform=${encodeURIComponent(platform)}`,
+      `/collections/videogames/search?platform=${encodeURIComponent(platform)}`,
       "Impossible de recuperer les jeux video.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -97,7 +108,7 @@ class JeuxVideoApi {
    */
   static async fetchColumnValues(platform) {
     return this.fetchJson(
-      `/collections/JeuxVideo/column-values?platform=${encodeURIComponent(platform)}`,
+      `/collections/videogames/column-values?platform=${encodeURIComponent(platform)}`,
       "Impossible de recuperer les valeurs de colonnes.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -112,7 +123,7 @@ class JeuxVideoApi {
    * @returns {Promise<Object>} Objet contenant le jeu ajoute.
    */
   static async addGame(gameForm) {
-    return this.fetchJson("/collections/JeuxVideo/games", "Impossible d'ajouter le jeu.", {
+    return this.fetchJson("/collections/videogames/games", "Impossible d'ajouter le jeu.", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -129,7 +140,7 @@ class JeuxVideoApi {
    * @returns {Promise<Object>} Objet contenant le jeu supprime.
    */
   static async deleteGame(game) {
-    return this.fetchJson("/collections/JeuxVideo/games", "Impossible de supprimer le jeu.", {
+    return this.fetchJson("/collections/videogames/games", "Impossible de supprimer le jeu.", {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -146,7 +157,7 @@ class JeuxVideoApi {
    * @returns {Promise<Object>} Objet contenant le jeu modifie.
    */
   static async updateGame(payload) {
-    return this.fetchJson("/collections/JeuxVideo/games", "Impossible de modifier le jeu.", {
+    return this.fetchJson("/collections/videogames/games", "Impossible de modifier le jeu.", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -164,7 +175,7 @@ class JeuxVideoApi {
    */
   static async deleteWishlistGame(game) {
     return this.fetchJson(
-      "/collections/JeuxVideo/wishlist/games",
+      "/collections/videogames/wishlist/games",
       "Impossible de supprimer le jeu de la liste de souhaits.",
       {
         method: "DELETE",
@@ -188,7 +199,7 @@ class JeuxVideoApi {
    */
   static async updateWishlistGame(payload) {
     return this.fetchJson(
-      "/collections/JeuxVideo/wishlist/games",
+      "/collections/videogames/wishlist/games",
       "Impossible de modifier le jeu de la liste de souhaits.",
       {
         method: "PUT",
@@ -209,7 +220,7 @@ class JeuxVideoApi {
    */
   static async searchGamesByName(query) {
     return this.fetchJson(
-      `/collections/JeuxVideo/game-search?q=${encodeURIComponent(query)}`,
+      `/collections/videogames/games/search?q=${encodeURIComponent(query)}`,
       "Impossible de rechercher les jeux.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -224,7 +235,7 @@ class JeuxVideoApi {
    * @returns {Promise<Object>} Resultat de reinitialisation du cache.
    */
   static async resetCache() {
-    return this.fetchJson("/collections/JeuxVideo/cache/reset", "Impossible de reinitialiser le cache.", {
+    return this.fetchJson("/collections/videogames/cache/reset", "Impossible de reinitialiser le cache.", {
       method: "POST",
       headers: AuthApi.getAuthorizationHeaders(),
     });
@@ -241,7 +252,7 @@ class JeuxVideoApi {
       headers: AuthApi.getAuthorizationHeaders(),
     };
     const response = await BackendAvailabilityGuard.fetch(
-      "/collections/JeuxVideo/ods/download",
+      "/collections/videogames/download",
       requestOptions
     );
     if (!response.ok) {
@@ -255,7 +266,7 @@ class JeuxVideoApi {
       throw new Error(data.error || "Impossible de telecharger le fichier de collection.");
     }
     const blob = await response.blob();
-    const filename = this.getDownloadFilename(response) || "JeuxVideo.ods";
+    const filename = this.getDownloadFilename(response) || "VideoGames.ods";
     this.saveBlob(blob, filename);
   }
 
@@ -348,4 +359,4 @@ class JeuxVideoApi {
   }
 }
 
-export default JeuxVideoApi;
+export default VideoGamesApi;

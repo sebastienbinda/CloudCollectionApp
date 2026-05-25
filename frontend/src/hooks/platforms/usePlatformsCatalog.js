@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 
 /**
  * Charge les plateformes et synchronise la selection initiale.
@@ -37,7 +37,7 @@ function usePlatformsCatalog(options) {
       try {
         setIsLoadingPlatforms(true);
         options.setError("");
-        const data = await JeuxVideoApi.fetchPlatforms();
+        const data = await VideoGamesApi.fetchPlatforms();
         const loadedPlatforms = (data.platforms || [])
           .filter((platform) => !["Accueil", "Liste de souhaits"].includes(platform));
         setPlatforms(loadedPlatforms);

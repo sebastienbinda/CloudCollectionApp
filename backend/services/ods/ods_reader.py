@@ -288,7 +288,7 @@ class OdsReader:
             str: URL image avec un parametre de cache base sur le fichier ODS.
         """
 
-        return f"/collections/JeuxVideo/platform-image/{sheet_name}?v={self._build_image_cache_token()}"
+        return f"/collections/videogames/platform-image/{sheet_name}?v={self._build_image_cache_token()}"
 
     def _build_image_cache_token(self) -> str:
         """Construit un jeton de cache base sur l'etat du fichier ODS.
