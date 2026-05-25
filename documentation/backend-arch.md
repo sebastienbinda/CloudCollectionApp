@@ -83,7 +83,6 @@ Use one controller per functional area when possible, for example:
 - `CollectionController` for connected-user SQL collection consultation,
   future game actions and raw user ODS download;
 - `RouteController` for `/api/routes`;
-- `UserWishListController` for wishlist routes;
 - `PlatformController`, `StudioController` and `GameController` for public
   Bibliotheque reads of global platforms, studios and games.
 

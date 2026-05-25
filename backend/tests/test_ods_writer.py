@@ -233,35 +233,6 @@ class OdsWriterTest(unittest.TestCase):
         self.assertEqual("Zelda Deluxe", rows[6][5])
         self.assertEqual("2026-05-06", rows[6][8])
         self.assertEqual("0", rows[6][11])
-    def test_update_wishlist_game_replaces_wishlist_columns(self):
-        """Verifie la modification d'une ligne de liste de souhaits.
-        Args:
-            Aucun.
-        Returns:
-            None: Les assertions valident les cellules wishlist modifiees.
-        """
-        writer = OdsWriter(
-            ods_path="/tmp/fake.ods",
-            archive_reader=FakeArchiveReader(self._build_wishlist_content()),
-            xml_reader=self._xml_reader(),
-        )
-        updated_content = writer._build_content_with_updated_wishlist_game(
-            original_game={"Nom du jeu": "Chrono Trigger", "Console": "Switch 2"},
-            updated_game={
-                "Nom du jeu": "Chrono Trigger HD",
-                "Console": "Switch 2",
-                "Studio": "Square",
-                "Date de sortie": "2026-06-01",
-                "Date d'achat": "",
-                "Lieu d'achat": "",
-                "Prix d'achat": "59.99",
-            },
-        )
-        rows = self._read_rows(updated_content, "Liste de souhaits")
-        self.assertEqual("Note gauche", rows[6][0])
-        self.assertEqual("Chrono Trigger HD", rows[6][5])
-        self.assertEqual("Switch 2", rows[6][6])
-        self.assertEqual("Square", rows[6][7])
     def test_write_ods_content_restores_backup_when_validation_fails(self):
         """Verifie la restauration du backup si le fichier modifie est invalide.
         Args:
@@ -317,7 +288,7 @@ class OdsWriterTest(unittest.TestCase):
             tmp_dir = f"{directory}/tmp"
             backup_dir = f"{directory}/backup"
             original_content = self._build_sheet_content()
-            updated_content = self._build_wishlist_content()
+            updated_content = self._build_sheet_content()
             self._write_ods_file(ods_path, original_content)
             writer = OdsWriter(
                 ods_path=ods_path,
@@ -340,39 +311,6 @@ class OdsWriterTest(unittest.TestCase):
             backups = os.listdir(backup_dir)
             self.assertEqual(1, len(backups))
             self.assertTrue(backups[0].startswith("test.ods.backup-"))
-    def test_add_wishlist_game_writes_next_available_row(self):
-        """Verifie l'ajout d'un jeu dans la liste de souhaits.
-        Args:
-            Aucun.
-        Returns:
-            None: Les assertions valident l'ecriture de la ligne wishlist.
-        """
-        with TemporaryDirectory() as directory:
-            ods_path = f"{directory}/test.ods"
-            original_content = self._build_wishlist_content()
-            self._write_ods_file(ods_path, original_content)
-            writer = OdsWriter(
-                ods_path=ods_path,
-                archive_reader=FakeArchiveReader(original_content),
-                xml_reader=self._xml_reader(),
-            )
-            writer.formula_recalculator = SuccessfulFormulaRecalculator()
-            writer.add_wishlist_game(
-                {
-                    "Nom du jeu": "Chrono Trigger HD",
-                    "Console": "Switch 2",
-                    "Studio": "Square",
-                    "Date de sortie": "",
-                    "Date d'achat": "",
-                    "Lieu d'achat": "",
-                    "Prix d'achat": "59.99",
-                }
-            )
-            with ZipFile(ods_path, "r") as archive:
-                updated_content = archive.read("content.xml")
-            rows = self._read_rows(updated_content, "Liste de souhaits")
-            self.assertEqual("Chrono Trigger HD", rows[7][5])
-            self.assertEqual("Switch 2", rows[7][6])
     def _build_sheet_content(self, with_free_row: bool = True) -> bytes:
         """Construit un `content.xml` minimal pour tester l'ecriture.
         Args:
@@ -392,23 +330,6 @@ class OdsWriterTest(unittest.TestCase):
         if with_free_row:
             sheet.append(self._row(["Note gauche", "", "", "", "Infos libres"] + [""] * 8))
         sheet.append(self._row(["Nombre de Jeux"] + [""] * 12))
-        return ET.tostring(root, encoding="utf-8", xml_declaration=True)
-    def _build_wishlist_content(self) -> bytes:
-        """Construit un `content.xml` minimal pour la wishlist.
-        Args:
-            Aucun.
-        Returns:
-            bytes: XML ODS minimal encode en UTF-8.
-        """
-        office = self.namespaces["office"]
-        table = self.namespaces["table"]
-        root = ET.Element(f"{{{office}}}document-content")
-        body = ET.SubElement(root, f"{{{office}}}body")
-        spreadsheet = ET.SubElement(body, f"{{{office}}}spreadsheet")
-        sheet = ET.SubElement(spreadsheet, f"{{{table}}}table", {f"{{{table}}}name": "Liste de souhaits"})
-        for _ in range(6):
-            sheet.append(self._row([""] * 12))
-        sheet.append(self._row(["Note gauche"] + [""] * 4 + ["Chrono Trigger", "Switch 2", "Square", "", "", "", "60"]))
         return ET.tostring(root, encoding="utf-8", xml_declaration=True)
     def _build_formula_content(self, formula: str) -> bytes:
         """Construit un `content.xml` minimal contenant une formule.

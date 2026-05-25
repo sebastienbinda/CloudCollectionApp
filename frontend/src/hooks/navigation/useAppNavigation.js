@@ -24,9 +24,7 @@ import AppRouting from "../../appRouting";
 function useAppNavigation(options) {
   const [currentView, setCurrentView] = useState(AppRouting.getViewFromUrl);
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
-    AppRouting.getViewFromUrl() === "wishlist"
-      ? AppRouting.wishlistSheetName
-      : AppRouting.getPlatformFromUrl()
+    AppRouting.getPlatformFromUrl()
   );
 
   const updatePlatformUrl = (platform) => {
@@ -57,13 +55,6 @@ function useAppNavigation(options) {
     updatePlatformUrl(platform);
   };
 
-  const openWishlist = () => {
-    options.clearDeleteGameFeedback();
-    setSelectedPlatform(AppRouting.wishlistSheetName);
-    setCurrentView("wishlist");
-    window.history.pushState({}, "", "/wishlist");
-  };
-
   useEffect(() => {
     const handlePopState = () => {
       options.clearDeleteGameFeedback();
@@ -90,11 +81,6 @@ function useAppNavigation(options) {
         setSelectedPlatform("");
         setCurrentView("about");
         window.history.replaceState({}, "", "/about");
-        return;
-      }
-      if (pathname === "/wishlist") {
-        setSelectedPlatform(AppRouting.wishlistSheetName);
-        setCurrentView("wishlist");
         return;
       }
       const platformFromUrl = AppRouting.getPlatformFromUrl();
@@ -144,7 +130,6 @@ function useAppNavigation(options) {
     openUsersPage: () => openView("users", "/users"),
     openCollectionOnboarding: () => openView("collectionOnboarding", "/collection/import"),
     openPlatform,
-    openWishlist,
   };
 }
 

@@ -12,6 +12,5 @@
 # Description : exports des validateurs objet backend.
 
 from services.validation.game_payload_validator import GamePayloadValidator
-from services.validation.wishlist_payload_validator import WishlistPayloadValidator
 
-__all__ = ["GamePayloadValidator", "WishlistPayloadValidator"]
+__all__ = ["GamePayloadValidator"]

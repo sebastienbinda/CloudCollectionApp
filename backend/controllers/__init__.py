@@ -19,7 +19,6 @@ from .route_controller import RouteController
 from .studio_controller import StudioController
 from .user_collection_import_controller import UserCollectionImportController
 from .user_controller import UserController
-from .user_wishlist_controller import UserWishListController
 
 __all__ = [
     "AuthenticationController",
@@ -30,5 +29,4 @@ __all__ = [
     "StudioController",
     "UserController",
     "UserCollectionImportController",
-    "UserWishListController",
 ]

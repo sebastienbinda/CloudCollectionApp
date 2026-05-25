@@ -26,14 +26,10 @@ function AddGameView({
   addGameMessage,
   isAddingGame,
   canAddGame,
-  canAddWishlistGame,
   onBack,
   onSubmit,
   onFieldChange,
 }) {
-  const isWishlistTarget = gameForm.addTarget === "wishlist";
-  const canSubmit = isWishlistTarget ? canAddWishlistGame : canAddGame;
-  const submitLabel = isWishlistTarget ? "Ajouter a la liste" : "Ajouter le jeu";
   const platformChoices = addGameColumnValues.Plateforme || platforms;
 
   return (
@@ -50,8 +46,7 @@ function AddGameView({
           </span>
         </h1>
         <p className="subtitle">
-          Le jeu sera ajoute dans la collection ou dans la liste de souhaits, en conservant
-          la presentation de votre fichier de collection.
+          Le jeu sera ajoute dans la collection en conservant la presentation de votre fichier.
         </p>
       </section>
 
@@ -59,30 +54,6 @@ function AddGameView({
       {addGameMessage ? <p className="success">{addGameMessage}</p> : null}
 
       <form className="addGameForm" onSubmit={onSubmit}>
-        <fieldset className="addTargetToggle">
-          <legend>Destination</legend>
-          <label>
-            <input
-              type="radio"
-              name="addTarget"
-              value="collection"
-              checked={!isWishlistTarget}
-              onChange={(event) => onFieldChange("addTarget", event.target.value)}
-            />
-            Collection
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="addTarget"
-              value="wishlist"
-              checked={isWishlistTarget}
-              onChange={(event) => onFieldChange("addTarget", event.target.value)}
-            />
-            Liste de souhaits
-          </label>
-        </fieldset>
-
         <label>
           Plateforme
           <select
@@ -116,7 +87,6 @@ function AddGameView({
             type="text"
             value={gameForm.Studio}
             onChange={(event) => onFieldChange("Studio", event.target.value)}
-            required={isWishlistTarget}
           />
           <datalist id="studio-options">
             {(addGameColumnValues.Studio || []).map((studio) => (
@@ -140,7 +110,7 @@ function AddGameView({
             type="date"
             value={gameForm["Date d'achat"]}
             onChange={(event) => onFieldChange("Date d'achat", event.target.value)}
-            required={!isWishlistTarget}
+            required
           />
         </label>
 
@@ -150,21 +120,19 @@ function AddGameView({
             type="text"
             value={gameForm["Lieu d'achat"]}
             onChange={(event) => onFieldChange("Lieu d'achat", event.target.value)}
-            required={!isWishlistTarget}
+            required
           />
         </label>
 
-        {!isWishlistTarget ? (
-          <label>
-            Note
-            <input
-              type="text"
-              value={gameForm.Note}
-              onChange={(event) => onFieldChange("Note", event.target.value)}
-              placeholder="8/10"
-            />
-          </label>
-        ) : null}
+        <label>
+          Note
+          <input
+            type="text"
+            value={gameForm.Note}
+            onChange={(event) => onFieldChange("Note", event.target.value)}
+            placeholder="8/10"
+          />
+        </label>
 
         <label>
           Prix d'achat
@@ -174,35 +142,33 @@ function AddGameView({
             step="0.01"
             value={gameForm["Prix d'achat"]}
             onChange={(event) => onFieldChange("Prix d'achat", event.target.value)}
-            required={!isWishlistTarget}
+            required
           />
         </label>
 
-        {!isWishlistTarget ? (
-          <label>
-            Version
-            <input
-              list="version-options"
-              type="text"
-              value={gameForm.Version}
-              onChange={(event) => onFieldChange("Version", event.target.value)}
-              placeholder="FR, PAL, NTSC..."
-            />
-            <datalist id="version-options">
-              {(addGameColumnValues.Version || []).map((version) => (
-                <option key={version} value={version} />
-              ))}
-            </datalist>
-          </label>
-        ) : null}
+        <label>
+          Version
+          <input
+            list="version-options"
+            type="text"
+            value={gameForm.Version}
+            onChange={(event) => onFieldChange("Version", event.target.value)}
+            placeholder="FR, PAL, NTSC..."
+          />
+          <datalist id="version-options">
+            {(addGameColumnValues.Version || []).map((version) => (
+              <option key={version} value={version} />
+            ))}
+          </datalist>
+        </label>
 
         <div className="formActions">
           <button type="button" className="secondaryButton" onClick={onBack}>
             Annuler
           </button>
-          {canSubmit ? (
+          {canAddGame ? (
             <button type="submit" disabled={isAddingGame}>
-              {submitLabel}
+              Ajouter le jeu
             </button>
           ) : null}
         </div>

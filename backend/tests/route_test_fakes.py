@@ -155,58 +155,6 @@ class FakeGamesService:
             raise ValueError("Nom du jeu est obligatoire.")
         return {"Plateforme": payload.get("platform"), **updated}
 
-    def add_wishlist_game(self, payload):
-        """Ajoute un jeu wishlist factice.
-
-        Args:
-            payload (dict[str, str]): Donnees wishlist.
-
-        Returns:
-            dict[str, str]: Jeu ajoute.
-
-        Raises:
-            ValueError: Si le studio manque.
-        """
-
-        if not payload.get("Studio"):
-            raise ValueError("Studio est obligatoire.")
-        return {"Nom du jeu": payload.get("Nom du jeu"), "Console": payload.get("Console")}
-
-    def delete_wishlist_game(self, payload):
-        """Supprime un jeu wishlist factice.
-
-        Args:
-            payload (dict[str, str]): Donnees wishlist.
-
-        Returns:
-            dict[str, str]: Jeu supprime.
-
-        Raises:
-            ValueError: Si la console manque.
-        """
-
-        if not payload.get("Console"):
-            raise ValueError("La console est obligatoire.")
-        return {"Nom du jeu": payload.get("Nom du jeu"), "Console": payload.get("Console")}
-
-    def update_wishlist_game(self, payload):
-        """Modifie un jeu wishlist factice.
-
-        Args:
-            payload (dict[str, object]): Donnees wishlist.
-
-        Returns:
-            dict[str, object]: Jeu modifie.
-
-        Raises:
-            ValueError: Si le studio manque.
-        """
-
-        updated = payload.get("updated") or {}
-        if not updated.get("Studio"):
-            raise ValueError("Studio est obligatoire.")
-        return {"Nom du jeu": updated.get("Nom du jeu"), "Console": updated.get("Console")}
-
     def list_add_game_choices(self, platform=""):
         """Retourne les choix d'ajout factices.
 

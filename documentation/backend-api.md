@@ -423,51 +423,9 @@ absent from `/api/routes` and return `404` because there is no Flask route:
 - `GET /collections/videogames/column-values`
 - `GET /collections/videogames/add-game-choices`
 - `GET /collections/videogames/platform-image/<platform>`
-
-## Wishlist Routes
-
-All routes in this section require a Bearer token with at least profile `USER`.
-
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `POST` | `/collections/videogames/wishlist/games` | Adds a game to the wishlist. |
-| `PUT` | `/collections/videogames/wishlist/games` | Updates a wishlist game. |
-| `DELETE` | `/collections/videogames/wishlist/games` | Deletes a wishlist game. |
-
-### Add Wishlist Game Payload
-
-```json
-{
-  "Nom du jeu": "Chrono Trigger",
-  "Console": "Switch 2",
-  "Studio": "Square"
-}
-```
-
-### Update Wishlist Game Payload
-
-```json
-{
-  "original": {
-    "Nom du jeu": "Chrono Trigger",
-    "Console": "Switch 2"
-  },
-  "updated": {
-    "Nom du jeu": "Chrono Trigger",
-    "Console": "Switch 2",
-    "Studio": "Square"
-  }
-}
-```
-
-### Delete Wishlist Game Payload
-
-```json
-{
-  "Nom du jeu": "Chrono Trigger",
-  "Console": "Switch 2"
-}
-```
+- `POST /collections/videogames/wishlist/games`
+- `PUT /collections/videogames/wishlist/games`
+- `DELETE /collections/videogames/wishlist/games`
 
 ## User Administration Routes
 

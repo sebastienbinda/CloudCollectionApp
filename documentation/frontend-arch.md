@@ -39,8 +39,6 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/library/`: public Library counters, public entity search,
   server-side pagination and backend-driven sorting for platforms, studios and
   games.
-- `frontend/src/hooks/wishlist/`: wishlist-specific mutations and transfer
-  actions.
 
 ## Current Entry Points
 
@@ -106,11 +104,6 @@ Use the following domain folders for new or modified hooks:
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
-
-### `hooks/wishlist`
-
-- Own wishlist edit, delete and transfer workflows.
-- Keep wishlist-specific API behavior out of generic app hooks.
 
 ### `services`
 

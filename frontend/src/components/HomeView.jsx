@@ -32,7 +32,6 @@ function HomeView({
   onOpenLibrary,
   onOpenAdminDashboard,
   onLogout,
-  onOpenWishlist,
   onOpenPlatform,
   onSearchQueryChange,
   onSearchSubmit,
@@ -56,7 +55,6 @@ function HomeView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}

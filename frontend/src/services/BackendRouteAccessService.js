@@ -23,11 +23,8 @@ class BackendRouteAccessService {
   static getDefaultActionPermissions(isAuthenticated = false) {
     return {
       canAddGame: false,
-      canAddWishlistGame: false,
       canEditGame: false,
       canDeleteGame: false,
-      canEditWishlistGame: false,
-      canDeleteWishlistGame: false,
       canDownloadOds: false,
       canResetCache: false,
       canSearchUsers: false,
@@ -157,11 +154,8 @@ class BackendRouteAccessService {
     return {
       ...BackendRouteAccessService.getDefaultActionPermissions(this.hasToken()),
       canAddGame: this.canAccess("POST", "/collections/videogames/games"),
-      canAddWishlistGame: this.canAccess("POST", "/collections/videogames/wishlist/games"),
       canEditGame: this.canAccess("PUT", "/collections/videogames/games"),
       canDeleteGame: this.canAccess("DELETE", "/collections/videogames/games"),
-      canEditWishlistGame: this.canAccess("PUT", "/collections/videogames/wishlist/games"),
-      canDeleteWishlistGame: this.canAccess("DELETE", "/collections/videogames/wishlist/games"),
       canDownloadOds: this.canAccess("GET", "/collections/videogames/download"),
       canResetCache: false,
       canSearchUsers: this.canAccess("GET", "/api/users"),

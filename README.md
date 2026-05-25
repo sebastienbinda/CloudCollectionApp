@@ -28,7 +28,7 @@ frontend fournit une interface web de consultation, recherche et import.
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
-- Navigation par plateforme et consultation d'une liste de souhaits.
+- Navigation par plateforme et consultation de la collection personnelle.
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
 - Import de collection ODS personnelle pour les utilisateurs inscrits.
@@ -98,7 +98,6 @@ Domaines de hooks :
 - `hooks/library/` : Bibliotheque publique, recherche, tri et pagination serveur.
 - `hooks/platforms/` : catalogue de plateformes.
 - `hooks/games/` : collection plateforme, tri, filtres et ajout.
-- `hooks/wishlist/` : actions liste de souhaits.
 
 Regles detaillees :
 
@@ -160,6 +159,7 @@ Services locaux :
 
 - application : `http://localhost:8080`
 - Mailpit : `http://localhost:8025`
+- PostgreSQL : `localhost:5432`
 
 Arreter :
 

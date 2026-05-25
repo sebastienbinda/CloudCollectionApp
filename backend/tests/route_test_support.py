@@ -34,13 +34,11 @@ from services.users.user_collection_import_service import UserCollectionImportRe
 
 try:
     from tests.route_test_fakes import (
-        FakeGamesService,
         FakeLibraryService,
         FakeUserCollectionQueryService,
     )
 except ModuleNotFoundError:
     from route_test_fakes import (
-        FakeGamesService,
         FakeLibraryService,
         FakeUserCollectionQueryService,
     )
@@ -357,7 +355,6 @@ class BaseAppRoutesTest(unittest.TestCase):
             None: Le client Flask est prepare.
         """
 
-        self.original_service = app_module.GamesService
         self.original_user_repository = app_module.authentication_controller.user_repository_class
         self.original_user_controller_repository = app_module.user_controller.user_repository_class
         self.original_user_controller_database_configuration = app_module.user_controller.database_configuration_class
@@ -374,7 +371,6 @@ class BaseAppRoutesTest(unittest.TestCase):
         self.original_platform_library_service_factory = app_module.platform_controller.library_service_factory
         self.original_studio_library_service_factory = app_module.studio_controller.library_service_factory
         self.original_game_library_service_factory = app_module.game_controller.library_service_factory
-        app_module.GamesService = FakeGamesService
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.database_configuration_class = FakeDatabaseConfiguration
@@ -413,7 +409,6 @@ class BaseAppRoutesTest(unittest.TestCase):
             None: Les fakes sont retires.
         """
 
-        app_module.GamesService = self.original_service
         app_module.authentication_controller.user_repository_class = self.original_user_repository
         app_module.user_controller.user_repository_class = self.original_user_controller_repository
         app_module.user_controller.database_configuration_class = self.original_user_controller_database_configuration

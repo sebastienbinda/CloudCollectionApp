@@ -10,7 +10,7 @@
  * Auteurs : Codex et Binda Sébastien
  * Licence : Apache 2.0
  *
- * Description : styles des vues detail plateforme, wishlist et ajout de jeu.
+ * Description : styles des vues detail plateforme et ajout de jeu.
  */
 .platformDetailHero {
   align-items: end;
@@ -98,47 +98,12 @@
   margin-top: 0.35rem;
 }
 
-.wishlistHero {
-  min-height: 8.5rem;
-  padding-bottom: 1rem;
-  padding-top: 1rem;
-}
-
-.wishlistHero .platformDetailContent h1 {
-  font-size: 2.25rem;
-  margin-bottom: 0.45rem;
-}
-
 .platformDetailStats small,
 .statCard small {
   color: #64748b;
   display: block;
   font-weight: 700;
   margin-top: 0.3rem;
-}
-
-.statCard .wishlistNextReleaseName {
-  font-size: 1rem;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.wishlistNextReleaseCard {
-  padding-right: 4.4rem;
-  position: relative;
-}
-
-.statCard .wishlistReleaseCountdown {
-  background: #000000;
-  border: 1px solid #000000;
-  border-radius: 6px;
-  color: #fde047;
-  font-size: 0.82rem;
-  font-weight: 800;
-  padding: 0.28rem 0.48rem;
-  position: absolute;
-  right: 0.65rem;
-  top: 0.65rem;
 }
 
 .addGameHeader {
@@ -216,38 +181,6 @@
   gap: 0.4rem;
 }
 
-.addTargetToggle {
-  align-items: center;
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  display: flex;
-  gap: 0.75rem;
-  grid-column: 1 / -1;
-  margin: 0;
-  padding: 0.85rem;
-}
-
-.addTargetToggle legend {
-  color: #334155;
-  font-weight: 800;
-  padding: 0 0.35rem;
-}
-
-.addTargetToggle label {
-  align-items: center;
-  background: #f8fafc;
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  display: flex;
-  gap: 0.45rem;
-  min-height: 2.35rem;
-  padding: 0 0.8rem;
-}
-
-.addTargetToggle input {
-  min-height: auto;
-}
-
 .addGameForm input,
 .addGameForm select {
   min-height: 2.55rem;
@@ -265,100 +198,6 @@
   grid-column: 1 / -1;
 }
 
-.wishlistPurchaseFilter {
-  align-items: center;
-  background: #f8fafc;
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-  margin-bottom: 1rem;
-  padding: 0.85rem;
-}
-
-.wishlistPurchaseFilter label,
-.wishlistPurchaseFilter span {
-  color: #334155;
-  font-weight: 700;
-}
-
-.wishlistPurchaseFilter select {
-  min-width: 17rem;
-}
-
-.wishlistPurchasePendingRow td {
-  background: #fff7ed;
-  border-color: #fed7aa;
-}
-
-.wishlistPurchasePendingRow td:first-child {
-  box-shadow: inset 4px 0 0 #f97316;
-}
-
-.wishlistPlatformColor0 td {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.wishlistPlatformColor0 td:first-child {
-  box-shadow: inset 4px 0 0 #2563eb;
-}
-
-.wishlistPlatformColor1 td {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-}
-
-.wishlistPlatformColor1 td:first-child {
-  box-shadow: inset 4px 0 0 #16a34a;
-}
-
-.wishlistPlatformColor2 td {
-  background: #f5f3ff;
-  border-color: #ddd6fe;
-}
-
-.wishlistPlatformColor2 td:first-child {
-  box-shadow: inset 4px 0 0 #7c3aed;
-}
-
-.wishlistPlatformColor3 td {
-  background: #fdf2f8;
-  border-color: #fbcfe8;
-}
-
-.wishlistPlatformColor3 td:first-child {
-  box-shadow: inset 4px 0 0 #db2777;
-}
-
-.wishlistPlatformColor4 td {
-  background: #ecfeff;
-  border-color: #a5f3fc;
-}
-
-.wishlistPlatformColor4 td:first-child {
-  box-shadow: inset 4px 0 0 #0891b2;
-}
-
-.wishlistPlatformColor5 td {
-  background: #f7fee7;
-  border-color: #d9f99d;
-}
-
-.wishlistPlatformColor5 td:first-child {
-  box-shadow: inset 4px 0 0 #65a30d;
-}
-
-.wishlistPlatformRow.wishlistPurchasePendingRow td {
-  background: #fff7ed;
-  border-color: #fed7aa;
-}
-
-.wishlistPlatformRow.wishlistPurchasePendingRow td:first-child {
-  box-shadow: inset 4px 0 0 #f97316;
-}
-
 .topRatedGameRow td {
   background: #fefce8;
   border-color: #fde68a;
@@ -369,13 +208,6 @@
   font-weight: 700;
 }
 
-.wishlistActionGroup {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.25rem;
-  justify-content: center;
-}
-
 .rowActionGroup {
   align-items: center;
   display: inline-flex;
@@ -383,7 +215,7 @@
   justify-content: center;
 }
 
-.wishlistIconButton {
+.rowIconButton {
   align-items: center;
   display: inline-flex;
   height: 1.75rem;
@@ -400,7 +232,7 @@
   background: #991b1b;
 }
 
-.wishlistActionIcon {
+.rowActionIcon {
   fill: currentColor;
   height: 0.95rem;
   width: 0.95rem;
@@ -417,17 +249,6 @@
   z-index: 50;
 }
 
-.wishlistTransferDialog {
-  background: #ffffff;
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
-  display: grid;
-  gap: 0.9rem;
-  max-width: 30rem;
-  padding: 1.25rem;
-  width: min(100%, 30rem);
-}
 
 .editGameDialog {
   background: #ffffff;
@@ -471,17 +292,6 @@
   justify-content: space-between;
 }
 
-.wishlistTransferDialog h2 {
-  margin-bottom: 0;
-}
-
-.wishlistTransferDialog label {
-  color: #334155;
-  display: grid;
-  font-weight: 700;
-  gap: 0.4rem;
-}
-
 @media (max-width: 860px) {
   .platformDetailHero {
     align-items: stretch;
@@ -504,10 +314,6 @@
   .platformDetailContent h1 {
     font-size: 1.35rem;
     margin-bottom: 0.2rem;
-  }
-
-  .wishlistHero .platformDetailContent h1 {
-    font-size: 1.35rem;
   }
 
   .platformDetailContent .eyebrow {
@@ -556,53 +362,4 @@
     flex-direction: column-reverse;
   }
 
-  .wishlistPurchaseFilter {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .wishlistPurchaseFilter select {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .wishlistNextReleaseCard {
-    display: grid;
-    gap: 0.18rem 0.55rem;
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 0;
-    padding: 0.5rem 0.65rem;
-  }
-
-  .wishlistNextReleaseCard > span:first-child {
-    grid-column: 1 / -1;
-  }
-
-  .statCard .wishlistNextReleaseName {
-    display: -webkit-box;
-    font-size: 0.9rem;
-    line-height: 1.15;
-    margin-top: 0;
-    max-height: 2.1rem;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .wishlistNextReleaseCard small {
-    display: inline;
-    font-size: 0.66rem;
-    line-height: 1.1;
-    margin-top: 0;
-  }
-
-  .statCard .wishlistReleaseCountdown {
-    align-self: center;
-    font-size: 0.72rem;
-    grid-column: 2;
-    grid-row: 2 / span 3;
-    padding: 0.22rem 0.4rem;
-    position: static;
-  }
 }

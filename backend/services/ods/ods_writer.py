@@ -21,8 +21,6 @@ from .ods_game_row_editor import OdsGameRowEditor
 from .ods_integrity_validator import OdsIntegrityValidator
 from .ods_namespaces import OdsNamespaces
 from .ods_sheet_row_replacer import OdsSheetRowReplacer
-from .ods_wishlist_appender import OdsWishlistAppender
-from .ods_wishlist_row_editor import OdsWishlistRowEditor
 from .ods_xml_reader import OdsXmlReader
 class OdsWriter:
     def __init__(self, ods_path: str, archive_reader: OdsArchiveReader, xml_reader: OdsXmlReader):
@@ -41,7 +39,6 @@ class OdsWriter:
         self.namespaces = OdsNamespaces.values
         self.row_editor = OdsGameRowEditor(xml_reader)
         self.row_replacer = OdsSheetRowReplacer()
-        self.wishlist_row_editor = OdsWishlistRowEditor(xml_reader)
         self.integrity_validator = OdsIntegrityValidator()
         self.formula_recalculator = OdsFormulaRecalculator()
     def add_game(self, platform: str, game: dict[str, Any]) -> None:
@@ -53,41 +50,6 @@ class OdsWriter:
             None: Le fichier ODS est modifie sur disque.
         """
         content = self._build_content_with_added_game(platform=platform, game=game)
-        self._write_ods_content(content)
-    def add_wishlist_game(self, game: dict[str, Any]) -> None:
-        """Ajoute un jeu dans l'onglet `Liste de souhaits`.
-        Args:
-            game (dict[str, Any]): Donnees wishlist deja validees et nettoyees.
-        Returns:
-            None: Le fichier ODS est modifie sur disque.
-        """
-        appender = OdsWishlistAppender(
-            self.archive_reader, self.xml_reader, self.wishlist_row_editor, self.row_replacer
-        )
-        self._write_ods_content(self._serialized_content(ET.fromstring(appender.build_content(game))))
-    def delete_wishlist_game(self, game_name: str, console: str) -> None:
-        """Supprime un jeu dans l'onglet `Liste de souhaits`.
-        Args:
-            game_name (str): Nom du jeu a supprimer.
-            console (str): Console associee a la ligne wishlist.
-        Returns:
-            None: Le fichier ODS est modifie sur disque.
-        """
-        content = self._build_content_without_wishlist_game(game_name=game_name, console=console)
-        self._write_ods_content(content)
-    def update_wishlist_game(
-        self,
-        original_game: dict[str, Any],
-        updated_game: dict[str, Any],
-    ) -> None:
-        """Modifie un jeu dans l'onglet `Liste de souhaits`.
-        Args:
-            original_game (dict[str, Any]): Donnees permettant d'identifier la ligne.
-            updated_game (dict[str, Any]): Donnees wishlist validees a ecrire.
-        Returns:
-            None: Le fichier ODS est modifie sur disque.
-        """
-        content = self._build_content_with_updated_wishlist_game(original_game, updated_game)
         self._write_ods_content(content)
     def delete_game(self, platform: str, game: dict[str, Any]) -> None:
         """Vide un jeu dans une plateforme sans modifier les colonnes hors table.
@@ -161,63 +123,6 @@ class OdsWriter:
             expanded_rows.append(ET.Element(row_tag))
         target_row = copy.deepcopy(expanded_rows[target_row_index])
         self.row_editor.set_game_row_values(target_row, template_row, game)
-        expanded_rows[target_row_index] = target_row
-        self.row_replacer.replace(sheet, row_tag, row_insert_position, expanded_rows)
-        return self._serialized_content(root)
-    def _build_content_without_wishlist_game(self, game_name: str, console: str) -> bytes:
-        """Construit un nouveau `content.xml` sans une ligne wishlist.
-        Args:
-            game_name (str): Nom du jeu cible.
-            console (str): Console cible.
-        Returns:
-            bytes: Contenu XML encode en UTF-8 a reinjecter dans l'archive ODS.
-        """
-        root = ET.fromstring(self.archive_reader.read_file("content.xml"))
-        sheet = self.xml_reader.find_sheet(root, "Liste de souhaits")
-        row_tag = f"{{{self.namespaces['table']}}}table-row"
-        repeated_rows_attribute = f"{{{self.namespaces['table']}}}number-rows-repeated"
-        direct_children = list(sheet)
-        row_insert_position = next(
-            (index for index, child in enumerate(direct_children) if child.tag == row_tag),
-            len(direct_children),
-        )
-        expanded_rows = self._expanded_sheet_rows(direct_children, row_tag, repeated_rows_attribute)
-        target_row_index = self.wishlist_row_editor.find_wishlist_row_index(
-            expanded_rows,
-            {"Nom du jeu": game_name, "Console": console},
-        )
-        if target_row_index is None:
-            raise ValueError("Le jeu est introuvable dans la liste de souhaits.")
-        expanded_rows.pop(target_row_index)
-        self.row_replacer.replace(sheet, row_tag, row_insert_position, expanded_rows)
-        return self._serialized_content(root)
-    def _build_content_with_updated_wishlist_game(
-        self,
-        original_game: dict[str, Any],
-        updated_game: dict[str, Any],
-    ) -> bytes:
-        """Construit un nouveau `content.xml` avec une ligne wishlist modifiee.
-        Args:
-            original_game (dict[str, Any]): Donnees de recherche de la ligne cible.
-            updated_game (dict[str, Any]): Donnees de remplacement validees.
-        Returns:
-            bytes: Contenu XML encode en UTF-8 a reinjecter dans l'archive ODS.
-        """
-        root = ET.fromstring(self.archive_reader.read_file("content.xml"))
-        sheet = self.xml_reader.find_sheet(root, "Liste de souhaits")
-        row_tag = f"{{{self.namespaces['table']}}}table-row"
-        repeated_rows_attribute = f"{{{self.namespaces['table']}}}number-rows-repeated"
-        direct_children = list(sheet)
-        row_insert_position = next(
-            (index for index, child in enumerate(direct_children) if child.tag == row_tag),
-            len(direct_children),
-        )
-        expanded_rows = self._expanded_sheet_rows(direct_children, row_tag, repeated_rows_attribute)
-        target_row_index = self.wishlist_row_editor.find_wishlist_row_index(expanded_rows, original_game)
-        if target_row_index is None:
-            raise ValueError("Le jeu est introuvable dans la liste de souhaits.")
-        target_row = copy.deepcopy(expanded_rows[target_row_index])
-        self.wishlist_row_editor.set_wishlist_row_values(target_row, target_row, updated_game)
         expanded_rows[target_row_index] = target_row
         self.row_replacer.replace(sheet, row_tag, row_insert_position, expanded_rows)
         return self._serialized_content(root)

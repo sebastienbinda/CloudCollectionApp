@@ -470,7 +470,7 @@ class OdsReader:
                 sheet_name=platform,
                 engine="odf",
                 header=5,
-                usecols="F:L" if platform == "Liste de souhaits" else "F:M",
+                usecols="F:M",
             )
             dataframe = dataframe.where(pd.notna(dataframe), None)
         except (TypeError, ValueError):

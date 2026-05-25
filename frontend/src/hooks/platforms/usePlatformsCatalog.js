@@ -43,9 +43,7 @@ function usePlatformsCatalog(options) {
         setPlatforms(loadedPlatforms);
 
         const platformFromUrl = AppRouting.getPlatformFromUrl();
-        if (options.currentView === "wishlist") {
-          options.setSelectedPlatform(AppRouting.wishlistSheetName);
-        } else if (platformFromUrl) {
+        if (platformFromUrl) {
           options.setSelectedPlatform(platformFromUrl);
           options.setCurrentView("games");
         } else if (loadedPlatforms.length > 0) {

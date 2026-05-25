@@ -29,7 +29,7 @@ const statusLabels = {
  */
 class TableColumnFormatService {
   /**
-   * Formate une valeur de tableau de jeux ou de wishlist.
+   * Formate une valeur de tableau de jeux.
    *
    * @param {string} column - Nom de colonne a formater.
    * @param {unknown} value - Valeur brute de cellule.

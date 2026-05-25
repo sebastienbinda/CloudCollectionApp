@@ -36,7 +36,6 @@ function LibraryEntityListView({
   onOpenAbout,
   onOpenHome,
   onOpenLibrary,
-  onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
   onLogout,
@@ -53,7 +52,6 @@ function LibraryEntityListView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}

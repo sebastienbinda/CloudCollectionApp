@@ -42,7 +42,6 @@ function LibraryHomeView({
   onOpenLibraryPlatforms,
   onOpenLibraryStudios,
   onOpenLibraryGames,
-  onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
   onLogout,
@@ -65,7 +64,6 @@ function LibraryHomeView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}

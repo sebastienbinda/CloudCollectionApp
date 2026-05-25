@@ -135,6 +135,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         self.assertNotIn("/collections/videogames/column-values", routes_by_path)
         self.assertNotIn("/collections/videogames/add-game-choices", routes_by_path)
         self.assertNotIn("/collections/videogames/platform-image/<path:platform>", routes_by_path)
+        self.assertNotIn("/collections/videogames/wishlist/games", routes_by_path)
 
     def test_download_returns_current_user_raw_file(self):
         """Verifie le telechargement brut du fichier utilisateur.

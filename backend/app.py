@@ -25,14 +25,12 @@ from controllers import (
     StudioController,
     UserCollectionImportController,
     UserController,
-    UserWishListController,
 )
 from services import (
     AuthGuard,
     AuthTokenService,
     BackendLoggingService,
     DatabaseSchemaService,
-    GamesService,
     UserCollectionImportConfiguration,
 )
 
@@ -59,10 +57,6 @@ route_controller = RouteController()
 user_controller = UserController(auth_guard)
 user_collection_import_controller = UserCollectionImportController(auth_guard)
 collection_controller = CollectionController(auth_guard)
-user_wishlist_controller = UserWishListController(
-    auth_guard,
-    games_service_factory=lambda: GamesService(),
-)
 platform_controller = PlatformController()
 studio_controller = StudioController()
 game_controller = GameController()
@@ -73,7 +67,6 @@ route_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
 collection_controller.register_routes(app)
-user_wishlist_controller.register_routes(app)
 platform_controller.register_routes(app)
 studio_controller.register_routes(app)
 game_controller.register_routes(app)

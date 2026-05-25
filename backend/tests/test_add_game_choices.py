@@ -13,12 +13,12 @@
 
 Description:
     Ce module valide la fusion backend des plateformes et suggestions issues
-    de la collection et de la liste de souhaits.
+    de la collection.
 """
 
 import unittest
 
-from services.games import GamesService
+from services.games.add_game_choice_service import AddGameChoiceService
 
 
 class FakeChoiceReader:
@@ -46,18 +46,13 @@ class FakeChoiceReader:
             dict[str, list[str]]: Valeurs par colonne.
         """
 
-        if platform == "Liste de souhaits":
-            return {
-                "Console": [" switch ", "PlayStation5", "Xbox", "nan", "NaT"],
-                "Studio": ["Nintendo", "Square", "Err:510"],
-            }
         if platform == "Playstation 5":
             return {"Studio": ["Sucker Punch", "nintendo", None], "Version": ["PS5", "nan"]}
         return {"Studio": ["nintendo", "Retro", ""], "Version": ["PAL"]}
 
 
-class AddGameChoicesTest(unittest.TestCase):
-    """Tests unitaires des choix fusionnes."""
+class AddGameChoiceServiceTest(unittest.TestCase):
+    """Tests unitaires du service de choix d'ajout."""
 
     def setUp(self):
         """Prepare un service sans acces ODS reel.
@@ -69,8 +64,11 @@ class AddGameChoicesTest(unittest.TestCase):
             None: Le lecteur ODS est remplace par un fake.
         """
 
-        self.service = GamesService.__new__(GamesService)
-        self.service.reader = FakeChoiceReader()
+        self.reader = FakeChoiceReader()
+        self.service = AddGameChoiceService(
+            self.reader.list_platforms,
+            self.reader.list_column_values,
+        )
 
     def test_list_add_game_choices_merges_platforms_case_and_spaces(self):
         """Verifie le dedoublonnage des plateformes fusionnees.
@@ -82,18 +80,16 @@ class AddGameChoicesTest(unittest.TestCase):
             None: Les assertions valident les choix retournes.
         """
 
-        choices = self.service.list_add_game_choices("Switch")
+        choices = self.service.list_choices()
 
-        self.assertEqual(["Playstation 5", "Switch", "Xbox"], choices["platforms"])
-        self.assertEqual(["Playstation 5", "Switch", "Xbox"], choices["values_by_column"]["Plateforme"])
+        self.assertEqual(["Playstation 5", "Switch"], choices["platforms"])
+        self.assertEqual(["Playstation 5", "Switch"], choices["values_by_column"]["Plateforme"])
         self.assertEqual(
-            ["nintendo", "Retro", "Square", "Sucker Punch"],
+            ["nintendo", "Retro", "Sucker Punch"],
             choices["values_by_column"]["Studio"],
         )
         self.assertEqual(["PAL", "PS5"], choices["values_by_column"]["Version"])
         self.assertNotIn("nan", choices["values_by_column"]["Plateforme"])
-        self.assertNotIn("NaT", choices["values_by_column"]["Plateforme"])
-        self.assertNotIn("Err:510", choices["values_by_column"]["Studio"])
 
 
 if __name__ == "__main__":

@@ -13,15 +13,12 @@
 
 Description:
     Cette classe objet fusionne les valeurs distinctes de toutes les plateformes
-    de collection et de la liste de souhaits pour alimenter les champs de saisie.
+    de collection pour alimenter les champs de saisie.
 """
 
 from typing import Any, Optional
 
 from services.formatting import SheetValueFormatter
-
-WISHLIST_SHEET = "Liste de souhaits"
-
 
 class AddGameChoiceService:
     """Construit les choix dedoublonnes, nettoyes et tries du formulaire d'ajout."""
@@ -55,19 +52,11 @@ class AddGameChoiceService:
             self.column_value_provider(collection_platform)
             for collection_platform in collection_platforms
         ]
-        wishlist_values = self.column_value_provider(WISHLIST_SHEET)
-        merged_platforms = self._sort_choices(
-            self._merge_choices(
-                collection_platforms,
-                wishlist_values.get("Console", []),
-                wishlist_values.get("Plateforme", []),
-            )
-        )
+        merged_platforms = self._sort_choices(self._merge_choices(collection_platforms))
         return {
             "platforms": merged_platforms,
             "values_by_column": self._build_values_by_column(
                 collection_values_groups,
-                wishlist_values,
                 merged_platforms,
             ),
         }
@@ -75,33 +64,29 @@ class AddGameChoiceService:
     def _build_values_by_column(
         self,
         collection_values_groups: list[dict[str, list[str]]],
-        wishlist_values: dict[str, list[str]],
         merged_platforms: list[str],
     ) -> dict[str, list[str]]:
         """Construit les valeurs de colonnes fusionnees pour l'ajout.
 
         Args:
             collection_values_groups (list[dict[str, list[str]]]): Valeurs de toutes les plateformes.
-            wishlist_values (dict[str, list[str]]): Valeurs de la liste de souhaits.
             merged_platforms (list[str]): Plateformes et consoles dedoublonnees.
 
         Returns:
             dict[str, list[str]]: Valeurs fusionnees par colonne.
         """
 
-        column_names = set(wishlist_values.keys())
+        column_names = set()
         for values_by_column in collection_values_groups:
             column_names.update(values_by_column.keys())
         merged_values = {}
         for column_name in sorted(column_names):
             merged_values[column_name] = self._sort_choices(self._merge_choices(
                 *[values_by_column.get(column_name, []) for values_by_column in collection_values_groups],
-                wishlist_values.get(column_name, []),
             ))
         merged_values["Plateforme"] = merged_platforms
         merged_values["Studio"] = self._sort_choices(self._merge_choices(
             *[values_by_column.get("Studio", []) for values_by_column in collection_values_groups],
-            wishlist_values.get("Studio", []),
         ))
         return merged_values
 

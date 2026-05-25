@@ -168,51 +168,6 @@ class VideoGamesApi {
   }
 
   /**
-   * Supprime un jeu de la liste de souhaits.
-   *
-   * @param {Object} game - Jeu wishlist identifie par son nom et sa console.
-   * @returns {Promise<Object>} Objet contenant le jeu supprime.
-   */
-  static async deleteWishlistGame(game) {
-    return this.fetchJson(
-      "/collections/videogames/wishlist/games",
-      "Impossible de supprimer le jeu de la liste de souhaits.",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...AuthApi.getAuthorizationHeaders(),
-        },
-        body: JSON.stringify({
-          "Nom du jeu": game["Nom du jeu"],
-          Console: game.Console || game.Plateforme,
-        }),
-      }
-    );
-  }
-
-  /**
-   * Modifie un jeu de la liste de souhaits.
-   *
-   * @param {Object} payload - Donnees contenant jeu original et jeu modifie.
-   * @returns {Promise<Object>} Objet contenant le jeu wishlist modifie.
-   */
-  static async updateWishlistGame(payload) {
-    return this.fetchJson(
-      "/collections/videogames/wishlist/games",
-      "Impossible de modifier le jeu de la liste de souhaits.",
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...AuthApi.getAuthorizationHeaders(),
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-  }
-
-  /**
    * Recherche un jeu par nom dans toutes les plateformes.
    *
    * @param {string} query - Texte recherche dans le nom du jeu.

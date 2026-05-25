@@ -34,7 +34,6 @@ props.
 - `A propos` always remains accessible and opens `/about`.
 - `Bibliotheque` always remains accessible.
 - `Ma collection` requires an active local session and opens `/collection`.
-- `Liste de souhaits` requires an active local session.
 - Inaccessible entries must use `disabled`.
 - The session menu remains managed by `AuthStatusMenu`.
 - The Library entry opens `/bibliotheque` and must remain available for

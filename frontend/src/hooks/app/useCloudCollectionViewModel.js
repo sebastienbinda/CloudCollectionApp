@@ -24,7 +24,6 @@ import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryStudios from "../library/useLibraryStudios";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
-import useWishlistPage from "../wishlist/useWishlistPage";
 import useOdsDownload from "../useOdsDownload";
 import useSessionState from "./useSessionState";
 
@@ -53,7 +52,6 @@ function useCloudCollectionViewModel() {
     actionPermissions: session.actionPermissions,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
-    openWishlist: navigation.openWishlist,
     openPlatform: navigation.openPlatform,
     platforms: [],
   });
@@ -88,10 +86,6 @@ function useCloudCollectionViewModel() {
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
     setError,
-  });
-  const wishlistPage = useWishlistPage({
-    reloadOds: refresh.reloadOds,
-    reloadGames: refresh.reloadGames,
   });
   const libraryEntities = useLibraryEntities({
     enabled: navigation.currentView === "library",
@@ -145,8 +139,6 @@ function useCloudCollectionViewModel() {
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,
       selectedPlatformStats: homePage.selectedPlatformStats,
-      editingWishlistGame: wishlistPage.editingWishlistGame,
-      isSavingWishlistGame: wishlistPage.isSavingWishlistGame,
       downloadError: odsDownload.downloadError,
       isDownloadingOds: odsDownload.isDownloadingOds,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
@@ -161,7 +153,6 @@ function useCloudCollectionViewModel() {
       openLibraryGames: navigation.openLibraryGames,
       openUsersPage: navigation.openUsersPage,
       openAbout: navigation.openAbout,
-      openWishlist: navigation.openWishlist,
       openPlatform: navigation.openPlatform,
       setHomeSearchQuery: homePage.setHomeSearchQuery,
       logout: session.logout,
@@ -175,11 +166,6 @@ function useCloudCollectionViewModel() {
       goHome: navigation.goHome,
       submitNewGame: addGamePage.submitNewGame,
       updateGameFormValue: addGamePage.updateGameFormValue,
-      addWishlistGameToPlatform: wishlistPage.addWishlistGameToPlatform,
-      deleteWishlistGame: wishlistPage.deleteWishlistGame,
-      openEditWishlistGame: wishlistPage.openEditWishlistGame,
-      saveEditedWishlistGame: wishlistPage.saveEditedWishlistGame,
-      cancelEditWishlistGame: wishlistPage.cancelEditWishlistGame,
       libraryEntities,
       libraryPlatforms,
       libraryStudios,

@@ -23,10 +23,8 @@ from services.ods import (
     OdsWriter,
     OdsXmlReader,
 )
-from services.validation import GamePayloadValidator, WishlistPayloadValidator
+from services.validation import GamePayloadValidator
 from .add_game_choice_service import AddGameChoiceService
-
-WISHLIST_SHEET = "Liste de souhaits"
 
 
 class GamesService:
@@ -50,7 +48,6 @@ class GamesService:
         self.reader = OdsReader(self.ods_path, self.cache, self.xml_reader, self.image_reader)
         self.writer = OdsWriter(self.ods_path, self.archive_reader, self.xml_reader)
         self.game_validator = GamePayloadValidator()
-        self.wishlist_validator = WishlistPayloadValidator()
 
     def search(self, platform: str, query: str = "") -> list[dict]:
         """Recherche les jeux d'une plateforme.
@@ -64,9 +61,6 @@ class GamesService:
         """
 
         dataframe = self.reader.read_games_dataframe(platform)
-        if platform == WISHLIST_SHEET:
-            return self._search_raw_dataframe(dataframe, query)
-
         items = [
             VideoGame.from_sheet_row(record)
             for record in dataframe.to_dict(orient="records")
@@ -81,34 +75,6 @@ class GamesService:
                 in " ".join(str(value).lower() for value in item.to_dict().values())
             ]
         return [item.to_dict() for item in items]
-
-    def _search_raw_dataframe(self, dataframe, query: str = "") -> list[dict]:
-        """Recherche dans un DataFrame sans conversion vers le modele `VideoGame`.
-
-        Args:
-            dataframe (pandas.DataFrame): Donnees brutes de l'onglet.
-            query (str): Texte optionnel filtre sur toutes les valeurs.
-
-        Returns:
-            list[dict]: Lignes serialisees pour l'API.
-        """
-
-        records = [
-            {
-                str(column): SheetValueFormatter.serialize(value)
-                for column, value in record.items()
-            }
-            for record in dataframe.to_dict(orient="records")
-        ]
-        normalized_query = query.strip().lower()
-        if not normalized_query:
-            return records
-        return [
-            record
-            for record in records
-            if normalized_query
-            in " ".join(str(value).lower() for value in record.values())
-        ]
 
     def search_by_game_name(self, query: str, limit: int = 50) -> list[dict]:
         """Recherche un nom de jeu dans toutes les plateformes.
@@ -156,80 +122,6 @@ class GamesService:
         self.writer.add_game(platform=platform, game=game)
         self.reset_cache()
         return {"Plateforme": platform, **game}
-
-    def add_wishlist_game(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Ajoute un jeu dans l'onglet `Liste de souhaits` apres validation.
-
-        Args:
-            payload (dict[str, Any]): Donnees du formulaire wishlist.
-
-        Returns:
-            dict[str, Any]: Jeu wishlist ajoute.
-        """
-
-        game = self.wishlist_validator.validate_add_payload(payload)
-        self.writer.add_wishlist_game(game)
-        self.reset_cache()
-        return game
-
-    def delete_wishlist_game(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Supprime un jeu de l'onglet `Liste de souhaits`.
-
-        Args:
-            payload (dict[str, Any]): Donnees contenant `Nom du jeu` et `Console`.
-
-        Returns:
-            dict[str, Any]: Jeu supprime, identifie par son nom et sa console.
-        """
-
-        game_name = SheetValueFormatter.clean_text(payload.get("Nom du jeu"))
-        console = SheetValueFormatter.clean_text(payload.get("Console"))
-        if not game_name:
-            raise ValueError("Le nom du jeu est obligatoire.")
-        if not console:
-            raise ValueError("La console est obligatoire.")
-
-        self.writer.delete_wishlist_game(game_name=game_name, console=console)
-        self.reset_cache()
-        return {"Nom du jeu": game_name, "Console": console}
-
-    def update_wishlist_game(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Modifie un jeu existant dans la liste de souhaits apres validation.
-
-        Args:
-            payload (dict[str, Any]): Donnees contenant `original` et `updated`.
-
-        Returns:
-            dict[str, Any]: Jeu wishlist modifie.
-        """
-
-        original = payload.get("original") or {}
-        updated = payload.get("updated") or {}
-        if not isinstance(original, dict) or not isinstance(updated, dict):
-            raise ValueError("Les donnees de modification sont invalides.")
-        original_game = self._build_wishlist_identifier(original)
-        updated_game = self.wishlist_validator.validate_update_payload(updated)
-        self.writer.update_wishlist_game(original_game=original_game, updated_game=updated_game)
-        self.reset_cache()
-        return updated_game
-
-    def _build_wishlist_identifier(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Construit l'identifiant de ligne wishlist.
-
-        Args:
-            payload (dict[str, Any]): Donnees originales de la ligne wishlist.
-
-        Returns:
-            dict[str, Any]: Identifiant contenant nom et console.
-        """
-
-        game_name = SheetValueFormatter.clean_text(payload.get("Nom du jeu"))
-        console = SheetValueFormatter.clean_text(payload.get("Console") or payload.get("Plateforme"))
-        if not game_name:
-            raise ValueError("Le nom du jeu original est obligatoire.")
-        if not console:
-            raise ValueError("La plateforme originale est obligatoire.")
-        return {"Nom du jeu": game_name, "Console": console}
 
     def delete_game(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Supprime un jeu d'une plateforme en vidant uniquement ses colonnes de jeu.
