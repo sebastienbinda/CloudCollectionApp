@@ -84,6 +84,8 @@ Use one controller per functional area when possible, for example:
 - `UserGamesCollectionController` for platform game collection routes;
 - `UserWishListController` for wishlist routes;
 - `PlatformController` for platform metadata and images.
+- `PlatformController`, `StudioController` and `GameController` for public
+  Bibliotheque reads of global platforms, studios and games.
 
 ### Services
 

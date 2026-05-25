@@ -267,17 +267,46 @@ class OdsCollectionImportReader:
         if isinstance(value, date):
             return value
 
-        parsed_value = pd.to_datetime(value, errors="coerce")
-        if pd.isna(parsed_value):
-            self.logger.warning(
-                "Date de sortie invalide ignoree: plateforme=%s, jeu=%s, ligne=%s, valeur=%s",
-                platform_name,
-                game_name,
-                row_number,
-                value,
-            )
+        try:
+            parsed_value = pd.to_datetime(value, errors="coerce")
+        except (OverflowError, ValueError, TypeError):
+            self._warn_invalid_release_date(platform_name, game_name, row_number, value)
             return None
-        return parsed_value.date()
+        if pd.isna(parsed_value):
+            self._warn_invalid_release_date(platform_name, game_name, row_number, value)
+            return None
+        try:
+            return parsed_value.date()
+        except (OverflowError, ValueError, AttributeError):
+            self._warn_invalid_release_date(platform_name, game_name, row_number, value)
+            return None
+
+    def _warn_invalid_release_date(
+        self,
+        platform_name: str,
+        game_name: str,
+        row_number: int,
+        value: Any,
+    ) -> None:
+        """Journalise une date de sortie ignoree pendant l'import.
+
+        Args:
+            platform_name (str): Nom de l'onglet plateforme.
+            game_name (str): Nom du jeu lu.
+            row_number (int): Numero de ligne logique dans le DataFrame.
+            value (Any): Valeur brute de date de sortie.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.logger.warning(
+            "Date de sortie invalide ignoree: plateforme=%s, jeu=%s, ligne=%s, valeur=%s",
+            platform_name,
+            game_name,
+            row_number,
+            value,
+        )
 
     def _build_studios(
         self,

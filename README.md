@@ -238,6 +238,7 @@ Documents fonctionnels et techniques principaux :
 - `documentation/backend-arch.md` : architecture Flask/backend.
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.
+- `documentation/bibliotheque.md` : consultation publique du referentiel commun.
 - `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
 - `documentation/register.md` : inscription utilisateur et validation email.
 - `documentation/users.md` : administration des utilisateurs.

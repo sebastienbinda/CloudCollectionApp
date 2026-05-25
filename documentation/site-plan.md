@@ -15,6 +15,9 @@
 - `/bibliotheque/jeux`: public paginated game reference list.
 - `/`: redirects to `/about` without a token and to `/accueil` with a token.
 
+The Bibliotheque routes must stay public and read-only. They consult the global
+reference database and must not depend on connected-user collection status.
+
 ## Authenticated Routes
 
 - `/accueil`: authenticated home page for users who already have a collection.

@@ -282,6 +282,41 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         self.assertIsNone(import_data.games[0].release_date)
         self.assertIn("Date de sortie invalide", logs.output[0])
 
+    def test_read_warns_and_keeps_out_of_range_release_date_as_none(self):
+        """Verifie qu'une date hors plage PostgreSQL/Python devient `None`.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'avertissement et la date nulle.
+        """
+
+        logger = logging.getLogger("tests.ods_import_reader.out_of_range_date")
+        service = self._service_for_reader(
+            FakeOdsReader(
+                ["Switch"],
+                {
+                    "Switch": self._dataframe(
+                        [
+                            {
+                                "Nom du jeu": "Zelda",
+                                "Studio": "Nintendo",
+                                "Date de sortie": "48113-11-21 00:00:01",
+                            }
+                        ]
+                    )
+                },
+            ),
+            logger=logger,
+        )
+
+        with self.assertLogs(logger, level="WARNING") as logs:
+            import_data = service.read("/tmp/out-of-range-date.ods")
+
+        self.assertIsNone(import_data.games[0].release_date)
+        self.assertIn("Date de sortie invalide", logs.output[0])
+
     def test_read_ignores_duplicate_platforms_with_warning(self):
         """Verifie la deduplication des plateformes du fichier.
 

@@ -114,6 +114,126 @@ Returns the backend route catalog, including:
 
 This route is protected.
 
+## Public Library Routes
+
+The routes in this section are public and read-only. They expose only global
+reference data from platforms, studios and games. They must not expose connected
+user data, imported collection file paths or `t_user_collection` associations.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/library/entities` | Counts global reference platforms, studios and games. |
+| `GET` | `/api/library/platforms` | Lists global reference platforms. |
+| `GET` | `/api/library/studios` | Lists global reference studios. |
+| `GET` | `/api/library/games` | Lists global reference games. |
+
+List endpoints support these query parameters:
+
+- `name`: optional name filter, matched without case or accent sensitivity;
+- `page`: zero-based page index, default `0`;
+- `size`: page size, default `500`, maximum `500`;
+- `sort`: repeatable `column,direction` rule, where direction is `asc` or
+  `desc`.
+
+Allowed sort columns:
+
+| Route | Columns |
+| --- | --- |
+| `/api/library/platforms` | `name`, `release_date`, `manufacturer` |
+| `/api/library/studios` | `name`, `country`, `creation_date` |
+| `/api/library/games` | `name`, `release_date`, `developer`, `platform` |
+
+Invalid page, size or sort values fall back to the default page, default size or
+`name,asc` sort.
+
+### Library Entity Counts Response
+
+```json
+{
+  "platforms": 12,
+  "studios": 34,
+  "games": 56
+}
+```
+
+### Library Platform List Response
+
+```json
+{
+  "platforms": [
+    {
+      "id": 1,
+      "name": "Switch",
+      "release_date": "2017-03-03",
+      "manufacturer": "Nintendo",
+      "description": {},
+      "status": "",
+      "total_games": 42
+    }
+  ],
+  "page": {
+    "page": 0,
+    "size": 500,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### Library Studio List Response
+
+```json
+{
+  "studios": [
+    {
+      "id": 1,
+      "name": "Nintendo",
+      "country": "Japon",
+      "city": "Kyoto",
+      "creation_date": "1889-09-23",
+      "status": "",
+      "editor_total_games": 12,
+      "developer_total_games": 34
+    }
+  ],
+  "page": {
+    "page": 0,
+    "size": 500,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### Library Game List Response
+
+```json
+{
+  "games": [
+    {
+      "id": 1,
+      "name": "The Legend of Zelda",
+      "release_date": "1986-02-21",
+      "developer": "Nintendo",
+      "editor": "Nintendo",
+      "status": "",
+      "platform": "NES"
+    }
+  ],
+  "page": {
+    "page": 0,
+    "size": 500,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Library errors use:
+
+- `503` when database configuration is missing or invalid;
+- `500` when a read fails unexpectedly.
+
 ## Game Collection Routes
 
 All routes in this section require a Bearer token with at least profile `USER`.
