@@ -72,10 +72,10 @@ Use the following domain folders for new or modified hooks:
 - Own cross-page collection refresh and ODS cache reset behavior.
 - Own the connected-user collection onboarding workflow.
 - Call `GET /api/users/me/collection` after sign-in to decide whether the user
-  can continue to `/accueil` or must visit `/collection/import`.
+  can continue to `/collection` or must visit `/collection/import`.
 - Call `POST /api/users/import` with `FormData` from the import view and let the
   backend own all import validation and persistence decisions.
-- Redirect to `/accueil` only after a successful import or when the status route
+- Redirect to `/collection` only after a successful import or when the status route
   confirms `has_collection: true`.
 
 ### `hooks/home`

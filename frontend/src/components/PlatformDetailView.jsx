@@ -80,7 +80,7 @@ function PlatformDetailView({
   return (
     <main className="container">
       <button className="backButton" type="button" onClick={onBack}>
-        Accueil
+        Ma collection
       </button>
       <section
         className={`platformDetailHero${

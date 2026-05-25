@@ -102,7 +102,7 @@ class AppRouting {
     if (!AppRouting.hasStoredAccessToken()) {
       return "about";
     }
-    if (window.location.pathname === "/accueil") {
+    if (window.location.pathname === "/collection") {
       return "home";
     }
     if (window.location.pathname === "/add-game") {

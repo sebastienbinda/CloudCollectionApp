@@ -186,9 +186,9 @@ tests, documentation, or scripts.
 - The frontend must avoid calling protected endpoints when no token is stored.
 - Public unauthenticated frontend pages are `AboutView` on `/about` and the
   Library consultation pages under `/bibliotheque`.
-- The authenticated home page is `HomeView` on `/accueil`.
+- The authenticated Ma collection page is `HomeView` on `/collection`.
 - The `/` route functionally redirects to `/about` without a token and to
-  `/accueil` with a token.
+  `/collection` with a token.
 - The session indicator in the main menu must stay consistent with the locally
   stored token, even if route discovery temporarily fails after a local restart.
   Action buttons must remain disabled until the backend route catalog confirms

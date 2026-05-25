@@ -123,7 +123,7 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
   return (
     <main className="container authContainer">
       <button className="backButton" type="button" onClick={onBack}>
-        Accueil
+        Ma collection
       </button>
       <section className="authHeader">
         <p className="eyebrow">Acces protege</p>

@@ -10,7 +10,7 @@
  * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
  * Licence : Apache 2.0
  *
- * Description : menu principal React partage par les pages About et Accueil.
+ * Description : menu principal React partage par les pages A propos et Ma collection.
  */
 import { useEffect, useRef, useState } from "react";
 import AuthStatusMenu from "./AuthStatusMenu";
@@ -19,26 +19,22 @@ import AuthStatusMenu from "./AuthStatusMenu";
  * Affiche le menu principal de navigation applicative.
  *
  * @param {Object} props - Etat d'authentification, plateformes et callbacks de navigation.
- * @returns {import("react").JSX.Element} Menu principal avec acces About, Accueil et session.
+ * @returns {import("react").JSX.Element} Menu principal avec acces A propos, Ma collection et session.
  */
 function MainMenu({
   isAuthenticated,
   username,
   profile,
-  platforms,
-  selectedPlatform,
   onOpenAbout,
   onOpenHome,
   onOpenLibrary,
   onOpenWishlist,
-  onOpenPlatform,
   onOpenAdminDashboard,
   onLogout,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const closeMenuTimeoutRef = useRef(null);
-  const firstPlatform = selectedPlatform || platforms[0] || "";
 
   useEffect(() => {
     return () => {
@@ -133,7 +129,7 @@ function MainMenu({
             type="button"
             onClick={() => runMenuAction(onOpenAbout)}
           >
-            About
+            A propos
           </button>
           <button
             className="secondaryButton"
@@ -141,7 +137,7 @@ function MainMenu({
             onClick={() => runMenuAction(onOpenHome)}
             disabled={!isAuthenticated}
           >
-            Accueil
+            Ma collection
           </button>
           <button
             className="secondaryButton"
@@ -157,14 +153,6 @@ function MainMenu({
             disabled={!isAuthenticated}
           >
             Liste de souhaits
-          </button>
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(() => onOpenPlatform(firstPlatform))}
-            disabled={!isAuthenticated || !firstPlatform}
-          >
-            Voir les jeux
           </button>
         </div>
       </div>

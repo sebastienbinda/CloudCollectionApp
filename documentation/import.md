@@ -13,12 +13,12 @@ database structure in `documentation/database.md`, and frontend navigation in
 - A connected `USER` without collection must be redirected to
   `/collection/import` after sign-in.
 - A connected user with `t_user.collection_file_path` already set must continue
-  to `/accueil`.
+  to `/collection`.
 - The frontend must call `GET /api/users/me/collection` to decide between those
   two paths.
 - The import page only collects the ODS file and displays interaction state.
   Validation, storage, deduplication and persistence belong to the backend.
-- After a successful import, the frontend must redirect to `/accueil`.
+- After a successful import, the frontend must redirect to `/collection`.
 
 ## Backend API Contract
 

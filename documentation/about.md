@@ -4,7 +4,7 @@
 
 - The About page is the application's public unauthenticated page.
 - It is rendered by `frontend/src/components/AboutView.jsx`.
-- Its route is `/about`; the authenticated home page remains `/accueil`.
+- Its route is `/about`; the authenticated Ma collection page is `/collection`.
 - It must not call a protected backend endpoint without a token.
 - It uses the static image `/about-home-image.jpg`, extracted from the
   `Accueil` sheet of the `collection.ods` file.

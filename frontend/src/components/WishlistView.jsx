@@ -317,7 +317,7 @@ class WishlistView extends Component {
     return (
       <main className="container">
         <button className="backButton" type="button" onClick={onBack}>
-          Accueil
+          Ma collection
         </button>
         <section className="platformDetailHero wishlistHero">
           <div className="platformDetailContent">

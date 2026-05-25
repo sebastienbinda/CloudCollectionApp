@@ -112,7 +112,7 @@ function UserCollectionOnboardingView({
           <article>
             <span>3</span>
             <h2>Consulter</h2>
-            <p>Apres succes, l'accueil de votre collection s'ouvre automatiquement.</p>
+            <p>Apres succes, Ma collection s'ouvre automatiquement.</p>
           </article>
         </div>
 
