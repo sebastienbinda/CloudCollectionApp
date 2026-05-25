@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 class FakeGamesService:
-    """Service JeuxVideo factice."""
+    """Service VideoGames factice."""
 
     def list_platforms(self):
         """Retourne les plateformes.
@@ -51,7 +51,7 @@ class FakeGamesService:
             tuple[str, str]: Chemin et nom du fichier.
         """
 
-        return str(Path(__file__)), "JeuxVideo-test.ods"
+        return str(Path(__file__)), "VideoGames-test.ods"
 
     def search(self, platform, query=""):
         """Recherche les jeux d'une plateforme.

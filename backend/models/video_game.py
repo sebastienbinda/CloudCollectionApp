@@ -6,7 +6,8 @@
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
 # Date de creation : 2026-05-03
-# Auteurs : Codex et Binda Sébastien
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
 #
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -14,7 +15,7 @@ from typing import Any, Optional, Union
 
 
 @dataclass
-class JeuVideo:
+class VideoGame:
     """Represente une ligne de jeu video normalisee depuis le fichier ODS.
 
     Attributes:
@@ -38,14 +39,14 @@ class JeuVideo:
     version: Optional[str]
 
     @classmethod
-    def from_sheet_row(cls, row: dict[str, Any]) -> "JeuVideo":
-        """Construit un objet `JeuVideo` a partir d'une ligne ODS.
+    def from_sheet_row(cls, row: dict[str, Any]) -> "VideoGame":
+        """Construit un objet `VideoGame` a partir d'une ligne ODS.
 
         Args:
             row (dict[str, Any]): Ligne issue de pandas ou du parseur XML, indexee par nom de colonne.
 
         Returns:
-            JeuVideo: Instance normalisee avec les variantes d'apostrophes harmonisees.
+            VideoGame: Instance normalisee avec les variantes d'apostrophes harmonisees.
         """
 
         return cls(

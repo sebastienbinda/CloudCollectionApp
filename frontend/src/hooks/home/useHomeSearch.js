@@ -13,7 +13,7 @@
  * Description : hook React de recherche globale depuis l'accueil.
  */
 import { useEffect, useState } from "react";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 
 /**
  * Gere la recherche de jeux par nom depuis la page d'accueil.
@@ -32,7 +32,7 @@ function useHomeSearch(isAuthenticated) {
     try {
       setIsSearchingGames(true);
       setHomeSearchError("");
-      const data = await JeuxVideoApi.searchGamesByName(query);
+      const data = await VideoGamesApi.searchGamesByName(query);
       setHomeSearchResults(Array.isArray(data.items) ? data.items : []);
     } catch (e) {
       setHomeSearchError("Impossible de rechercher dans la collection.");

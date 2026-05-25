@@ -45,25 +45,25 @@ class UserWishListController:
         """
 
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/wishlist/games",
-            endpoint="delete_jeux_video_wishlist_game",
-            view_func=self.auth_guard.require_token(self.delete_jeux_video_wishlist_game),
+            "/collections/videogames/wishlist/games",
+            endpoint="delete_video_games_wishlist_game",
+            view_func=self.auth_guard.require_token(self.delete_video_games_wishlist_game),
             methods=["DELETE"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/wishlist/games",
-            endpoint="add_jeux_video_wishlist_game",
-            view_func=self.auth_guard.require_token(self.add_jeux_video_wishlist_game),
+            "/collections/videogames/wishlist/games",
+            endpoint="add_video_games_wishlist_game",
+            view_func=self.auth_guard.require_token(self.add_video_games_wishlist_game),
             methods=["POST"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/wishlist/games",
-            endpoint="update_jeux_video_wishlist_game",
-            view_func=self.auth_guard.require_token(self.update_jeux_video_wishlist_game),
+            "/collections/videogames/wishlist/games",
+            endpoint="update_video_games_wishlist_game",
+            view_func=self.auth_guard.require_token(self.update_video_games_wishlist_game),
             methods=["PUT"],
         )
 
-    def delete_jeux_video_wishlist_game(self):
+    def delete_video_games_wishlist_game(self):
         """Supprime un jeu dans l'onglet ODS `Liste de souhaits`.
 
         Args:
@@ -76,7 +76,7 @@ class UserWishListController:
         payload = request.get_json(silent=True) or {}
         try:
             item = self._create_games_service().delete_wishlist_game(payload)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
+            return jsonify({"type": CollectionTypes.VideoGames.value, "item": item})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:
@@ -84,7 +84,7 @@ class UserWishListController:
         except Exception as exc:
             return jsonify({"error": f"Unable to update ODS file: {exc}"}), 500
 
-    def add_jeux_video_wishlist_game(self):
+    def add_video_games_wishlist_game(self):
         """Ajoute un jeu dans l'onglet ODS `Liste de souhaits`.
 
         Args:
@@ -97,7 +97,7 @@ class UserWishListController:
         payload = request.get_json(silent=True) or {}
         try:
             item = self._create_games_service().add_wishlist_game(payload)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item}), 201
+            return jsonify({"type": CollectionTypes.VideoGames.value, "item": item}), 201
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:
@@ -105,7 +105,7 @@ class UserWishListController:
         except Exception as exc:
             return jsonify({"error": f"Unable to update ODS file: {exc}"}), 500
 
-    def update_jeux_video_wishlist_game(self):
+    def update_video_games_wishlist_game(self):
         """Modifie un jeu dans l'onglet ODS `Liste de souhaits`.
 
         Args:
@@ -118,7 +118,7 @@ class UserWishListController:
         payload = request.get_json(silent=True) or {}
         try:
             item = self._create_games_service().update_wishlist_game(payload)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
+            return jsonify({"type": CollectionTypes.VideoGames.value, "item": item})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:

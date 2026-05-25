@@ -118,7 +118,7 @@ class OdsReaderFallbackTest(unittest.TestCase):
                 stats = self.reader.get_home_stats()
 
         image_url = stats["platforms"][0]["image_url"]
-        self.assertEqual("/collections/JeuxVideo/platform-image/Switch?v=123456-789", image_url)
+        self.assertEqual("/collections/videogames/platform-image/Switch?v=123456-789", image_url)
 
     def test_home_title_can_be_configured_from_environment(self):
         """Verifie la configuration du titre d'accueil.

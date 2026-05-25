@@ -13,7 +13,7 @@
  * Description : hook objet de telechargement du fichier ODS protege.
  */
 import { useState } from "react";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import VideoGamesApi from "../services/VideoGamesApi";
 
 /**
  * Gere le telechargement du fichier ODS depuis le frontend.
@@ -34,7 +34,7 @@ function useOdsDownload() {
     setDownloadError("");
     try {
       setIsDownloadingOds(true);
-      await JeuxVideoApi.downloadOdsFile();
+      await VideoGamesApi.downloadOdsFile();
     } catch (error) {
       setDownloadError(error.message || "Impossible de telecharger le fichier de collection.");
     } finally {

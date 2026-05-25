@@ -11,7 +11,7 @@
 import os
 from typing import Any, Optional
 
-from models import JeuVideo
+from models import VideoGame
 from services.formatting import SheetValueFormatter
 from services.ods import (
     OdsArchiveReader,
@@ -68,7 +68,7 @@ class GamesService:
             return self._search_raw_dataframe(dataframe, query)
 
         items = [
-            JeuVideo.from_sheet_row(record)
+            VideoGame.from_sheet_row(record)
             for record in dataframe.to_dict(orient="records")
         ]
 
@@ -83,7 +83,7 @@ class GamesService:
         return [item.to_dict() for item in items]
 
     def _search_raw_dataframe(self, dataframe, query: str = "") -> list[dict]:
-        """Recherche dans un DataFrame sans conversion vers le modele `JeuVideo`.
+        """Recherche dans un DataFrame sans conversion vers le modele `VideoGame`.
 
         Args:
             dataframe (pandas.DataFrame): Donnees brutes de l'onglet.

@@ -240,18 +240,18 @@ All routes in this section require a Bearer token with at least profile `USER`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `GET` | `/collections/JeuxVideo/platforms` | Lists ODS platform sheets. |
-| `GET` | `/collections/JeuxVideo/home` | Returns dashboard statistics from `Accueil`. |
-| `GET` | `/collections/JeuxVideo/search?platform=Switch&q=mario` | Lists or filters games for one platform. |
-| `GET` | `/collections/JeuxVideo/game-search?q=mario` | Searches games by name across all platforms. |
-| `GET` | `/collections/JeuxVideo/column-values?platform=Switch` | Lists distinct values by column for filtering. |
-| `GET` | `/collections/JeuxVideo/add-game-choices?platform=Switch` | Returns merged choices for the add-game form. |
-| `GET` | `/collections/JeuxVideo/platform-image/Switch` | Returns the embedded platform image. |
-| `POST` | `/collections/JeuxVideo/games` | Adds a game to a platform sheet. |
-| `PUT` | `/collections/JeuxVideo/games` | Updates a game in a platform sheet. |
-| `DELETE` | `/collections/JeuxVideo/games` | Deletes a game from a platform sheet. |
-| `POST` | `/collections/JeuxVideo/cache/reset` | Clears the backend ODS cache. |
-| `GET` | `/collections/JeuxVideo/ods/download` | Downloads the ODS file. |
+| `GET` | `/collections/videogames/platforms` | Lists ODS platform sheets. |
+| `GET` | `/collections/videogames/home` | Returns dashboard statistics from `Accueil`. |
+| `GET` | `/collections/videogames/search?platform=Switch&q=mario` | Lists or filters games for one platform. |
+| `GET` | `/collections/videogames/games/search?q=mario` | Searches games by name across all platforms. |
+| `GET` | `/collections/videogames/column-values?platform=Switch` | Lists distinct values by column for filtering. |
+| `GET` | `/collections/videogames/add-game-choices?platform=Switch` | Returns merged choices for the add-game form. |
+| `GET` | `/collections/videogames/platform-image/Switch` | Returns the embedded platform image. |
+| `POST` | `/collections/videogames/games` | Adds a game to a platform sheet. |
+| `PUT` | `/collections/videogames/games` | Updates a game in a platform sheet. |
+| `DELETE` | `/collections/videogames/games` | Deletes a game from a platform sheet. |
+| `POST` | `/collections/videogames/cache/reset` | Clears the backend ODS cache. |
+| `GET` | `/collections/videogames/download` | Downloads the ODS file. |
 
 ### Add Game Payload
 
@@ -298,9 +298,9 @@ All routes in this section require a Bearer token with at least profile `USER`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `POST` | `/collections/JeuxVideo/wishlist/games` | Adds a game to the wishlist. |
-| `PUT` | `/collections/JeuxVideo/wishlist/games` | Updates a wishlist game. |
-| `DELETE` | `/collections/JeuxVideo/wishlist/games` | Deletes a wishlist game. |
+| `POST` | `/collections/videogames/wishlist/games` | Adds a game to the wishlist. |
+| `PUT` | `/collections/videogames/wishlist/games` | Updates a wishlist game. |
+| `DELETE` | `/collections/videogames/wishlist/games` | Deletes a wishlist game. |
 
 ### Add Wishlist Game Payload
 

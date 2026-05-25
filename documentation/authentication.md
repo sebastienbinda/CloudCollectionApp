@@ -177,8 +177,8 @@ tests, documentation, or scripts.
 
 - The token is stored in `localStorage` under `cloudCollectionAccessToken`.
 - Local expiration is stored under `cloudCollectionAccessTokenExpiresAt`.
-- All protected backend calls must go through `JeuxVideoApi` or reuse
-  `JeuxVideoApi.getAuthorizationHeaders()`.
+- All protected backend calls must go through `VideoGamesApi` or reuse
+  `VideoGamesApi.getAuthorizationHeaders()`.
 - Protected media resources used by CSS backgrounds or image tags must first be
   fetched with an authenticated `fetch` request, then displayed with a local
   object URL. Direct `url("/protected-route")` references do not send Bearer

@@ -13,7 +13,7 @@
  * Description : hook de gestion des modifications des jeux de la liste de souhaits.
  */
 import { useState } from "react";
-import JeuxVideoApi from "../services/JeuxVideoApi";
+import VideoGamesApi from "../services/VideoGamesApi";
 
 /**
  * Gere l'edition des jeux de la liste de souhaits.
@@ -52,7 +52,7 @@ function useWishlistGameMutations(reloadOds, reloadGames) {
   const saveEditedWishlistGame = async (originalGame, updatedGame) => {
     try {
       setIsSavingWishlistGame(true);
-      const data = await JeuxVideoApi.updateWishlistGame({
+      const data = await VideoGamesApi.updateWishlistGame({
         original: originalGame,
         updated: updatedGame,
       });

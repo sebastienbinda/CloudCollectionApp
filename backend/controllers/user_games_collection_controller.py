@@ -15,20 +15,12 @@ from functools import wraps
 
 from flask import Flask, jsonify, request, send_file
 
-from models import CollectionTypes, Film
+from models import CollectionTypes
 from services import AuthGuard, GamesService
 
 
 class UserGamesCollectionController:
     """Enregistre les routes HTTP de consultation et gestion de collection jeux video."""
-
-    COLLECTION_ITEMS = {
-        CollectionTypes.Films.value: [
-            Film(id=1, name="Interstellar"),
-            Film(id=2, name="Inception"),
-            Film(id=3, name="Le Seigneur des Anneaux"),
-        ],
-    }
 
     def __init__(self, auth_guard: AuthGuard, games_service_factory=GamesService):
         """Initialise le controleur de collection jeux video.
@@ -55,92 +47,68 @@ class UserGamesCollectionController:
         """
 
         flask_app.add_url_rule(
-            "/collections/<collection_type>/search",
+            "/collections/videogames/search",
             endpoint="search_collection_items",
             view_func=self._as_view(self.search_collection_items),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/home",
-            endpoint="get_jeux_video_home",
-            view_func=self._as_view(self.get_jeux_video_home),
+            "/collections/videogames/home",
+            endpoint="get_video_games_home",
+            view_func=self._as_view(self.get_video_games_home),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/cache/reset",
-            endpoint="reset_jeux_video_cache",
-            view_func=self.auth_guard.require_token(self.reset_jeux_video_cache),
+            "/collections/videogames/cache/reset",
+            endpoint="reset_video_games_cache",
+            view_func=self.auth_guard.require_token(self.reset_video_games_cache),
             methods=["POST"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/ods/download",
-            endpoint="download_jeux_video_ods",
-            view_func=self.auth_guard.require_token(self.download_jeux_video_ods),
+            "/collections/videogames/download",
+            endpoint="download_video_games_ods",
+            view_func=self.auth_guard.require_token(self.download_video_games_ods),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/game-search",
-            endpoint="search_jeux_video_games",
-            view_func=self._as_view(self.search_jeux_video_games),
+            "/collections/videogames/games/search",
+            endpoint="search_video_games",
+            view_func=self._as_view(self.search_video_games),
             methods=["GET"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/games",
-            endpoint="add_jeux_video_game",
-            view_func=self.auth_guard.require_token(self.add_jeux_video_game),
+            "/collections/videogames/games",
+            endpoint="add_video_game",
+            view_func=self.auth_guard.require_token(self.add_video_game),
             methods=["POST"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/games",
-            endpoint="delete_jeux_video_game",
-            view_func=self.auth_guard.require_token(self.delete_jeux_video_game),
+            "/collections/videogames/games",
+            endpoint="delete_video_game",
+            view_func=self.auth_guard.require_token(self.delete_video_game),
             methods=["DELETE"],
         )
         flask_app.add_url_rule(
-            "/collections/JeuxVideo/games",
-            endpoint="update_jeux_video_game",
-            view_func=self.auth_guard.require_token(self.update_jeux_video_game),
+            "/collections/videogames/games",
+            endpoint="update_video_game",
+            view_func=self.auth_guard.require_token(self.update_video_game),
             methods=["PUT"],
         )
 
-    def search_collection_items(self, collection_type: str):
-        """Recherche des elements dans une collection supportee.
+    def search_collection_items(self):
+        """Recherche des jeux video sur une plateforme ODS.
 
         Args:
-            collection_type (str): Type de collection recherche dans l'URL.
+            Aucun.
 
         Returns:
             tuple[flask.Response, int] | flask.Response: Liste JSON ou erreur JSON.
         """
 
-        try:
-            collection_enum = CollectionTypes(collection_type)
-        except ValueError:
-            return (
-                jsonify(
-                    {
-                        "error": "Unknown collection type.",
-                        "allowed_types": [collection.value for collection in CollectionTypes],
-                    }
-                ),
-                400,
-            )
-
         search_query = request.args.get("q", "").strip().lower()
-        if collection_enum == CollectionTypes.JeuxVideo:
-            return self._search_jeux_video_items(search_query)
+        return self._search_video_games_items(search_query)
 
-        items = self.COLLECTION_ITEMS[collection_enum.value]
-        if search_query:
-            items = [
-                item
-                for item in items
-                if search_query
-                in " ".join(str(value).lower() for value in item.to_dict().values())
-            ]
-        return jsonify({"type": collection_enum.value, "items": [item.to_dict() for item in items]})
-
-    def get_jeux_video_home(self):
+    def get_video_games_home(self):
         """Retourne les statistiques de l'onglet `Accueil` du fichier ODS.
 
         Args:
@@ -152,7 +120,7 @@ class UserGamesCollectionController:
 
         try:
             stats = self._create_games_service().get_home_stats()
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, **stats})
+            return jsonify({"type": CollectionTypes.VideoGames.value, **stats})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError:
@@ -160,7 +128,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to read ODS file: {exc}"}), 500
 
-    def reset_jeux_video_cache(self):
+    def reset_video_games_cache(self):
         """Vide le cache backend des donnees lues depuis le fichier ODS.
 
         Args:
@@ -174,7 +142,7 @@ class UserGamesCollectionController:
             removed_entries = self._create_games_service().reset_cache()
             return jsonify(
                 {
-                    "type": CollectionTypes.JeuxVideo.value,
+                    "type": CollectionTypes.VideoGames.value,
                     "message": "Cache ODS reinitialise.",
                     "removed_entries": removed_entries,
                 }
@@ -184,7 +152,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to reset ODS cache: {exc}"}), 500
 
-    def download_jeux_video_ods(self):
+    def download_video_games_ods(self):
         """Telecharge le fichier ODS de la collection jeux video.
 
         Args:
@@ -207,7 +175,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to download ODS file: {exc}"}), 500
 
-    def search_jeux_video_games(self):
+    def search_video_games(self):
         """Recherche un jeu par nom dans toutes les plateformes.
 
         Args:
@@ -226,7 +194,7 @@ class UserGamesCollectionController:
             )
             return jsonify(
                 {
-                    "type": CollectionTypes.JeuxVideo.value,
+                    "type": CollectionTypes.VideoGames.value,
                     "query": search_query,
                     "count": len(items),
                     "items": items,
@@ -237,7 +205,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to search ODS file: {exc}"}), 500
 
-    def add_jeux_video_game(self):
+    def add_video_game(self):
         """Ajoute un jeu dans l'onglet ODS correspondant a sa plateforme.
 
         Args:
@@ -250,7 +218,7 @@ class UserGamesCollectionController:
         payload = request.get_json(silent=True) or {}
         try:
             item = self._create_games_service().add_game(payload)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item}), 201
+            return jsonify({"type": CollectionTypes.VideoGames.value, "item": item}), 201
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:
@@ -258,7 +226,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to update ODS file: {exc}"}), 500
 
-    def delete_jeux_video_game(self):
+    def delete_video_game(self):
         """Supprime un jeu dans l'onglet ODS de sa plateforme.
 
         Args:
@@ -271,7 +239,7 @@ class UserGamesCollectionController:
         payload = request.get_json(silent=True) or {}
         try:
             item = self._create_games_service().delete_game(payload)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
+            return jsonify({"type": CollectionTypes.VideoGames.value, "item": item})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:
@@ -279,7 +247,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to update ODS file: {exc}"}), 500
 
-    def update_jeux_video_game(self):
+    def update_video_game(self):
         """Modifie un jeu dans l'onglet ODS de sa plateforme.
 
         Args:
@@ -292,7 +260,7 @@ class UserGamesCollectionController:
         payload = request.get_json(silent=True) or {}
         try:
             item = self._create_games_service().update_game(payload)
-            return jsonify({"type": CollectionTypes.JeuxVideo.value, "item": item})
+            return jsonify({"type": CollectionTypes.VideoGames.value, "item": item})
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 500
         except ValueError as exc:
@@ -300,7 +268,7 @@ class UserGamesCollectionController:
         except Exception as exc:
             return jsonify({"error": f"Unable to update ODS file: {exc}"}), 500
 
-    def _search_jeux_video_items(self, search_query: str):
+    def _search_video_games_items(self, search_query: str):
         """Recherche les jeux video sur une plateforme ODS.
 
         Args:

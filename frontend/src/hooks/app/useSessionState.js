@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import AuthApi from "../../services/AuthApi";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 import useAuthSessionModal from "../useAuthSessionModal";
 import useBackendActionPermissions from "../useBackendActionPermissions";
 
@@ -28,7 +28,7 @@ function getLocalAuthenticatedIdentity() {
   return {
     isAuthenticated: hasLocalAccessToken,
     username: hasLocalAccessToken ? AuthApi.getAuthenticatedUsername() : "",
-    profile: hasLocalAccessToken ? JeuxVideoApi.getAuthenticatedProfile() : "",
+    profile: hasLocalAccessToken ? VideoGamesApi.getAuthenticatedProfile() : "",
   };
 }
 

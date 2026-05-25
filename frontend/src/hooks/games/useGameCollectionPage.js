@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import { filterGames, getStudioCount, sortGames } from "../../collectionUtils";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 import usePlatformGameMutations from "../usePlatformGameMutations";
 
 /**
@@ -46,7 +46,7 @@ function useGameCollectionPage(options) {
       try {
         setIsLoadingGames(true);
         options.setError("");
-        const data = await JeuxVideoApi.fetchGames(options.selectedPlatform);
+        const data = await VideoGamesApi.fetchGames(options.selectedPlatform);
         setGames(Array.isArray(data) ? data : []);
         setColumnFilters({});
       } catch (e) {
@@ -68,7 +68,7 @@ function useGameCollectionPage(options) {
       }
 
       try {
-        const data = await JeuxVideoApi.fetchColumnValues(options.selectedPlatform);
+        const data = await VideoGamesApi.fetchColumnValues(options.selectedPlatform);
         setValuesByColumn(data.values_by_column || {});
       } catch (e) {
         setValuesByColumn({});

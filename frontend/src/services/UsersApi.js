@@ -14,7 +14,7 @@
  */
 import AuthApi from "./AuthApi";
 import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
-import JeuxVideoApi from "./JeuxVideoApi";
+import VideoGamesApi from "./VideoGamesApi";
 
 /**
  * Regroupe les appels frontend de gestion administrative des utilisateurs.
@@ -35,7 +35,7 @@ class UsersApi {
       }
     });
     const suffix = query.toString() ? `?${query.toString()}` : "";
-    return JeuxVideoApi.fetchJson(`/api/users${suffix}`, "Impossible de charger les utilisateurs.", {
+    return VideoGamesApi.fetchJson(`/api/users${suffix}`, "Impossible de charger les utilisateurs.", {
       headers: AuthApi.getAuthorizationHeaders(),
     });
   }
@@ -56,7 +56,7 @@ class UsersApi {
       requestOptions
     );
     if (!response.ok) {
-      const data = await JeuxVideoApi.parseJsonResponse(
+      const data = await VideoGamesApi.parseJsonResponse(
         response,
         "Impossible de supprimer l'utilisateur."
       );
@@ -74,7 +74,7 @@ class UsersApi {
    * @returns {Promise<Object>} Objet contenant l'utilisateur modifie.
    */
   static async lockUser(userId) {
-    return JeuxVideoApi.fetchJson(
+    return VideoGamesApi.fetchJson(
       `/api/users/${encodeURIComponent(userId)}/lock`,
       "Impossible de bloquer l'utilisateur.",
       {
@@ -91,7 +91,7 @@ class UsersApi {
    * @returns {Promise<Object>} Objet contenant l'utilisateur modifie.
    */
   static async unlockUser(userId) {
-    return JeuxVideoApi.fetchJson(
+    return VideoGamesApi.fetchJson(
       `/api/users/${encodeURIComponent(userId)}/unlock`,
       "Impossible de debloquer l'utilisateur.",
       {

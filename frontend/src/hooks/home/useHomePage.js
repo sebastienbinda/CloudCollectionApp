@@ -13,7 +13,7 @@
  * Description : hook React de la page d'accueil de collection.
  */
 import { useEffect, useState } from "react";
-import JeuxVideoApi from "../../services/JeuxVideoApi";
+import VideoGamesApi from "../../services/VideoGamesApi";
 import useHomeSearch from "./useHomeSearch";
 
 /**
@@ -39,7 +39,7 @@ function useHomePage(options) {
       try {
         setIsLoadingHome(true);
         options.setError("");
-        const data = await JeuxVideoApi.fetchHomeStats();
+        const data = await VideoGamesApi.fetchHomeStats();
         setHomeStats(data);
       } catch (e) {
         options.setError("Impossible de charger les statistiques de l'accueil.");
@@ -67,7 +67,7 @@ function useHomePage(options) {
       try {
         const imageEntries = await Promise.all(
           imageUrls.map(async (imageUrl) => {
-            const objectUrl = await JeuxVideoApi.fetchProtectedImageObjectUrl(imageUrl);
+            const objectUrl = await VideoGamesApi.fetchProtectedImageObjectUrl(imageUrl);
             createdObjectUrls.push(objectUrl);
             return [imageUrl, objectUrl];
           })
