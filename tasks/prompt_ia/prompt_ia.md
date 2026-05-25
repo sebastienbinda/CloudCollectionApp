@@ -1,0 +1,1 @@
+Ajout d'un prompt IA pour qu'un utilisateur puisse ajouter un jeu a sa collection sans passer par un formulaire mais juste avec un prompt.

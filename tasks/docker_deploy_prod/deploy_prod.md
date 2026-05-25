@@ -1,0 +1,1 @@
+Modifier le script de déploiement en production pour ne plus build les images mais récupérer les images depuis github en fonction de la version souhaitée.

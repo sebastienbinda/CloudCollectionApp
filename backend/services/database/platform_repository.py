@@ -14,13 +14,21 @@
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from services.library.library_query_contract import LibraryQueryCriteria
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
+
+from .library_query_sql_builder import LibraryQuerySqlBuilder
 
 
 class SqlAlchemyPlatformRepository:
     """Persiste les plateformes de collection dans `t_platform`."""
 
     UNKNOWN_STATUS = "UNKNOWN"
+    LIBRARY_SORT_COLUMNS = {
+        "name": "platform.name",
+        "release_date": "platform.release_date",
+        "manufacturer": "platform.manufacturer",
+    }
 
     def __init__(self, schema_name: str, name_normalizer: UserCollectionNameNormalizer):
         """Initialise le repository des plateformes.
@@ -71,3 +79,90 @@ class SqlAlchemyPlatformRepository:
             ),
             {"name": platform_name, "status": self.UNKNOWN_STATUS},
         ).scalar_one())
+
+    def count_public_library_platforms(self, connection: Connection) -> int:
+        """Compte toutes les plateformes globales de reference.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            int: Nombre total de plateformes globales.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        return int(connection.execute(
+            text(f'SELECT COUNT(*) FROM "{self.schema_name}".t_platform')
+        ).scalar_one())
+
+    def count_public_library_platforms_by_criteria(
+        self,
+        connection: Connection,
+        criteria: LibraryQueryCriteria,
+    ) -> int:
+        """Compte les plateformes globales correspondant aux criteres publics.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            criteria (LibraryQueryCriteria): Criteres de recherche Bibliotheque.
+
+        Returns:
+            int: Nombre de plateformes correspondant aux criteres.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        parameters: dict[str, object] = {}
+        where_clause = LibraryQuerySqlBuilder.build_name_filter(
+            criteria,
+            "platform.name",
+            parameters,
+        )
+        return int(connection.execute(
+            text(
+                f'SELECT COUNT(*) FROM "{self.schema_name}".t_platform platform '
+                f"{where_clause}"
+            ),
+            parameters,
+        ).scalar_one())
+
+    def list_public_library_platforms(
+        self,
+        connection: Connection,
+        criteria: LibraryQueryCriteria,
+    ) -> list[dict[str, object]]:
+        """Liste les plateformes globales paginees pour la Bibliotheque.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            criteria (LibraryQueryCriteria): Criteres de recherche, tri et pagination.
+
+        Returns:
+            list[dict[str, object]]: Plateformes publiques avec compteur de jeux.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        parameters: dict[str, object] = LibraryQuerySqlBuilder.build_pagination_parameters(criteria)
+        where_clause = LibraryQuerySqlBuilder.build_name_filter(criteria, "platform.name", parameters)
+        order_by_clause = LibraryQuerySqlBuilder.build_order_by(criteria, self.LIBRARY_SORT_COLUMNS)
+        rows = connection.execute(
+            text(
+                "SELECT "
+                "platform.id, platform.name, platform.release_date, platform.manufacturer, "
+                "platform.description, platform.status, COUNT(game.id) AS total_games "
+                f'FROM "{self.schema_name}".t_platform platform '
+                f'LEFT JOIN "{self.schema_name}".t_game game ON game.platform = platform.id '
+                f"{where_clause} "
+                "GROUP BY platform.id, platform.name, platform.release_date, "
+                "platform.manufacturer, platform.description, platform.status "
+                f"{order_by_clause} "
+                "LIMIT :limit OFFSET :offset"
+            ),
+            parameters,
+        ).mappings()
+        return [dict(row) for row in rows]

@@ -149,7 +149,14 @@ function useUserCollectionOnboarding(options) {
     if (!hasAccessToken || !authenticatedUsername) {
       return;
     }
-    if (["about", "auth"].includes(currentView)) {
+    if ([
+      "about",
+      "auth",
+      "library",
+      "libraryPlatforms",
+      "libraryStudios",
+      "libraryGames",
+    ].includes(currentView)) {
       return;
     }
     if (checkedUsername === authenticatedUsername) {

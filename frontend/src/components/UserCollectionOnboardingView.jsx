@@ -35,6 +35,7 @@ function UserCollectionOnboardingView({
   isAuthenticated,
   onOpenAbout,
   onOpenHome,
+  onOpenLibrary,
   onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
@@ -76,6 +77,7 @@ function UserCollectionOnboardingView({
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
+          onOpenLibrary={onOpenLibrary}
           onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
@@ -110,7 +112,7 @@ function UserCollectionOnboardingView({
           <article>
             <span>3</span>
             <h2>Consulter</h2>
-            <p>Apres succes, l'accueil de votre collection s'ouvre automatiquement.</p>
+            <p>Apres succes, Ma collection s'ouvre automatiquement.</p>
           </article>
         </div>
 

@@ -18,8 +18,10 @@ from flask_cors import CORS
 
 from controllers import (
     AuthenticationController,
+    GameController,
     PlatformController,
     RouteController,
+    StudioController,
     UserCollectionImportController,
     UserController,
     UserGamesCollectionController,
@@ -65,6 +67,8 @@ user_wishlist_controller = UserWishListController(
     games_service_factory=lambda: GamesService(),
 )
 platform_controller = PlatformController(games_service_factory=lambda: GamesService())
+studio_controller = StudioController()
+game_controller = GameController()
 
 # 5. Enregistre les routes avant de les marquer avec la protection globale.
 authentication_controller.register_routes(app)
@@ -74,11 +78,18 @@ user_collection_import_controller.register_routes(app)
 user_games_collection_controller.register_routes(app)
 user_wishlist_controller.register_routes(app)
 platform_controller.register_routes(app)
+studio_controller.register_routes(app)
+game_controller.register_routes(app)
 
 # 6. Protege toutes les routes non publiques apres leur enregistrement.
 auth_guard.protect_all_routes(
     app,
-    exempt_endpoints=authentication_controller.get_public_endpoint_names(),
+    exempt_endpoints=(
+        authentication_controller.get_public_endpoint_names()
+        | platform_controller.get_public_endpoint_names()
+        | studio_controller.get_public_endpoint_names()
+        | game_controller.get_public_endpoint_names()
+    ),
 )
 
 if __name__ == "__main__":

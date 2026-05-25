@@ -45,7 +45,7 @@ function AdminDashboardView({
   return (
     <main className="container adminDashboard">
       <button className="backButton" type="button" onClick={onBack}>
-        Accueil
+        Ma collection
       </button>
       <section className="addGameHeader">
         <p className="eyebrow">Administration</p>

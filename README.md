@@ -24,6 +24,7 @@ consultation, recherche, import et edition.
 ## Fonctionnalites
 
 - Tableau de bord de collection avec statistiques par plateforme.
+- Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
 - Navigation par plateforme et consultation d'une liste de souhaits.
 - Recherche globale par nom de jeu.
 - Filtres, tris, ajout, modification et suppression de jeux apres authentification.
@@ -91,7 +92,8 @@ Domaines de hooks :
 - `hooks/app/` : session, droits backend et view-model principal.
 - `hooks/navigation/` : vue courante, plateforme selectionnee et URL.
 - `hooks/collection/` : rechargement transversal, reset cache ODS et onboarding d'import.
-- `hooks/home/` : accueil, images protegees et recherche globale.
+- `hooks/home/` : Ma collection, images protegees et recherche globale.
+- `hooks/library/` : Bibliotheque publique, recherche, tri et pagination serveur.
 - `hooks/platforms/` : catalogue de plateformes.
 - `hooks/games/` : collection plateforme, tri, filtres et ajout.
 - `hooks/wishlist/` : actions liste de souhaits.
@@ -236,6 +238,7 @@ Documents fonctionnels et techniques principaux :
 - `documentation/backend-arch.md` : architecture Flask/backend.
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.
+- `documentation/bibliotheque.md` : consultation publique du referentiel commun.
 - `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
 - `documentation/register.md` : inscription utilisateur et validation email.
 - `documentation/users.md` : administration des utilisateurs.

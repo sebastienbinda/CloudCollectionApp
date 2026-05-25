@@ -4,7 +4,7 @@
 
 Le rebase sur `main` a rendu disponibles `documentation/backend-arch.md`, `documentation/frontend-arch.md` et `documentation/backend-api.md`.
 
-Le workflow `tasks/user_collection/user_collection_workflow.md` peut etre implemente sans changement de schema obligatoire. Les tables et colonnes necessaires existent deja, notamment `t_user.collection_file_path`, `t_game.developper` et `t_user_collection`.
+Le workflow `tasks/user_collection/user_collection_workflow.md` peut etre implemente sans changement de schema obligatoire. Les tables et colonnes necessaires existent deja, notamment `t_user.collection_file_path`, `t_game.developer` et `t_user_collection`.
 
 La suite doit principalement ajouter une configuration de taille d'upload, un montage Docker de workspace utilisateur, un lecteur ODS d'import, une normalisation dediee, des repositories SQL par entite, un service metier, deux endpoints et un workflow frontend d'onboarding/upload.
 
@@ -56,9 +56,9 @@ Fichier : `backend/services/database/game.py`
 
 Modele : `Game`
 
-Champs utiles : `id`, `name`, `release_date`, `developper`, `editor`, `platform`, `description`.
+Champs utiles : `id`, `name`, `release_date`, `developer`, `editor`, `platform`, `description`.
 
-Conclusion : la colonne technique existante est `developper`, pas `developer`. L'import doit mapper le champ fonctionnel `developer` du document vers `Game.developper` / `t_game.developper`.
+Conclusion : la colonne technique existante est `developer`. L'import doit mapper le champ fonctionnel `developer` du document vers `Game.developer` / `t_game.developer`.
 
 ### Association utilisateur-collection
 

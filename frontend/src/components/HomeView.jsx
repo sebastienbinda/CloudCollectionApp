@@ -1,4 +1,8 @@
 import { formatCellValue, formatCurrency, formatNumber } from "../collectionUtils";
+import CardComponent from "./CardComponent";
+import CardCountComponent from "./CardCountComponent";
+import CardHeaderComponent from "./CardHeaderComponent";
+import GridComponent from "./GridComponent";
 import MainMenu from "./MainMenu";
 import ProgressBar from "./ProgressBar";
 import ProjectIcon from "./ProjectIcon";
@@ -25,6 +29,7 @@ function HomeView({
   authenticatedProfile,
   onOpenAbout,
   onOpenHome,
+  onOpenLibrary,
   onOpenAdminDashboard,
   onLogout,
   onOpenWishlist,
@@ -50,6 +55,7 @@ function HomeView({
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
+          onOpenLibrary={onOpenLibrary}
           onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
@@ -205,12 +211,10 @@ function HomeView({
                 <span>{formatNumber(homeStats.platforms?.length || 0)} onglets</span>
               </div>
             </div>
-            <div className="platformGrid">
+            <GridComponent>
               {(homeStats.platforms || []).map((platform) => (
-                <button
-                  type="button"
+                <CardComponent
                   className={[
-                    "platformCard",
                     platform.has_image ? "platformCardWithImage" : "",
                     topPlatform?.sheet_name === platform.sheet_name ? "platformCardTopCount" : "",
                   ].join(" ")}
@@ -222,12 +226,12 @@ function HomeView({
                       : undefined
                   }
                 >
-                  <div className="platformCardHeader">
+                  <CardHeaderComponent>
                     <h3>{platform.name}</h3>
-                    <p className="platformGameCount">
+                    <CardCountComponent>
                       {formatNumber(platform.games_count)} jeux
-                    </p>
-                  </div>
+                    </CardCountComponent>
+                  </CardHeaderComponent>
                   {isAuthenticated ? (
                     <dl>
                       <div>
@@ -240,9 +244,9 @@ function HomeView({
                       </div>
                     </dl>
                   ) : null}
-                </button>
+                </CardComponent>
               ))}
-            </div>
+            </GridComponent>
           </section>
         </>
       ) : null}

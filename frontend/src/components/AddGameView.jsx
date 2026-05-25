@@ -39,7 +39,7 @@ function AddGameView({
   return (
     <main className="container">
       <button className="backButton" type="button" onClick={onBack}>
-        Accueil
+        Ma collection
       </button>
       <section className="addGameHeader">
         <p className="eyebrow">Nouveau jeu</p>

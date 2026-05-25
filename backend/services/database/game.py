@@ -28,7 +28,7 @@ class Game(DatabaseModelBase):
         id (int): Identifiant technique genere par la sequence `s_game`.
         name (str): Nom du jeu.
         release_date (Optional[datetime]): Date de sortie du jeu.
-        developper (Optional[int]): Identifiant du studio de developpement.
+        developer (Optional[int]): Identifiant du studio de developpement.
         editor (Optional[int]): Identifiant du studio editeur.
         platform (int): Identifiant de la plateforme du jeu.
         description (Optional[dict]): Description structuree stockee en JSONB.
@@ -44,7 +44,7 @@ class Game(DatabaseModelBase):
     )
     name: Mapped[str] = mapped_column(String(256), nullable=False)
     release_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    developper: Mapped[Optional[int]] = mapped_column(ForeignKey("t_studio.id"), nullable=True)
+    developer: Mapped[Optional[int]] = mapped_column(ForeignKey("t_studio.id"), nullable=True)
     editor: Mapped[Optional[int]] = mapped_column(ForeignKey("t_studio.id"), nullable=True)
     platform: Mapped[int] = mapped_column(ForeignKey("t_platform.id"), nullable=False)
     description: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)

@@ -11,9 +11,10 @@
 
 ## Objective
 
-The main menu gives access to cross-application views from the About and Accueil
-pages. It must not contain business logic: it triggers callbacks provided by
-`App.jsx` and only reflects the session state received through props.
+The main menu gives access to cross-application views from the A propos and Ma
+collection pages. It must not contain business logic: it triggers callbacks
+provided by `App.jsx` and only reflects the session state received through
+props.
 
 ## Expected Behavior
 
@@ -30,12 +31,16 @@ pages. It must not contain business logic: it triggers callbacks provided by
 
 ## Access Constraints
 
-- `About` always remains accessible.
-- `Accueil` requires an active local session.
+- `A propos` always remains accessible and opens `/about`.
+- `Bibliotheque` always remains accessible.
+- `Ma collection` requires an active local session and opens `/collection`.
 - `Liste de souhaits` requires an active local session.
-- `Voir les jeux` requires an active local session and a target platform.
 - Inaccessible entries must use `disabled`.
 - The session menu remains managed by `AuthStatusMenu`.
+- The Library entry opens `/bibliotheque` and must remain available for
+  unauthenticated visitors.
+- The main menu must not expose a `Voir les jeux` entry; platform game pages
+  remain reachable from collection cards and contextual navigation.
 
 ## Responsiveness
 

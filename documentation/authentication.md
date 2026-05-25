@@ -31,6 +31,10 @@ avoid unnecessary calls, but all real protection must remain on the backend side
     own a Bearer token.
   - `GET /api/auth/verify-email` and `POST /api/auth/verify-email`, used from
     an email verification link before sign-in.
+  - `GET /api/library/entities`, used to expose public reference entity counts.
+  - `GET /api/library/platforms`, used to expose public reference platforms.
+  - `GET /api/library/studios`, used to expose public reference studios.
+  - `GET /api/library/games`, used to expose public reference games.
 - CORS `OPTIONS` requests remain exempt to allow preflights.
 - Routes must be protected globally with `AuthGuard.protect_all_routes`.
 - Do not add a new public route without an explicit decision and without
@@ -180,10 +184,11 @@ tests, documentation, or scripts.
   object URL. Direct `url("/protected-route")` references do not send Bearer
   headers and must not be used for protected resources.
 - The frontend must avoid calling protected endpoints when no token is stored.
-- The public unauthenticated page is `AboutView` on `/about`.
-- The authenticated home page is `HomeView` on `/accueil`.
+- Public unauthenticated frontend pages are `AboutView` on `/about` and the
+  Library consultation pages under `/bibliotheque`.
+- The authenticated Ma collection page is `HomeView` on `/collection`.
 - The `/` route functionally redirects to `/about` without a token and to
-  `/accueil` with a token.
+  `/collection` with a token.
 - The session indicator in the main menu must stay consistent with the locally
   stored token, even if route discovery temporarily fails after a local restart.
   Action buttons must remain disabled until the backend route catalog confirms

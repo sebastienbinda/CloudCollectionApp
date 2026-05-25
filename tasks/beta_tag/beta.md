@@ -1,0 +1,1 @@
+Ajouter un flag beta version visible et explicite sur la page about. et dans le footer.

@@ -29,6 +29,7 @@ function AboutView({
   selectedPlatform,
   onOpenAbout,
   onOpenHome,
+  onOpenLibrary,
   onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
@@ -50,6 +51,7 @@ function AboutView({
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
+          onOpenLibrary={onOpenLibrary}
           onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
