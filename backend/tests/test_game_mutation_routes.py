@@ -34,8 +34,8 @@ class GameMutationRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(401, response.status_code)
 
-    def test_add_delete_update_game_routes(self):
-        """Verifie les mutations de jeux de collection.
+    def test_add_delete_update_game_routes_return_not_implemented(self):
+        """Verifie les mutations futures de jeux de collection.
 
         Args:
             Aucun.
@@ -46,12 +46,9 @@ class GameMutationRoutesTest(BaseAppRoutesTest):
 
         headers = self.get_auth_headers()
 
-        self.assertEqual("Mario", self.client.post("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.post("/collections/videogames/games", headers=headers, json={"platform": "Switch"}).status_code)
-        self.assertEqual("Mario", self.client.delete("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.delete("/collections/videogames/games", headers=headers, json={"platform": "Switch"}).status_code)
-        self.assertEqual("Mario 2", self.client.put("/collections/videogames/games", headers=headers, json={"platform": "Switch", "updated": {"Nom du jeu": "Mario 2"}}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.put("/collections/videogames/games", headers=headers, json={"platform": "Switch", "updated": {}}).status_code)
+        self.assertEqual(501, self.client.post("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).status_code)
+        self.assertEqual(501, self.client.delete("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).status_code)
+        self.assertEqual(501, self.client.put("/collections/videogames/games", headers=headers, json={"platform": "Switch", "updated": {"Nom du jeu": "Mario 2"}}).status_code)
 
     def test_wishlist_mutation_routes(self):
         """Verifie les mutations wishlist.

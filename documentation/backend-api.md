@@ -240,57 +240,188 @@ All routes in this section require a Bearer token with at least profile `USER`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
+| `GET` | `/collections/videogames` | Returns connected-user collection statistics from SQL. |
+| `GET` | `/collections/videogames/platforms/search` | Lists platforms owned by the connected user from SQL. |
+| `GET` | `/collections/videogames/games/search` | Lists connected-user games from SQL. |
+| `GET` | `/collections/videogames/download` | Downloads the connected user's imported ODS file as raw bytes. |
+| `POST` | `/collections/videogames/games` | Reserved for a future add action and returns `501`. |
+| `PUT` | `/collections/videogames/games` | Reserved for a future update action and returns `501`. |
+| `DELETE` | `/collections/videogames/games` | Reserved for a future delete action and returns `501`. |
+
+The connected user is derived from the Bearer token. These routes never accept a
+user identifier in the URL, query string or payload.
+
+### Collection Statistics Response
+
+```json
+{
+  "total": 420,
+  "total_value": 0,
+  "average_value": 0,
+  "max_platform": "Switch"
+}
+```
+
+When the connected user has no game in `t_user_collection`, the response is:
+
+```json
+{
+  "total": 0,
+  "total_value": 0,
+  "average_value": 0,
+  "max_platform": ""
+}
+```
+
+### Collection Platform Search
+
+Supported query parameters:
+
+- `name`: optional platform name filter, matched without case or accent
+  sensitivity;
+- `page`: zero-based page index, default `0`;
+- `size`: page size, default `500`, maximum `500`;
+- `sort`: repeatable `column,direction` rule. Allowed column: `name`.
+
+Response:
+
+```json
+{
+  "page": {
+    "totalElements": 1,
+    "page": 0,
+    "size": 500,
+    "totalPages": 1
+  },
+  "platforms": [
+    {
+      "id": 1,
+      "name": "Switch",
+      "nb_games": 25,
+      "total_value": 0,
+      "average_value": 0
+    }
+  ]
+}
+```
+
+Empty response:
+
+```json
+{
+  "page": {
+    "totalElements": 0,
+    "page": 0,
+    "size": 500,
+    "totalPages": 0
+  },
+  "platforms": []
+}
+```
+
+### Collection Game Search
+
+Supported query parameters:
+
+- `name`: optional game name filter, matched without case or accent
+  sensitivity;
+- `studio_name`: optional studio name filter, matched without case or accent
+  sensitivity;
+- `platform_name`: optional platform name filter, matched without case or
+  accent sensitivity;
+- `platform_id`: optional exact platform id. Invalid values return an empty
+  list;
+- `release_date`: optional range formatted as `YYYY-MM-DD..YYYY-MM-DD`;
+- `page`: zero-based page index, default `0`;
+- `size`: page size, default `500`, maximum `500`;
+- `sort`: repeatable `column,direction` rule.
+
+Allowed sort columns:
+
+- `name`;
+- `platform_name`;
+- `release_date`;
+- `studio_name`;
+- `buy_date`;
+- `grade`.
+
+Response:
+
+```json
+{
+  "page": {
+    "totalElements": 1,
+    "page": 0,
+    "size": 500,
+    "totalPages": 1
+  },
+  "games": [
+    {
+      "id": 1,
+      "name": "The Legend of Zelda",
+      "platform_name": "NES",
+      "platform_id": 1,
+      "release_date": "1986-02-21",
+      "studio_name": "Nintendo",
+      "studio_id": 10,
+      "version": "",
+      "buy_date": "",
+      "buy_location": "",
+      "grade": ""
+    }
+  ]
+}
+```
+
+Empty response:
+
+```json
+{
+  "page": {
+    "totalElements": 0,
+    "page": 0,
+    "size": 500,
+    "totalPages": 0
+  },
+  "games": []
+}
+```
+
+### Collection ODS Download
+
+`GET /collections/videogames/download` reads `t_user.collection_file_path` for
+the connected user and sends that file without parsing the ODS content.
+
+Download errors use:
+
+- `404` when `collection_file_path` is empty;
+- `404` when the file no longer exists on disk;
+- `500` for unexpected download failures.
+
+### Future Game Actions
+
+`POST`, `PUT` and `DELETE /collections/videogames/games` are registered so the
+route catalog can announce future actions, but they currently return:
+
+```json
+{
+  "error": "Not implemented."
+}
+```
+
+with HTTP status `501`.
+
+### Legacy ODS Platform Utility Routes
+
+These routes are still registered until the dedicated legacy cleanup task is
+applied:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
 | `GET` | `/collections/videogames/platforms` | Lists ODS platform sheets. |
-| `GET` | `/collections/videogames/home` | Returns dashboard statistics from `Accueil`. |
-| `GET` | `/collections/videogames/search?platform=Switch&q=mario` | Lists or filters games for one platform. |
-| `GET` | `/collections/videogames/games/search?q=mario` | Searches games by name across all platforms. |
 | `GET` | `/collections/videogames/column-values?platform=Switch` | Lists distinct values by column for filtering. |
 | `GET` | `/collections/videogames/add-game-choices?platform=Switch` | Returns merged choices for the add-game form. |
 | `GET` | `/collections/videogames/platform-image/Switch` | Returns the embedded platform image. |
-| `POST` | `/collections/videogames/games` | Adds a game to a platform sheet. |
-| `PUT` | `/collections/videogames/games` | Updates a game in a platform sheet. |
-| `DELETE` | `/collections/videogames/games` | Deletes a game from a platform sheet. |
-| `POST` | `/collections/videogames/cache/reset` | Clears the backend ODS cache. |
-| `GET` | `/collections/videogames/download` | Downloads the ODS file. |
-
-### Add Game Payload
-
-```json
-{
-  "platform": "Switch",
-  "Nom du jeu": "Metroid Prime",
-  "Studio": "Nintendo",
-  "Date de sortie": "2026-05-23",
-  "Date d'achat": "2026-05-23",
-  "Lieu d'achat": "Boutique",
-  "Note": "Edition standard",
-  "Prix d'achat": "49.99",
-  "Version": "Physique"
-}
-```
-
-### Update Game Payload
-
-```json
-{
-  "platform": "Switch",
-  "original": {
-    "Nom du jeu": "Metroid Prime"
-  },
-  "updated": {
-    "Nom du jeu": "Metroid Prime Remastered"
-  }
-}
-```
-
-### Delete Game Payload
-
-```json
-{
-  "platform": "Switch",
-  "Nom du jeu": "Metroid Prime"
-}
-```
 
 ## Wishlist Routes
 

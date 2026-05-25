@@ -62,6 +62,20 @@ class UserCollectionQueryRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def find_collection_file_path(self, connection: Connection, user_id: int) -> str:
+        """Retourne le chemin du fichier de collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            str: Chemin du fichier ou chaine vide.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
     def count_platforms_by_criteria(
         self,
         connection: Connection,
@@ -268,6 +282,22 @@ class UserCollectionQueryService:
             "page": self._page_payload(criteria, total_elements),
             "games": [self._game_payload(row) for row in rows],
         }
+
+    def get_collection_file_path(self, user_id: int) -> str:
+        """Retourne le chemin du fichier de collection utilisateur.
+
+        Args:
+            user_id (int): Identifiant de l'utilisateur connecte.
+
+        Returns:
+            str: Chemin du fichier ou chaine vide.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une requete.
+        """
+
+        with self.engine.connect() as connection:
+            return self.repository.find_collection_file_path(connection, user_id)
 
     def _page_payload(
         self,

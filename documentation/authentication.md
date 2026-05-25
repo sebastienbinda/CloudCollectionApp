@@ -102,6 +102,13 @@ profile:
 
 - `GET /api/users/me/collection`
 - `POST /api/users/import`
+- `GET /collections/videogames`
+- `GET /collections/videogames/platforms/search`
+- `GET /collections/videogames/games/search`
+- `GET /collections/videogames/download`
+- `POST /collections/videogames/games`
+- `PUT /collections/videogames/games`
+- `DELETE /collections/videogames/games`
 
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.

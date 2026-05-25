@@ -289,3 +289,113 @@ class FakeLibraryService:
         """
 
         return {"totalElements": 1, "page": criteria.page_request.page, "size": criteria.page_request.size, "totalPages": 1}
+
+
+class FakeUserCollectionQueryService:
+    """Service de consultation collection factice."""
+
+    last_platforms_criteria = None
+    last_games_criteria = None
+    collection_file_path = str(Path(__file__))
+
+    def get_statistics(self, user_id):
+        """Retourne les statistiques de collection factices.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            dict[str, object]: Statistiques factices.
+        """
+
+        return {
+            "total": 42,
+            "total_value": 0,
+            "average_value": 0,
+            "max_platform": "Switch",
+        }
+
+    def list_platforms(self, user_id, criteria):
+        """Liste les plateformes de collection factices.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            criteria (UserCollectionPlatformQueryCriteria): Criteres recus.
+
+        Returns:
+            dict[str, object]: Payload plateformes.
+        """
+
+        self.__class__.last_platforms_criteria = criteria
+        return {
+            "page": self._page(criteria),
+            "platforms": [
+                {
+                    "id": 1,
+                    "name": "Switch",
+                    "nb_games": 25,
+                    "total_value": 0,
+                    "average_value": 0,
+                }
+            ],
+        }
+
+    def list_games(self, user_id, criteria):
+        """Liste les jeux de collection factices.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            criteria (UserCollectionGameQueryCriteria): Criteres recus.
+
+        Returns:
+            dict[str, object]: Payload jeux.
+        """
+
+        self.__class__.last_games_criteria = criteria
+        return {
+            "page": self._page(criteria),
+            "games": [
+                {
+                    "id": 3,
+                    "name": "Mario Kart",
+                    "platform_name": "Switch",
+                    "platform_id": 1,
+                    "release_date": "1992-08-27",
+                    "studio_name": "Nintendo",
+                    "studio_id": 2,
+                    "version": "",
+                    "buy_date": "",
+                    "buy_location": "",
+                    "grade": "",
+                }
+            ],
+        }
+
+    def get_collection_file_path(self, user_id):
+        """Retourne le chemin de fichier configure.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            str: Chemin du fichier.
+        """
+
+        return self.__class__.collection_file_path
+
+    def _page(self, criteria):
+        """Construit une page factice.
+
+        Args:
+            criteria (object): Criteres recus.
+
+        Returns:
+            dict[str, int]: Page factice.
+        """
+
+        return {
+            "totalElements": 1,
+            "page": criteria.page_request.page,
+            "size": criteria.page_request.size,
+            "totalPages": 1,
+        }

@@ -75,6 +75,29 @@ class SqlAlchemyUserCollectionQueryRepository:
             {"user_id": user_id},
         ).scalar_one())
 
+    def find_collection_file_path(self, connection: Connection, user_id: int) -> str:
+        """Recherche le chemin du fichier de collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant de l'utilisateur connecte.
+
+        Returns:
+            str: Chemin du fichier ou chaine vide si absent.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        collection_file_path = connection.execute(
+            text(
+                f'SELECT collection_file_path FROM "{self.schema_name}".t_user '
+                "WHERE id = :user_id"
+            ),
+            {"user_id": user_id},
+        ).scalar_one_or_none()
+        return "" if collection_file_path is None else str(collection_file_path)
+
     def find_max_platform_name(self, connection: Connection, user_id: int) -> str:
         """Recherche la plateforme la plus representee dans la collection.
 

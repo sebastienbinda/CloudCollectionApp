@@ -18,13 +18,13 @@ from flask_cors import CORS
 
 from controllers import (
     AuthenticationController,
+    CollectionController,
     GameController,
     PlatformController,
     RouteController,
     StudioController,
     UserCollectionImportController,
     UserController,
-    UserGamesCollectionController,
     UserWishListController,
 )
 from services import (
@@ -58,10 +58,7 @@ authentication_controller = AuthenticationController(auth_token_service)
 route_controller = RouteController()
 user_controller = UserController(auth_guard)
 user_collection_import_controller = UserCollectionImportController(auth_guard)
-user_games_collection_controller = UserGamesCollectionController(
-    auth_guard,
-    games_service_factory=lambda: GamesService(),
-)
+collection_controller = CollectionController(auth_guard)
 user_wishlist_controller = UserWishListController(
     auth_guard,
     games_service_factory=lambda: GamesService(),
@@ -75,7 +72,7 @@ authentication_controller.register_routes(app)
 route_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
-user_games_collection_controller.register_routes(app)
+collection_controller.register_routes(app)
 user_wishlist_controller.register_routes(app)
 platform_controller.register_routes(app)
 studio_controller.register_routes(app)

@@ -134,6 +134,20 @@ class FakeUserCollectionQueryRepository:
         self.calls.append(("find_max_platform_name", connection, user_id))
         return "Switch"
 
+    def find_collection_file_path(self, connection, user_id):
+        """Retourne un chemin de fichier factice.
+
+        Args:
+            connection (object): Connexion recue.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            str: Chemin de collection.
+        """
+
+        self.calls.append(("find_collection_file_path", connection, user_id))
+        return "/users/workspace/7/7-collection.ods"
+
     def count_platforms_by_criteria(self, connection, user_id, criteria):
         """Compte les plateformes factices.
 
@@ -436,6 +450,19 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertEqual({"totalElements": 0, "page": 0, "size": 500, "totalPages": 0}, payload["page"])
         self.assertEqual([], payload["games"])
         self.assertEqual(0, self.engine.connect_count)
+
+    def test_get_collection_file_path_uses_repository(self):
+        """Verifie la lecture du chemin de fichier utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le chemin retourne.
+        """
+
+        self.assertEqual("/users/workspace/7/7-collection.ods", self.service.get_collection_file_path(7))
+        self.assertIn(("find_collection_file_path", self.engine.connection, 7), self.repository.calls)
 
     def test_parser_normalizes_filters_sort_and_date_range(self):
         """Verifie le parsing des filtres specifiques collection.

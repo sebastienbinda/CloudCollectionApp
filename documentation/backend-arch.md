@@ -80,8 +80,9 @@ Use one controller per functional area when possible, for example:
 - `UserController` for administrative user management;
 - `UserCollectionImportController` for connected-user collection status and
   ODS import routes;
+- `CollectionController` for connected-user SQL collection consultation,
+  future game actions and raw user ODS download;
 - `RouteController` for `/api/routes`;
-- `UserGamesCollectionController` for platform game collection routes;
 - `UserWishListController` for wishlist routes;
 - `PlatformController` for platform metadata and images.
 - `PlatformController`, `StudioController` and `GameController` for public
@@ -99,6 +100,8 @@ Use domain folders under `backend/services/`:
 - `email/`: email configuration and sending;
 - `formatting/`: value formatting helpers;
 - `games/`: game collection workflows and add-game choices;
+- `collection/`: connected-user SQL collection consultation and query
+  contracts;
 - `library/`: public read-only consultation of global reference games,
   platforms and studios;
 - `logging/`: backend logging setup and handlers;

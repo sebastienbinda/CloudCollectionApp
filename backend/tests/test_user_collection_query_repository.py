@@ -146,6 +146,27 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertEqual({"user_id": 12}, count_parameters)
         self.assertEqual({"user_id": 12}, max_parameters)
 
+    def test_find_collection_file_path_reads_user_table_by_id(self):
+        """Verifie la lecture du chemin de fichier utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la requete generee.
+        """
+
+        connection = FakeRepositoryConnection(scalar_value="/users/workspace/12/12-collection.ods")
+
+        path = self.repository.find_collection_file_path(connection, 12)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual("/users/workspace/12/12-collection.ods", path)
+        self.assertIn("SELECT collection_file_path", sql)
+        self.assertIn("t_user", sql)
+        self.assertIn("WHERE id = :user_id", sql)
+        self.assertEqual({"user_id": 12}, parameters)
+
     def test_list_platforms_filters_by_user_name_sort_and_pagination(self):
         """Verifie la liste paginee des plateformes utilisateur.
 
