@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Adapter les pages frontend `Ma collection` et `platform` pour consommer les
+Adapter les pages frontend `Ma collection` et `plateforme` pour consommer les
 nouveaux endpoints SQL de collection utilisateur.
 
 Cette tâche doit s'appuyer sur le rapport :
@@ -28,7 +28,7 @@ Cette tâche doit s'appuyer sur le rapport :
 4. Adapter la page `Ma collection` pour afficher :
    - les statistiques globales depuis `GET /collections/videogames` ;
    - les plateformes depuis `GET /collections/videogames/platforms/search`.
-5. Adapter la page `platform` pour charger les jeux depuis
+5. Adapter la page `plateforme` pour charger les jeux depuis
    `GET /collections/videogames/games/search`.
 6. Faire passer la plateforme sélectionnée par `platform_id` dans l'URL.
 7. Adapter la navigation depuis `Ma collection` vers une plateforme avec son id.
@@ -43,7 +43,7 @@ Cette tâche doit s'appuyer sur le rapport :
 ## Critères d'acceptation
 
 - La page `Ma collection` n'utilise plus de données issues d'une lecture ODS.
-- La page `platform` n'utilise plus de données issues d'une lecture ODS.
+- La page `plateforme` n'utilise plus de données issues d'une lecture ODS.
 - La navigation de plateforme repose sur `platform_id`.
 - Les pages gèrent les réponses vides.
 - Le frontend ne tente plus d'appeler les endpoints supprimés.
