@@ -184,8 +184,8 @@ class FakeLogger:
 
 
 class DatabaseSchemaServiceTest(unittest.TestCase):
-    def test_migrations_keep_single_standalone_head(self):
-        """Verifie que le dossier Alembic contient une seule migration autonome.
+    def test_migrations_keep_single_linear_head(self):
+        """Verifie que le dossier Alembic contient une seule branche lineaire.
 
         Args:
             Aucun.
@@ -201,9 +201,38 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         script_directory = ScriptDirectory.from_config(alembic_configuration)
         revisions = list(script_directory.walk_revisions())
 
-        self.assertEqual(["20260522_0004"], script_directory.get_heads())
-        self.assertEqual(1, len(revisions))
-        self.assertIsNone(revisions[0].down_revision)
+        revisions_by_id = {revision.revision: revision for revision in revisions}
+
+        self.assertEqual(["20260525_0005"], script_directory.get_heads())
+        self.assertEqual(2, len(revisions))
+        self.assertEqual("20260522_0004", revisions_by_id["20260525_0005"].down_revision)
+        self.assertIsNone(revisions_by_id["20260522_0004"].down_revision)
+
+    def test_collection_query_index_migration_declares_expected_indexes(self):
+        """Verifie que la migration d'index cible les colonnes attendues.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les index declares.
+        """
+
+        migration_path = (
+            Path(__file__).resolve().parents[1]
+            / "migrations"
+            / "versions"
+            / "20260525_0005_add_collection_query_indexes.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn('"ix_t_user_collection_game_id"', migration_source)
+        self.assertIn('"t_user_collection"', migration_source)
+        self.assertIn('["game_id"]', migration_source)
+        self.assertIn('"ix_t_game_platform"', migration_source)
+        self.assertIn('["platform"]', migration_source)
+        self.assertIn('"ix_t_game_developer"', migration_source)
+        self.assertIn('["developer"]', migration_source)
 
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.
