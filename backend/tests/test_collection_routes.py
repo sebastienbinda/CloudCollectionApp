@@ -88,7 +88,53 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         legacy_path = f"/collections/{legacy_collection_type}/search"
         response = self.client.get(legacy_path, headers=self.get_user_auth_headers())
 
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(404, response.status_code)
+
+    def test_legacy_ods_collection_routes_are_not_registered(self):
+        """Verifie que les anciennes routes ODS de consultation sont supprimees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les 404.
+        """
+
+        headers = self.get_user_auth_headers()
+        requests_to_check = [
+            ("GET", "/collections/videogames/home"),
+            ("POST", "/collections/videogames/cache/reset"),
+            ("GET", "/collections/videogames/search?platform=Switch"),
+            ("GET", "/collections/videogames/platforms"),
+            ("GET", "/collections/videogames/column-values?platform=Switch"),
+            ("GET", "/collections/videogames/add-game-choices?platform=Switch"),
+            ("GET", "/collections/videogames/platform-image/Switch"),
+        ]
+
+        for method, path in requests_to_check:
+            response = self.client.open(path, method=method, headers=headers)
+            self.assertEqual(404, response.status_code, path)
+
+    def test_legacy_ods_collection_routes_are_absent_from_route_catalog(self):
+        """Verifie que les anciennes routes ODS sont absentes de `/api/routes`.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le catalogue.
+        """
+
+        response = self.client.get("/api/routes", headers=self.get_user_auth_headers())
+        routes_by_path = {route["path"] for route in response.get_json()["routes"]}
+
+        self.assertNotIn("/collections/videogames/home", routes_by_path)
+        self.assertNotIn("/collections/videogames/cache/reset", routes_by_path)
+        self.assertNotIn("/collections/videogames/search", routes_by_path)
+        self.assertNotIn("/collections/videogames/platforms", routes_by_path)
+        self.assertNotIn("/collections/videogames/column-values", routes_by_path)
+        self.assertNotIn("/collections/videogames/add-game-choices", routes_by_path)
+        self.assertNotIn("/collections/videogames/platform-image/<path:platform>", routes_by_path)
 
     def test_download_returns_current_user_raw_file(self):
         """Verifie le telechargement brut du fichier utilisateur.

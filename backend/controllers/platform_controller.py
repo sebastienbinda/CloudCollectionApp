@@ -9,19 +9,17 @@
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : controleur HTTP des plateformes de collection jeux video.
+# Description : controleur HTTP des plateformes de la Bibliotheque publique.
 
-from io import BytesIO
 from functools import wraps
 
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 
-from models import CollectionTypes
-from services import DatabaseConfiguration, GamesService, LibraryQueryParser, LibraryService
+from services import DatabaseConfiguration, LibraryQueryParser, LibraryService
 
 
 class PlatformController:
-    """Enregistre les routes HTTP liees aux plateformes jeux video."""
+    """Enregistre les routes HTTP publiques liees aux plateformes."""
 
     PUBLIC_ENDPOINTS = frozenset(
         {
@@ -32,14 +30,12 @@ class PlatformController:
 
     def __init__(
         self,
-        games_service_factory=GamesService,
         library_service_factory=None,
         library_query_parser=None,
     ):
         """Initialise le controleur des plateformes.
 
         Args:
-            games_service_factory (Callable): Fabrique du service metier jeux video.
             library_service_factory (Callable | None): Fabrique du service Bibliotheque.
             library_query_parser (LibraryQueryParser | None): Parseur de requetes Bibliotheque.
 
@@ -47,7 +43,6 @@ class PlatformController:
             None: Le constructeur ne retourne aucune valeur.
         """
 
-        self.games_service_factory = games_service_factory
         self.library_service_factory = library_service_factory or self._create_default_library_service
         self.library_query_parser = library_query_parser or LibraryQueryParser()
 
@@ -61,30 +56,6 @@ class PlatformController:
             None: La methode ne retourne aucune valeur.
         """
 
-        flask_app.add_url_rule(
-            "/collections/videogames/platforms",
-            endpoint="list_video_games_platforms",
-            view_func=self._as_view(self.list_video_games_platforms),
-            methods=["GET"],
-        )
-        flask_app.add_url_rule(
-            "/collections/videogames/platform-image/<path:platform>",
-            endpoint="get_video_games_platform_image",
-            view_func=self._as_view(self.get_video_games_platform_image),
-            methods=["GET"],
-        )
-        flask_app.add_url_rule(
-            "/collections/videogames/column-values",
-            endpoint="list_video_games_column_values",
-            view_func=self._as_view(self.list_video_games_column_values),
-            methods=["GET"],
-        )
-        flask_app.add_url_rule(
-            "/collections/videogames/add-game-choices",
-            endpoint="list_video_games_add_game_choices",
-            view_func=self._as_view(self.list_video_games_add_game_choices),
-            methods=["GET"],
-        )
         flask_app.add_url_rule(
             "/api/library/entities",
             endpoint="count_library_entities",
@@ -144,119 +115,6 @@ class PlatformController:
             return jsonify({"error": str(exc)}), 503
         except Exception as exc:
             return jsonify({"error": f"Unable to read library platforms: {exc}"}), 500
-
-    def list_video_games_platforms(self):
-        """Liste les plateformes disponibles dans le fichier ODS.
-
-        Args:
-            Aucun.
-
-        Returns:
-            tuple[flask.Response, int] | flask.Response: Plateformes JSON ou erreur JSON.
-        """
-
-        try:
-            platforms = self._create_games_service().list_platforms()
-            return jsonify({"type": CollectionTypes.VideoGames.value, "platforms": platforms})
-        except FileNotFoundError as exc:
-            return jsonify({"error": str(exc)}), 500
-        except Exception as exc:
-            return jsonify({"error": f"Unable to read ODS file: {exc}"}), 500
-
-    def get_video_games_platform_image(self, platform: str):
-        """Retourne l'image embarquee dans l'onglet ODS d'une plateforme.
-
-        Args:
-            platform (str): Nom de l'onglet plateforme recherche.
-
-        Returns:
-            flask.Response | tuple[flask.Response, int]: Image ou erreur JSON.
-        """
-
-        try:
-            image_bytes, mime_type, filename = self._create_games_service().get_platform_image(platform)
-            response = send_file(
-                BytesIO(image_bytes),
-                mimetype=mime_type,
-                download_name=filename,
-                max_age=0,
-            )
-            response.headers["Cache-Control"] = "no-store, max-age=0"
-            return response
-        except FileNotFoundError as exc:
-            return jsonify({"error": str(exc)}), 500
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 404
-        except Exception as exc:
-            return jsonify({"error": f"Unable to read ODS image: {exc}"}), 500
-
-    def list_video_games_column_values(self):
-        """Liste les valeurs distinctes de chaque colonne pour une plateforme.
-
-        Args:
-            Aucun.
-
-        Returns:
-            tuple[flask.Response, int] | flask.Response: Valeurs JSON ou erreur JSON.
-        """
-
-        platform = request.args.get("platform", "Playstation").strip() or "Playstation"
-        try:
-            values = self._create_games_service().list_column_values(platform=platform)
-            return jsonify(
-                {
-                    "type": CollectionTypes.VideoGames.value,
-                    "platform": platform,
-                    "values_by_column": values,
-                }
-            )
-        except FileNotFoundError as exc:
-            return jsonify({"error": str(exc)}), 500
-        except ValueError:
-            return (
-                jsonify(
-                    {
-                        "error": f"Sheet '{platform}' not found in ODS file.",
-                        "hint": "Use query param ?platform=<sheet_name>.",
-                    }
-                ),
-                400,
-            )
-        except Exception as exc:
-            return jsonify({"error": f"Unable to read ODS file: {exc}"}), 500
-
-    def list_video_games_add_game_choices(self):
-        """Liste les choix fusionnes pour le formulaire d'ajout.
-
-        Args:
-            Aucun.
-
-        Returns:
-            flask.Response | tuple[flask.Response, int]: Choix JSON ou erreur JSON.
-        """
-
-        platform = request.args.get("platform", "").strip()
-        try:
-            choices = self._create_games_service().list_add_game_choices(platform=platform)
-            return jsonify({"type": CollectionTypes.VideoGames.value, **choices})
-        except FileNotFoundError as exc:
-            return jsonify({"error": str(exc)}), 500
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        except Exception as exc:
-            return jsonify({"error": f"Unable to read ODS choices: {exc}"}), 500
-
-    def _create_games_service(self):
-        """Construit le service jeux video.
-
-        Args:
-            Aucun.
-
-        Returns:
-            GamesService: Service metier utilise par les routes.
-        """
-
-        return self.games_service_factory()
 
     def _create_library_service(self):
         """Construit le service Bibliotheque.

@@ -163,7 +163,7 @@ class BackendRouteAccessService {
       canEditWishlistGame: this.canAccess("PUT", "/collections/videogames/wishlist/games"),
       canDeleteWishlistGame: this.canAccess("DELETE", "/collections/videogames/wishlist/games"),
       canDownloadOds: this.canAccess("GET", "/collections/videogames/download"),
-      canResetCache: this.canAccess("POST", "/collections/videogames/cache/reset"),
+      canResetCache: false,
       canSearchUsers: this.canAccess("GET", "/api/users"),
       canDeleteUser: this.canAccess("DELETE", "/api/users/<int:user_id>"),
       canLockUser: this.canAccess("POST", "/api/users/<int:user_id>/lock"),

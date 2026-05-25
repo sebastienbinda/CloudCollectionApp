@@ -5,6 +5,8 @@
 - Every backend endpoint is protected except explicitly documented public
   authentication and registration endpoints.
 - Without a Bearer token: `403`; invalid or expired token: `401`.
+- Unregistered routes return Flask's standard `404` and are not converted into
+  authentication errors.
 - The frontend only sends or clears the token; security remains in the backend.
 - Every protected call must use `Authorization: Bearer <access_token>`.
 - Every public exception must be documented and tested.

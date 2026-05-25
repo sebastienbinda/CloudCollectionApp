@@ -84,7 +84,6 @@ Use one controller per functional area when possible, for example:
   future game actions and raw user ODS download;
 - `RouteController` for `/api/routes`;
 - `UserWishListController` for wishlist routes;
-- `PlatformController` for platform metadata and images.
 - `PlatformController`, `StudioController` and `GameController` for public
   Bibliotheque reads of global platforms, studios and games.
 

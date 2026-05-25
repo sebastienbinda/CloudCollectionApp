@@ -411,17 +411,18 @@ route catalog can announce future actions, but they currently return:
 
 with HTTP status `501`.
 
-### Legacy ODS Platform Utility Routes
+### Removed ODS Consultation Routes
 
-These routes are still registered until the dedicated legacy cleanup task is
-applied:
+The backend no longer registers these legacy ODS consultation routes. They are
+absent from `/api/routes` and return `404` because there is no Flask route:
 
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `GET` | `/collections/videogames/platforms` | Lists ODS platform sheets. |
-| `GET` | `/collections/videogames/column-values?platform=Switch` | Lists distinct values by column for filtering. |
-| `GET` | `/collections/videogames/add-game-choices?platform=Switch` | Returns merged choices for the add-game form. |
-| `GET` | `/collections/videogames/platform-image/Switch` | Returns the embedded platform image. |
+- `GET /collections/videogames/home`
+- `POST /collections/videogames/cache/reset`
+- `GET /collections/videogames/search`
+- `GET /collections/videogames/platforms`
+- `GET /collections/videogames/column-values`
+- `GET /collections/videogames/add-game-choices`
+- `GET /collections/videogames/platform-image/<platform>`
 
 ## Wishlist Routes
 

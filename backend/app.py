@@ -63,7 +63,7 @@ user_wishlist_controller = UserWishListController(
     auth_guard,
     games_service_factory=lambda: GamesService(),
 )
-platform_controller = PlatformController(games_service_factory=lambda: GamesService())
+platform_controller = PlatformController()
 studio_controller = StudioController()
 game_controller = GameController()
 
