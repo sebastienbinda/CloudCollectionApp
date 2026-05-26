@@ -14,7 +14,6 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
-import AddGameChoicesApi from "../../services/AddGameChoicesApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 
 const initialGameForm = AppRouting.createInitialGameForm();
@@ -33,11 +32,14 @@ function useAddGamePage(options) {
   const [isAddingGame, setIsAddingGame] = useState(false);
 
   const prepareAddGameForm = (selectedPlatform, availablePlatforms = options.platforms) => {
+    const selectedPlatformName = availablePlatforms.find(
+      (platform) => String(platform.id) === String(selectedPlatform)
+    )?.name;
     setAddGameMessage("");
     setAddGameError("");
     setGameForm((previous) => ({
       ...previous,
-      platform: previous.platform || selectedPlatform || availablePlatforms[0] || "",
+      platform: previous.platform || selectedPlatformName || availablePlatforms[0]?.name || "",
     }));
   };
 
@@ -55,12 +57,7 @@ function useAddGamePage(options) {
         return;
       }
 
-      try {
-        const data = await AddGameChoicesApi.fetchChoices(gameForm.platform);
-        setAddGameColumnValues(data.values_by_column || {});
-      } catch (e) {
-        setAddGameColumnValues({});
-      }
+      setAddGameColumnValues({});
     };
 
     fetchAddGameColumnValues();

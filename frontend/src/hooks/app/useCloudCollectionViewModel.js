@@ -138,7 +138,9 @@ function useCloudCollectionViewModel() {
       actionPermissions: session.actionPermissions,
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,
-      selectedPlatformStats: homePage.selectedPlatformStats,
+      selectedPlatformStats: homePage.selectedPlatformStats || platformsCatalog.platforms.find(
+        (platform) => String(platform.id) === String(navigation.selectedPlatform)
+      ),
       downloadError: odsDownload.downloadError,
       isDownloadingOds: odsDownload.isDownloadingOds,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,

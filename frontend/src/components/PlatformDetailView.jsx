@@ -55,6 +55,10 @@ function PlatformDetailView({
   onDeleteGame,
   editingGame,
 }) {
+  const selectedPlatformName = selectedPlatformStats?.name
+    || platforms.find((platform) => String(platform.id) === String(selectedPlatform))?.name
+    || "CloudCollectionApp";
+
   /**
    * Indique si une note de jeu merite une mise en avant.
    *
@@ -83,21 +87,14 @@ function PlatformDetailView({
         Ma collection
       </button>
       <section
-        className={`platformDetailHero${
-          selectedPlatformStats?.has_image ? " platformDetailHeroWithImage" : ""
-        }`}
-        style={
-          selectedPlatformStats?.image_url
-            ? { backgroundImage: `url("${encodeURI(selectedPlatformStats.image_url)}")` }
-            : undefined
-        }
+        className="platformDetailHero"
       >
         <div className="platformDetailContent">
           <p className="eyebrow">Plateforme</p>
           <h1>
             <span className="pageTitleWithIcon">
               <ProjectIcon />
-              <span>{selectedPlatformStats?.name || selectedPlatform || "CloudCollectionApp"}</span>
+              <span>{selectedPlatformName}</span>
             </span>
           </h1>
           <p className="subtitle">Filtrer la liste par plateforme</p>
@@ -143,8 +140,8 @@ function PlatformDetailView({
           disabled={isLoadingPlatforms || platforms.length === 0}
         >
           {platforms.map((platform) => (
-            <option key={platform} value={platform}>
-              {platform}
+            <option key={platform.id} value={platform.id}>
+              {platform.name}
             </option>
           ))}
         </select>

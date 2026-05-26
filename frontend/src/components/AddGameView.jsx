@@ -30,7 +30,9 @@ function AddGameView({
   onSubmit,
   onFieldChange,
 }) {
-  const platformChoices = addGameColumnValues.Plateforme || platforms;
+  const platformChoices = (addGameColumnValues.Plateforme || []).length > 0
+    ? addGameColumnValues.Plateforme
+    : platforms.map((platform) => platform.name || "");
 
   return (
     <main className="container">

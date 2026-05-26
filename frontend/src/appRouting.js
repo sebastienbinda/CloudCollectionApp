@@ -31,14 +31,24 @@ class AppRouting {
   }
 
   /**
+   * Lit l'identifiant de plateforme present dans l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.search`.
+   * @returns {string} Identifiant issu du parametre `platform_id`, ou chaine vide.
+   */
+  static getPlatformIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("platform_id") || "";
+  }
+
+  /**
    * Lit la plateforme presente dans l'URL courante.
    *
    * @param {void} Aucun - Utilise `window.location.search`.
-   * @returns {string} Nom de plateforme issu du parametre `platform`, ou chaine vide.
+   * @returns {string} Identifiant de plateforme compatible avec l'ancien appel.
    */
   static getPlatformFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("platform") || "";
+    return AppRouting.getPlatformIdFromUrl();
   }
 
   /**
@@ -114,7 +124,7 @@ class AppRouting {
     if (window.location.pathname === "/collection/import") {
       return "collectionOnboarding";
     }
-    if (AppRouting.getPlatformFromUrl()) {
+    if (AppRouting.getPlatformIdFromUrl()) {
       return "games";
     }
     return AppRouting.hasStoredAccessToken() ? "home" : "about";

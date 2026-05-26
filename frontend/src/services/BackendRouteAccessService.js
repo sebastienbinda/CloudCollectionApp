@@ -153,9 +153,9 @@ class BackendRouteAccessService {
   getActionPermissions() {
     return {
       ...BackendRouteAccessService.getDefaultActionPermissions(this.hasToken()),
-      canAddGame: this.canAccess("POST", "/collections/videogames/games"),
-      canEditGame: this.canAccess("PUT", "/collections/videogames/games"),
-      canDeleteGame: this.canAccess("DELETE", "/collections/videogames/games"),
+      canAddGame: false,
+      canEditGame: false,
+      canDeleteGame: false,
       canDownloadOds: this.canAccess("GET", "/collections/videogames/download"),
       canResetCache: false,
       canSearchUsers: this.canAccess("GET", "/api/users"),

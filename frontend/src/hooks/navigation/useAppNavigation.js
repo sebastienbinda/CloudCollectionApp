@@ -24,14 +24,15 @@ import AppRouting from "../../appRouting";
 function useAppNavigation(options) {
   const [currentView, setCurrentView] = useState(AppRouting.getViewFromUrl);
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
-    AppRouting.getPlatformFromUrl()
+    AppRouting.getPlatformIdFromUrl()
   );
 
-  const updatePlatformUrl = (platform) => {
+  const updatePlatformUrl = (platformId) => {
     const url = new URL(window.location.href);
     url.pathname = "/";
-    if (platform) url.searchParams.set("platform", platform);
-    else url.searchParams.delete("platform");
+    url.searchParams.delete("platform");
+    if (platformId) url.searchParams.set("platform_id", platformId);
+    else url.searchParams.delete("platform_id");
     window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
   };
 
@@ -49,10 +50,11 @@ function useAppNavigation(options) {
   };
 
   const openPlatform = (platform) => {
+    const platformId = typeof platform === "object" && platform !== null ? platform.id : platform;
     options.clearDeleteGameFeedback();
-    setSelectedPlatform(platform);
+    setSelectedPlatform(String(platformId || ""));
     setCurrentView("games");
-    updatePlatformUrl(platform);
+    updatePlatformUrl(platformId);
   };
 
   useEffect(() => {
@@ -83,9 +85,9 @@ function useAppNavigation(options) {
         window.history.replaceState({}, "", "/about");
         return;
       }
-      const platformFromUrl = AppRouting.getPlatformFromUrl();
-      setCurrentView(platformFromUrl ? "games" : "home");
-      if (platformFromUrl) setSelectedPlatform(platformFromUrl);
+      const platformIdFromUrl = AppRouting.getPlatformIdFromUrl();
+      setCurrentView(platformIdFromUrl ? "games" : "home");
+      if (platformIdFromUrl) setSelectedPlatform(platformIdFromUrl);
     };
 
     window.addEventListener("popstate", handlePopState);
