@@ -24,16 +24,15 @@ import AppRouting from "../../appRouting";
 function useAppNavigation(options) {
   const [currentView, setCurrentView] = useState(AppRouting.getViewFromUrl);
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
-    AppRouting.getViewFromUrl() === "wishlist"
-      ? AppRouting.wishlistSheetName
-      : AppRouting.getPlatformFromUrl()
+    AppRouting.getPlatformIdFromUrl()
   );
 
-  const updatePlatformUrl = (platform) => {
+  const updatePlatformUrl = (platformId) => {
     const url = new URL(window.location.href);
     url.pathname = "/";
-    if (platform) url.searchParams.set("platform", platform);
-    else url.searchParams.delete("platform");
+    url.searchParams.delete("platform");
+    if (platformId) url.searchParams.set("platform_id", platformId);
+    else url.searchParams.delete("platform_id");
     window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
   };
 
@@ -44,6 +43,10 @@ function useAppNavigation(options) {
   };
 
   const openAddGamePage = () => {
+    if (!options.canUseCollectionViews) {
+      openView("adminDashboard", "/admin-dashboard");
+      return;
+    }
     options.clearDeleteGameFeedback();
     options.prepareAddGameForm(selectedPlatform);
     setCurrentView("addGame");
@@ -51,17 +54,15 @@ function useAppNavigation(options) {
   };
 
   const openPlatform = (platform) => {
+    if (!options.canUseCollectionViews) {
+      openView("adminDashboard", "/admin-dashboard");
+      return;
+    }
+    const platformId = typeof platform === "object" && platform !== null ? platform.id : platform;
     options.clearDeleteGameFeedback();
-    setSelectedPlatform(platform);
+    setSelectedPlatform(String(platformId || ""));
     setCurrentView("games");
-    updatePlatformUrl(platform);
-  };
-
-  const openWishlist = () => {
-    options.clearDeleteGameFeedback();
-    setSelectedPlatform(AppRouting.wishlistSheetName);
-    setCurrentView("wishlist");
-    window.history.pushState({}, "", "/wishlist");
+    updatePlatformUrl(platformId);
   };
 
   useEffect(() => {
@@ -92,14 +93,9 @@ function useAppNavigation(options) {
         window.history.replaceState({}, "", "/about");
         return;
       }
-      if (pathname === "/wishlist") {
-        setSelectedPlatform(AppRouting.wishlistSheetName);
-        setCurrentView("wishlist");
-        return;
-      }
-      const platformFromUrl = AppRouting.getPlatformFromUrl();
-      setCurrentView(platformFromUrl ? "games" : "home");
-      if (platformFromUrl) setSelectedPlatform(platformFromUrl);
+      const platformIdFromUrl = AppRouting.getPlatformIdFromUrl();
+      setCurrentView(platformIdFromUrl ? "games" : "home");
+      if (platformIdFromUrl) setSelectedPlatform(platformIdFromUrl);
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -119,6 +115,16 @@ function useAppNavigation(options) {
   }, [options.authenticatedProfile, currentView]);
 
   useEffect(() => {
+    const collectionViews = ["home", "games", "addGame", "collectionOnboarding"];
+    if (options.canUseCollectionViews || !collectionViews.includes(currentView)) return;
+    const fallbackView = options.authenticatedProfile === "ADMIN" ? "adminDashboard" : "about";
+    const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/admin-dashboard" : "/about";
+    setSelectedPlatform("");
+    setCurrentView(fallbackView);
+    window.history.replaceState({}, "", fallbackPath);
+  }, [currentView, options.authenticatedProfile, options.canUseCollectionViews]);
+
+  useEffect(() => {
     if (!options.hasAccessToken || currentView !== "home" || window.location.pathname !== "/") return;
     window.history.replaceState({}, "", "/collection");
   }, [currentView, options.hasAccessToken]);
@@ -133,7 +139,13 @@ function useAppNavigation(options) {
     setCurrentView,
     selectedPlatform,
     setSelectedPlatform,
-    goHome: () => openView("home", "/collection"),
+    goHome: () => {
+      if (!options.canUseCollectionViews) {
+        openView("adminDashboard", "/admin-dashboard");
+        return;
+      }
+      openView("home", "/collection");
+    },
     openAbout: () => openView("about", "/about"),
     openLibrary: () => openView("library", "/bibliotheque"),
     openLibraryPlatforms: () => openView("libraryPlatforms", "/bibliotheque/plateformes"),
@@ -142,9 +154,14 @@ function useAppNavigation(options) {
     openAddGamePage,
     openAdminDashboard: () => openView("adminDashboard", "/admin-dashboard"),
     openUsersPage: () => openView("users", "/users"),
-    openCollectionOnboarding: () => openView("collectionOnboarding", "/collection/import"),
+    openCollectionOnboarding: () => {
+      if (!options.canUseCollectionViews) {
+        openView("adminDashboard", "/admin-dashboard");
+        return;
+      }
+      openView("collectionOnboarding", "/collection/import");
+    },
     openPlatform,
-    openWishlist,
   };
 }
 

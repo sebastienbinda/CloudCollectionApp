@@ -19,7 +19,7 @@ import VideoGamesApi from "../services/VideoGamesApi";
  * Gere la suppression et la modification des jeux de plateforme.
  *
  * @param {string} selectedPlatform - Plateforme courante.
- * @param {Function} reloadOds - Callback de rechargement des statistiques ODS.
+ * @param {Function} reloadOds - Callback de rechargement des statistiques collection.
  * @param {Function} reloadGames - Callback de rechargement des jeux.
  * @returns {Object} Etat et actions de mutation des jeux.
  */
@@ -84,7 +84,7 @@ function usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames) {
   /**
    * Enregistre les modifications d'un jeu.
    *
-   * @param {Object} originalGame - Jeu original identifiant la ligne ODS.
+   * @param {Object} originalGame - Jeu original identifiant l'entree collection.
    * @param {Object} updatedGame - Donnees modifiees par l'utilisateur.
    * @returns {Promise<void>} Modifie le jeu et actualise l'interface.
    */

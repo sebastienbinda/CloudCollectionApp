@@ -18,21 +18,20 @@ from flask_cors import CORS
 
 from controllers import (
     AuthenticationController,
+    CollectionController,
     GameController,
     PlatformController,
     RouteController,
     StudioController,
     UserCollectionImportController,
     UserController,
-    UserGamesCollectionController,
-    UserWishListController,
 )
 from services import (
     AuthGuard,
     AuthTokenService,
     BackendLoggingService,
     DatabaseSchemaService,
-    GamesService,
+    LibraryServiceProvider,
     UserCollectionImportConfiguration,
 )
 
@@ -58,25 +57,18 @@ authentication_controller = AuthenticationController(auth_token_service)
 route_controller = RouteController()
 user_controller = UserController(auth_guard)
 user_collection_import_controller = UserCollectionImportController(auth_guard)
-user_games_collection_controller = UserGamesCollectionController(
-    auth_guard,
-    games_service_factory=lambda: GamesService(),
-)
-user_wishlist_controller = UserWishListController(
-    auth_guard,
-    games_service_factory=lambda: GamesService(),
-)
-platform_controller = PlatformController(games_service_factory=lambda: GamesService())
-studio_controller = StudioController()
-game_controller = GameController()
+collection_controller = CollectionController(auth_guard)
+library_service_provider = LibraryServiceProvider()
+platform_controller = PlatformController(library_service_factory=library_service_provider)
+studio_controller = StudioController(library_service_factory=library_service_provider)
+game_controller = GameController(library_service_factory=library_service_provider)
 
 # 5. Enregistre les routes avant de les marquer avec la protection globale.
 authentication_controller.register_routes(app)
 route_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
-user_games_collection_controller.register_routes(app)
-user_wishlist_controller.register_routes(app)
+collection_controller.register_routes(app)
 platform_controller.register_routes(app)
 studio_controller.register_routes(app)
 game_controller.register_routes(app)

@@ -22,7 +22,6 @@ import LibraryHomeView from "./LibraryHomeView";
 import PlatformDetailView from "./PlatformDetailView";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
-import WishlistView from "./WishlistView";
 
 /**
  * Selectionne la vue React a afficher selon l'etat applicatif courant.
@@ -59,10 +58,6 @@ class AppViewSwitch {
       return this.renderUsers(props);
     }
 
-    if (props.currentView === "wishlist") {
-      return this.renderWishlist(props);
-    }
-
     if (props.currentView === "collectionOnboarding") {
       return this.renderCollectionOnboarding(props);
     }
@@ -96,6 +91,7 @@ class AppViewSwitch {
     return (
       <AboutView
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
@@ -103,7 +99,6 @@ class AppViewSwitch {
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
-        onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}
@@ -131,6 +126,7 @@ class AppViewSwitch {
         homeSearchResults={props.homeSearchResults}
         homeSearchError={props.homeSearchError}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         onOpenAbout={props.openAbout}
@@ -138,7 +134,6 @@ class AppViewSwitch {
         onOpenLibrary={props.openLibrary}
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}
-        onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onSearchQueryChange={props.setHomeSearchQuery}
         onSearchSubmit={props.searchGamesByName}
@@ -160,18 +155,15 @@ class AppViewSwitch {
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
         canAddGame={props.actionPermissions.canAddGame}
-        canResetCache={props.actionPermissions.canResetCache}
         canDownloadOds={props.actionPermissions.canDownloadOds}
         canSearchUsers={props.actionPermissions.canSearchUsers}
-        cacheResetMessage={props.cacheResetMessage}
-        cacheResetError={props.cacheResetError}
-        isResettingCache={props.isResettingCache}
+        canUseCollectionViews={props.canUseCollectionViews}
         downloadError={props.downloadError}
         isDownloadingOds={props.isDownloadingOds}
         onBack={props.goHome}
+        onBackToLibrary={props.openLibrary}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
-        onResetCache={props.resetOdsCache}
         onDownloadOds={props.downloadOdsFile}
       />
     );
@@ -212,7 +204,6 @@ class AppViewSwitch {
         addGameMessage={props.addGameMessage}
         isAddingGame={props.isAddingGame}
         canAddGame={props.actionPermissions.canAddGame}
-        canAddWishlistGame={props.actionPermissions.canAddWishlistGame}
         onBack={props.goHome}
         onSubmit={props.submitNewGame}
         onFieldChange={props.updateGameFormValue}
@@ -230,6 +221,7 @@ class AppViewSwitch {
     return (
       <AuthView
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         onAuthenticated={props.handleAuthenticatedUser}
         onBack={props.openAbout}
       />
@@ -254,51 +246,15 @@ class AppViewSwitch {
         isCheckingCollection={props.isCheckingCollection}
         isImportingCollection={props.isImportingCollection}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
-        onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}
         onFileChange={props.selectCollectionFile}
         onSubmitImport={props.importSelectedCollection}
-      />
-    );
-  }
-
-  /**
-   * Rend la liste de souhaits.
-   *
-   * @param {Object} props - Etat et callbacks wishlist.
-   * @returns {import("react").JSX.Element} Vue wishlist.
-   */
-  static renderWishlist(props) {
-    return (
-      <WishlistView
-        games={props.namedGames}
-        columns={props.columns}
-        valuesByColumn={props.valuesByColumn}
-        columnFilters={props.columnFilters}
-        sortConfig={props.sortConfig}
-        sortedGames={props.sortedGames}
-        filteredGames={props.filteredGames}
-        error={props.error}
-        isLoadingGames={props.isLoadingGames}
-        platforms={props.platforms}
-        canAddGame={props.actionPermissions.canAddGame}
-        canEditWishlistGame={props.actionPermissions.canEditWishlistGame}
-        canDeleteWishlistGame={props.actionPermissions.canDeleteWishlistGame}
-        editingWishlistGame={props.editingWishlistGame}
-        isSavingWishlistGame={props.isSavingWishlistGame}
-        onBack={props.goHome}
-        onAddWishlistGameToPlatform={props.addWishlistGameToPlatform}
-        onDeleteWishlistGame={props.deleteWishlistGame}
-        onEditWishlistGame={props.openEditWishlistGame}
-        onSaveWishlistGame={props.saveEditedWishlistGame}
-        onCancelEditWishlistGame={props.cancelEditWishlistGame}
-        onToggleSort={props.toggleSort}
-        onColumnFiltersChange={props.setColumnFilters}
       />
     );
   }
@@ -316,6 +272,7 @@ class AppViewSwitch {
         entitiesError={props.libraryEntities.entitiesError}
         isLoadingEntities={props.libraryEntities.isLoadingEntities}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
@@ -326,7 +283,6 @@ class AppViewSwitch {
         onOpenLibraryPlatforms={props.openLibraryPlatforms}
         onOpenLibraryStudios={props.openLibraryStudios}
         onOpenLibraryGames={props.openLibraryGames}
-        onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}
@@ -350,6 +306,7 @@ class AppViewSwitch {
         subtitle={subtitle}
         listState={listState}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
@@ -357,7 +314,6 @@ class AppViewSwitch {
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
-        onOpenWishlist={props.openWishlist}
         onOpenPlatform={props.openPlatform}
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}

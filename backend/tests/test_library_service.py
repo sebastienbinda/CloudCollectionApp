@@ -17,6 +17,7 @@ import unittest
 from services.database import DatabaseConfiguration
 from services.library import LibraryQueryParser
 from services.library.library_service import LibraryService
+from services.library.library_service_provider import LibraryServiceProvider
 
 
 class FakeConnectionContext:
@@ -302,6 +303,34 @@ class LibraryServiceTest(unittest.TestCase):
 
         self.assertEqual({"platforms": 2, "studios": 3, "games": 9}, payload)
         self.assertEqual(1, self.engine.connect_count)
+
+    def test_library_service_provider_reuses_singleton_instance(self):
+        """Verifie que le fournisseur Bibliotheque construit une seule instance.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le singleton et son reset.
+        """
+
+        created_services = []
+
+        def create_service():
+            service = object()
+            created_services.append(service)
+            return service
+
+        provider = LibraryServiceProvider(create_service)
+
+        first_service = provider.get_service()
+        second_service = provider()
+        provider.reset()
+        third_service = provider.get_service()
+
+        self.assertIs(first_service, second_service)
+        self.assertIsNot(first_service, third_service)
+        self.assertEqual(2, len(created_services))
 
     def test_list_platforms_returns_contract_payload(self):
         """Verifie le payload pagine des plateformes.

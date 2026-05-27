@@ -33,10 +33,10 @@ function UserCollectionOnboardingView({
   isCheckingCollection,
   isImportingCollection,
   isAuthenticated,
+  canUseCollectionViews,
   onOpenAbout,
   onOpenHome,
   onOpenLibrary,
-  onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
   onLogout,
@@ -71,6 +71,7 @@ function UserCollectionOnboardingView({
       <header className="pageHeader collectionOnboardingHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}
@@ -78,7 +79,6 @@ function UserCollectionOnboardingView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}

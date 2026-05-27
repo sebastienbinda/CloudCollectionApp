@@ -11,6 +11,8 @@
 #
 # Description : tests des routes publiques Bibliotheque et catalogue.
 
+import app as app_module
+
 try:
     from tests.route_test_support import BaseAppRoutesTest
     from tests.route_test_fakes import FakeLibraryService
@@ -36,6 +38,52 @@ class LibraryRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual({"platforms": 2, "studios": 3, "games": 4}, response.get_json())
+
+    def test_library_controller_reuses_single_service_instance(self):
+        """Verifie que les controleurs Bibliotheque reutilisent leur service.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident une seule construction par controleur.
+        """
+
+        created_services = {
+            "platforms": [],
+            "studios": [],
+            "games": [],
+        }
+
+        def create_platform_service():
+            service = FakeLibraryService()
+            created_services["platforms"].append(service)
+            return service
+
+        def create_studio_service():
+            service = FakeLibraryService()
+            created_services["studios"].append(service)
+            return service
+
+        def create_game_service():
+            service = FakeLibraryService()
+            created_services["games"].append(service)
+            return service
+
+        app_module.platform_controller.library_service_factory = create_platform_service
+        app_module.studio_controller.library_service_factory = create_studio_service
+        app_module.game_controller.library_service_factory = create_game_service
+
+        self.client.get("/api/library/entities")
+        self.client.get("/api/library/platforms")
+        self.client.get("/api/library/studios")
+        self.client.get("/api/library/studios")
+        self.client.get("/api/library/games")
+        self.client.get("/api/library/games")
+
+        self.assertEqual(1, len(created_services["platforms"]))
+        self.assertEqual(1, len(created_services["studios"]))
+        self.assertEqual(1, len(created_services["games"]))
 
     def test_library_platforms_route_is_public_and_uses_query_contract(self):
         """Verifie la route plateformes publique.

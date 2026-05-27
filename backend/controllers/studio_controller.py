@@ -34,6 +34,8 @@ class StudioController:
             None: Le constructeur ne retourne aucune valeur.
         """
 
+        self._library_service = None
+        self._library_service_factory = None
         self.library_service_factory = library_service_factory or self._create_default_library_service
         self.library_query_parser = library_query_parser or LibraryQueryParser()
 
@@ -78,23 +80,52 @@ class StudioController:
 
         try:
             criteria = self.library_query_parser.parse("studios", request.args)
-            return jsonify(self._create_library_service().list_studios(criteria))
+            return jsonify(self._get_library_service().list_studios(criteria))
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 503
         except Exception as exc:
             return jsonify({"error": f"Unable to read library studios: {exc}"}), 500
 
-    def _create_library_service(self):
-        """Construit le service Bibliotheque.
+    @property
+    def library_service_factory(self):
+        """Retourne la fabrique du service Bibliotheque.
 
         Args:
             Aucun.
 
         Returns:
-            LibraryService: Service metier utilise par les routes Bibliotheque.
+            Callable: Fabrique courante du service Bibliotheque.
         """
 
-        return self.library_service_factory()
+        return self._library_service_factory
+
+    @library_service_factory.setter
+    def library_service_factory(self, factory):
+        """Remplace la fabrique du service Bibliotheque et invalide le singleton.
+
+        Args:
+            factory (Callable): Fabrique a utiliser pour construire le service.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self._library_service_factory = factory
+        self._library_service = None
+
+    def _get_library_service(self):
+        """Retourne le singleton de service Bibliotheque du controleur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            LibraryService: Service metier partage par les routes Bibliotheque.
+        """
+
+        if self._library_service is None:
+            self._library_service = self.library_service_factory()
+        return self._library_service
 
     def _create_default_library_service(self):
         """Construit le service Bibliotheque depuis l'environnement.

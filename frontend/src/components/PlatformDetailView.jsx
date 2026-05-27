@@ -55,6 +55,10 @@ function PlatformDetailView({
   onDeleteGame,
   editingGame,
 }) {
+  const selectedPlatformName = selectedPlatformStats?.name
+    || platforms.find((platform) => String(platform.id) === String(selectedPlatform))?.name
+    || "CloudCollectionApp";
+
   /**
    * Indique si une note de jeu merite une mise en avant.
    *
@@ -83,21 +87,14 @@ function PlatformDetailView({
         Ma collection
       </button>
       <section
-        className={`platformDetailHero${
-          selectedPlatformStats?.has_image ? " platformDetailHeroWithImage" : ""
-        }`}
-        style={
-          selectedPlatformStats?.image_url
-            ? { backgroundImage: `url("${encodeURI(selectedPlatformStats.image_url)}")` }
-            : undefined
-        }
+        className="platformDetailHero"
       >
         <div className="platformDetailContent">
           <p className="eyebrow">Plateforme</p>
           <h1>
             <span className="pageTitleWithIcon">
               <ProjectIcon />
-              <span>{selectedPlatformStats?.name || selectedPlatform || "CloudCollectionApp"}</span>
+              <span>{selectedPlatformName}</span>
             </span>
           </h1>
           <p className="subtitle">Filtrer la liste par plateforme</p>
@@ -143,8 +140,8 @@ function PlatformDetailView({
           disabled={isLoadingPlatforms || platforms.length === 0}
         >
           {platforms.map((platform) => (
-            <option key={platform} value={platform}>
-              {platform}
+            <option key={platform.id} value={platform.id}>
+              {platform.name}
             </option>
           ))}
         </select>
@@ -176,13 +173,13 @@ function PlatformDetailView({
                   <div className="rowActionGroup">
                     {canEditGame ? (
                       <button
-                        className="wishlistIconButton"
+                        className="rowIconButton"
                         type="button"
                         aria-label={`Modifier ${game["Nom du jeu"] || "ce jeu"}`}
                         title="Modifier le jeu"
                         onClick={() => onEditGame(game)}
                       >
-                        <svg aria-hidden="true" className="wishlistActionIcon" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
                           <path d="M4 17.5V21h3.5L18.1 10.4l-3.5-3.5L4 17.5Z" />
                           <path d="m16 5.5 1.6-1.6a1.2 1.2 0 0 1 1.7 0l.8.8a1.2 1.2 0 0 1 0 1.7L18.5 8 16 5.5Z" />
                         </svg>
@@ -190,13 +187,13 @@ function PlatformDetailView({
                     ) : null}
                     {canDeleteGame ? (
                       <button
-                        className="wishlistIconButton dangerIconButton"
+                        className="rowIconButton dangerIconButton"
                         type="button"
                         aria-label={`Supprimer ${game["Nom du jeu"] || "ce jeu"} de la plateforme`}
                         title="Supprimer de la plateforme"
                         onClick={() => onDeleteGame(game)}
                       >
-                        <svg aria-hidden="true" className="wishlistActionIcon" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
                           <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z" />
                           <path d="M6 9h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z" />
                         </svg>

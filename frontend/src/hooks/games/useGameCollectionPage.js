@@ -17,6 +17,32 @@ import { filterGames, getStudioCount, sortGames } from "../../collectionUtils";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import usePlatformGameMutations from "../usePlatformGameMutations";
 
+const filterableColumns = ["Studio", "Version", "Date de sortie", "Date d'achat"];
+const hiddenGameColumns = new Set(["id", "platform_id"]);
+
+/**
+ * Construit les valeurs distinctes de filtres depuis les jeux charges.
+ *
+ * @param {Array<Object>} loadedGames - Jeux normalises pour le tableau.
+ * @returns {Object} Valeurs distinctes par colonne.
+ */
+const buildValuesByColumn = (loadedGames) =>
+  filterableColumns.reduce((values, column) => {
+    values[column] = Array.from(
+      new Set(
+        loadedGames
+          .map((game) => game[column])
+          .filter((value) => value !== null && value !== undefined && String(value).trim() !== "")
+      )
+    ).sort((firstValue, secondValue) =>
+      String(firstValue).localeCompare(String(secondValue), "fr", {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
+    return values;
+  }, {});
+
 /**
  * Gere les jeux, filtres, tris et mutations de la collection par plateforme.
  *
@@ -39,6 +65,7 @@ function useGameCollectionPage(options) {
     const fetchGames = async () => {
       if (!options.hasAccessToken || !options.selectedPlatform) {
         setGames([]);
+        setValuesByColumn({});
         setIsLoadingGames(false);
         return;
       }
@@ -47,11 +74,14 @@ function useGameCollectionPage(options) {
         setIsLoadingGames(true);
         options.setError("");
         const data = await VideoGamesApi.fetchGames(options.selectedPlatform);
-        setGames(Array.isArray(data) ? data : []);
+        const loadedGames = Array.isArray(data) ? data : [];
+        setGames(loadedGames);
+        setValuesByColumn(buildValuesByColumn(loadedGames));
         setColumnFilters({});
       } catch (e) {
         options.setError("Impossible de charger les jeux video pour cette plateforme.");
         setGames([]);
+        setValuesByColumn({});
       } finally {
         setIsLoadingGames(false);
       }
@@ -60,27 +90,14 @@ function useGameCollectionPage(options) {
     fetchGames();
   }, [options.selectedPlatform, options.gamesReloadKey, options.isAuthenticated, options.hasAccessToken]);
 
-  useEffect(() => {
-    const fetchColumnValues = async () => {
-      if (!options.hasAccessToken || !options.selectedPlatform) {
-        setValuesByColumn({});
-        return;
-      }
-
-      try {
-        const data = await VideoGamesApi.fetchColumnValues(options.selectedPlatform);
-        setValuesByColumn(data.values_by_column || {});
-      } catch (e) {
-        setValuesByColumn({});
-      }
-    };
-
-    fetchColumnValues();
-  }, [options.selectedPlatform, options.gamesReloadKey, options.isAuthenticated, options.hasAccessToken]);
-
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
   const columns = namedGames.length > 0
-    ? ["Nom du jeu", ...Object.keys(namedGames[0]).filter((column) => column !== "Nom du jeu")]
+    ? [
+        "Nom du jeu",
+        ...Object.keys(namedGames[0]).filter(
+          (column) => column !== "Nom du jeu" && !hiddenGameColumns.has(column)
+        ),
+      ]
     : [];
   const filteredGames = filterGames(namedGames, columns, columnFilters);
   const sortedGames = sortGames(filteredGames, sortConfig);

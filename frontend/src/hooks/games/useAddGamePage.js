@@ -14,9 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
-import AddGameChoicesApi from "../../services/AddGameChoicesApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
-import WishlistAddApi from "../../services/WishlistAddApi";
 
 const initialGameForm = AppRouting.createInitialGameForm();
 
@@ -34,11 +32,14 @@ function useAddGamePage(options) {
   const [isAddingGame, setIsAddingGame] = useState(false);
 
   const prepareAddGameForm = (selectedPlatform, availablePlatforms = options.platforms) => {
+    const selectedPlatformName = availablePlatforms.find(
+      (platform) => String(platform.id) === String(selectedPlatform)
+    )?.name;
     setAddGameMessage("");
     setAddGameError("");
     setGameForm((previous) => ({
       ...previous,
-      platform: previous.platform || selectedPlatform || availablePlatforms[0] || "",
+      platform: previous.platform || selectedPlatformName || availablePlatforms[0]?.name || "",
     }));
   };
 
@@ -56,12 +57,7 @@ function useAddGamePage(options) {
         return;
       }
 
-      try {
-        const data = await AddGameChoicesApi.fetchChoices(gameForm.platform);
-        setAddGameColumnValues(data.values_by_column || {});
-      } catch (e) {
-        setAddGameColumnValues({});
-      }
+      setAddGameColumnValues({});
     };
 
     fetchAddGameColumnValues();
@@ -71,27 +67,19 @@ function useAddGamePage(options) {
     event.preventDefault();
     setAddGameMessage("");
     setAddGameError("");
-    const isWishlistTarget = gameForm.addTarget === "wishlist";
-    if (isWishlistTarget && !options.actionPermissions.canAddWishlistGame) return;
-    if (!isWishlistTarget && !options.actionPermissions.canAddGame) return;
+    if (!options.actionPermissions.canAddGame) return;
 
     try {
       setIsAddingGame(true);
-      const data = isWishlistTarget
-        ? await WishlistAddApi.addWishlistGame(gameForm)
-        : await VideoGamesApi.addGame(gameForm);
-      setAddGameMessage(
-        isWishlistTarget ? "Jeu ajoute a la liste de souhaits." : "Jeu ajoute avec succes."
-      );
+      const data = await VideoGamesApi.addGame(gameForm);
+      setAddGameMessage("Jeu ajoute avec succes.");
       setGameForm({
         ...initialGameForm,
         platform: gameForm.platform,
-        addTarget: gameForm.addTarget,
       });
       options.reloadOds();
       options.reloadGames();
-      if (isWishlistTarget) options.openWishlist();
-      else options.openPlatform(data.item.Plateforme);
+      options.openPlatform(data.item.Plateforme);
     } catch (e) {
       setAddGameError(e.message || "Impossible d'ajouter le jeu.");
     } finally {

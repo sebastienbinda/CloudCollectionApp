@@ -25,6 +25,7 @@ function HomeView({
   homeSearchResults,
   homeSearchError,
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -32,7 +33,6 @@ function HomeView({
   onOpenLibrary,
   onOpenAdminDashboard,
   onLogout,
-  onOpenWishlist,
   onOpenPlatform,
   onSearchQueryChange,
   onSearchSubmit,
@@ -49,6 +49,7 @@ function HomeView({
       <header className="pageHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}
@@ -56,7 +57,6 @@ function HomeView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}
@@ -135,7 +135,7 @@ function HomeView({
                 {homeSearchResults.map((game, index) => (
                   <article
                     className="searchResultCard"
-                    key={`${game.Plateforme}-${game["Nom du jeu"]}-${index}`}
+                    key={`${game.platform_id}-${game["Nom du jeu"]}-${index}`}
                   >
                     <div>
                       <span>{game.Plateforme}</span>
@@ -169,7 +169,7 @@ function HomeView({
                         <dd>{formatCellValue("Version", game.Version)}</dd>
                       </div>
                     </dl>
-                    <button type="button" onClick={() => onOpenPlatform(game.Plateforme)}>
+                    <button type="button" onClick={() => onOpenPlatform(game.platform_id)}>
                       Voir la plateforme
                     </button>
                   </article>
@@ -208,23 +208,17 @@ function HomeView({
             <div className="sectionHeader">
               <div>
                 <h2>Plateformes</h2>
-                <span>{formatNumber(homeStats.platforms?.length || 0)} onglets</span>
+                <span>{formatNumber(homeStats.platforms?.length || 0)} plateformes</span>
               </div>
             </div>
             <GridComponent>
               {(homeStats.platforms || []).map((platform) => (
                 <CardComponent
                   className={[
-                    platform.has_image ? "platformCardWithImage" : "",
-                    topPlatform?.sheet_name === platform.sheet_name ? "platformCardTopCount" : "",
+                    topPlatform?.id === platform.id ? "platformCardTopCount" : "",
                   ].join(" ")}
-                  key={platform.name}
-                  onClick={() => onOpenPlatform(platform.sheet_name)}
-                  style={
-                    platform.image_url
-                      ? { backgroundImage: `url("${encodeURI(platform.image_url)}")` }
-                      : undefined
-                  }
+                  key={platform.id || platform.name}
+                  onClick={() => onOpenPlatform(platform.id)}
                 >
                   <CardHeaderComponent>
                     <h3>{platform.name}</h3>

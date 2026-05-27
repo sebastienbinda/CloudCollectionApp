@@ -23,12 +23,12 @@ import AuthStatusMenu from "./AuthStatusMenu";
  */
 function MainMenu({
   isAuthenticated,
+  canUseCollectionViews = true,
   username,
   profile,
   onOpenAbout,
   onOpenHome,
   onOpenLibrary,
-  onOpenWishlist,
   onOpenAdminDashboard,
   onLogout,
 }) {
@@ -135,7 +135,7 @@ function MainMenu({
             className="secondaryButton"
             type="button"
             onClick={() => runMenuAction(onOpenHome)}
-            disabled={!isAuthenticated}
+            disabled={!isAuthenticated || !canUseCollectionViews}
           >
             Ma collection
           </button>
@@ -145,14 +145,6 @@ function MainMenu({
             onClick={() => runMenuAction(onOpenLibrary)}
           >
             Bibliotheque
-          </button>
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(onOpenWishlist)}
-            disabled={!isAuthenticated}
-          >
-            Liste de souhaits
           </button>
         </div>
       </div>

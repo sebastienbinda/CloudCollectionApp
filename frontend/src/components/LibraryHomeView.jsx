@@ -32,6 +32,7 @@ function LibraryHomeView({
   entitiesError,
   isLoadingEntities,
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   platforms,
@@ -42,7 +43,6 @@ function LibraryHomeView({
   onOpenLibraryPlatforms,
   onOpenLibraryStudios,
   onOpenLibraryGames,
-  onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
   onLogout,
@@ -58,6 +58,7 @@ function LibraryHomeView({
       <header className="pageHeader libraryHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}
@@ -65,7 +66,6 @@ function LibraryHomeView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}

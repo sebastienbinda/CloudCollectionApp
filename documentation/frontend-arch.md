@@ -28,10 +28,10 @@ Use the following domain folders for new or modified hooks:
   view-model assembly.
 - `frontend/src/hooks/navigation/`: current view, URL synchronization,
   history handling and route redirection.
-- `frontend/src/hooks/collection/`: cross-page collection refresh and cache
-  actions, plus connected-user collection onboarding and import state.
-- `frontend/src/hooks/home/`: home dashboard data, protected home images and
-  home search.
+- `frontend/src/hooks/collection/`: cross-page collection refresh signals, plus
+  connected-user collection onboarding and import state.
+- `frontend/src/hooks/home/`: connected-user collection statistics and home
+  search.
 - `frontend/src/hooks/platforms/`: platform catalog loading and platform
   selection initialization.
 - `frontend/src/hooks/games/`: platform game collection, game filtering,
@@ -39,8 +39,6 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/library/`: public Library counters, public entity search,
   server-side pagination and backend-driven sorting for platforms, studios and
   games.
-- `frontend/src/hooks/wishlist/`: wishlist-specific mutations and transfer
-  actions.
 
 ## Current Entry Points
 
@@ -65,14 +63,20 @@ Use the following domain folders for new or modified hooks:
 - Own `currentView` and `selectedPlatform`.
 - Own browser history updates and `popstate` behavior.
 - Preserve unauthenticated redirection rules from `documentation/site-plan.md`.
+- Preserve the frontend-only `ADMIN` collection exclusion from
+  `documentation/site-plan.md`: `ADMIN` keeps backend rights but must not open
+  collection ownership views.
 - Do not fetch backend data.
 
 ### `hooks/collection`
 
-- Own cross-page collection refresh and ODS cache reset behavior.
+- Own cross-page collection refresh behavior.
 - Own the connected-user collection onboarding workflow.
 - Call `GET /api/users/me/collection` after sign-in to decide whether the user
   can continue to `/collection` or must visit `/collection/import`.
+- Skip the collection-status check for the configured `ADMIN` account and route
+  it to administration instead, because `ADMIN` is not a frontend collection
+  owner.
 - Call `POST /api/users/import` with `FormData` from the import view and let the
   backend own all import validation and persistence decisions.
 - Redirect to `/collection` only after a successful import or when the status route
@@ -80,21 +84,21 @@ Use the following domain folders for new or modified hooks:
 
 ### `hooks/home`
 
-- Own home dashboard loading.
+- Own connected-user collection statistics loading.
 - Own home search state and search submissions.
-- Own protected platform image object URLs and URL cleanup.
 
 ### `hooks/platforms`
 
 - Own platform list loading.
-- Filter technical ODS sheets that must not appear as user platforms.
+- Load connected-user collection platforms from backend SQL endpoints.
 - Initialize selected platform from URL or first available platform.
 
 ### `hooks/games`
 
 - Own platform game loading.
 - Own table filters, sorting and derived game collections.
-- Own add-game form state, suggestions and submit workflow.
+- Own add-game form state and future submit workflow while backend actions
+  remain reserved.
 - Use services for backend calls and utilities for pure transforms.
 
 ### `hooks/library`
@@ -106,11 +110,6 @@ Use the following domain folders for new or modified hooks:
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
-
-### `hooks/wishlist`
-
-- Own wishlist edit, delete and transfer workflows.
-- Keep wishlist-specific API behavior out of generic app hooks.
 
 ### `services`
 

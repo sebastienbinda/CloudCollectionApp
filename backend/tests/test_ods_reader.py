@@ -9,30 +9,16 @@
 # Auteurs : Codex et Binda Sébastien
 #
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
 from services.ods import OdsCache, OdsReader, OdsXmlReader
 
 
-class FakeImageReader:
-    def list_platform_image_paths(self):
-        """Retourne les chemins d'images factices des plateformes.
-
-        Args:
-            Aucun.
-
-        Returns:
-            dict[str, str]: Images factices indexees par nom d'onglet.
-        """
-
-        return {"Switch": "Pictures/switch.png", "Playstation": "Pictures/ps.png"}
-
-
-class OdsReaderFallbackTest(unittest.TestCase):
+class OdsReaderImportTest(unittest.TestCase):
     def setUp(self):
-        """Prepare un lecteur ODS avec dependances factices.
+        """Prepare un lecteur ODS d'import avec dependances factices.
 
         Args:
             Aucun.
@@ -42,118 +28,75 @@ class OdsReaderFallbackTest(unittest.TestCase):
         """
 
         self.reader = OdsReader(
-            ods_path="/tmp/fallback-home.ods",
-            cache=OdsCache("/tmp/fallback-home.ods"),
-            xml_reader=None,
-            image_reader=FakeImageReader(),
+            ods_path="/tmp/import.ods",
+            cache=OdsCache("/tmp/import.ods"),
+            xml_reader=MagicMock(),
         )
         self.reader.cache.reset()
-        self.reader.list_platforms = lambda: ["Switch", "Playstation"]
-        self.reader.read_games_dataframe = self._read_games_dataframe
 
-    def test_home_stats_fallback_recomputes_error_values(self):
-        """Verifie le fallback lorsque l'onglet Accueil retourne des erreurs.
+    def test_list_platforms_excludes_non_importable_sheets(self):
+        """Verifie que seuls les onglets plateformes sont exposes.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident les statistiques recalculees.
+            None: Les assertions valident le filtrage des onglets.
         """
 
-        with patch.dict("services.ods.ods_reader.os.environ", {}, clear=True):
-            with patch("services.ods.ods_reader.pd.read_excel", return_value=self._home_dataframe()):
-                stats = self.reader.get_home_stats()
+        excel_file = MagicMock()
+        excel_file.sheet_names = ["Accueil", "Switch", "Liste de souhaits", "Playstation"]
+        with patch("services.ods.ods_reader.pd.ExcelFile", return_value=excel_file):
+            platforms = self.reader.list_platforms()
 
-        self.assertEqual(3, stats["totals"]["games_count"])
-        self.assertEqual("Ma collection", stats["title"])
-        self.assertEqual(60.5, stats["totals"]["total_price"])
-        self.assertEqual(20.17, stats["totals"]["average_price"])
-        self.assertEqual("2019-03-01", stats["first_game_date"])
-        self.assertEqual("2021-06-15", stats["last_game_date"])
-        self.assertEqual(2, stats["platforms"][0]["games_count"])
-        self.assertEqual(30.5, stats["platforms"][0]["total_price"])
-        self.assertEqual(15.25, stats["platforms"][0]["average_price"])
+        self.assertEqual(["Switch", "Playstation"], platforms)
 
-    def test_home_stats_keeps_valid_sheet_values(self):
-        """Verifie que le fallback ne remplace pas les valeurs Accueil valides.
+    def test_read_games_dataframe_normalizes_typographic_columns(self):
+        """Verifie la normalisation des colonnes importables.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident la priorite des valeurs de l'onglet Accueil.
+            None: Les assertions valident les noms de colonnes.
         """
 
-        dataframe = self._home_dataframe()
-        dataframe = dataframe.astype(
-            {"Nombre de jeux": "object", "Prix": "object", "Prix moyen": "object"}
+        dataframe = pd.DataFrame(
+            [
+                {
+                    "Nom du jeu": "Zelda",
+                    "Date d’achat": "2020-01-01",
+                    "Lieu d’achat": "Paris",
+                    "Prix d’achat": "10",
+                }
+            ]
         )
-        dataframe.loc[dataframe["Plateforme"] == "Switch", "Nombre de jeux"] = 99
-        dataframe.loc[dataframe["Plateforme"] == "Switch", "Prix"] = 1234
-        dataframe.loc[dataframe["Plateforme"] == "Switch", "Prix moyen"] = 12.46
-
         with patch("services.ods.ods_reader.pd.read_excel", return_value=dataframe):
-            stats = self.reader.get_home_stats()
+            games = self.reader.read_games_dataframe("Switch")
 
-        switch_stats = stats["platforms"][0]
-        self.assertEqual(99, switch_stats["games_count"])
-        self.assertEqual(1234, switch_stats["total_price"])
-        self.assertEqual(12.46, switch_stats["average_price"])
+        self.assertIn("Date d'achat", games.columns)
+        self.assertIn("Lieu d'achat", games.columns)
+        self.assertIn("Prix d'achat", games.columns)
 
-    def test_home_stats_versions_platform_image_urls(self):
-        """Verifie que les URLs d'images changent avec le fichier ODS.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident la presence du jeton de cache.
-        """
-
-        with patch("services.ods.ods_reader.os.stat") as stat_mock:
-            stat_mock.return_value.st_mtime_ns = 123456
-            stat_mock.return_value.st_size = 789
-            with patch("services.ods.ods_reader.pd.read_excel", return_value=self._home_dataframe()):
-                stats = self.reader.get_home_stats()
-
-        image_url = stats["platforms"][0]["image_url"]
-        self.assertEqual("/collections/videogames/platform-image/Switch?v=123456-789", image_url)
-
-    def test_home_title_can_be_configured_from_environment(self):
-        """Verifie la configuration du titre d'accueil.
+    def test_read_games_dataframe_uses_xml_fallback_for_existing_platform(self):
+        """Verifie le secours XML lorsque pandas ne lit pas la feuille.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident le titre configure.
+            None: Les assertions valident l'appel au lecteur XML.
         """
 
-        self.reader.cache.reset()
-        with patch("services.ods.ods_reader.pd.read_excel", return_value=self._home_dataframe()):
-            with patch.dict("services.ods.ods_reader.os.environ", {"APP_HOME_TITLE": "Mes RPG"}):
-                stats = self.reader.get_home_stats()
+        fallback_dataframe = pd.DataFrame([{"Nom du jeu": "Mario"}])
+        self.reader.xml_reader.read_games_dataframe_from_xml.return_value = fallback_dataframe
+        self.reader.list_platforms = lambda: ["Switch"]
 
-        self.assertEqual("Mes RPG", stats["title"])
+        with patch("services.ods.ods_reader.pd.read_excel", side_effect=TypeError("formula")):
+            games = self.reader.read_games_dataframe("Switch")
 
-    def test_home_stats_fallback_when_pandas_cannot_read_formulas(self):
-        """Verifie le fallback si pandas echoue sur des formules sans cache.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident l'accueil recalcule.
-        """
-
-        self.reader.cache.reset()
-        with patch.dict("services.ods.ods_reader.os.environ", {}, clear=True):
-            with patch("services.ods.ods_reader.pd.read_excel", side_effect=TypeError("formula cache")):
-                stats = self.reader.get_home_stats()
-
-        self.assertEqual(3, stats["totals"]["games_count"])
-        self.assertEqual(60.5, stats["totals"]["total_price"])
+        self.assertEqual("Mario", games.iloc[0]["Nom du jeu"])
+        self.reader.xml_reader.read_games_dataframe_from_xml.assert_called_once_with("Switch")
 
     def test_xml_reader_returns_none_for_formula_float_without_cached_value(self):
         """Verifie la lecture d'une formule sans resultat calcule en cache.
@@ -179,78 +122,6 @@ class OdsReaderFallbackTest(unittest.TestCase):
         )
 
         self.assertIsNone(value)
-
-    def _home_dataframe(self):
-        """Construit un DataFrame Accueil avec erreurs de formules.
-
-        Args:
-            Aucun.
-
-        Returns:
-            pandas.DataFrame: Donnees factices de l'onglet Accueil.
-        """
-
-        return pd.DataFrame(
-            [
-                {
-                    "Plateforme": "Switch",
-                    "Nombre de jeux": "Err:510",
-                    "Prix": "Err:510",
-                    "Prix moyen": "Err:510",
-                },
-                {
-                    "Plateforme": "Playstation",
-                    "Nombre de jeux": "Err:510",
-                    "Prix": "Err:510",
-                    "Prix moyen": "Err:510",
-                },
-                {
-                    "Plateforme": "Total",
-                    "Nombre de jeux": "Err:510",
-                    "Prix": "Err:510",
-                    "Prix moyen": "Err:510",
-                },
-                {"Plateforme": "Date du premier jeu", "Prix": "Err:510"},
-                {"Plateforme": "Date du dernier jeu", "Prix": "Err:510"},
-            ]
-        )
-
-    def _read_games_dataframe(self, platform):
-        """Retourne les jeux factices d'une plateforme.
-
-        Args:
-            platform (str): Nom de l'onglet plateforme.
-
-        Returns:
-            pandas.DataFrame: Jeux factices de la plateforme.
-        """
-
-        games_by_platform = {
-            "Switch": pd.DataFrame(
-                [
-                    {
-                        "Nom du jeu": "Zelda",
-                        "Prix d'achat": "10,50",
-                        "Date de sortie": "2020-01-01",
-                    },
-                    {
-                        "Nom du jeu": "Mario",
-                        "Prix d'achat": 20,
-                        "Date de sortie": "2021-06-15",
-                    },
-                ]
-            ),
-            "Playstation": pd.DataFrame(
-                [
-                    {
-                        "Nom du jeu": "Gran Turismo",
-                        "Prix d'achat": 30,
-                        "Date de sortie": "2019-03-01",
-                    }
-                ]
-            ),
-        }
-        return games_by_platform[platform]
 
     def _cell_with_attribute(self, attribute, value):
         """Construit une cellule XML avec un attribut.

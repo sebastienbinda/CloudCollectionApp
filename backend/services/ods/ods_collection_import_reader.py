@@ -28,7 +28,6 @@ from .ods_collection_import_models import (
     OdsCollectionImportPlatform,
     OdsCollectionImportStudio,
 )
-from .ods_image_reader import OdsImageReader
 from .ods_reader import OdsReader
 from .ods_xml_reader import OdsXmlReader
 
@@ -335,20 +334,19 @@ class OdsCollectionImportReader:
         return studios
 
     def _create_ods_reader(self, ods_path: str) -> OdsReader:
-        """Cree le lecteur ODS bas niveau partage par les workflows applicatifs.
+        """Cree le lecteur ODS bas niveau dedie au workflow d'import.
 
         Args:
             ods_path (str): Chemin du fichier ODS a lire.
 
         Returns:
-            OdsReader: Lecteur ODS configure avec cache, XML et images.
+            OdsReader: Lecteur ODS configure avec cache et secours XML.
         """
 
         cache = OdsCache(ods_path)
         archive_reader = OdsArchiveReader(ods_path, cache)
         xml_reader = OdsXmlReader(archive_reader, cache)
-        image_reader = OdsImageReader(archive_reader, cache)
-        return OdsReader(ods_path, cache, xml_reader, image_reader)
+        return OdsReader(ods_path, cache, xml_reader)
 
     def _reset_reader_cache(self, reader: Optional[OdsReader]) -> None:
         """Vide le cache du lecteur ODS d'import en fin de traitement.

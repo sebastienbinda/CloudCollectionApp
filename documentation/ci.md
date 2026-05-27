@@ -45,9 +45,9 @@ The `docker-images` job depends on both validation jobs. Docker images must not
 be pushed if tests or frontend build fail. Branch pushes never publish Docker
 images.
 
-Backend tests run with a configured ODS path. When `JEUXVIDEO_ODS_PATH` is not
-already defined, `./test_backend.sh` points it to the versioned
-`collection-example.ods` fixture.
+Backend tests run through `./test_backend.sh`, which prepares the Python
+environment and then executes the backend test suite. ODS fixtures are now
+loaded directly by import tests when needed.
 
 The workflow uses GitHub and Docker actions that target the Node.js 24 runtime.
 This is independent from the frontend application build, which uses the Node.js

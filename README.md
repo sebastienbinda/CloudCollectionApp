@@ -11,27 +11,29 @@
 -->
 # CloudCollectionApp
 
+Le code de cette application a ete realise a l'aide de Codex et de l'API GPT 5.5.
+
 Application web personnelle qui transforme un fichier de collection LibreOffice
 Calc `.ods` en site en ligne accessible a tout moment. Chaque utilisateur garde
 sa collection privee rattachee a son compte, tout en contribuant a enrichir une
 base commune de jeux, plateformes et studios.
 
-Le fichier ODS importe initialise la collection personnelle. Le backend expose
-une API securisee pour proteger les donnees utilisateur et alimenter le
-referentiel commun, tandis que le frontend fournit une interface web de
-consultation, recherche, import et edition.
+Le fichier ODS importe initialise la collection personnelle. La consultation de
+collection s'appuie ensuite sur PostgreSQL, tandis que le fichier ODS utilisateur
+reste telechargeable en brut. Le backend expose une API securisee pour proteger
+les donnees utilisateur et alimenter le referentiel commun, tandis que le
+frontend fournit une interface web de consultation, recherche et import.
 
 ## Fonctionnalites
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
-- Navigation par plateforme et consultation d'une liste de souhaits.
+- Navigation par plateforme et consultation de la collection personnelle.
 - Recherche globale par nom de jeu.
-- Filtres, tris, ajout, modification et suppression de jeux apres authentification.
+- Filtres et tris de collection apres authentification.
 - Import de collection ODS personnelle pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec validation email.
-- Administration utilisateur, telechargement ODS et reset du cache.
-- Sauvegarde automatique du fichier ODS avant chaque ecriture.
+- Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
 
 ## Architecture Globale
@@ -53,14 +55,14 @@ Technologies principales :
 - Flask
 - SQLAlchemy et Alembic
 - PostgreSQL
-- pandas, odfpy et XML/ZIP standard library pour le fichier ODS
+- pandas, odfpy et XML/ZIP standard library pour l'import ODS utilisateur
 
 Organisation :
 
 - `backend/app.py` : composition Flask, initialisation runtime, enregistrement des controllers et protection globale.
 - `backend/controllers/` : endpoints HTTP et mapping des reponses.
 - `backend/services/` : services metier et infrastructure organises par domaine.
-- `backend/services/ods/` : lecture, ecriture, backup, cache et validation ODS.
+- `backend/services/ods/` : lecture d'import ODS utilisateur, archive, cache et secours XML.
 - `backend/services/database/` : configuration SQLAlchemy, ORM, repositories et schema.
 - `backend/tests/` : tests backend par couche.
 
@@ -91,12 +93,11 @@ Domaines de hooks :
 
 - `hooks/app/` : session, droits backend et view-model principal.
 - `hooks/navigation/` : vue courante, plateforme selectionnee et URL.
-- `hooks/collection/` : rechargement transversal, reset cache ODS et onboarding d'import.
-- `hooks/home/` : Ma collection, images protegees et recherche globale.
+- `hooks/collection/` : rechargement transversal et onboarding d'import.
+- `hooks/home/` : statistiques Ma collection et recherche globale.
 - `hooks/library/` : Bibliotheque publique, recherche, tri et pagination serveur.
-- `hooks/platforms/` : catalogue de plateformes.
-- `hooks/games/` : collection plateforme, tri, filtres et ajout.
-- `hooks/wishlist/` : actions liste de souhaits.
+- `hooks/platforms/` : plateformes de la collection utilisateur lues depuis SQL.
+- `hooks/games/` : jeux de la collection utilisateur, tri, filtres et actions futures.
 
 Regles detaillees :
 
@@ -105,17 +106,14 @@ Regles detaillees :
 - Menu : `documentation/menu.md`
 - Page About : `documentation/about.md`
 
-## Configuration ODS
+## Import ODS Utilisateur
 
-Le backend ne contient aucun chemin ODS code en dur.
+Le backend ne consulte plus de collection globale depuis un fichier ODS. Les
+vues Ma collection lisent PostgreSQL via les endpoints
+`/collections/videogames/**`.
 
 Variables principales :
 
-- `JEUXVIDEO_ODS_PATH` : chemin du fichier ODS pour un lancement backend direct.
-- `JEUXVIDEO_ODS_FILE` : fichier ODS monte par Docker Compose.
-- `JEUXVIDEO_ODS_BACKUP_DIR` : repertoire des sauvegardes.
-- `JEUXVIDEO_ODS_TMP_DIR` : repertoire temporaire d'ecriture.
-- `ODS_FORMULA_RECALCULATION` : politique de recalcul des formules.
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
@@ -126,11 +124,11 @@ Un fichier exemple versionnable est fourni :
 collection-example.ods
 ```
 
-Structure fonctionnelle attendue :
+Structure fonctionnelle attendue pour l'import :
 
-- onglet `Accueil` pour les statistiques;
-- onglet `Liste de souhaits`;
-- un onglet par plateforme.
+- un onglet par plateforme ;
+- les onglets techniques tels que `Accueil` et `Liste de souhaits` sont ignores
+  par l'import utilisateur.
 
 ## Lancement Local
 
@@ -158,6 +156,7 @@ Services locaux :
 
 - application : `http://localhost:8080`
 - Mailpit : `http://localhost:8025`
+- PostgreSQL : `localhost:5432`
 
 Arreter :
 
@@ -172,7 +171,7 @@ cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-JEUXVIDEO_ODS_PATH=../collection-example.ods BACKEND_PORT=7777 python app.py
+BACKEND_PORT=7777 python app.py
 ```
 
 Backend : `http://localhost:7777`

@@ -63,9 +63,34 @@ class VideoGamesApi {
    * @returns {Promise<Object>} Donnees du tableau de bord.
    */
   static async fetchHomeStats() {
-    return this.fetchJson("/collections/videogames/home", "Impossible de recuperer l'accueil.", {
+    const requestOptions = {
       headers: AuthApi.getAuthorizationHeaders(),
-    });
+    };
+    const [statistics, platformsPayload] = await Promise.all([
+      this.fetchJson(
+        "/collections/videogames",
+        "Impossible de recuperer les statistiques de collection.",
+        requestOptions
+      ),
+      this.fetchJson(
+        "/collections/videogames/platforms/search",
+        "Impossible de recuperer les plateformes.",
+        requestOptions
+      ),
+    ]);
+    const platforms = this.normalizeCollectionPlatforms(platformsPayload.platforms || []);
+    return {
+      title: "Ma collection",
+      first_game_date: "",
+      last_game_date: "",
+      totals: {
+        games_count: statistics.total || 0,
+        total_price: statistics.total_value || 0,
+        average_price: statistics.average_value || 0,
+      },
+      max_platform: statistics.max_platform || "",
+      platforms,
+    };
   }
 
   /**
@@ -75,49 +100,47 @@ class VideoGamesApi {
    * @returns {Promise<Object>} Objet contenant `platforms`.
    */
   static async fetchPlatforms() {
-    return this.fetchJson(
-      "/collections/videogames/platforms",
+    const data = await this.fetchJson(
+      "/collections/videogames/platforms/search",
       "Impossible de recuperer les plateformes.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
       }
     );
+    return {
+      ...data,
+      platforms: this.normalizeCollectionPlatforms(data.platforms || []),
+    };
   }
 
   /**
    * Charge les jeux d'une plateforme.
    *
-   * @param {string} platform - Nom d'onglet ODS a lire.
-   * @returns {Promise<Array>} Liste des jeux de la plateforme.
+   * @param {string|number} platformId - Identifiant SQL de plateforme.
+   * @returns {Promise<Array>} Liste des jeux normalisee pour le tableau.
    */
-  static async fetchGames(platform) {
-    return this.fetchJson(
-      `/collections/videogames/search?platform=${encodeURIComponent(platform)}`,
+  static async fetchGames(platformId) {
+    const data = await this.fetchJson(
+      `/collections/videogames/games/search?platform_id=${encodeURIComponent(platformId)}`,
       "Impossible de recuperer les jeux video.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
       }
     );
+    return this.normalizeCollectionGames(data.games || []);
   }
 
   /**
-   * Charge les valeurs distinctes de colonnes pour une plateforme.
+   * Retourne les suggestions disponibles pour les actions futures de jeu.
    *
-   * @param {string} platform - Nom d'onglet ODS a analyser.
    * @returns {Promise<Object>} Objet contenant `values_by_column`.
    */
-  static async fetchColumnValues(platform) {
-    return this.fetchJson(
-      `/collections/videogames/column-values?platform=${encodeURIComponent(platform)}`,
-      "Impossible de recuperer les valeurs de colonnes.",
-      {
-        headers: AuthApi.getAuthorizationHeaders(),
-      }
-    );
+  static async fetchColumnValues() {
+    return { values_by_column: {} };
   }
 
   /**
-   * Ajoute un jeu au fichier ODS.
+   * Appelle la route reservee pour l'ajout futur d'un jeu.
    *
    * @param {Object} gameForm - Donnees du formulaire d'ajout.
    * @returns {Promise<Object>} Objet contenant le jeu ajoute.
@@ -168,77 +191,61 @@ class VideoGamesApi {
   }
 
   /**
-   * Supprime un jeu de la liste de souhaits.
-   *
-   * @param {Object} game - Jeu wishlist identifie par son nom et sa console.
-   * @returns {Promise<Object>} Objet contenant le jeu supprime.
-   */
-  static async deleteWishlistGame(game) {
-    return this.fetchJson(
-      "/collections/videogames/wishlist/games",
-      "Impossible de supprimer le jeu de la liste de souhaits.",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...AuthApi.getAuthorizationHeaders(),
-        },
-        body: JSON.stringify({
-          "Nom du jeu": game["Nom du jeu"],
-          Console: game.Console || game.Plateforme,
-        }),
-      }
-    );
-  }
-
-  /**
-   * Modifie un jeu de la liste de souhaits.
-   *
-   * @param {Object} payload - Donnees contenant jeu original et jeu modifie.
-   * @returns {Promise<Object>} Objet contenant le jeu wishlist modifie.
-   */
-  static async updateWishlistGame(payload) {
-    return this.fetchJson(
-      "/collections/videogames/wishlist/games",
-      "Impossible de modifier le jeu de la liste de souhaits.",
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...AuthApi.getAuthorizationHeaders(),
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-  }
-
-  /**
    * Recherche un jeu par nom dans toutes les plateformes.
    *
    * @param {string} query - Texte recherche dans le nom du jeu.
    * @returns {Promise<Object>} Objet contenant les resultats.
    */
   static async searchGamesByName(query) {
-    return this.fetchJson(
-      `/collections/videogames/games/search?q=${encodeURIComponent(query)}`,
+    const data = await this.fetchJson(
+      `/collections/videogames/games/search?name=${encodeURIComponent(query)}`,
       "Impossible de rechercher les jeux.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
       }
     );
+    return {
+      ...data,
+      items: this.normalizeCollectionGames(data.games || []),
+    };
   }
 
   /**
-   * Reinitialise le cache backend du fichier ODS.
+   * Normalise les plateformes SQL vers le format historique des vues.
    *
-   * @param {void} Aucun - Appelle l'endpoint de reset.
-   * @returns {Promise<Object>} Resultat de reinitialisation du cache.
+   * @param {Array<Object>} platforms - Plateformes retournees par l'API SQL.
+   * @returns {Array<Object>} Plateformes pretes pour l'interface.
    */
-  static async resetCache() {
-    return this.fetchJson("/collections/videogames/cache/reset", "Impossible de reinitialiser le cache.", {
-      method: "POST",
-      headers: AuthApi.getAuthorizationHeaders(),
-    });
+  static normalizeCollectionPlatforms(platforms) {
+    return platforms.map((platform) => ({
+      id: platform.id,
+      name: platform.name || "",
+      games_count: platform.nb_games || 0,
+      total_price: platform.total_value || 0,
+      average_price: platform.average_value || 0,
+    }));
+  }
+
+  /**
+   * Normalise les jeux SQL vers les colonnes affichees par la collection.
+   *
+   * @param {Array<Object>} games - Jeux retournes par l'API SQL.
+   * @returns {Array<Object>} Jeux compatibles avec les composants existants.
+   */
+  static normalizeCollectionGames(games) {
+    return games.map((game) => ({
+      id: game.id,
+      platform_id: game.platform_id,
+      "Nom du jeu": game.name || "",
+      Plateforme: game.platform_name || "",
+      Studio: game.studio_name || "",
+      "Date de sortie": game.release_date || "",
+      "Date d'achat": game.buy_date || "",
+      "Lieu d'achat": game.buy_location || "",
+      Note: game.grade || "",
+      "Prix d'achat": "",
+      Version: game.version || "",
+    }));
   }
 
   /**

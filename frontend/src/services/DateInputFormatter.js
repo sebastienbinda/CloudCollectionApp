@@ -14,13 +14,13 @@
  */
 
 /**
- * Convertit les dates ODS/API vers le format attendu par `input[type=date]`.
+ * Convertit les dates API vers le format attendu par `input[type=date]`.
  */
 class DateInputFormatter {
   /**
    * Formate une date brute pour un champ HTML date.
    *
-   * @param {unknown} value - Valeur date issue de l'API ou du fichier ODS.
+   * @param {unknown} value - Valeur date issue de l'API.
    * @returns {string} Date au format `YYYY-MM-DD`, ou chaine vide.
    */
   static format(value) {

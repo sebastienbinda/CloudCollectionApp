@@ -88,6 +88,11 @@ Constraints:
 - Foreign key: `editor` -> `t_studio.id`
 - Foreign key: `platform` -> `t_platform.id`
 
+Indexes:
+
+- `ix_t_game_platform`: `platform`
+- `ix_t_game_developer`: `developer`
+
 #### `t_user`
 
 | Column | Type | Null | Description |
@@ -132,6 +137,10 @@ Constraints:
 - Primary key: `user_id`, `game_id`
 - Foreign key: `user_id` -> `t_user.id`
 - Foreign key: `game_id` -> `t_game.id`
+
+Indexes:
+
+- `ix_t_user_collection_game_id`: `game_id`
 
 Rows are created by the user collection import workflow for every imported game
 attached to the connected user. Existing `(user_id, game_id)` rows are reused and

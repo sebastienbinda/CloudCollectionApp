@@ -38,21 +38,18 @@ function usePlatformsCatalog(options) {
         setIsLoadingPlatforms(true);
         options.setError("");
         const data = await VideoGamesApi.fetchPlatforms();
-        const loadedPlatforms = (data.platforms || [])
-          .filter((platform) => !["Accueil", "Liste de souhaits"].includes(platform));
+        const loadedPlatforms = data.platforms || [];
         setPlatforms(loadedPlatforms);
 
-        const platformFromUrl = AppRouting.getPlatformFromUrl();
-        if (options.currentView === "wishlist") {
-          options.setSelectedPlatform(AppRouting.wishlistSheetName);
-        } else if (platformFromUrl) {
-          options.setSelectedPlatform(platformFromUrl);
+        const platformIdFromUrl = AppRouting.getPlatformIdFromUrl();
+        if (platformIdFromUrl) {
+          options.setSelectedPlatform(platformIdFromUrl);
           options.setCurrentView("games");
         } else if (loadedPlatforms.length > 0) {
-          options.setSelectedPlatform(loadedPlatforms[0]);
+          options.setSelectedPlatform(String(loadedPlatforms[0].id || ""));
           options.setGameForm((previous) => ({
             ...previous,
-            platform: previous.platform || loadedPlatforms[0],
+            platform: previous.platform || loadedPlatforms[0].name || "",
           }));
         }
       } catch (e) {

@@ -33,9 +33,15 @@ from services.users import UserSummary
 from services.users.user_collection_import_service import UserCollectionImportResult
 
 try:
-    from tests.route_test_fakes import FakeGamesService, FakeLibraryService
+    from tests.route_test_fakes import (
+        FakeLibraryService,
+        FakeUserCollectionQueryService,
+    )
 except ModuleNotFoundError:
-    from route_test_fakes import FakeGamesService, FakeLibraryService
+    from route_test_fakes import (
+        FakeLibraryService,
+        FakeUserCollectionQueryService,
+    )
 
 
 class FakeSqlAlchemyUserRepository:
@@ -349,7 +355,6 @@ class BaseAppRoutesTest(unittest.TestCase):
             None: Le client Flask est prepare.
         """
 
-        self.original_service = app_module.GamesService
         self.original_user_repository = app_module.authentication_controller.user_repository_class
         self.original_user_controller_repository = app_module.user_controller.user_repository_class
         self.original_user_controller_database_configuration = app_module.user_controller.database_configuration_class
@@ -358,12 +363,14 @@ class BaseAppRoutesTest(unittest.TestCase):
         self.original_collection_import_service = app_module.user_collection_import_controller.import_service_class
         self.original_collection_ods_reader = app_module.user_collection_import_controller.ods_reader_class
         self.original_collection_database_configuration = app_module.user_collection_import_controller.database_configuration_class
+        self.original_collection_query_service_factory = app_module.collection_controller.collection_query_service_factory
+        self.original_collection_user_repository_class = app_module.collection_controller.user_repository_class
+        self.original_collection_database_configuration_class = app_module.collection_controller.database_configuration_class
         self.original_registration_service = app_module.authentication_controller.user_registration_service_class
         self.original_database_configuration = app_module.authentication_controller.database_configuration_class
         self.original_platform_library_service_factory = app_module.platform_controller.library_service_factory
         self.original_studio_library_service_factory = app_module.studio_controller.library_service_factory
         self.original_game_library_service_factory = app_module.game_controller.library_service_factory
-        app_module.GamesService = FakeGamesService
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.database_configuration_class = FakeDatabaseConfiguration
@@ -372,6 +379,9 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.user_collection_import_controller.import_service_class = FakeUserCollectionImportService
         app_module.user_collection_import_controller.ods_reader_class = FakeOdsCollectionImportReader
         app_module.user_collection_import_controller.database_configuration_class = FakeDatabaseConfiguration
+        app_module.collection_controller.collection_query_service_factory = FakeUserCollectionQueryService
+        app_module.collection_controller.user_repository_class = FakeSqlAlchemyUserRepository
+        app_module.collection_controller.database_configuration_class = FakeDatabaseConfiguration
         app_module.authentication_controller.user_registration_service_class = FakeUserRegistrationService
         app_module.authentication_controller.database_configuration_class = FakeDatabaseConfiguration
         app_module.platform_controller.library_service_factory = FakeLibraryService
@@ -383,6 +393,9 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeLibraryService.last_platforms_criteria = None
         FakeLibraryService.last_studios_criteria = None
         FakeLibraryService.last_games_criteria = None
+        FakeUserCollectionQueryService.last_platforms_criteria = None
+        FakeUserCollectionQueryService.last_games_criteria = None
+        FakeUserCollectionQueryService.collection_file_path = __file__
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
 
@@ -396,7 +409,6 @@ class BaseAppRoutesTest(unittest.TestCase):
             None: Les fakes sont retires.
         """
 
-        app_module.GamesService = self.original_service
         app_module.authentication_controller.user_repository_class = self.original_user_repository
         app_module.user_controller.user_repository_class = self.original_user_controller_repository
         app_module.user_controller.database_configuration_class = self.original_user_controller_database_configuration
@@ -405,6 +417,9 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.user_collection_import_controller.import_service_class = self.original_collection_import_service
         app_module.user_collection_import_controller.ods_reader_class = self.original_collection_ods_reader
         app_module.user_collection_import_controller.database_configuration_class = self.original_collection_database_configuration
+        app_module.collection_controller.collection_query_service_factory = self.original_collection_query_service_factory
+        app_module.collection_controller.user_repository_class = self.original_collection_user_repository_class
+        app_module.collection_controller.database_configuration_class = self.original_collection_database_configuration_class
         app_module.authentication_controller.user_registration_service_class = self.original_registration_service
         app_module.authentication_controller.database_configuration_class = self.original_database_configuration
         app_module.platform_controller.library_service_factory = self.original_platform_library_service_factory

@@ -213,6 +213,8 @@ class AuthGuard:
         if request.method in self.EXEMPT_METHODS:
             return True
         endpoint_name = request.endpoint or ""
+        if not endpoint_name:
+            return True
         return endpoint_name == "static" or endpoint_name in exempt_endpoints
 
     def _extract_bearer_token(self) -> str:

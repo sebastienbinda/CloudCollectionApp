@@ -24,7 +24,6 @@ import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryStudios from "../library/useLibraryStudios";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
-import useWishlistPage from "../wishlist/useWishlistPage";
 import useOdsDownload from "../useOdsDownload";
 import useSessionState from "./useSessionState";
 
@@ -36,6 +35,7 @@ import useSessionState from "./useSessionState";
 function useCloudCollectionViewModel() {
   const [error, setError] = useState("");
   const session = useSessionState();
+  const canUseCollectionViews = session.hasAccessToken && session.authenticatedProfile !== "ADMIN";
   const refresh = useCollectionRefresh();
   const clearDeleteGameFeedbackRef = useRef(() => {});
   const prepareAddGameFormRef = useRef(() => {});
@@ -43,25 +43,25 @@ function useCloudCollectionViewModel() {
   const navigation = useAppNavigation({
     hasAccessToken: session.hasAccessToken,
     authenticatedProfile: session.authenticatedProfile,
+    canUseCollectionViews,
     clearDeleteGameFeedback: () => clearDeleteGameFeedbackRef.current(),
     prepareAddGameForm: (selectedPlatform) => prepareAddGameFormRef.current(selectedPlatform),
   });
   const addGamePage = useAddGamePage({
     currentView: navigation.currentView,
-    hasAccessToken: session.hasAccessToken,
+    hasAccessToken: canUseCollectionViews,
     odsReloadKey: refresh.odsReloadKey,
     actionPermissions: session.actionPermissions,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
-    openWishlist: navigation.openWishlist,
     openPlatform: navigation.openPlatform,
     platforms: [],
   });
   const platformsCatalog = usePlatformsCatalog({
     currentView: navigation.currentView,
     odsReloadKey: refresh.odsReloadKey,
-    isAuthenticated: session.actionPermissions.isAuthenticated,
-    hasAccessToken: session.hasAccessToken,
+    isAuthenticated: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews,
     setSelectedPlatform: navigation.setSelectedPlatform,
     setCurrentView: navigation.setCurrentView,
     setGameForm: addGamePage.setGameForm,
@@ -76,22 +76,18 @@ function useCloudCollectionViewModel() {
     currentView: navigation.currentView,
     selectedPlatform: navigation.selectedPlatform,
     odsReloadKey: refresh.odsReloadKey,
-    isAuthenticated: session.actionPermissions.isAuthenticated,
-    hasAccessToken: session.hasAccessToken,
+    isAuthenticated: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews,
     setError,
   });
   const gameCollection = useGameCollectionPage({
     selectedPlatform: navigation.selectedPlatform,
     gamesReloadKey: refresh.gamesReloadKey,
-    isAuthenticated: session.actionPermissions.isAuthenticated,
-    hasAccessToken: session.hasAccessToken,
+    isAuthenticated: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
     setError,
-  });
-  const wishlistPage = useWishlistPage({
-    reloadOds: refresh.reloadOds,
-    reloadGames: refresh.reloadGames,
   });
   const libraryEntities = useLibraryEntities({
     enabled: navigation.currentView === "library",
@@ -107,10 +103,12 @@ function useCloudCollectionViewModel() {
   });
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
-    hasAccessToken: session.hasAccessToken,
+    hasAccessToken: canUseCollectionViews,
     authenticatedUsername: session.authenticatedUsername,
     currentView: navigation.currentView,
+    canUseCollectionViews,
     openCollectionOnboarding: navigation.openCollectionOnboarding,
+    openAdminDashboard: navigation.openAdminDashboard,
     goHome: navigation.goHome,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
@@ -131,9 +129,6 @@ function useCloudCollectionViewModel() {
       homeSearchQuery: homePage.homeSearchQuery,
       homeSearchResults: homePage.homeSearchResults,
       homeSearchError: homePage.homeSearchError,
-      cacheResetMessage: refresh.cacheResetMessage,
-      cacheResetError: refresh.cacheResetError,
-      isResettingCache: refresh.isResettingCache,
       gameForm: addGamePage.gameForm,
       addGameColumnValues: addGamePage.addGameColumnValues,
       addGameError: addGamePage.addGameError,
@@ -142,11 +137,12 @@ function useCloudCollectionViewModel() {
       ...gameCollection,
       isLoadingPlatforms: platformsCatalog.isLoadingPlatforms,
       actionPermissions: session.actionPermissions,
+      canUseCollectionViews,
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,
-      selectedPlatformStats: homePage.selectedPlatformStats,
-      editingWishlistGame: wishlistPage.editingWishlistGame,
-      isSavingWishlistGame: wishlistPage.isSavingWishlistGame,
+      selectedPlatformStats: homePage.selectedPlatformStats || platformsCatalog.platforms.find(
+        (platform) => String(platform.id) === String(navigation.selectedPlatform)
+      ),
       downloadError: odsDownload.downloadError,
       isDownloadingOds: odsDownload.isDownloadingOds,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
@@ -161,13 +157,11 @@ function useCloudCollectionViewModel() {
       openLibraryGames: navigation.openLibraryGames,
       openUsersPage: navigation.openUsersPage,
       openAbout: navigation.openAbout,
-      openWishlist: navigation.openWishlist,
       openPlatform: navigation.openPlatform,
       setHomeSearchQuery: homePage.setHomeSearchQuery,
       logout: session.logout,
       searchGamesByName: homePage.searchGamesByName,
       closeHomeSearch: homePage.closeHomeSearch,
-      resetOdsCache: refresh.resetOdsCache,
       downloadOdsFile: odsDownload.downloadOdsFile,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
       selectCollectionFile: userCollectionOnboarding.selectCollectionFile,
@@ -175,11 +169,6 @@ function useCloudCollectionViewModel() {
       goHome: navigation.goHome,
       submitNewGame: addGamePage.submitNewGame,
       updateGameFormValue: addGamePage.updateGameFormValue,
-      addWishlistGameToPlatform: wishlistPage.addWishlistGameToPlatform,
-      deleteWishlistGame: wishlistPage.deleteWishlistGame,
-      openEditWishlistGame: wishlistPage.openEditWishlistGame,
-      saveEditedWishlistGame: wishlistPage.saveEditedWishlistGame,
-      cancelEditWishlistGame: wishlistPage.cancelEditWishlistGame,
       libraryEntities,
       libraryPlatforms,
       libraryStudios,

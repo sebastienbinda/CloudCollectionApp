@@ -442,29 +442,6 @@ td.gameNameColumn {
     white-space: nowrap;
   }
 
-  table.wishlistGameTable th[data-column],
-  table.wishlistGameTable td[data-column] {
-    display: none;
-  }
-
-  table.wishlistGameTable th.mobileVisibleColumn:not(.filterCell),
-  table.wishlistGameTable td.mobileVisibleColumn {
-    display: table-cell;
-  }
-
-  table.wishlistGameTable th[data-column="Console"].mobileVisibleColumn:not(.filterCell),
-  table.wishlistGameTable td[data-column="Console"].mobileVisibleColumn {
-    display: table-cell;
-  }
-
-  table.wishlistGameTable .gameNameColumn {
-    width: 62%;
-  }
-
-  table.wishlistGameTable .mobileVisibleColumn:not(.gameNameColumn) {
-    width: 38%;
-  }
-
   .sortButton {
     min-height: 2rem;
   }

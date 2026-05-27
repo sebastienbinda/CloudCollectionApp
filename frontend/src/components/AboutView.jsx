@@ -23,6 +23,7 @@ import ProjectIcon from "./ProjectIcon";
  */
 function AboutView({
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   platforms,
@@ -30,7 +31,6 @@ function AboutView({
   onOpenAbout,
   onOpenHome,
   onOpenLibrary,
-  onOpenWishlist,
   onOpenPlatform,
   onOpenAdminDashboard,
   onLogout,
@@ -45,6 +45,7 @@ function AboutView({
         />
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}
@@ -52,7 +53,6 @@ function AboutView({
           onOpenAbout={onOpenAbout}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
-          onOpenWishlist={onOpenWishlist}
           onOpenPlatform={onOpenPlatform}
           onOpenAdminDashboard={onOpenAdminDashboard}
           onLogout={onLogout}

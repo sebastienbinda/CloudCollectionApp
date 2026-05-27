@@ -24,7 +24,6 @@ import useHomeSearch from "./useHomeSearch";
  */
 function useHomePage(options) {
   const [homeStats, setHomeStats] = useState(null);
-  const [platformImageObjectUrls, setPlatformImageObjectUrls] = useState({});
   const [isLoadingHome, setIsLoadingHome] = useState(true);
   const search = useHomeSearch(options.isAuthenticated);
 
@@ -51,60 +50,12 @@ function useHomePage(options) {
     fetchHomeStats();
   }, [options.odsReloadKey, options.isAuthenticated, options.currentView, options.hasAccessToken]);
 
-  useEffect(() => {
-    let isCancelled = false;
-    const createdObjectUrls = [];
-    const imageUrls = Array.from(
-      new Set((homeStats?.platforms || []).map((platform) => platform.image_url).filter(Boolean))
-    );
-
-    setPlatformImageObjectUrls({});
-    if (!options.hasAccessToken || imageUrls.length === 0) {
-      return () => {};
-    }
-
-    const fetchPlatformImages = async () => {
-      try {
-        const imageEntries = await Promise.all(
-          imageUrls.map(async (imageUrl) => {
-            const objectUrl = await VideoGamesApi.fetchProtectedImageObjectUrl(imageUrl);
-            createdObjectUrls.push(objectUrl);
-            return [imageUrl, objectUrl];
-          })
-        );
-        if (!isCancelled) {
-          setPlatformImageObjectUrls(Object.fromEntries(imageEntries));
-        }
-      } catch (e) {
-        if (!isCancelled) {
-          setPlatformImageObjectUrls({});
-        }
-      }
-    };
-
-    fetchPlatformImages();
-
-    return () => {
-      isCancelled = true;
-      createdObjectUrls.forEach((objectUrl) => window.URL.revokeObjectURL(objectUrl));
-    };
-  }, [homeStats, options.hasAccessToken, options.isAuthenticated]);
-
-  const homeStatsWithAuthenticatedImages = homeStats
-    ? {
-        ...homeStats,
-        platforms: (homeStats.platforms || []).map((platform) => ({
-          ...platform,
-          image_url: platformImageObjectUrls[platform.image_url] || "",
-        })),
-      }
-    : null;
-  const selectedPlatformStats = homeStatsWithAuthenticatedImages?.platforms?.find(
-    (platform) => platform.sheet_name === options.selectedPlatform
+  const selectedPlatformStats = homeStats?.platforms?.find(
+    (platform) => String(platform.id) === String(options.selectedPlatform)
   );
 
   return {
-    homeStats: homeStatsWithAuthenticatedImages,
+    homeStats,
     selectedPlatformStats,
     isLoadingHome,
     ...search,

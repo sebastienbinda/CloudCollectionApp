@@ -13,54 +13,24 @@
  * Description : hook React de rechargement transversal de collection.
  */
 import { useState } from "react";
-import VideoGamesApi from "../../services/VideoGamesApi";
 
 /**
- * Gere les cles de rechargement ODS et le reset du cache backend.
+ * Gere les cles de rechargement transversal de collection.
  *
  * @returns {Object} Etat et actions de rechargement de collection.
  */
 function useCollectionRefresh() {
-  const [cacheResetMessage, setCacheResetMessage] = useState("");
-  const [cacheResetError, setCacheResetError] = useState("");
-  const [isResettingCache, setIsResettingCache] = useState(false);
   const [odsReloadKey, setOdsReloadKey] = useState(0);
   const [gamesReloadKey, setGamesReloadKey] = useState(0);
 
   const reloadOds = () => setOdsReloadKey((previous) => previous + 1);
   const reloadGames = () => setGamesReloadKey((previous) => previous + 1);
 
-  /**
-   * Reinitialise le cache ODS backend puis demande le rechargement des vues.
-   *
-   * @returns {Promise<void>} Promesse resolue apres la mise a jour des messages.
-   */
-  const resetOdsCache = async () => {
-    setCacheResetMessage("");
-    setCacheResetError("");
-
-    try {
-      setIsResettingCache(true);
-      await VideoGamesApi.resetCache();
-      setCacheResetMessage("Cache reinitialise. Donnees rechargees.");
-      reloadOds();
-      reloadGames();
-    } catch (e) {
-      setCacheResetError(e.message || "Impossible de reinitialiser le cache.");
-    } finally {
-      setIsResettingCache(false);
-    }
-  };
-
   return {
-    cacheResetMessage,
-    cacheResetError,
-    isResettingCache,
     odsReloadKey,
     gamesReloadKey,
     reloadOds,
     reloadGames,
-    resetOdsCache,
   };
 }
 

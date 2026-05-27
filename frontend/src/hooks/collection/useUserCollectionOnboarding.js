@@ -13,6 +13,7 @@
  * Description : hook React pilotant l'onboarding d'import de collection utilisateur.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import AuthApi from "../../services/AuthApi";
 import UserCollectionApi from "../../services/UserCollectionApi";
 
 /**
@@ -34,6 +35,17 @@ function getUserCollectionErrorMessage(error) {
 }
 
 /**
+ * Indique si le token courant peut ouvrir les vues de collection.
+ *
+ * @returns {boolean} `true` pour les profils collection utilisateur.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function canCurrentTokenUseCollectionViews() {
+  const profile = String(AuthApi.getAccessTokenPayload().profile || "USER").trim().toUpperCase();
+  return profile !== "ADMIN";
+}
+
+/**
  * Orchestre la verification de collection et l'import initial du fichier ODS.
  *
  * @param {Object} options - Navigation, session et callbacks de rafraichissement.
@@ -43,9 +55,11 @@ function getUserCollectionErrorMessage(error) {
 function useUserCollectionOnboarding(options) {
   const {
     authenticatedUsername,
+    canUseCollectionViews,
     currentView,
     goHome,
     hasAccessToken,
+    openAdminDashboard,
     openCollectionOnboarding,
     reloadGames,
     reloadOds,
@@ -69,7 +83,7 @@ function useUserCollectionOnboarding(options) {
   }, []);
 
   const checkCurrentUserCollection = useCallback(async () => {
-    if (!hasAccessToken) {
+    if (!hasAccessToken && !AuthApi.getAccessToken()) {
       resetOnboardingState();
       return null;
     }
@@ -99,13 +113,23 @@ function useUserCollectionOnboarding(options) {
   }, [checkCurrentUserCollection, openCollectionOnboarding]);
 
   const handleAuthenticatedUser = useCallback(async () => {
+    if (!canUseCollectionViews && !canCurrentTokenUseCollectionViews()) {
+      openAdminDashboard();
+      return;
+    }
     const nextHasCollection = await checkCurrentUserCollection();
     if (nextHasCollection) {
       goHome();
       return;
     }
     openCollectionOnboarding();
-  }, [checkCurrentUserCollection, goHome, openCollectionOnboarding]);
+  }, [
+    canUseCollectionViews,
+    checkCurrentUserCollection,
+    goHome,
+    openAdminDashboard,
+    openCollectionOnboarding,
+  ]);
 
   const selectCollectionFile = useCallback((collectionFile) => {
     setSelectedCollectionFile(collectionFile || null);
@@ -146,7 +170,7 @@ function useUserCollectionOnboarding(options) {
   }, [hasAccessToken, resetOnboardingState]);
 
   useEffect(() => {
-    if (!hasAccessToken || !authenticatedUsername) {
+    if (!hasAccessToken || !authenticatedUsername || !canUseCollectionViews) {
       return;
     }
     if ([
@@ -173,6 +197,7 @@ function useUserCollectionOnboarding(options) {
     currentView,
     hasCollection,
     hasAccessToken,
+    canUseCollectionViews,
     openCollectionOnboarding,
     openOnboardingWhenCollectionIsMissing,
   ]);

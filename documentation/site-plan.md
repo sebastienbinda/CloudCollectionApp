@@ -13,25 +13,34 @@
 - `/bibliotheque/plateformes`: public paginated platform reference list.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
-- `/`: redirects to `/about` without a token and to `/collection` with a token.
+- `/`: redirects to `/about` without a token, to `/collection` with a
+  non-`ADMIN` token, and to the administration dashboard with an `ADMIN` token.
 
 The Bibliotheque routes must stay public and read-only. They consult the global
 reference database and must not depend on connected-user collection status.
 
 ## Authenticated Routes
 
-- `/collection`: authenticated Ma collection page for users who already have a collection.
+- `/collection`: authenticated Ma collection page for non-`ADMIN` users who
+  already have a collection.
 - `/collection/import`: authenticated onboarding page shown when
-  `GET /api/users/me/collection` returns `has_collection: false`.
+  `GET /api/users/me/collection` returns `has_collection: false` for a
+  non-`ADMIN` user.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
 
 After sign-in, the frontend must check the connected user's collection status
-before opening Ma collection. Users with `has_collection: true` continue to
-`/collection`. Users with `has_collection: false` are redirected to
-`/collection/import`, where they can upload an ODS file through
-`POST /api/users/import`. After a successful import, the frontend redirects to
-`/collection`.
+before opening Ma collection, except for the configured `ADMIN` account. Users
+with `has_collection: true` continue to `/collection`. Users with
+`has_collection: false` are redirected to `/collection/import`, where they can
+upload an ODS file through `POST /api/users/import`. After a successful import,
+the frontend redirects to `/collection`.
+
+The `ADMIN` profile keeps backend access through the route catalog and Bearer
+token hierarchy, but the frontend must not offer collection ownership screens to
+that profile. `Ma collection`, platform detail, add-game and collection import
+routes must be disabled or redirected to the administration dashboard for
+`ADMIN`.
 
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the

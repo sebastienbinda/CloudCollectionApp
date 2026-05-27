@@ -26,26 +26,25 @@ function AdminDashboardView({
   authenticatedProfile,
   platforms,
   canAddGame,
-  canResetCache,
   canDownloadOds,
   canSearchUsers,
-  cacheResetMessage,
-  cacheResetError,
-  isResettingCache,
+  canUseCollectionViews,
   downloadError,
   isDownloadingOds,
   onBack,
+  onBackToLibrary,
   onAddGame,
   onOpenUsers,
-  onResetCache,
   onDownloadOds,
 }) {
   const isAdmin = authenticatedProfile === "ADMIN";
+  const backLabel = canUseCollectionViews ? "Ma collection" : "Bibliotheque";
+  const handleBack = canUseCollectionViews ? onBack : onBackToLibrary;
 
   return (
     <main className="container adminDashboard">
-      <button className="backButton" type="button" onClick={onBack}>
-        Ma collection
+      <button className="backButton" type="button" onClick={handleBack}>
+        {backLabel}
       </button>
       <section className="addGameHeader">
         <p className="eyebrow">Administration</p>
@@ -60,53 +59,40 @@ function AdminDashboardView({
         </p>
       </section>
 
-      {cacheResetError ? <p className="error">{cacheResetError}</p> : null}
       {downloadError ? <p className="error">{downloadError}</p> : null}
-      {cacheResetMessage ? <p className="success">{cacheResetMessage}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
-        <article className="adminActionCard">
-          <span>Collection</span>
-          <h2>Ajouter un jeu</h2>
-          <p>Ouvre le formulaire d'ajout dans la collection.</p>
-          <button
-            type="button"
-            onClick={onAddGame}
-            disabled={!canAddGame || platforms.length === 0}
-          >
-            Ajouter un jeu
-          </button>
-        </article>
+        {canUseCollectionViews ? (
+          <article className="adminActionCard">
+            <span>Collection</span>
+            <h2>Ajouter un jeu</h2>
+            <p>Ouvre le formulaire d'ajout dans la collection.</p>
+            <button
+              type="button"
+              onClick={onAddGame}
+              disabled={!canAddGame || platforms.length === 0}
+            >
+              Ajouter un jeu
+            </button>
+          </article>
+        ) : null}
 
-        <article className="adminActionCard">
-          <span>Cache</span>
-          <h2>Reset cache</h2>
-          <p>Force le backend a relire les donnees de collection.</p>
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={onResetCache}
-            disabled={!canResetCache || isResettingCache}
-          >
-            Reset cache
-          </button>
-          {isResettingCache ? <ProgressBar label="Reset du cache en cours" /> : null}
-        </article>
-
-        <article className="adminActionCard">
-          <span>Export</span>
-          <h2>Telecharger la collection</h2>
-          <p>Recupere le fichier source de la collection.</p>
-          <button
-            className="downloadOdsButton"
-            type="button"
-            onClick={onDownloadOds}
-            disabled={!canDownloadOds || isDownloadingOds}
-          >
-            Telecharger la collection
-          </button>
-          {isDownloadingOds ? <ProgressBar label="Telechargement de la collection en cours" /> : null}
-        </article>
+        {canUseCollectionViews ? (
+          <article className="adminActionCard">
+            <span>Export</span>
+            <h2>Telecharger la collection</h2>
+            <p>Recupere le fichier source de la collection.</p>
+            <button
+              className="downloadOdsButton"
+              type="button"
+              onClick={onDownloadOds}
+              disabled={!canDownloadOds || isDownloadingOds}
+            >
+              Telecharger la collection
+            </button>
+            {isDownloadingOds ? <ProgressBar label="Telechargement de la collection en cours" /> : null}
+          </article>
+        ) : null}
 
         {isAdmin ? (
           <article className="adminActionCard">

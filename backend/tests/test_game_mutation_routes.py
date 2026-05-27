@@ -9,7 +9,7 @@
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : tests des routes mutantes jeux et wishlist.
+# Description : tests des routes mutantes jeux.
 
 try:
     from tests.route_test_support import BaseAppRoutesTest
@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 
 
 class GameMutationRoutesTest(BaseAppRoutesTest):
-    """Valide les routes mutantes jeux et wishlist."""
+    """Valide les routes mutantes jeux."""
 
     def test_add_game_route_requires_valid_token(self):
         """Verifie l'authentification de l'ajout de jeu.
@@ -34,8 +34,8 @@ class GameMutationRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(401, response.status_code)
 
-    def test_add_delete_update_game_routes(self):
-        """Verifie les mutations de jeux de collection.
+    def test_add_delete_update_game_routes_return_not_implemented(self):
+        """Verifie les mutations futures de jeux de collection.
 
         Args:
             Aucun.
@@ -46,15 +46,12 @@ class GameMutationRoutesTest(BaseAppRoutesTest):
 
         headers = self.get_auth_headers()
 
-        self.assertEqual("Mario", self.client.post("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.post("/collections/videogames/games", headers=headers, json={"platform": "Switch"}).status_code)
-        self.assertEqual("Mario", self.client.delete("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.delete("/collections/videogames/games", headers=headers, json={"platform": "Switch"}).status_code)
-        self.assertEqual("Mario 2", self.client.put("/collections/videogames/games", headers=headers, json={"platform": "Switch", "updated": {"Nom du jeu": "Mario 2"}}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.put("/collections/videogames/games", headers=headers, json={"platform": "Switch", "updated": {}}).status_code)
+        self.assertEqual(501, self.client.post("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).status_code)
+        self.assertEqual(501, self.client.delete("/collections/videogames/games", headers=headers, json={"platform": "Switch", "Nom du jeu": "Mario"}).status_code)
+        self.assertEqual(501, self.client.put("/collections/videogames/games", headers=headers, json={"platform": "Switch", "updated": {"Nom du jeu": "Mario 2"}}).status_code)
 
-    def test_wishlist_mutation_routes(self):
-        """Verifie les mutations wishlist.
+    def test_wishlist_mutation_routes_are_not_registered(self):
+        """Verifie que les mutations wishlist sont supprimees.
 
         Args:
             Aucun.
@@ -65,9 +62,6 @@ class GameMutationRoutesTest(BaseAppRoutesTest):
 
         headers = self.get_auth_headers()
 
-        self.assertEqual("Chrono", self.client.post("/collections/videogames/wishlist/games", headers=headers, json={"Nom du jeu": "Chrono", "Console": "Switch", "Studio": "Square"}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.post("/collections/videogames/wishlist/games", headers=headers, json={"Nom du jeu": "Chrono", "Console": "Switch"}).status_code)
-        self.assertEqual("Chrono", self.client.delete("/collections/videogames/wishlist/games", headers=headers, json={"Nom du jeu": "Chrono", "Console": "Switch"}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.delete("/collections/videogames/wishlist/games", headers=headers, json={"Nom du jeu": "Chrono"}).status_code)
-        self.assertEqual("Chrono", self.client.put("/collections/videogames/wishlist/games", headers=headers, json={"updated": {"Nom du jeu": "Chrono", "Console": "Switch", "Studio": "Square"}}).get_json()["item"]["Nom du jeu"])
-        self.assertEqual(400, self.client.put("/collections/videogames/wishlist/games", headers=headers, json={"updated": {"Nom du jeu": "Chrono"}}).status_code)
+        self.assertEqual(404, self.client.post("/collections/videogames/wishlist/games", headers=headers, json={"Nom du jeu": "Chrono", "Console": "Switch", "Studio": "Square"}).status_code)
+        self.assertEqual(404, self.client.delete("/collections/videogames/wishlist/games", headers=headers, json={"Nom du jeu": "Chrono", "Console": "Switch"}).status_code)
+        self.assertEqual(404, self.client.put("/collections/videogames/wishlist/games", headers=headers, json={"updated": {"Nom du jeu": "Chrono", "Console": "Switch", "Studio": "Square"}}).status_code)

@@ -10,8 +10,6 @@
  * Auteurs : Codex et Binda Sébastien
  */
 class AppRouting {
-  static wishlistSheetName = "Liste de souhaits";
-
   /**
    * Cree l'etat initial du formulaire d'ajout de jeu.
    *
@@ -21,7 +19,6 @@ class AppRouting {
   static createInitialGameForm() {
     return {
       platform: "",
-      addTarget: "collection",
       "Nom du jeu": "",
       Studio: "",
       "Date de sortie": "",
@@ -34,14 +31,24 @@ class AppRouting {
   }
 
   /**
+   * Lit l'identifiant de plateforme present dans l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.search`.
+   * @returns {string} Identifiant issu du parametre `platform_id`, ou chaine vide.
+   */
+  static getPlatformIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("platform_id") || "";
+  }
+
+  /**
    * Lit la plateforme presente dans l'URL courante.
    *
    * @param {void} Aucun - Utilise `window.location.search`.
-   * @returns {string} Nom de plateforme issu du parametre `platform`, ou chaine vide.
+   * @returns {string} Identifiant de plateforme compatible avec l'ancien appel.
    */
   static getPlatformFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("platform") || "";
+    return AppRouting.getPlatformIdFromUrl();
   }
 
   /**
@@ -78,7 +85,7 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"addGame"|"adminDashboard"|"auth"|"users"|"wishlist"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"addGame"|"adminDashboard"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"} Identifiant de vue.
    */
   static getViewFromUrl() {
     if (window.location.pathname === "/about") {
@@ -114,13 +121,10 @@ class AppRouting {
     if (window.location.pathname === "/users") {
       return "users";
     }
-    if (window.location.pathname === "/wishlist") {
-      return "wishlist";
-    }
     if (window.location.pathname === "/collection/import") {
       return "collectionOnboarding";
     }
-    if (AppRouting.getPlatformFromUrl()) {
+    if (AppRouting.getPlatformIdFromUrl()) {
       return "games";
     }
     return AppRouting.hasStoredAccessToken() ? "home" : "about";

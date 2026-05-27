@@ -5,6 +5,8 @@
 - Every backend endpoint is protected except explicitly documented public
   authentication and registration endpoints.
 - Without a Bearer token: `403`; invalid or expired token: `401`.
+- Unregistered routes return Flask's standard `404` and are not converted into
+  authentication errors.
 - The frontend only sends or clears the token; security remains in the backend.
 - Every protected call must use `Authorization: Bearer <access_token>`.
 - Every public exception must be documented and tested.
@@ -97,11 +99,24 @@ Profiles are hierarchical. `ADMIN` inherits every route right granted to `USER`.
 Every protected route currently requires at least `USER`, so both profiles can
 access the existing protected API surface.
 
+This hierarchy is a backend authorization rule only. The configured technical
+`ADMIN` account is not a collection owner in the frontend workflow: it must not
+be offered the `Ma collection`, platform detail, add-game or collection import
+screens. After sign-in, an `ADMIN` session opens the administration dashboard
+instead of checking connected-user collection status.
+
 Connected-user collection routes are protected routes with the same minimum
 profile:
 
 - `GET /api/users/me/collection`
 - `POST /api/users/import`
+- `GET /collections/videogames`
+- `GET /collections/videogames/platforms/search`
+- `GET /collections/videogames/games/search`
+- `GET /collections/videogames/download`
+- `POST /collections/videogames/games`
+- `PUT /collections/videogames/games`
+- `DELETE /collections/videogames/games`
 
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.
@@ -188,7 +203,11 @@ tests, documentation, or scripts.
   Library consultation pages under `/bibliotheque`.
 - The authenticated Ma collection page is `HomeView` on `/collection`.
 - The `/` route functionally redirects to `/about` without a token and to
-  `/collection` with a token.
+  `/collection` with a non-`ADMIN` token.
+- With an `ADMIN` token, collection pages remain unavailable in the frontend:
+  `/collection`, `/collection/import`, platform detail and add-game views must
+  redirect to the administration dashboard or expose disabled navigation
+  entries. This frontend restriction does not remove backend endpoint access.
 - The session indicator in the main menu must stay consistent with the locally
   stored token, even if route discovery temporarily fails after a local restart.
   Action buttons must remain disabled until the backend route catalog confirms
