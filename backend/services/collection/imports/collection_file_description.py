@@ -47,6 +47,27 @@ class CollectionSheetLayout:
     column_information: dict[CollectionImportField, str]
     included_sheets: Optional[list[str]] = None
 
+    def to_dict(self, include_included_sheets: bool = True) -> dict:
+        """Convertit le layout en dictionnaire serialisable.
+
+        Args:
+            include_included_sheets (bool): Indique si `included_sheets` doit etre inclus.
+
+        Returns:
+            dict: Representation JSON du layout.
+        """
+
+        payload = {
+            "data_range": self.data_range,
+            "header_row": self.header_row,
+            "column_information": {
+                field.value: column for field, column in self.column_information.items()
+            },
+        }
+        if include_included_sheets and self.included_sheets is not None:
+            payload["included_sheets"] = list(self.included_sheets)
+        return payload
+
 
 @dataclass(frozen=True)
 class CollectionPerSheetConfiguration:
@@ -61,6 +82,24 @@ class CollectionPerSheetConfiguration:
     sheet_name: str
     sheet_information: Optional[CollectionImportField]
     layout: CollectionSheetLayout
+
+    def to_dict(self) -> dict:
+        """Convertit la configuration d'onglet en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Representation JSON de la configuration d'onglet.
+        """
+
+        payload = {
+            "sheet_name": self.sheet_name,
+            **self.layout.to_dict(include_included_sheets=False),
+        }
+        if self.sheet_information is not None:
+            payload["sheet_information"] = self.sheet_information.value
+        return payload
 
 
 @dataclass(frozen=True)
@@ -77,6 +116,25 @@ class CollectionMultipleSheetsConfiguration:
     shared_layout: Optional[CollectionSheetLayout] = None
     sheets: Optional[list[CollectionPerSheetConfiguration]] = None
 
+    def to_dict(self) -> dict:
+        """Convertit la configuration multi-onglets en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Representation JSON de la configuration multi-onglets.
+        """
+
+        payload = {}
+        if self.sheet_information is not None:
+            payload["sheet_information"] = self.sheet_information.value
+        if self.shared_layout is not None:
+            payload["shared_layout"] = self.shared_layout.to_dict()
+        if self.sheets is not None:
+            payload["sheets"] = [sheet.to_dict() for sheet in self.sheets]
+        return payload
+
 
 @dataclass(frozen=True)
 class CollectionFileDescription:
@@ -91,3 +149,22 @@ class CollectionFileDescription:
     file_type: CollectionFileType
     single_sheet_conf: Optional[CollectionSheetLayout] = None
     multiple_sheets_conf: Optional[CollectionMultipleSheetsConfiguration] = None
+
+    def to_dict(self) -> dict:
+        """Convertit la description en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Representation JSON valide de la description.
+        """
+
+        payload = {"file_type": self.file_type.value}
+        if self.single_sheet_conf is not None:
+            payload["single_sheet_conf"] = self.single_sheet_conf.to_dict(
+                include_included_sheets=False
+            )
+        if self.multiple_sheets_conf is not None:
+            payload["multiple_sheets_conf"] = self.multiple_sheets_conf.to_dict()
+        return payload

@@ -90,6 +90,29 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(201, response.status_code)
         self.assertEqual(4, response.get_json()["associated_games"])
         self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
+        self.assertIsNotNone(FakeUserCollectionImportService.last_call[3])
+
+    def test_import_current_user_collection_accepts_multiple_sheet_modes(self):
+        """Verifie les modes multi-onglets valides.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les statuts HTTP.
+        """
+
+        for description in [self._valid_shared_layout_description(), self._valid_sheets_description()]:
+            response = self.client.post(
+                "/api/users/import",
+                headers=self.get_user_auth_headers(),
+                data={
+                    "collection_file": (BytesIO(b"ods"), "collection.ods"),
+                    "collection_file_description": json.dumps(description),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(201, response.status_code)
 
     def test_import_current_user_collection_requires_file(self):
         """Verifie le refus sans fichier.
@@ -228,5 +251,60 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
                     "studio": "C",
                     "release_date": "D",
                 },
+            },
+        }
+
+    def _valid_shared_layout_description(self):
+        """Construit une description multi-onglets a layout partage.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Description JSON compatible.
+        """
+
+        return {
+            "file_type": "libreoffice_ods",
+            "multiple_sheets_conf": {
+                "sheet_information": "platform",
+                "shared_layout": {
+                    "data_range": "A1:D200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "studio": "C",
+                        "release_date": "D",
+                    },
+                },
+            },
+        }
+
+    def _valid_sheets_description(self):
+        """Construit une description multi-onglets avec layout par onglet.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Description JSON compatible.
+        """
+
+        return {
+            "file_type": "libreoffice_ods",
+            "multiple_sheets_conf": {
+                "sheets": [
+                    {
+                        "sheet_name": "Switch",
+                        "sheet_information": "platform",
+                        "data_range": "A1:D200",
+                        "header_row": 1,
+                        "column_information": {
+                            "name": "A",
+                            "studio": "C",
+                            "release_date": "D",
+                        },
+                    }
+                ]
             },
         }

@@ -284,13 +284,20 @@ class FakeUserCollectionImportRepository:
 
         return self.has_collection
 
-    def import_collection(self, user_id, collection_file_path, import_data):
+    def import_collection(
+        self,
+        user_id,
+        collection_file_path,
+        import_data,
+        collection_file_description=None,
+    ):
         """Retourne des compteurs de persistance.
 
         Args:
             user_id (int): Identifiant utilisateur.
             collection_file_path (str): Chemin final.
             import_data (object): Donnees ignorees.
+            collection_file_description (dict | None): Description ignoree.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs factices.

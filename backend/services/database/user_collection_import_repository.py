@@ -112,6 +112,7 @@ class SqlAlchemyUserCollectionImportRepository:
         user_id: int,
         collection_file_path: str,
         import_data: CollectionImportData,
+        collection_file_description: dict,
     ) -> UserCollectionImportPersistenceResult:
         """Importe les donnees de collection dans une transaction SQL.
 
@@ -119,6 +120,7 @@ class SqlAlchemyUserCollectionImportRepository:
             user_id (int): Identifiant de l'utilisateur proprietaire.
             collection_file_path (str): Chemin final du fichier de collection.
             import_data (CollectionImportData): Donnees de collection deja validees.
+            collection_file_description (dict): Description valide ayant servi a l'import.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de l'import.
@@ -143,10 +145,11 @@ class SqlAlchemyUserCollectionImportRepository:
                 user_id,
                 game_ids,
             )
-            self.user_file_repository.update_collection_file_path(
+            self.user_file_repository.update_collection_file(
                 connection,
                 user_id,
                 collection_file_path,
+                collection_file_description,
             )
         return UserCollectionImportPersistenceResult(
             created_platforms=created_platforms,

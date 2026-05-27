@@ -73,6 +73,7 @@ class UserCollectionImportRepository(Protocol):
         user_id: int,
         collection_file_path: str,
         import_data: CollectionImportData,
+        collection_file_description: dict,
     ) -> UserCollectionImportPersistenceResult:
         """Persiste les donnees importees dans une transaction.
 
@@ -80,6 +81,7 @@ class UserCollectionImportRepository(Protocol):
             user_id (int): Identifiant utilisateur.
             collection_file_path (str): Chemin final du fichier.
             import_data (CollectionImportData): Donnees lues depuis le fichier.
+            collection_file_description (dict): Description valide ayant servi a l'import.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de persistance.
@@ -222,6 +224,7 @@ class UserCollectionImportService:
                 user_id,
                 str(copied_file_path),
                 import_data,
+                file_description.to_dict(),
             )
             return self._map_result(persistence_result)
         except CollectionFileDescriptionValidationError:

@@ -79,13 +79,20 @@ class FakeUserCollectionImportRepository:
 
         return self.has_collection
 
-    def import_collection(self, user_id, collection_file_path, import_data):
+    def import_collection(
+        self,
+        user_id,
+        collection_file_path,
+        import_data,
+        collection_file_description,
+    ):
         """Memorise l'appel de persistance ou leve une erreur.
 
         Args:
             user_id (int): Identifiant utilisateur.
             collection_file_path (str): Chemin final du fichier.
             import_data (OdsCollectionImportData): Donnees importees.
+            collection_file_description (dict): Description sauvegardee.
 
         Returns:
             UserCollectionImportPersistenceResult: Resultat configure.
@@ -94,7 +101,9 @@ class FakeUserCollectionImportRepository:
             Exception: Erreur configuree pour le test.
         """
 
-        self.import_calls.append((user_id, collection_file_path, import_data))
+        self.import_calls.append(
+            (user_id, collection_file_path, import_data, collection_file_description)
+        )
         if self.import_error:
             raise self.import_error
         return self.result
@@ -228,6 +237,10 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 result.associated_games,
             ))
             self.assertEqual(str(target_file), repository.import_calls[0][1])
+            self.assertEqual(
+                self._valid_description().to_dict(),
+                repository.import_calls[0][3],
+            )
 
     def test_import_collection_rejects_existing_collection(self):
         """Verifie le refus d'une collection deja importee.
@@ -441,20 +454,6 @@ class UserCollectionImportServiceTest(unittest.TestCase):
         source_filename="collection.ods",
         source_content=b"ods-content",
     ):
-        """Construit un service d'import et ses dependances factices.
-
-        Args:
-            directory (str): Repertoire temporaire de test.
-            repository (FakeUserCollectionImportRepository | None): Repository factice.
-            reader (FakeOdsCollectionImportReader | None): Lecteur factice.
-            max_upload_bytes (int): Taille maximale configuree.
-            source_filename (str): Nom du fichier source.
-            source_content (bytes): Contenu du fichier source.
-
-        Returns:
-            tuple: Service, repository, lecteur et chemin source.
-        """
-
         source_file = Path(directory) / source_filename
         source_file.write_bytes(source_content)
         repository = repository or FakeUserCollectionImportRepository()
@@ -475,15 +474,6 @@ class UserCollectionImportServiceTest(unittest.TestCase):
         )
 
     def _valid_description(self):
-        """Construit une description valide de fichier de collection.
-
-        Args:
-            Aucun.
-
-        Returns:
-            CollectionFileDescription: Description minimale valide.
-        """
-
         return CollectionFileDescription(
             file_type=CollectionFileType.LIBREOFFICE_ODS,
             single_sheet_conf=CollectionSheetLayout(

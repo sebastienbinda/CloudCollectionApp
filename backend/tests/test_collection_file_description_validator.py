@@ -59,6 +59,7 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
             "A",
             description.single_sheet_conf.column_information[CollectionImportField.NAME],
         )
+        self.assertEqual(self._single_sheet_payload(), description.to_dict())
 
     def test_valid_shared_layout_configuration(self):
         """Verifie une configuration multi-onglets avec layout partage.
