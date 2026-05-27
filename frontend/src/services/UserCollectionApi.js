@@ -44,6 +44,7 @@ class UserCollectionApiError extends Error {
 class UserCollectionApi {
   static ERROR_CODES = Object.freeze({
     INVALID_FILE: "invalid_file",
+    INVALID_CONFIGURATION: "invalid_configuration",
     FILE_TOO_LARGE: "file_too_large",
     COLLECTION_ALREADY_IMPORTED: "collection_already_imported",
     UNAUTHORIZED: "unauthorized",
@@ -52,6 +53,7 @@ class UserCollectionApi {
 
   static errorMessagesByCode = Object.freeze({
     [UserCollectionApi.ERROR_CODES.INVALID_FILE]: "Le fichier de collection est invalide.",
+    [UserCollectionApi.ERROR_CODES.INVALID_CONFIGURATION]: "La configuration d'import est invalide.",
     [UserCollectionApi.ERROR_CODES.FILE_TOO_LARGE]: "Le fichier de collection est trop volumineux.",
     [UserCollectionApi.ERROR_CODES.COLLECTION_ALREADY_IMPORTED]: "Une collection a deja ete importee.",
     [UserCollectionApi.ERROR_CODES.UNAUTHORIZED]: "Vous devez etre connecte pour acceder a votre collection.",
@@ -76,15 +78,17 @@ class UserCollectionApi {
   }
 
   /**
-   * Importe le fichier ODS de collection de l'utilisateur connecte.
+   * Importe le fichier de collection de l'utilisateur connecte.
    *
-   * @param {File|Blob} collectionFile - Fichier ODS selectionne par l'utilisateur.
+   * @param {File|Blob} collectionFile - Fichier selectionne par l'utilisateur.
+   * @param {Object} collectionFileDescription - Configuration validee cote frontend.
    * @returns {Promise<Object>} Compteurs d'import retournes par le backend.
    * @throws {UserCollectionApiError} Si le fichier est invalide, trop volumineux, deja importe ou refuse.
    */
-  static async importCollection(collectionFile) {
+  static async importCollection(collectionFile, collectionFileDescription) {
     const formData = new FormData();
     formData.append("collection_file", collectionFile);
+    formData.append("collection_file_description", JSON.stringify(collectionFileDescription));
 
     return this.fetchJson("/api/users/import", "Impossible d'importer votre collection.", {
       method: "POST",
@@ -172,6 +176,9 @@ class UserCollectionApi {
     }
     if (status === 400) {
       return this.ERROR_CODES.INVALID_FILE;
+    }
+    if (status === 422) {
+      return this.ERROR_CODES.INVALID_CONFIGURATION;
     }
     if (status === 409) {
       return this.ERROR_CODES.COLLECTION_ALREADY_IMPORTED;

@@ -152,7 +152,10 @@ class UserCollectionImportController:
         except CollectionFileDescriptionValidationError as exc:
             return jsonify({"error": "Configuration invalide.", "details": exc.details}), 422
         except UserCollectionImportInvalidFileError as exc:
-            return jsonify({"error": str(exc)}), 400
+            current_app.logger.exception(
+                "Fichier de collection refuse pendant l'import utilisateur."
+            )
+            return jsonify({"error": str(exc), "details": exc.details}), 400
         except UserCollectionImportTooLargeError as exc:
             return jsonify({"error": str(exc)}), 413
         except UserCollectionImportConflictError as exc:

@@ -46,6 +46,20 @@ class UserCollectionImportConflictError(UserCollectionImportError):
 class UserCollectionImportInvalidFileError(UserCollectionImportError):
     """Signale qu'un fichier d'import est invalide ou illisible."""
 
+    def __init__(self, message: str, details: list[str] | None = None):
+        """Initialise l'erreur de fichier invalide.
+
+        Args:
+            message (str): Message fonctionnel principal.
+            details (list[str] | None): Raisons techniques affichables.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.details = details or [message]
+        super().__init__(message)
+
 
 class UserCollectionImportTooLargeError(UserCollectionImportError):
     """Signale qu'un fichier d'import depasse la taille maximale autorisee."""
@@ -232,7 +246,10 @@ class UserCollectionImportService:
             raise
         except (CollectionFileReadError, CollectionFileValidationError) as exc:
             self._delete_copied_file(copied_file_path)
-            raise UserCollectionImportInvalidFileError("Fichier de collection invalide.") from exc
+            raise UserCollectionImportInvalidFileError(
+                "Fichier de collection invalide.",
+                self._import_invalid_file_details(exc),
+            ) from exc
         except UserCollectionAlreadyImportedError as exc:
             self._delete_copied_file(copied_file_path)
             raise UserCollectionImportConflictError("Collection deja importee.") from exc
@@ -389,6 +406,24 @@ class UserCollectionImportService:
             copied_file_path.unlink(missing_ok=True)
         except OSError:
             pass
+
+    def _import_invalid_file_details(self, error: Exception) -> list[str]:
+        """Construit les raisons affichables d'un refus de fichier.
+
+        Args:
+            error (Exception): Erreur source levee par le reader.
+
+        Returns:
+            list[str]: Messages explicites sans chemin interne.
+        """
+
+        messages = [str(error).strip()]
+        cause = getattr(error, "__cause__", None)
+        if cause is not None:
+            cause_message = str(cause).strip()
+            if cause_message:
+                messages.append(cause_message)
+        return [message for message in messages if message]
 
     def _map_result(
         self,

@@ -80,6 +80,7 @@ class OdsReader:
         sheet_name: str,
         data_range: str,
         header_row: int,
+        selected_columns: str | None = None,
     ) -> pd.DataFrame:
         """Lit une feuille ODS selon une plage et une ligne d'en-tete.
 
@@ -87,14 +88,20 @@ class OdsReader:
             sheet_name (str): Nom de l'onglet a lire.
             data_range (str): Plage tableur inclusive, par exemple `A1:H200`.
             header_row (int): Ligne d'en-tete en index tableur commencant a `1`.
+            selected_columns (str | None): Colonnes tableur a charger, par exemple `A,C,F`.
 
         Returns:
             pandas.DataFrame: Donnees de la feuille avec valeurs vides a `None`.
         """
 
         return self.cache.remember(
-            f"sheet_dataframe:{sheet_name}:{data_range}:{header_row}",
-            lambda: self._load_sheet_dataframe(sheet_name, data_range, header_row),
+            f"sheet_dataframe:{sheet_name}:{data_range}:{header_row}:{selected_columns or '*'}",
+            lambda: self._load_sheet_dataframe(
+                sheet_name,
+                data_range,
+                header_row,
+                selected_columns,
+            ),
         )
 
     def _load_platforms(self) -> list[str]:
@@ -153,6 +160,7 @@ class OdsReader:
         sheet_name: str,
         data_range: str,
         header_row: int,
+        selected_columns: str | None = None,
     ) -> pd.DataFrame:
         """Charge une feuille ODS avec les parametres configurables.
 
@@ -160,6 +168,7 @@ class OdsReader:
             sheet_name (str): Nom de l'onglet.
             data_range (str): Plage tableur inclusive.
             header_row (int): Ligne d'en-tete commencant a `1`.
+            selected_columns (str | None): Colonnes tableur a charger.
 
         Returns:
             pandas.DataFrame: Donnees lues depuis l'onglet.
@@ -170,7 +179,7 @@ class OdsReader:
             sheet_name=sheet_name,
             engine="odf",
             header=header_row - 1,
-            usecols=self._usecols_from_range(data_range),
+            usecols=selected_columns or self._usecols_from_range(data_range),
             nrows=self._data_row_count(data_range, header_row),
         )
         return dataframe.where(pd.notna(dataframe), None)

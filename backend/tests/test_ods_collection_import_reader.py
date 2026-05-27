@@ -32,13 +32,20 @@ from services.ods import (
 class FakeOdsReader:
     """Simule le lecteur ODS bas niveau pour les tests d'import."""
 
-    def __init__(self, platform_names, dataframes_by_platform=None, error=None):
+    def __init__(
+        self,
+        platform_names,
+        dataframes_by_platform=None,
+        error=None,
+        dataframe_error=None,
+    ):
         """Initialise le lecteur ODS factice.
 
         Args:
             platform_names (list[str]): Onglets plateformes retournes.
             dataframes_by_platform (dict[str, pandas.DataFrame] | None): Donnees par onglet.
             error (Exception | None): Erreur a lever lors de la lecture des onglets.
+            dataframe_error (Exception | None): Erreur a lever lors de la lecture d'une feuille.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -47,7 +54,9 @@ class FakeOdsReader:
         self.platform_names = platform_names
         self.dataframes_by_platform = dataframes_by_platform or {}
         self.error = error
+        self.dataframe_error = dataframe_error
         self.cache = FakeOdsCache()
+        self.sheet_dataframe_calls = []
 
     def list_sheets(self):
         """Retourne les onglets factices.
@@ -66,18 +75,22 @@ class FakeOdsReader:
             raise self.error
         return self.platform_names
 
-    def read_sheet_dataframe(self, platform, data_range, header_row):
+    def read_sheet_dataframe(self, platform, data_range, header_row, selected_columns=None):
         """Retourne les jeux factices d'une feuille.
 
         Args:
             platform (str): Nom de l'onglet plateforme.
             data_range (str): Plage ignoree.
             header_row (int): Ligne d'en-tete ignoree.
+            selected_columns (str | None): Colonnes configurees.
 
         Returns:
             pandas.DataFrame: Jeux de la plateforme.
         """
 
+        self.sheet_dataframe_calls.append((platform, data_range, header_row, selected_columns))
+        if self.dataframe_error:
+            raise self.dataframe_error
         return self.dataframes_by_platform[platform]
 
 
@@ -155,6 +168,10 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         import_data = service.read("/tmp/collection.ods", self._single_sheet_description())
 
         self.assertEqual(1, fake_reader.cache.reset_count)
+        self.assertEqual(
+            [("Collection", "A1:D200", 1, "A,B,C,D")],
+            fake_reader.sheet_dataframe_calls,
+        )
         self.assertEqual(["Switch", "PC"], [platform.name for platform in import_data.platforms])
         self.assertEqual(
             ["Nintendo", "Retro", "Larian"],
@@ -180,6 +197,30 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
 
         with self.assertRaises(OdsCollectionImportReadError):
             service.read("/tmp/broken.ods", self._single_sheet_description())
+
+    def test_read_adds_sheet_context_when_dataframe_read_fails(self):
+        """Verifie le contexte retourne quand une feuille ne peut pas etre lue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident onglet, ligne et colonnes.
+        """
+
+        service = self._service_for_reader(
+            FakeOdsReader(["Collection"], dataframe_error=ValueError("bad range"))
+        )
+
+        with self.assertRaises(OdsCollectionImportReadError) as context:
+            service.read("/tmp/bad-range.ods", self._single_sheet_description())
+
+        message = str(context.exception)
+        self.assertIn("Onglet: Collection", message)
+        self.assertIn("Plage: A1:D200", message)
+        self.assertIn("Ligne d'en-tete: 1", message)
+        self.assertIn("name=A", message)
+        self.assertIn("platform=B", message)
 
     def test_read_rejects_file_without_importable_platform_sheet(self):
         """Verifie le refus d'un fichier sans onglet plateforme.

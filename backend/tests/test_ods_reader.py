@@ -98,6 +98,25 @@ class OdsReaderImportTest(unittest.TestCase):
         self.assertEqual("Mario", games.iloc[0]["Nom du jeu"])
         self.reader.xml_reader.read_games_dataframe_from_xml.assert_called_once_with("Switch")
 
+    def test_read_sheet_dataframe_uses_selected_columns_when_provided(self):
+        """Verifie que la lecture configurable peut cibler les colonnes utiles.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les options pandas.
+        """
+
+        dataframe = pd.DataFrame([{"Nom": "Zelda", "Studio": "Nintendo"}])
+        with patch("services.ods.ods_reader.pd.read_excel", return_value=dataframe) as read_excel:
+            sheet = self.reader.read_sheet_dataframe("Collection", "A1:H200", 1, "A,C")
+
+        self.assertEqual("Zelda", sheet.iloc[0]["Nom"])
+        read_excel.assert_called_once()
+        self.assertEqual("A,C", read_excel.call_args.kwargs["usecols"])
+        self.assertEqual(199, read_excel.call_args.kwargs["nrows"])
+
     def test_xml_reader_returns_none_for_formula_float_without_cached_value(self):
         """Verifie la lecture d'une formule sans resultat calcule en cache.
 

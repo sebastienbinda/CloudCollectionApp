@@ -23,11 +23,15 @@ try:
         FakeOdsCollectionImportReader,
         UserCollectionImportServiceTest,
     )
+    from services.ods import OdsCollectionImportReadError
+    from services.users.user_collection_import_service import UserCollectionImportInvalidFileError
 except ModuleNotFoundError:
     from test_user_collection_import_service import (
         FakeOdsCollectionImportReader,
         UserCollectionImportServiceTest,
     )
+    from services.ods import OdsCollectionImportReadError
+    from services.users.user_collection_import_service import UserCollectionImportInvalidFileError
 
 
 class UserCollectionImportServiceGenericReaderTest(unittest.TestCase):
@@ -63,6 +67,34 @@ class UserCollectionImportServiceGenericReaderTest(unittest.TestCase):
             self.assertEqual(str(target_file), reader.read_paths[0])
             self.assertEqual(1, result.created_games)
             self.assertEqual(1, len(repository.import_calls))
+
+    def test_import_collection_exposes_invalid_reader_details(self):
+        """Verifie les raisons affichables d'une erreur de lecture.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les details.
+        """
+
+        helper = UserCollectionImportServiceTest()
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = helper._build_service(
+                directory,
+                reader=FakeOdsCollectionImportReader(error=OdsCollectionImportReadError("bad")),
+            )
+
+            with self.assertRaises(UserCollectionImportInvalidFileError) as context:
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    helper._valid_description(),
+                )
+
+            self.assertEqual(["bad"], context.exception.details)
+            self.assertEqual([], repository.import_calls)
 
 
 if __name__ == "__main__":

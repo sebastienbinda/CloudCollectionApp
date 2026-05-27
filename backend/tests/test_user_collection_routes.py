@@ -229,6 +229,8 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
                 content_type="multipart/form-data",
             )
             self.assertEqual(expected_status, response.status_code)
+            if expected_status == 400:
+                self.assertIn("details", response.get_json())
 
     def _valid_description(self):
         """Construit une description de fichier valide pour les routes.

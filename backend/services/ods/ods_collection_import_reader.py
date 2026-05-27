@@ -38,9 +38,9 @@ from services.users.user_collection_name_normalizer import UserCollectionNameNor
 
 from .ods_archive_reader import OdsArchiveReader
 from .ods_cache import OdsCache
+from .ods_import_error_context import OdsImportErrorContext
 from .ods_reader import OdsReader
 from .ods_xml_reader import OdsXmlReader
-
 
 class OdsCollectionImportReadError(CollectionFileReadError):
     """Signale qu'un fichier ODS de collection ne peut pas etre lu."""
@@ -62,6 +62,7 @@ class OdsCollectionImportReader:
         reader_factory: Optional[Callable[[str], OdsReader]] = None,
         name_normalizer: Optional[UserCollectionNameNormalizer] = None,
         cell_reference_parser: Optional[SpreadsheetCellReferenceParser] = None,
+        error_context: Optional[OdsImportErrorContext] = None,
         logger: Optional[logging.Logger] = None,
     ):
         """Initialise le lecteur d'import de collection ODS.
@@ -70,6 +71,7 @@ class OdsCollectionImportReader:
             reader_factory (Optional[Callable[[str], OdsReader]]): Fabrique de lecteur ODS.
             name_normalizer (Optional[UserCollectionNameNormalizer]): Normaliseur metier.
             cell_reference_parser (Optional[SpreadsheetCellReferenceParser]): Parser tableur.
+            error_context (Optional[OdsImportErrorContext]): Contexte d'erreurs.
             logger (Optional[logging.Logger]): Logger utilise pour les avertissements.
 
         Returns:
@@ -79,6 +81,7 @@ class OdsCollectionImportReader:
         self.reader_factory = reader_factory or self._create_ods_reader
         self.name_normalizer = name_normalizer or UserCollectionNameNormalizer()
         self.cell_reference_parser = cell_reference_parser or SpreadsheetCellReferenceParser()
+        self.error_context = error_context or OdsImportErrorContext()
         self.logger = logger or logging.getLogger(__name__)
 
     @property
@@ -117,7 +120,7 @@ class OdsCollectionImportReader:
         try:
             reader = self.reader_factory(ods_path)
             games = self._read_configured_games(reader, description)
-        except OdsCollectionImportValidationError:
+        except (OdsCollectionImportReadError, OdsCollectionImportValidationError):
             raise
         except CollectionFileDescriptionValidationError:
             raise
@@ -139,19 +142,6 @@ class OdsCollectionImportReader:
         reader: OdsReader,
         description: CollectionFileDescription,
     ) -> list[CollectionImportGame]:
-        """Lit les jeux selon le mode de configuration fourni.
-
-        Args:
-            reader (OdsReader): Lecteur ODS bas niveau.
-            description (CollectionFileDescription): Description valide du fichier.
-
-        Returns:
-            list[CollectionImportGame]: Jeux importables.
-
-        Raises:
-            OdsCollectionImportValidationError: Si aucune feuille importable n'existe.
-        """
-
         sheet_names = reader.list_sheets()
         if not sheet_names:
             raise OdsCollectionImportValidationError("Le fichier ODS ne contient aucun onglet.")
@@ -226,11 +216,21 @@ class OdsCollectionImportReader:
         sheet_information: Optional[CollectionImportField],
         seen_game_keys: set[tuple[str, str]],
     ) -> list[CollectionImportGame]:
-        dataframe = reader.read_sheet_dataframe(
-            sheet_name,
-            layout.data_range,
-            layout.header_row,
-        )
+        try:
+            dataframe = reader.read_sheet_dataframe(
+                sheet_name,
+                layout.data_range,
+                layout.header_row,
+                self._configured_columns(layout),
+            )
+        except Exception as exc:
+            raise OdsCollectionImportReadError(
+                self.error_context.sheet_message(
+                    "Lecture de l'onglet impossible",
+                    sheet_name,
+                    layout,
+                )
+            ) from exc
         return self._build_games(
             sheet_name,
             dataframe,
@@ -263,64 +263,77 @@ class OdsCollectionImportReader:
         games: list[CollectionImportGame] = []
         column_positions = self._column_positions(layout)
         for row_index, row in dataframe.iterrows():
-            game_name = self.name_normalizer.stored_value(
-                self._field_value(row, column_positions, CollectionImportField.NAME)
-            )
-            game_key = self.name_normalizer.comparison_key(game_name)
-            if not game_name or game_key is None:
-                continue
-            platform_name = self._normalized_field_value(
-                row,
-                column_positions,
-                CollectionImportField.PLATFORM,
-                sheet_information,
-                sheet_name,
-            )
-            if platform_name is None:
-                continue
-            deduplication_key = (platform_name, game_key)
-            if deduplication_key in seen_game_keys:
-                self.logger.warning(
-                    "Jeu duplique ignore: plateforme=%s, jeu=%s",
+            row_number = self.error_context.spreadsheet_row_number(layout, row_index)
+            try:
+                game_name = self.name_normalizer.stored_value(
+                    self._field_value(row, column_positions, CollectionImportField.NAME)
+                )
+                game_key = self.name_normalizer.comparison_key(game_name)
+                if not game_name or game_key is None:
+                    continue
+                platform_name = self._normalized_field_value(
+                    row,
+                    column_positions,
+                    CollectionImportField.PLATFORM,
+                    sheet_information,
                     sheet_name,
-                    game_name,
                 )
-                continue
-            seen_game_keys.add(deduplication_key)
-            studio_name = self._normalized_field_value(
-                row,
-                column_positions,
-                CollectionImportField.STUDIO,
-                sheet_information,
-                sheet_name,
-            )
-            games.append(
-                CollectionImportGame(
-                    name=game_name,
-                    platform_name=platform_name,
-                    studio_name=studio_name,
-                    release_date=self._parse_release_date(
-                        platform_name,
+                if platform_name is None:
+                    continue
+                deduplication_key = (platform_name, game_key)
+                if deduplication_key in seen_game_keys:
+                    self.logger.warning(
+                        "Jeu duplique ignore: plateforme=%s, jeu=%s",
+                        sheet_name,
                         game_name,
-                        self._field_value(
-                            row,
-                            column_positions,
-                            CollectionImportField.RELEASE_DATE,
-                        ),
-                        int(row_index) + 1,
-                    ),
+                    )
+                    continue
+                seen_game_keys.add(deduplication_key)
+                studio_name = self._normalized_field_value(
+                    row,
+                    column_positions,
+                    CollectionImportField.STUDIO,
+                    sheet_information,
+                    sheet_name,
                 )
-            )
+                games.append(
+                    CollectionImportGame(
+                        name=game_name,
+                        platform_name=platform_name,
+                        studio_name=studio_name,
+                        release_date=self._parse_release_date(
+                            platform_name,
+                            game_name,
+                            self._field_value(
+                                row,
+                                column_positions,
+                                CollectionImportField.RELEASE_DATE,
+                            ),
+                            row_number,
+                        ),
+                    )
+                )
+            except Exception as exc:
+                raise OdsCollectionImportValidationError(
+                    self.error_context.row_message(sheet_name, row_number, layout)
+                ) from exc
         return games
 
     def _column_positions(self, layout: CollectionSheetLayout) -> dict[CollectionImportField, int]:
-        start_column = layout.data_range.split(":", 1)[0]
-        start_column_name = "".join(character for character in start_column if character.isalpha())
-        start_index = self.cell_reference_parser.column_to_index(start_column_name)
+        selected_columns = self._selected_columns(layout)
         return {
-            field: self.cell_reference_parser.column_to_index(column_name) - start_index
+            field: selected_columns.index(column_name)
             for field, column_name in layout.column_information.items()
         }
+
+    def _configured_columns(self, layout: CollectionSheetLayout) -> str:
+        return ",".join(self._selected_columns(layout))
+
+    def _selected_columns(self, layout: CollectionSheetLayout) -> list[str]:
+        return sorted(
+            set(layout.column_information.values()),
+            key=self.cell_reference_parser.column_to_index,
+        )
 
     def _field_value(
         self,
@@ -395,18 +408,6 @@ class OdsCollectionImportReader:
         row_number: int,
         value: Any,
     ) -> None:
-        """Journalise une date de sortie ignoree pendant l'import.
-
-        Args:
-            platform_name (str): Nom de l'onglet plateforme.
-            game_name (str): Nom du jeu lu.
-            row_number (int): Numero de ligne logique dans le DataFrame.
-            value (Any): Valeur brute de date de sortie.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-        """
-
         self.logger.warning(
             "Date de sortie invalide ignoree: plateforme=%s, jeu=%s, ligne=%s, valeur=%s",
             platform_name,
