@@ -31,6 +31,7 @@ from services import (
     AuthTokenService,
     BackendLoggingService,
     DatabaseSchemaService,
+    LibraryServiceProvider,
     UserCollectionImportConfiguration,
 )
 
@@ -57,9 +58,10 @@ route_controller = RouteController()
 user_controller = UserController(auth_guard)
 user_collection_import_controller = UserCollectionImportController(auth_guard)
 collection_controller = CollectionController(auth_guard)
-platform_controller = PlatformController()
-studio_controller = StudioController()
-game_controller = GameController()
+library_service_provider = LibraryServiceProvider()
+platform_controller = PlatformController(library_service_factory=library_service_provider)
+studio_controller = StudioController(library_service_factory=library_service_provider)
+game_controller = GameController(library_service_factory=library_service_provider)
 
 # 5. Enregistre les routes avant de les marquer avec la protection globale.
 authentication_controller.register_routes(app)

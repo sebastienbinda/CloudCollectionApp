@@ -131,9 +131,8 @@ class VideoGamesApi {
   }
 
   /**
-   * Charge les valeurs distinctes de colonnes pour une plateforme.
+   * Retourne les suggestions disponibles pour les actions futures de jeu.
    *
-   * @param {string} platform - Nom d'onglet ODS a analyser.
    * @returns {Promise<Object>} Objet contenant `values_by_column`.
    */
   static async fetchColumnValues() {
@@ -141,7 +140,7 @@ class VideoGamesApi {
   }
 
   /**
-   * Ajoute un jeu au fichier ODS.
+   * Appelle la route reservee pour l'ajout futur d'un jeu.
    *
    * @param {Object} gameForm - Donnees du formulaire d'ajout.
    * @returns {Promise<Object>} Objet contenant le jeu ajoute.
@@ -209,16 +208,6 @@ class VideoGamesApi {
       ...data,
       items: this.normalizeCollectionGames(data.games || []),
     };
-  }
-
-  /**
-   * Reinitialise le cache backend du fichier ODS.
-   *
-   * @param {void} Aucun - Appelle l'endpoint de reset.
-   * @returns {Promise<Object>} Resultat de reinitialisation du cache.
-   */
-  static async resetCache() {
-    return { message: "Cache ODS indisponible pour la consultation SQL." };
   }
 
   /**

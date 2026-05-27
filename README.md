@@ -55,14 +55,14 @@ Technologies principales :
 - Flask
 - SQLAlchemy et Alembic
 - PostgreSQL
-- pandas, odfpy et XML/ZIP standard library pour le fichier ODS
+- pandas, odfpy et XML/ZIP standard library pour l'import ODS utilisateur
 
 Organisation :
 
 - `backend/app.py` : composition Flask, initialisation runtime, enregistrement des controllers et protection globale.
 - `backend/controllers/` : endpoints HTTP et mapping des reponses.
 - `backend/services/` : services metier et infrastructure organises par domaine.
-- `backend/services/ods/` : lecture, ecriture, backup, cache et validation ODS.
+- `backend/services/ods/` : lecture d'import ODS utilisateur, archive, cache et secours XML.
 - `backend/services/database/` : configuration SQLAlchemy, ORM, repositories et schema.
 - `backend/tests/` : tests backend par couche.
 
@@ -94,10 +94,10 @@ Domaines de hooks :
 - `hooks/app/` : session, droits backend et view-model principal.
 - `hooks/navigation/` : vue courante, plateforme selectionnee et URL.
 - `hooks/collection/` : rechargement transversal et onboarding d'import.
-- `hooks/home/` : Ma collection, images protegees et recherche globale.
+- `hooks/home/` : statistiques Ma collection et recherche globale.
 - `hooks/library/` : Bibliotheque publique, recherche, tri et pagination serveur.
-- `hooks/platforms/` : catalogue de plateformes.
-- `hooks/games/` : collection plateforme, tri, filtres et ajout.
+- `hooks/platforms/` : plateformes de la collection utilisateur lues depuis SQL.
+- `hooks/games/` : jeux de la collection utilisateur, tri, filtres et actions futures.
 
 Regles detaillees :
 
@@ -106,17 +106,14 @@ Regles detaillees :
 - Menu : `documentation/menu.md`
 - Page About : `documentation/about.md`
 
-## Configuration ODS
+## Import ODS Utilisateur
 
-Le backend ne contient aucun chemin ODS code en dur.
+Le backend ne consulte plus de collection globale depuis un fichier ODS. Les
+vues Ma collection lisent PostgreSQL via les endpoints
+`/collections/videogames/**`.
 
 Variables principales :
 
-- `JEUXVIDEO_ODS_PATH` : chemin du fichier ODS pour un lancement backend direct.
-- `JEUXVIDEO_ODS_FILE` : fichier ODS monte par Docker Compose.
-- `JEUXVIDEO_ODS_BACKUP_DIR` : repertoire des sauvegardes.
-- `JEUXVIDEO_ODS_TMP_DIR` : repertoire temporaire d'ecriture.
-- `ODS_FORMULA_RECALCULATION` : politique de recalcul des formules.
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
@@ -174,7 +171,7 @@ cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-JEUXVIDEO_ODS_PATH=../collection-example.ods BACKEND_PORT=7777 python app.py
+BACKEND_PORT=7777 python app.py
 ```
 
 Backend : `http://localhost:7777`

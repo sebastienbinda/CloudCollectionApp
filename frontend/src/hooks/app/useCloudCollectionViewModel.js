@@ -35,6 +35,7 @@ import useSessionState from "./useSessionState";
 function useCloudCollectionViewModel() {
   const [error, setError] = useState("");
   const session = useSessionState();
+  const canUseCollectionViews = session.hasAccessToken && session.authenticatedProfile !== "ADMIN";
   const refresh = useCollectionRefresh();
   const clearDeleteGameFeedbackRef = useRef(() => {});
   const prepareAddGameFormRef = useRef(() => {});
@@ -42,12 +43,13 @@ function useCloudCollectionViewModel() {
   const navigation = useAppNavigation({
     hasAccessToken: session.hasAccessToken,
     authenticatedProfile: session.authenticatedProfile,
+    canUseCollectionViews,
     clearDeleteGameFeedback: () => clearDeleteGameFeedbackRef.current(),
     prepareAddGameForm: (selectedPlatform) => prepareAddGameFormRef.current(selectedPlatform),
   });
   const addGamePage = useAddGamePage({
     currentView: navigation.currentView,
-    hasAccessToken: session.hasAccessToken,
+    hasAccessToken: canUseCollectionViews,
     odsReloadKey: refresh.odsReloadKey,
     actionPermissions: session.actionPermissions,
     reloadOds: refresh.reloadOds,
@@ -58,8 +60,8 @@ function useCloudCollectionViewModel() {
   const platformsCatalog = usePlatformsCatalog({
     currentView: navigation.currentView,
     odsReloadKey: refresh.odsReloadKey,
-    isAuthenticated: session.actionPermissions.isAuthenticated,
-    hasAccessToken: session.hasAccessToken,
+    isAuthenticated: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews,
     setSelectedPlatform: navigation.setSelectedPlatform,
     setCurrentView: navigation.setCurrentView,
     setGameForm: addGamePage.setGameForm,
@@ -74,15 +76,15 @@ function useCloudCollectionViewModel() {
     currentView: navigation.currentView,
     selectedPlatform: navigation.selectedPlatform,
     odsReloadKey: refresh.odsReloadKey,
-    isAuthenticated: session.actionPermissions.isAuthenticated,
-    hasAccessToken: session.hasAccessToken,
+    isAuthenticated: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews,
     setError,
   });
   const gameCollection = useGameCollectionPage({
     selectedPlatform: navigation.selectedPlatform,
     gamesReloadKey: refresh.gamesReloadKey,
-    isAuthenticated: session.actionPermissions.isAuthenticated,
-    hasAccessToken: session.hasAccessToken,
+    isAuthenticated: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
     setError,
@@ -101,10 +103,12 @@ function useCloudCollectionViewModel() {
   });
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
-    hasAccessToken: session.hasAccessToken,
+    hasAccessToken: canUseCollectionViews,
     authenticatedUsername: session.authenticatedUsername,
     currentView: navigation.currentView,
+    canUseCollectionViews,
     openCollectionOnboarding: navigation.openCollectionOnboarding,
+    openAdminDashboard: navigation.openAdminDashboard,
     goHome: navigation.goHome,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
@@ -125,9 +129,6 @@ function useCloudCollectionViewModel() {
       homeSearchQuery: homePage.homeSearchQuery,
       homeSearchResults: homePage.homeSearchResults,
       homeSearchError: homePage.homeSearchError,
-      cacheResetMessage: refresh.cacheResetMessage,
-      cacheResetError: refresh.cacheResetError,
-      isResettingCache: refresh.isResettingCache,
       gameForm: addGamePage.gameForm,
       addGameColumnValues: addGamePage.addGameColumnValues,
       addGameError: addGamePage.addGameError,
@@ -136,6 +137,7 @@ function useCloudCollectionViewModel() {
       ...gameCollection,
       isLoadingPlatforms: platformsCatalog.isLoadingPlatforms,
       actionPermissions: session.actionPermissions,
+      canUseCollectionViews,
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,
       selectedPlatformStats: homePage.selectedPlatformStats || platformsCatalog.platforms.find(
@@ -160,7 +162,6 @@ function useCloudCollectionViewModel() {
       logout: session.logout,
       searchGamesByName: homePage.searchGamesByName,
       closeHomeSearch: homePage.closeHomeSearch,
-      resetOdsCache: refresh.resetOdsCache,
       downloadOdsFile: odsDownload.downloadOdsFile,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
       selectCollectionFile: userCollectionOnboarding.selectCollectionFile,

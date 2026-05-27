@@ -22,7 +22,6 @@ from .auth import (
 )
 from .database import DatabaseConfiguration, DatabaseSchemaService, SqlAlchemyUserRepository
 from .email import EmailConfiguration, EmailSenderFactory
-from .games import GamesService
 from .library.library_query_contract import (
     LibraryPageRequest,
     LibraryQueryCriteria,
@@ -32,6 +31,7 @@ from .library.library_query_contract import (
 from .library.library_service import (
     LibraryService,
 )
+from .library.library_service_provider import LibraryServiceProvider
 from .logging import BackendLoggingService
 from .routing import RouteDiscoveryService
 from .users import (
@@ -54,12 +54,12 @@ __all__ = [
     "EmailConfiguration",
     "EmailSenderFactory",
     "EmailVerificationService",
-    "GamesService",
     "InvalidEmailVerificationTokenError",
     "LibraryPageRequest",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
     "LibraryService",
+    "LibraryServiceProvider",
     "LibrarySortRule",
     "PasswordPolicyError",
     "RouteDiscoveryService",

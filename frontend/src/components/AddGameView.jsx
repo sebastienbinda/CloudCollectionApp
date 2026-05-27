@@ -13,7 +13,7 @@ import ProjectIcon from "./ProjectIcon";
 import ProgressBar from "./ProgressBar";
 
 /**
- * Page contenant le formulaire d'ajout d'un jeu dans le fichier ODS.
+ * Page contenant le formulaire d'ajout futur d'un jeu.
  *
  * @param {Object} props - Etat du formulaire, listes de suggestions et callbacks.
  * @returns {import("react").JSX.Element} Vue d'ajout de jeu.

@@ -18,8 +18,7 @@ infrastructure, authentication, routing or backend tests.
 - Business workflows must live in domain services under `backend/services/`.
 - Persistence details must live in repositories or infrastructure services,
   not in controllers.
-- ODS parsing, writing, backup and formula handling must stay under
-  `backend/services/ods/`.
+- ODS parsing for user imports must stay under `backend/services/ods/`.
 - Database schema, ORM models, repositories and migrations must follow
   `documentation/database.md`.
 - Authentication, route protection and frontend session contracts must follow
@@ -32,7 +31,6 @@ infrastructure, authentication, routing or backend tests.
 - `backend/app.py`: Flask application composition root.
 - `backend/controllers/`: HTTP route registration and HTTP response mapping.
 - `backend/services/`: domain, infrastructure and integration services.
-- `backend/models/`: simple transport/domain models not backed by the database.
 - `backend/services/database/`: SQLAlchemy models, database configuration,
   schema initialization and repositories.
 - `backend/migrations/`: Alembic environment and migration scripts.
@@ -97,19 +95,17 @@ Use domain folders under `backend/services/`:
   initialization;
 - `email/`: email configuration and sending;
 - `formatting/`: value formatting helpers;
-- `games/`: game collection workflows and add-game choices;
 - `collection/`: connected-user SQL collection consultation and query
   contracts;
 - `library/`: public read-only consultation of global reference games,
   platforms and studios;
 - `logging/`: backend logging setup and handlers;
-- `ods/`: ODS reading, writing, backup, cache, path resolution and formulas;
+- `ods/`: user collection ODS import readers, archive access, XML fallback and
+  import cache;
 - `routing/`: route catalog discovery;
 - `security/`: secret encryption utilities;
 - `users/`: user administration workflows, user status and connected-user
   collection import orchestration;
-- `validation/`: payload validation rules.
-
 Services may compose other services, validators and repositories. Keep service
 constructors injectable when useful for tests.
 
@@ -128,13 +124,15 @@ Database code must follow these boundaries:
 
 ### ODS Infrastructure
 
-ODS code must preserve the file as the current collection source of truth.
+ODS code is limited to user import parsing. SQL is the source of truth for
+collection consultation after import.
 
-- Readers parse ODS content and expose normalized data to services.
-- Writers update `content.xml` while preserving spreadsheet styles.
-- Backup services create a backup before writes.
-- Cache services own read caching and invalidation.
-- Validators reject invalid payloads before writer calls.
+- Import readers parse ODS content and expose normalized data to services.
+- The raw user ODS download sends `t_user.collection_file_path` without parsing.
+- No collection consultation route may depend on a global ODS path, ODS writer,
+  embedded image extraction or spreadsheet formula recalculation.
+- Cache services may be used only inside the import reader to avoid repeated
+  reads during a single import workflow.
 
 Do not bypass these services from controllers.
 
@@ -160,7 +158,7 @@ Backend tests should mirror the layer being changed:
 - controller or route behavior: update route tests such as
   `backend/tests/test_app_routes.py`;
 - business service behavior: update the relevant service test;
-- ODS parsing/writing behavior: update ODS reader/writer/cache tests;
+- ODS import parsing behavior: update ODS reader/cache tests;
 - database schema or migration orchestration: update database tests;
 - authentication and authorization behavior: update auth route and token tests.
 
@@ -180,7 +178,8 @@ When adding a feature:
 2. search for similar controllers, services, validators and tests;
 3. add or extend the controller only for HTTP mapping;
 4. put business logic in a service under the domain folder;
-5. put payload validation in `backend/services/validation/` when reusable;
+5. put reusable payload validation in the owning domain service or a dedicated
+   domain helper;
 6. add or update backend tests for the changed behavior;
 7. update functional documentation when a documented area changes;
 8. update `README.md` when behavior, commands, routes, configuration or

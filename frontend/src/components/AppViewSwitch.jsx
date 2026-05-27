@@ -91,6 +91,7 @@ class AppViewSwitch {
     return (
       <AboutView
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
@@ -125,6 +126,7 @@ class AppViewSwitch {
         homeSearchResults={props.homeSearchResults}
         homeSearchError={props.homeSearchError}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         onOpenAbout={props.openAbout}
@@ -153,18 +155,15 @@ class AppViewSwitch {
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
         canAddGame={props.actionPermissions.canAddGame}
-        canResetCache={props.actionPermissions.canResetCache}
         canDownloadOds={props.actionPermissions.canDownloadOds}
         canSearchUsers={props.actionPermissions.canSearchUsers}
-        cacheResetMessage={props.cacheResetMessage}
-        cacheResetError={props.cacheResetError}
-        isResettingCache={props.isResettingCache}
+        canUseCollectionViews={props.canUseCollectionViews}
         downloadError={props.downloadError}
         isDownloadingOds={props.isDownloadingOds}
         onBack={props.goHome}
+        onBackToLibrary={props.openLibrary}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
-        onResetCache={props.resetOdsCache}
         onDownloadOds={props.downloadOdsFile}
       />
     );
@@ -222,6 +221,7 @@ class AppViewSwitch {
     return (
       <AuthView
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         onAuthenticated={props.handleAuthenticatedUser}
         onBack={props.openAbout}
       />
@@ -246,6 +246,7 @@ class AppViewSwitch {
         isCheckingCollection={props.isCheckingCollection}
         isImportingCollection={props.isImportingCollection}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         onOpenAbout={props.openAbout}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
@@ -271,6 +272,7 @@ class AppViewSwitch {
         entitiesError={props.libraryEntities.entitiesError}
         isLoadingEntities={props.libraryEntities.isLoadingEntities}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}
@@ -304,6 +306,7 @@ class AppViewSwitch {
         subtitle={subtitle}
         listState={listState}
         isAuthenticated={props.actionPermissions.isAuthenticated}
+        canUseCollectionViews={props.canUseCollectionViews}
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         platforms={props.platforms}

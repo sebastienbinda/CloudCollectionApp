@@ -23,6 +23,7 @@ import ProjectIcon from "./ProjectIcon";
  */
 function AboutView({
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   platforms,
@@ -44,6 +45,7 @@ function AboutView({
         />
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}

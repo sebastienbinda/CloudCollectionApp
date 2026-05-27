@@ -21,7 +21,6 @@ REQUIREMENTS_FILE="${BACKEND_DIR}/requirements.txt"
 REQUIREMENTS_STAMP="${VENV_DIR}/.requirements.sha256"
 REQUIRED_PYTHON_VERSION="3.12"
 PYTHON_BIN="${PYTHON_BIN:-}"
-DEFAULT_TEST_ODS_PATH="${PROJECT_DIR}/collection-example.ods"
 
 # Verifie que les fichiers backend requis existent.
 #
@@ -38,20 +37,6 @@ check_backend_files() {
     exit 1
   fi
 
-  if [ -z "${JEUXVIDEO_ODS_PATH:-}" ] && [ ! -f "$DEFAULT_TEST_ODS_PATH" ]; then
-    echo "Fichier ODS de test introuvable: ${DEFAULT_TEST_ODS_PATH}" >&2
-    exit 1
-  fi
-}
-
-# Configure le fichier ODS de test si aucun chemin n'est fourni par l'environnement.
-#
-# @param {void} Aucun - Utilise `collection-example.ods` comme fixture versionnee.
-# @returns {void} Exporte `JEUXVIDEO_ODS_PATH` si necessaire.
-configure_test_ods_path() {
-  if [ -z "${JEUXVIDEO_ODS_PATH:-}" ]; then
-    export JEUXVIDEO_ODS_PATH="$DEFAULT_TEST_ODS_PATH"
-  fi
 }
 
 # Trouve un interpreteur Python compatible avec la version backend supportee.
@@ -161,7 +146,6 @@ run_backend_tests() {
 }
 
 check_backend_files
-configure_test_ods_path
 ensure_virtualenv
 ensure_dependencies
 run_backend_tests

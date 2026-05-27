@@ -411,22 +411,6 @@ route catalog can announce future actions, but they currently return:
 
 with HTTP status `501`.
 
-### Removed ODS Consultation Routes
-
-The backend no longer registers these legacy ODS consultation routes. They are
-absent from `/api/routes` and return `404` because there is no Flask route:
-
-- `GET /collections/videogames/home`
-- `POST /collections/videogames/cache/reset`
-- `GET /collections/videogames/search`
-- `GET /collections/videogames/platforms`
-- `GET /collections/videogames/column-values`
-- `GET /collections/videogames/add-game-choices`
-- `GET /collections/videogames/platform-image/<platform>`
-- `POST /collections/videogames/wishlist/games`
-- `PUT /collections/videogames/wishlist/games`
-- `DELETE /collections/videogames/wishlist/games`
-
 ## User Administration Routes
 
 The routes in this section require profile `ADMIN`.
@@ -519,18 +503,6 @@ Import errors use:
   at the proxy or Flask layer, or when the uploaded file exceeds the same
   configured limit during import validation;
 - `500` for an unexpected import failure.
-
-## ODS Write Behavior
-
-Before every write, the backend creates a backup in
-`JEUXVIDEO_ODS_BACKUP_DIR`:
-
-```text
-collection.ods.backup-YYYYMMDDHHMMSSffffff
-```
-
-Writes update the ODS archive content while preserving existing spreadsheet
-styles. After a write, the backend invalidates the ODS read cache.
 
 ## Email Configuration
 

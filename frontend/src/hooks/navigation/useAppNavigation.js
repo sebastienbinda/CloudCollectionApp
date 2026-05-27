@@ -43,6 +43,10 @@ function useAppNavigation(options) {
   };
 
   const openAddGamePage = () => {
+    if (!options.canUseCollectionViews) {
+      openView("adminDashboard", "/admin-dashboard");
+      return;
+    }
     options.clearDeleteGameFeedback();
     options.prepareAddGameForm(selectedPlatform);
     setCurrentView("addGame");
@@ -50,6 +54,10 @@ function useAppNavigation(options) {
   };
 
   const openPlatform = (platform) => {
+    if (!options.canUseCollectionViews) {
+      openView("adminDashboard", "/admin-dashboard");
+      return;
+    }
     const platformId = typeof platform === "object" && platform !== null ? platform.id : platform;
     options.clearDeleteGameFeedback();
     setSelectedPlatform(String(platformId || ""));
@@ -107,6 +115,16 @@ function useAppNavigation(options) {
   }, [options.authenticatedProfile, currentView]);
 
   useEffect(() => {
+    const collectionViews = ["home", "games", "addGame", "collectionOnboarding"];
+    if (options.canUseCollectionViews || !collectionViews.includes(currentView)) return;
+    const fallbackView = options.authenticatedProfile === "ADMIN" ? "adminDashboard" : "about";
+    const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/admin-dashboard" : "/about";
+    setSelectedPlatform("");
+    setCurrentView(fallbackView);
+    window.history.replaceState({}, "", fallbackPath);
+  }, [currentView, options.authenticatedProfile, options.canUseCollectionViews]);
+
+  useEffect(() => {
     if (!options.hasAccessToken || currentView !== "home" || window.location.pathname !== "/") return;
     window.history.replaceState({}, "", "/collection");
   }, [currentView, options.hasAccessToken]);
@@ -121,7 +139,13 @@ function useAppNavigation(options) {
     setCurrentView,
     selectedPlatform,
     setSelectedPlatform,
-    goHome: () => openView("home", "/collection"),
+    goHome: () => {
+      if (!options.canUseCollectionViews) {
+        openView("adminDashboard", "/admin-dashboard");
+        return;
+      }
+      openView("home", "/collection");
+    },
     openAbout: () => openView("about", "/about"),
     openLibrary: () => openView("library", "/bibliotheque"),
     openLibraryPlatforms: () => openView("libraryPlatforms", "/bibliotheque/plateformes"),
@@ -130,7 +154,13 @@ function useAppNavigation(options) {
     openAddGamePage,
     openAdminDashboard: () => openView("adminDashboard", "/admin-dashboard"),
     openUsersPage: () => openView("users", "/users"),
-    openCollectionOnboarding: () => openView("collectionOnboarding", "/collection/import"),
+    openCollectionOnboarding: () => {
+      if (!options.canUseCollectionViews) {
+        openView("adminDashboard", "/admin-dashboard");
+        return;
+      }
+      openView("collectionOnboarding", "/collection/import");
+    },
     openPlatform,
   };
 }

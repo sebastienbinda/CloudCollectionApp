@@ -29,6 +29,7 @@ function LibraryEntityListView({
   subtitle,
   listState,
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   platforms,
@@ -45,6 +46,7 @@ function LibraryEntityListView({
       <header className="pageHeader libraryHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}

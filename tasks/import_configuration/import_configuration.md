@@ -1,0 +1,1 @@
+Cette tâche doit permettre d'adapter la fonction d'import de fichier de collection via une configuration qui définie où lire les informations à importer plutôt que de se baser sur une structure connue.

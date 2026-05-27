@@ -32,6 +32,7 @@ function LibraryHomeView({
   entitiesError,
   isLoadingEntities,
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   platforms,
@@ -57,6 +58,7 @@ function LibraryHomeView({
       <header className="pageHeader libraryHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}

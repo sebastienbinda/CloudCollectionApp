@@ -33,6 +33,7 @@ function UserCollectionOnboardingView({
   isCheckingCollection,
   isImportingCollection,
   isAuthenticated,
+  canUseCollectionViews,
   onOpenAbout,
   onOpenHome,
   onOpenLibrary,
@@ -70,6 +71,7 @@ function UserCollectionOnboardingView({
       <header className="pageHeader collectionOnboardingHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}

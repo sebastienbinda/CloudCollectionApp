@@ -23,6 +23,7 @@ import AuthStatusMenu from "./AuthStatusMenu";
  */
 function MainMenu({
   isAuthenticated,
+  canUseCollectionViews = true,
   username,
   profile,
   onOpenAbout,
@@ -134,7 +135,7 @@ function MainMenu({
             className="secondaryButton"
             type="button"
             onClick={() => runMenuAction(onOpenHome)}
-            disabled={!isAuthenticated}
+            disabled={!isAuthenticated || !canUseCollectionViews}
           >
             Ma collection
           </button>

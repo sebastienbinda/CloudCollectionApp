@@ -25,6 +25,7 @@ function HomeView({
   homeSearchResults,
   homeSearchError,
   isAuthenticated,
+  canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -48,6 +49,7 @@ function HomeView({
       <header className="pageHeader">
         <MainMenu
           isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           platforms={platforms}
@@ -206,7 +208,7 @@ function HomeView({
             <div className="sectionHeader">
               <div>
                 <h2>Plateformes</h2>
-                <span>{formatNumber(homeStats.platforms?.length || 0)} onglets</span>
+                <span>{formatNumber(homeStats.platforms?.length || 0)} plateformes</span>
               </div>
             </div>
             <GridComponent>
