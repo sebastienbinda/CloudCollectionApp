@@ -12,7 +12,9 @@
 # Description : tests des routes de collection utilisateur.
 
 from io import BytesIO
+import json
 
+from services.collection.imports import CollectionFileDescriptionValidationError
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
@@ -78,7 +80,10 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         response = self.client.post(
             "/api/users/import",
             headers=self.get_user_auth_headers(),
-            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            data={
+                "collection_file": (BytesIO(b"ods"), "collection.ods"),
+                "collection_file_description": json.dumps(self._valid_description()),
+            },
             content_type="multipart/form-data",
         )
 
@@ -99,6 +104,79 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         response = self.client.post("/api/users/import", headers=self.get_user_auth_headers())
 
         self.assertEqual(400, response.status_code)
+
+    def test_import_current_user_collection_requires_file_description(self):
+        """Verifie le refus sans description JSON.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident 422 et les details.
+        """
+
+        response = self.client.post(
+            "/api/users/import",
+            headers=self.get_user_auth_headers(),
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual("Configuration invalide.", response.get_json()["error"])
+        self.assertTrue(response.get_json()["details"])
+
+    def test_import_current_user_collection_rejects_invalid_json_description(self):
+        """Verifie le refus d'une description JSON invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident 422 et les details.
+        """
+
+        response = self.client.post(
+            "/api/users/import",
+            headers=self.get_user_auth_headers(),
+            data={
+                "collection_file": (BytesIO(b"ods"), "collection.ods"),
+                "collection_file_description": "{invalid-json",
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual(["JSON invalide."], response.get_json()["details"])
+
+    def test_import_current_user_collection_maps_validation_error(self):
+        """Verifie le mapping 422 d'une erreur de validation de configuration.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le format d'erreur.
+        """
+
+        FakeUserCollectionImportService.next_error = CollectionFileDescriptionValidationError(
+            ["file_type inconnu."]
+        )
+        response = self.client.post(
+            "/api/users/import",
+            headers=self.get_user_auth_headers(),
+            data={
+                "collection_file": (BytesIO(b"ods"), "collection.ods"),
+                "collection_file_description": json.dumps(self._valid_description()),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual(
+            {"error": "Configuration invalide.", "details": ["file_type inconnu."]},
+            response.get_json(),
+        )
 
     def test_import_current_user_collection_maps_domain_errors(self):
         """Verifie le mapping des erreurs d'import.
@@ -121,7 +199,34 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
             response = self.client.post(
                 "/api/users/import",
                 headers=self.get_user_auth_headers(),
-                data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+                data={
+                    "collection_file": (BytesIO(b"ods"), "collection.ods"),
+                    "collection_file_description": json.dumps(self._valid_description()),
+                },
                 content_type="multipart/form-data",
             )
             self.assertEqual(expected_status, response.status_code)
+
+    def _valid_description(self):
+        """Construit une description de fichier valide pour les routes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Description JSON compatible avec le contrat d'import.
+        """
+
+        return {
+            "file_type": "libreoffice_ods",
+            "single_sheet_conf": {
+                "data_range": "A1:H200",
+                "header_row": 1,
+                "column_information": {
+                    "name": "A",
+                    "platform": "B",
+                    "studio": "C",
+                    "release_date": "D",
+                },
+            },
+        }

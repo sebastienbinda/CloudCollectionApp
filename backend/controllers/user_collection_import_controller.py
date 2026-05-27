@@ -24,6 +24,10 @@ from services import (
     UserProfile,
 )
 from services.database import SqlAlchemyUserCollectionImportRepository
+from services.collection.imports import (
+    CollectionFileDescriptionValidationError,
+    CollectionFileDescriptionValidator,
+)
 from services.ods import OdsCollectionImportReader
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
@@ -44,6 +48,7 @@ class UserCollectionImportController:
         import_repository_class=SqlAlchemyUserCollectionImportRepository,
         import_service_class=UserCollectionImportService,
         ods_reader_class=OdsCollectionImportReader,
+        file_description_validator_class=CollectionFileDescriptionValidator,
         import_configuration_class=UserCollectionImportConfiguration,
         database_configuration_class=DatabaseConfiguration,
     ):
@@ -55,6 +60,7 @@ class UserCollectionImportController:
             import_repository_class (type): Classe de repository d'import.
             import_service_class (type): Classe du service metier d'import.
             ods_reader_class (type): Classe du lecteur ODS d'import.
+            file_description_validator_class (type): Classe de validation de description.
             import_configuration_class (type): Classe de configuration d'import.
             database_configuration_class (type): Classe de configuration base.
 
@@ -67,6 +73,7 @@ class UserCollectionImportController:
         self.import_repository_class = import_repository_class
         self.import_service_class = import_service_class
         self.ods_reader_class = ods_reader_class
+        self.file_description_validator_class = file_description_validator_class
         self.import_configuration_class = import_configuration_class
         self.database_configuration_class = database_configuration_class
 
@@ -133,6 +140,7 @@ class UserCollectionImportController:
             collection_file = request.files.get("collection_file")
             if collection_file is None or not collection_file.filename:
                 return jsonify({"error": "Le parametre collection_file est requis."}), 400
+            self._parse_collection_file_description()
             temporary_file_path = self._save_temporary_upload(collection_file)
             result = self._create_import_service().import_collection(
                 user_id,
@@ -140,6 +148,8 @@ class UserCollectionImportController:
                 collection_file.filename,
             )
             return jsonify(result.to_dict()), 201
+        except CollectionFileDescriptionValidationError as exc:
+            return jsonify({"error": "Configuration invalide.", "details": exc.details}), 422
         except UserCollectionImportInvalidFileError as exc:
             return jsonify({"error": str(exc)}), 400
         except UserCollectionImportTooLargeError as exc:
@@ -194,6 +204,23 @@ class UserCollectionImportController:
             temporary_file_path = Path(file.name)
         collection_file.save(temporary_file_path)
         return temporary_file_path
+
+    def _parse_collection_file_description(self):
+        """Parse et valide la description JSON du fichier de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            CollectionFileDescription: Description valide du fichier importe.
+
+        Raises:
+            CollectionFileDescriptionValidationError: Si la description est invalide.
+        """
+
+        return self.file_description_validator_class().parse_json_text(
+            request.form.get("collection_file_description")
+        )
 
     def _delete_temporary_file(self, temporary_file_path: Path) -> None:
         """Supprime le fichier temporaire d'upload.
