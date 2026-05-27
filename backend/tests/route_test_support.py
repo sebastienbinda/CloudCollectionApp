@@ -305,25 +305,32 @@ class FakeUserCollectionImportService:
     next_error = None
     last_call = None
 
-    def __init__(self, configuration, repository, ods_reader):
+    def __init__(self, configuration, repository, reader_factory):
         """Initialise le service.
 
         Args:
             configuration (object): Configuration ignoree.
             repository (object): Repository ignore.
-            ods_reader (object): Lecteur ignore.
+            reader_factory (object): Factory ignoree.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
-    def import_collection(self, user_id, source_file_path, original_filename=None):
+    def import_collection(
+        self,
+        user_id,
+        source_file_path,
+        original_filename=None,
+        file_description=None,
+    ):
         """Importe une collection factice.
 
         Args:
             user_id (int): Identifiant utilisateur.
             source_file_path (str): Chemin temporaire.
             original_filename (str | None): Nom original.
+            file_description (object | None): Description valide.
 
         Returns:
             UserCollectionImportResult: Compteurs factices.
@@ -332,14 +339,19 @@ class FakeUserCollectionImportService:
             Exception: Erreur configuree.
         """
 
-        self.__class__.last_call = (user_id, source_file_path, original_filename)
+        self.__class__.last_call = (
+            user_id,
+            source_file_path,
+            original_filename,
+            file_description,
+        )
         if self.next_error:
             raise self.next_error
         return UserCollectionImportResult(1, 2, 3, 4)
 
 
-class FakeOdsCollectionImportReader:
-    """Lecteur ODS factice."""
+class FakeCollectionFileReaderFactory:
+    """Factory de lecteurs de collection factice."""
 
 
 class BaseAppRoutesTest(unittest.TestCase):
@@ -361,7 +373,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         self.original_collection_user_repository = app_module.user_collection_import_controller.user_repository_class
         self.original_collection_import_repository = app_module.user_collection_import_controller.import_repository_class
         self.original_collection_import_service = app_module.user_collection_import_controller.import_service_class
-        self.original_collection_ods_reader = app_module.user_collection_import_controller.ods_reader_class
+        self.original_collection_reader_factory = app_module.user_collection_import_controller.reader_factory_class
         self.original_collection_database_configuration = app_module.user_collection_import_controller.database_configuration_class
         self.original_collection_query_service_factory = app_module.collection_controller.collection_query_service_factory
         self.original_collection_user_repository_class = app_module.collection_controller.user_repository_class
@@ -377,7 +389,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.user_collection_import_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_collection_import_controller.import_repository_class = FakeUserCollectionImportRepository
         app_module.user_collection_import_controller.import_service_class = FakeUserCollectionImportService
-        app_module.user_collection_import_controller.ods_reader_class = FakeOdsCollectionImportReader
+        app_module.user_collection_import_controller.reader_factory_class = FakeCollectionFileReaderFactory
         app_module.user_collection_import_controller.database_configuration_class = FakeDatabaseConfiguration
         app_module.collection_controller.collection_query_service_factory = FakeUserCollectionQueryService
         app_module.collection_controller.user_repository_class = FakeSqlAlchemyUserRepository
@@ -415,7 +427,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.user_collection_import_controller.user_repository_class = self.original_collection_user_repository
         app_module.user_collection_import_controller.import_repository_class = self.original_collection_import_repository
         app_module.user_collection_import_controller.import_service_class = self.original_collection_import_service
-        app_module.user_collection_import_controller.ods_reader_class = self.original_collection_ods_reader
+        app_module.user_collection_import_controller.reader_factory_class = self.original_collection_reader_factory
         app_module.user_collection_import_controller.database_configuration_class = self.original_collection_database_configuration
         app_module.collection_controller.collection_query_service_factory = self.original_collection_query_service_factory
         app_module.collection_controller.user_repository_class = self.original_collection_user_repository_class

@@ -27,8 +27,8 @@ from services.database import SqlAlchemyUserCollectionImportRepository
 from services.collection.imports import (
     CollectionFileDescriptionValidationError,
     CollectionFileDescriptionValidator,
+    CollectionFileReaderFactory,
 )
-from services.ods import OdsCollectionImportReader
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
@@ -47,7 +47,7 @@ class UserCollectionImportController:
         user_repository_class=SqlAlchemyUserRepository,
         import_repository_class=SqlAlchemyUserCollectionImportRepository,
         import_service_class=UserCollectionImportService,
-        ods_reader_class=OdsCollectionImportReader,
+        reader_factory_class=CollectionFileReaderFactory,
         file_description_validator_class=CollectionFileDescriptionValidator,
         import_configuration_class=UserCollectionImportConfiguration,
         database_configuration_class=DatabaseConfiguration,
@@ -59,7 +59,7 @@ class UserCollectionImportController:
             user_repository_class (type): Classe de repository utilisateur.
             import_repository_class (type): Classe de repository d'import.
             import_service_class (type): Classe du service metier d'import.
-            ods_reader_class (type): Classe du lecteur ODS d'import.
+            reader_factory_class (type): Classe de factory de lecteurs.
             file_description_validator_class (type): Classe de validation de description.
             import_configuration_class (type): Classe de configuration d'import.
             database_configuration_class (type): Classe de configuration base.
@@ -72,7 +72,7 @@ class UserCollectionImportController:
         self.user_repository_class = user_repository_class
         self.import_repository_class = import_repository_class
         self.import_service_class = import_service_class
-        self.ods_reader_class = ods_reader_class
+        self.reader_factory_class = reader_factory_class
         self.file_description_validator_class = file_description_validator_class
         self.import_configuration_class = import_configuration_class
         self.database_configuration_class = database_configuration_class
@@ -140,12 +140,13 @@ class UserCollectionImportController:
             collection_file = request.files.get("collection_file")
             if collection_file is None or not collection_file.filename:
                 return jsonify({"error": "Le parametre collection_file est requis."}), 400
-            self._parse_collection_file_description()
+            file_description = self._parse_collection_file_description()
             temporary_file_path = self._save_temporary_upload(collection_file)
             result = self._create_import_service().import_collection(
                 user_id,
                 str(temporary_file_path),
                 collection_file.filename,
+                file_description,
             )
             return jsonify(result.to_dict()), 201
         except CollectionFileDescriptionValidationError as exc:
@@ -250,7 +251,7 @@ class UserCollectionImportController:
         return self.import_service_class(
             self.import_configuration_class.from_environment(),
             self._create_import_repository(),
-            self.ods_reader_class(),
+            self.reader_factory_class(),
         )
 
     def _create_import_repository(self):

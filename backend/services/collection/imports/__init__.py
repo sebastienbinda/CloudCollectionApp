@@ -23,13 +23,33 @@ from .collection_file_description_validator import (
     CollectionFileDescriptionValidationError,
     CollectionFileDescriptionValidator,
 )
+from .collection_file_reader import (
+    CollectionFileReadError,
+    CollectionFileReader,
+    CollectionFileValidationError,
+)
+from .collection_file_reader_factory import CollectionFileReaderFactory
+from .collection_import_models import (
+    CollectionImportData,
+    CollectionImportGame,
+    CollectionImportPlatform,
+    CollectionImportStudio,
+)
 
 __all__ = [
     "CollectionFileDescription",
     "CollectionFileDescriptionValidationError",
     "CollectionFileDescriptionValidator",
+    "CollectionFileReadError",
+    "CollectionFileReader",
+    "CollectionFileReaderFactory",
+    "CollectionFileValidationError",
     "CollectionFileType",
+    "CollectionImportData",
     "CollectionImportField",
+    "CollectionImportGame",
+    "CollectionImportPlatform",
+    "CollectionImportStudio",
     "CollectionMultipleSheetsConfiguration",
     "CollectionPerSheetConfiguration",
     "CollectionSheetLayout",
