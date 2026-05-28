@@ -32,6 +32,7 @@ function getUserCollectionErrorMessage(error) {
     invalid_file: formatInvalidFileMessage(error),
     file_too_large: "Le fichier selectionne depasse la taille maximale autorisee.",
     invalid_configuration: formatInvalidConfigurationMessage(error),
+    temporary_file_missing: "Envoyez votre fichier de collection avant de lancer l'import.",
     collection_already_imported: "Une collection est deja associee a ce compte.",
     unauthorized: "Votre session ne permet pas d'importer cette collection.",
     unexpected_error: "L'import de la collection a echoue.",
@@ -100,11 +101,13 @@ function useUserCollectionOnboarding(options) {
   const [hasCollection, setHasCollection] = useState(null);
   const [checkedUsername, setCheckedUsername] = useState("");
   const [selectedCollectionFile, setSelectedCollectionFile] = useState(null);
+  const [availableImportSheets, setAvailableImportSheets] = useState([]);
   const [importConfiguration, setImportConfiguration] = useState(
     createDefaultImportConfiguration
   );
   const [onboardingError, setOnboardingError] = useState("");
   const [isCheckingCollection, setIsCheckingCollection] = useState(false);
+  const [isAnalyzingCollection, setIsAnalyzingCollection] = useState(false);
   const [isImportingCollection, setIsImportingCollection] = useState(false);
   const importInProgressRef = useRef(false);
 
@@ -112,9 +115,11 @@ function useUserCollectionOnboarding(options) {
     setHasCollection(null);
     setCheckedUsername("");
     setSelectedCollectionFile(null);
+    setAvailableImportSheets([]);
     setImportConfiguration(createDefaultImportConfiguration());
     setOnboardingError("");
     setIsCheckingCollection(false);
+    setIsAnalyzingCollection(false);
     setIsImportingCollection(false);
     importInProgressRef.current = false;
   }, []);
@@ -168,10 +173,54 @@ function useUserCollectionOnboarding(options) {
     openCollectionOnboarding,
   ]);
 
-  const selectCollectionFile = useCallback((collectionFile) => {
-    setSelectedCollectionFile(collectionFile || null);
-    setOnboardingError("");
+  const applyAnalyzedSheets = useCallback((sheetNames) => {
+    setAvailableImportSheets(sheetNames);
+    setImportConfiguration((currentConfiguration) => {
+      if (sheetNames.length <= 1) {
+        return {
+          ...currentConfiguration,
+          multipleSheets: false,
+          sharedSheetLayout: {
+            ...currentConfiguration.sharedSheetLayout,
+            includedSheets: "",
+            excludedSheets: "",
+          },
+        };
+      }
+      return {
+        ...currentConfiguration,
+        multipleSheets: true,
+        sharedLayout: true,
+        sharedSheetLayout: {
+          ...currentConfiguration.sharedSheetLayout,
+          sheetSelectionMode: "included",
+          includedSheets: sheetNames,
+          excludedSheets: [],
+        },
+      };
+    });
   }, []);
+
+  const selectCollectionFile = useCallback(async (collectionFile) => {
+    setSelectedCollectionFile(collectionFile || null);
+    setAvailableImportSheets([]);
+    setOnboardingError("");
+    if (!collectionFile) {
+      return;
+    }
+    setIsAnalyzingCollection(true);
+    try {
+      const fileType = importConfiguration.fileType || "libreoffice_ods";
+      await UserCollectionApi.uploadImportFile(collectionFile, fileType);
+      const analysis = await UserCollectionApi.analyzeImportFile(fileType);
+      applyAnalyzedSheets(Array.isArray(analysis.sheets) ? analysis.sheets : []);
+    } catch (error) {
+      setSelectedCollectionFile(null);
+      setOnboardingError(getUserCollectionErrorMessage(error));
+    } finally {
+      setIsAnalyzingCollection(false);
+    }
+  }, [applyAnalyzedSheets, importConfiguration.fileType]);
 
   const updateImportConfiguration = useCallback((fieldName, value) => {
     setImportConfiguration((currentConfiguration) => ({
@@ -284,7 +333,7 @@ function useUserCollectionOnboarding(options) {
     setIsImportingCollection(true);
     setOnboardingError("");
     try {
-      await UserCollectionApi.importCollection(selectedCollectionFile, description);
+      await UserCollectionApi.importCollection(description);
       setHasCollection(true);
       setSelectedCollectionFile(null);
       reloadOds();
@@ -341,10 +390,12 @@ function useUserCollectionOnboarding(options) {
   return {
     hasCollection,
     selectedCollectionFile,
+    availableImportSheets,
     selectedCollectionFileName: selectedCollectionFile?.name || "",
     importConfiguration,
     onboardingError,
     isCheckingCollection,
+    isAnalyzingCollection,
     isImportingCollection,
     handleAuthenticatedUser,
     selectCollectionFile,

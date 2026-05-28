@@ -41,7 +41,6 @@ from .ods_cache import OdsCache
 from .ods_import_error_context import OdsImportErrorContext
 from .ods_reader import OdsReader
 from .ods_xml_reader import OdsXmlReader
-
 class OdsCollectionImportReadError(CollectionFileReadError):
     """Signale qu'un fichier ODS de collection ne peut pas etre lu."""
 
@@ -51,11 +50,7 @@ class OdsCollectionImportValidationError(CollectionFileValidationError):
 
 
 class OdsCollectionImportReader:
-    """Lit un fichier ODS de collection utilisateur pour le workflow d'import.
-
-    Le service transforme les onglets plateforme en modeles metier et laisse la
-    persistance a la couche d'import applicative.
-    """
+    """Lit un fichier ODS de collection utilisateur pour le workflow d'import."""
 
     def __init__(
         self,
@@ -137,6 +132,30 @@ class OdsCollectionImportReader:
             games=games,
         )
 
+    def analyze_sheets(self, ods_path: str) -> list[str]:
+        """Retourne les onglets disponibles dans un fichier ODS.
+
+        Args:
+            ods_path (str): Chemin du fichier ODS a analyser.
+
+        Returns:
+            list[str]: Noms d'onglets dans l'ordre du fichier.
+
+        Raises:
+            OdsCollectionImportReadError: Si le fichier ODS ne peut pas etre lu.
+        """
+
+        reader = None
+        try:
+            reader = self.reader_factory(ods_path)
+            return reader.list_sheets()
+        except Exception as exc:
+            raise OdsCollectionImportReadError(
+                "Le fichier ODS de collection est illisible."
+            ) from exc
+        finally:
+            self._reset_reader_cache(reader)
+
     def _read_configured_games(
         self,
         reader: OdsReader,
@@ -168,28 +187,18 @@ class OdsCollectionImportReader:
         available_sheet_names: list[str],
         seen_game_keys: set[tuple[str, str]],
     ) -> list[CollectionImportGame]:
-        """Lit les jeux d'une configuration multi-onglets.
-
-        Args:
-            reader (OdsReader): Lecteur ODS bas niveau.
-            configuration (CollectionMultipleSheetsConfiguration): Configuration multi-onglets.
-            available_sheet_names (list[str]): Onglets presents dans le fichier.
-            seen_game_keys (set[tuple[str, str]]): Jeux deja conserves par plateforme.
-
-        Returns:
-            list[CollectionImportGame]: Jeux importables.
-        """
-
         games: list[CollectionImportGame] = []
         if configuration.shared_layout is not None:
-            sheet_names = configuration.shared_layout.included_sheets or available_sheet_names
+            layout = configuration.shared_layout
+            self._ensure_sheets_exist(layout.excluded_sheets or [], available_sheet_names)
+            sheet_names = self._selected_shared_layout_sheets(layout, available_sheet_names)
             self._ensure_sheets_exist(sheet_names, available_sheet_names)
             for sheet_name in sheet_names:
                 games.extend(
                     self._read_layout_games(
                         reader,
                         sheet_name,
-                        configuration.shared_layout,
+                        layout,
                         configuration.sheet_information,
                         seen_game_keys,
                     )
@@ -207,6 +216,18 @@ class OdsCollectionImportReader:
                 )
             )
         return games
+
+    def _selected_shared_layout_sheets(
+        self,
+        layout: CollectionSheetLayout,
+        available_sheet_names: list[str],
+    ) -> list[str]:
+        if layout.included_sheets is not None:
+            return layout.included_sheets
+        if layout.excluded_sheets is not None:
+            excluded_sheet_names = set(layout.excluded_sheets)
+            return [name for name in available_sheet_names if name not in excluded_sheet_names]
+        return available_sheet_names
 
     def _read_layout_games(
         self,
@@ -455,7 +476,6 @@ class OdsCollectionImportReader:
             seen_platform_keys.add(platform_key)
             platforms.append(CollectionImportPlatform(name=game.platform_name))
         return platforms
-
     def _ensure_sheets_exist(
         self,
         expected_sheet_names: list[str],
@@ -466,31 +486,12 @@ class OdsCollectionImportReader:
             raise CollectionFileDescriptionValidationError(
                 [f"onglet absent du fichier: {sheet_name}." for sheet_name in missing_sheets]
             )
-
     def _create_ods_reader(self, ods_path: str) -> OdsReader:
-        """Cree le lecteur ODS bas niveau dedie au workflow d'import.
-
-        Args:
-            ods_path (str): Chemin du fichier ODS a lire.
-
-        Returns:
-            OdsReader: Lecteur ODS configure avec cache et secours XML.
-        """
-
         cache = OdsCache(ods_path)
         archive_reader = OdsArchiveReader(ods_path, cache)
         xml_reader = OdsXmlReader(archive_reader, cache)
         return OdsReader(ods_path, cache, xml_reader)
 
     def _reset_reader_cache(self, reader: Optional[OdsReader]) -> None:
-        """Vide le cache du lecteur ODS d'import en fin de traitement.
-
-        Args:
-            reader (Optional[OdsReader]): Lecteur ODS utilise pour l'import.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-        """
-
         if reader is not None and hasattr(reader, "cache"):
             reader.cache.reset()

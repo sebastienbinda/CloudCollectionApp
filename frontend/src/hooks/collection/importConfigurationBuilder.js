@@ -49,7 +49,9 @@ function createDefaultImportConfiguration() {
     singleSheetLayout: createDefaultLayout(true),
     sharedSheetLayout: {
       ...createDefaultLayout(false),
+      sheetSelectionMode: "included",
       includedSheets: "",
+      excludedSheets: "",
     },
     sheets: [
       {
@@ -80,9 +82,17 @@ function buildImportConfigurationDescription(configuration) {
   if (configuration.sharedLayout) {
     const requiredFields = REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION);
     const layout = buildLayout(configuration.sharedSheetLayout, requiredFields, errors);
-    const includedSheets = splitSheetNames(configuration.sharedSheetLayout.includedSheets);
-    if (includedSheets.length) {
-      layout.included_sheets = includedSheets;
+    const selectionMode = configuration.sharedSheetLayout.sheetSelectionMode;
+    if (selectionMode === "excluded") {
+      const excludedSheets = splitSheetNames(configuration.sharedSheetLayout.excludedSheets);
+      if (excludedSheets.length) {
+        layout.excluded_sheets = excludedSheets;
+      }
+    } else {
+      const includedSheets = splitSheetNames(configuration.sharedSheetLayout.includedSheets);
+      if (includedSheets.length) {
+        layout.included_sheets = includedSheets;
+      }
     }
     return {
       description: errors.length ? null : {
@@ -156,6 +166,9 @@ function buildLayout(layout, requiredFields, errors) {
  * @returns {string[]} Noms d'onglets non vides.
  */
 function splitSheetNames(value) {
+  if (Array.isArray(value)) {
+    return value.map((sheetName) => String(sheetName).trim()).filter(Boolean);
+  }
   return String(value || "")
     .split(/[\n,]/)
     .map((sheetName) => sheetName.trim())

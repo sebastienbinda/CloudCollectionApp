@@ -28,6 +28,7 @@ const FIELD_LABELS = Object.freeze({
  */
 function ImportConfigurationFields({
   configuration,
+  availableSheetNames = [],
   disabled,
   onConfigurationChange,
   onLayoutChange,
@@ -88,6 +89,7 @@ function ImportConfigurationFields({
       ) : (
         <MultipleSheetsFields
           configuration={configuration}
+          availableSheetNames={availableSheetNames}
           onConfigurationChange={onConfigurationChange}
           onLayoutChange={onLayoutChange}
           onLayoutColumnChange={onLayoutColumnChange}
@@ -110,6 +112,7 @@ function ImportConfigurationFields({
  */
 function MultipleSheetsFields({
   configuration,
+  availableSheetNames,
   onConfigurationChange,
   onLayoutChange,
   onLayoutColumnChange,
@@ -150,16 +153,43 @@ function MultipleSheetsFields({
       </div>
       {configuration.sharedLayout ? (
         <>
+          <div className="segmentedField" role="group" aria-label="Selection des onglets">
+            <span>Selection des onglets</span>
+            <label>
+              <input
+                type="radio"
+                name="sheetSelectionMode"
+                checked={configuration.sharedSheetLayout.sheetSelectionMode !== "excluded"}
+                onChange={() => onLayoutChange(
+                  "sharedSheetLayout",
+                  "sheetSelectionMode",
+                  "included"
+                )}
+              />
+              Inclure
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="sheetSelectionMode"
+                checked={configuration.sharedSheetLayout.sheetSelectionMode === "excluded"}
+                onChange={() => onLayoutChange(
+                  "sharedSheetLayout",
+                  "sheetSelectionMode",
+                  "excluded"
+                )}
+              />
+              Exclure
+            </label>
+          </div>
           <label>
-            Onglets inclus
-            <textarea
-              rows="2"
-              value={configuration.sharedSheetLayout.includedSheets}
-              onChange={(event) => onLayoutChange(
-                "sharedSheetLayout",
-                "includedSheets",
-                event.target.value
-              )}
+            {configuration.sharedSheetLayout.sheetSelectionMode === "excluded"
+              ? "Onglets exclus"
+              : "Onglets inclus"}
+            <SheetSelectionField
+              availableSheetNames={availableSheetNames}
+              configuration={configuration}
+              onLayoutChange={onLayoutChange}
             />
           </label>
           <LayoutFields
@@ -182,6 +212,59 @@ function MultipleSheetsFields({
       )}
     </>
   );
+}
+
+/**
+ * Affiche la selection d'onglets analysee ou une saisie libre de secours.
+ *
+ * @param {Object} props - Onglets disponibles, configuration et callback.
+ * @returns {import("react").JSX.Element} Champ de selection d'onglets.
+ */
+function SheetSelectionField({ availableSheetNames, configuration, onLayoutChange }) {
+  const isExclusionMode = configuration.sharedSheetLayout.sheetSelectionMode === "excluded";
+  const fieldName = isExclusionMode ? "excludedSheets" : "includedSheets";
+  const value = configuration.sharedSheetLayout[fieldName];
+  if (availableSheetNames.length) {
+    const selectedValues = Array.isArray(value) ? value : splitSheetNames(value);
+    return (
+      <select
+        multiple
+        value={selectedValues}
+        onChange={(event) => onLayoutChange(
+          "sharedSheetLayout",
+          fieldName,
+          Array.from(event.target.selectedOptions).map((option) => option.value)
+        )}
+      >
+        {availableSheetNames.map((sheetName) => (
+          <option key={sheetName} value={sheetName}>{sheetName}</option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <textarea
+      rows="2"
+      value={value}
+      onChange={(event) => onLayoutChange("sharedSheetLayout", fieldName, event.target.value)}
+    />
+  );
+}
+
+/**
+ * Decoupe une saisie d'onglets libre.
+ *
+ * @param {string|string[]} value - Valeur source.
+ * @returns {string[]} Noms d'onglets non vides.
+ */
+function splitSheetNames(value) {
+  if (Array.isArray(value)) {
+    return value.map((sheetName) => String(sheetName).trim()).filter(Boolean);
+  }
+  return String(value || "")
+    .split(/[\n,]/)
+    .map((sheetName) => sheetName.trim())
+    .filter(Boolean);
 }
 
 /**

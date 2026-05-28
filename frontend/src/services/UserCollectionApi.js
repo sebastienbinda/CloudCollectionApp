@@ -46,6 +46,7 @@ class UserCollectionApi {
     INVALID_FILE: "invalid_file",
     INVALID_CONFIGURATION: "invalid_configuration",
     FILE_TOO_LARGE: "file_too_large",
+    TEMPORARY_FILE_MISSING: "temporary_file_missing",
     COLLECTION_ALREADY_IMPORTED: "collection_already_imported",
     UNAUTHORIZED: "unauthorized",
     UNEXPECTED: "unexpected_error",
@@ -55,6 +56,7 @@ class UserCollectionApi {
     [UserCollectionApi.ERROR_CODES.INVALID_FILE]: "Le fichier de collection est invalide.",
     [UserCollectionApi.ERROR_CODES.INVALID_CONFIGURATION]: "La configuration d'import est invalide.",
     [UserCollectionApi.ERROR_CODES.FILE_TOO_LARGE]: "Le fichier de collection est trop volumineux.",
+    [UserCollectionApi.ERROR_CODES.TEMPORARY_FILE_MISSING]: "Le fichier de collection doit etre envoye avant l'import.",
     [UserCollectionApi.ERROR_CODES.COLLECTION_ALREADY_IMPORTED]: "Une collection a deja ete importee.",
     [UserCollectionApi.ERROR_CODES.UNAUTHORIZED]: "Vous devez etre connecte pour acceder a votre collection.",
     [UserCollectionApi.ERROR_CODES.UNEXPECTED]: "Une erreur inattendue est survenue.",
@@ -78,22 +80,61 @@ class UserCollectionApi {
   }
 
   /**
-   * Importe le fichier de collection de l'utilisateur connecte.
+   * Depose le fichier temporaire de collection de l'utilisateur connecte.
    *
    * @param {File|Blob} collectionFile - Fichier selectionne par l'utilisateur.
-   * @param {Object} collectionFileDescription - Configuration validee cote frontend.
-   * @returns {Promise<Object>} Compteurs d'import retournes par le backend.
-   * @throws {UserCollectionApiError} Si le fichier est invalide, trop volumineux, deja importe ou refuse.
+   * @param {string} fileType - Type de fichier selectionne.
+   * @returns {Promise<Object>} Confirmation de depot retournee par le backend.
+   * @throws {UserCollectionApiError} Si le fichier est invalide, trop volumineux ou deja importe.
    */
-  static async importCollection(collectionFile, collectionFileDescription) {
+  static async uploadImportFile(collectionFile, fileType = "libreoffice_ods") {
     const formData = new FormData();
     formData.append("collection_file", collectionFile);
-    formData.append("collection_file_description", JSON.stringify(collectionFileDescription));
 
+    return this.fetchJson(
+      `/api/users/import/file/${encodeURIComponent(fileType)}`,
+      "Impossible d'envoyer votre fichier de collection.",
+      {
+        method: "POST",
+        headers: AuthApi.getAuthorizationHeaders(),
+        body: formData,
+      }
+    );
+  }
+
+  /**
+   * Analyse le fichier temporaire de collection de l'utilisateur connecte.
+   *
+   * @param {string} fileType - Type de fichier selectionne.
+   * @returns {Promise<Object>} Liste des onglets detectes.
+   * @throws {UserCollectionApiError} Si le fichier temporaire est absent ou invalide.
+   */
+  static async analyzeImportFile(fileType = "libreoffice_ods") {
+    return this.fetchJson(
+      `/api/users/import/analyze/${encodeURIComponent(fileType)}`,
+      "Impossible d'analyser votre fichier de collection.",
+      {
+        method: "POST",
+        headers: AuthApi.getAuthorizationHeaders(),
+      }
+    );
+  }
+
+  /**
+   * Importe le fichier temporaire de collection de l'utilisateur connecte.
+   *
+   * @param {Object} collectionFileDescription - Configuration validee cote frontend.
+   * @returns {Promise<Object>} Compteurs d'import retournes par le backend.
+   * @throws {UserCollectionApiError} Si le fichier est invalide, absent, deja importe ou refuse.
+   */
+  static async importCollection(collectionFileDescription) {
     return this.fetchJson("/api/users/import", "Impossible d'importer votre collection.", {
       method: "POST",
-      headers: AuthApi.getAuthorizationHeaders(),
-      body: formData,
+      headers: {
+        ...AuthApi.getAuthorizationHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(collectionFileDescription),
     });
   }
 
@@ -185,6 +226,9 @@ class UserCollectionApi {
     }
     if (status === 413) {
       return this.ERROR_CODES.FILE_TOO_LARGE;
+    }
+    if (status === 404) {
+      return this.ERROR_CODES.TEMPORARY_FILE_MISSING;
     }
     return this.ERROR_CODES.UNEXPECTED;
   }

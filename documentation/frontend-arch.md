@@ -77,8 +77,10 @@ Use the following domain folders for new or modified hooks:
 - Skip the collection-status check for the configured `ADMIN` account and route
   it to administration instead, because `ADMIN` is not a frontend collection
   owner.
-- Call `POST /api/users/import` with `FormData` from the import view and let the
-  backend own all import validation and persistence decisions.
+- Call `POST /api/users/import/file/<file_type>` with `FormData`, then
+  `POST /api/users/import/analyze/<file_type>` to prefill sheet choices, then
+  `POST /api/users/import` with JSON configuration. The backend owns validation
+  and persistence decisions.
 - Redirect to `/collection` only after a successful import or when the status route
   confirms `has_collection: true`.
 

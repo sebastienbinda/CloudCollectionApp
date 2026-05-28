@@ -311,6 +311,8 @@ class FakeUserCollectionImportService:
 
     next_error = None
     last_call = None
+    uploaded_files = []
+    analyzed_files = []
 
     def __init__(self, configuration, repository, reader_factory):
         """Initialise le service.
@@ -352,6 +354,31 @@ class FakeUserCollectionImportService:
             original_filename,
             file_description,
         )
+        if self.next_error:
+            raise self.next_error
+        return UserCollectionImportResult(1, 2, 3, 4)
+
+    def upload_import_file(self, user_id, source_file_path, original_filename, file_type):
+        """Depose un fichier temporaire factice."""
+
+        self.__class__.last_call = (user_id, source_file_path, original_filename, file_type)
+        self.__class__.uploaded_files.append(self.__class__.last_call)
+        if self.next_error:
+            raise self.next_error
+
+    def analyze_import_file(self, user_id, file_type):
+        """Analyse un fichier temporaire factice."""
+
+        self.__class__.last_call = (user_id, file_type)
+        self.__class__.analyzed_files.append(self.__class__.last_call)
+        if self.next_error:
+            raise self.next_error
+        return ["Switch", "NES"]
+
+    def import_collection_from_temporary_file(self, user_id, file_description=None):
+        """Importe une collection depuis un fichier temporaire factice."""
+
+        self.__class__.last_call = (user_id, file_description)
         if self.next_error:
             raise self.next_error
         return UserCollectionImportResult(1, 2, 3, 4)
@@ -409,6 +436,8 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeUserCollectionImportRepository.has_collection = False
         FakeUserCollectionImportService.next_error = None
         FakeUserCollectionImportService.last_call = None
+        FakeUserCollectionImportService.uploaded_files = []
+        FakeUserCollectionImportService.analyzed_files = []
         FakeLibraryService.last_platforms_criteria = None
         FakeLibraryService.last_studios_criteria = None
         FakeLibraryService.last_games_criteria = None

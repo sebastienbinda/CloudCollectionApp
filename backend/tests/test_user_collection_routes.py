@@ -12,12 +12,12 @@
 # Description : tests des routes de collection utilisateur.
 
 from io import BytesIO
-import json
 
 from services.collection.imports import CollectionFileDescriptionValidationError
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
+    UserCollectionImportTemporaryFileMissingError,
     UserCollectionImportTooLargeError,
     UserCollectionImportUnexpectedError,
 )
@@ -67,8 +67,49 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         FakeUserCollectionImportRepository.has_collection = True
         self.assertEqual({"has_collection": True}, self.client.get("/api/users/me/collection", headers=headers).get_json())
 
+    def test_upload_current_user_collection_import_file_returns_created(self):
+        """Verifie le depot temporaire nominal d'une collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et l'appel service.
+        """
+
+        response = self.client.post(
+            "/api/users/import/file/libreoffice_ods",
+            headers=self.get_user_auth_headers(),
+            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(201, response.status_code)
+        self.assertEqual({"uploaded": True}, response.get_json())
+        self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
+        self.assertEqual("collection.ods", FakeUserCollectionImportService.last_call[2])
+
+    def test_analyze_current_user_collection_import_file_returns_sheets(self):
+        """Verifie l'analyse nominale du fichier temporaire.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les onglets retournes.
+        """
+
+        response = self.client.post(
+            "/api/users/import/analyze/libreoffice_ods",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"sheets": ["Switch", "NES"]}, response.get_json())
+        self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
+
     def test_import_current_user_collection_returns_counts(self):
-        """Verifie l'import nominal d'une collection.
+        """Verifie l'import nominal d'une collection depuis le fichier temporaire.
 
         Args:
             Aucun.
@@ -80,17 +121,13 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         response = self.client.post(
             "/api/users/import",
             headers=self.get_user_auth_headers(),
-            data={
-                "collection_file": (BytesIO(b"ods"), "collection.ods"),
-                "collection_file_description": json.dumps(self._valid_description()),
-            },
-            content_type="multipart/form-data",
+            json=self._valid_description(),
         )
 
         self.assertEqual(201, response.status_code)
         self.assertEqual(4, response.get_json()["associated_games"])
         self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
-        self.assertIsNotNone(FakeUserCollectionImportService.last_call[3])
+        self.assertIsNotNone(FakeUserCollectionImportService.last_call[1])
 
     def test_import_current_user_collection_accepts_multiple_sheet_modes(self):
         """Verifie les modes multi-onglets valides.
@@ -106,15 +143,11 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
             response = self.client.post(
                 "/api/users/import",
                 headers=self.get_user_auth_headers(),
-                data={
-                    "collection_file": (BytesIO(b"ods"), "collection.ods"),
-                    "collection_file_description": json.dumps(description),
-                },
-                content_type="multipart/form-data",
+                json=description,
             )
             self.assertEqual(201, response.status_code)
 
-    def test_import_current_user_collection_requires_file(self):
+    def test_upload_current_user_collection_import_file_requires_file(self):
         """Verifie le refus sans fichier.
 
         Args:
@@ -124,12 +157,15 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
             None: Les assertions valident 400.
         """
 
-        response = self.client.post("/api/users/import", headers=self.get_user_auth_headers())
+        response = self.client.post(
+            "/api/users/import/file/libreoffice_ods",
+            headers=self.get_user_auth_headers(),
+        )
 
         self.assertEqual(400, response.status_code)
 
     def test_import_current_user_collection_requires_file_description(self):
-        """Verifie le refus sans description JSON.
+        """Verifie le refus sans body JSON.
 
         Args:
             Aucun.
@@ -138,12 +174,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
             None: Les assertions valident 422 et les details.
         """
 
-        response = self.client.post(
-            "/api/users/import",
-            headers=self.get_user_auth_headers(),
-            data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
-            content_type="multipart/form-data",
-        )
+        response = self.client.post("/api/users/import", headers=self.get_user_auth_headers())
 
         self.assertEqual(422, response.status_code)
         self.assertEqual("Configuration invalide.", response.get_json()["error"])
@@ -162,11 +193,8 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         response = self.client.post(
             "/api/users/import",
             headers=self.get_user_auth_headers(),
-            data={
-                "collection_file": (BytesIO(b"ods"), "collection.ods"),
-                "collection_file_description": "{invalid-json",
-            },
-            content_type="multipart/form-data",
+            data="{invalid-json",
+            content_type="application/json",
         )
 
         self.assertEqual(422, response.status_code)
@@ -188,11 +216,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         response = self.client.post(
             "/api/users/import",
             headers=self.get_user_auth_headers(),
-            data={
-                "collection_file": (BytesIO(b"ods"), "collection.ods"),
-                "collection_file_description": json.dumps(self._valid_description()),
-            },
-            content_type="multipart/form-data",
+            json=self._valid_description(),
         )
 
         self.assertEqual(422, response.status_code)
@@ -214,6 +238,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         cases = [
             (UserCollectionImportConflictError("Collection deja importee."), 409),
             (UserCollectionImportInvalidFileError("Fichier invalide."), 400),
+            (UserCollectionImportTemporaryFileMissingError("Fichier temporaire introuvable."), 404),
             (UserCollectionImportTooLargeError("Fichier trop volumineux."), 413),
             (UserCollectionImportUnexpectedError("boom"), 500),
         ]
@@ -222,15 +247,44 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
             response = self.client.post(
                 "/api/users/import",
                 headers=self.get_user_auth_headers(),
-                data={
-                    "collection_file": (BytesIO(b"ods"), "collection.ods"),
-                    "collection_file_description": json.dumps(self._valid_description()),
-                },
-                content_type="multipart/form-data",
+                json=self._valid_description(),
             )
             self.assertEqual(expected_status, response.status_code)
             if expected_status == 400:
                 self.assertIn("details", response.get_json())
+
+    def test_upload_current_user_collection_import_file_maps_domain_errors(self):
+        """Verifie le mapping des erreurs du depot temporaire."""
+
+        cases = [
+            (UserCollectionImportConflictError("Collection deja importee."), 409),
+            (UserCollectionImportInvalidFileError("Fichier invalide."), 400),
+            (UserCollectionImportTooLargeError("Fichier trop volumineux."), 413),
+        ]
+        for error, expected_status in cases:
+            FakeUserCollectionImportService.next_error = error
+            response = self.client.post(
+                "/api/users/import/file/libreoffice_ods",
+                headers=self.get_user_auth_headers(),
+                data={"collection_file": (BytesIO(b"ods"), "collection.ods")},
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(expected_status, response.status_code)
+
+    def test_analyze_current_user_collection_import_file_maps_errors(self):
+        """Verifie le mapping des erreurs de l'analyse."""
+
+        cases = [
+            (UserCollectionImportTemporaryFileMissingError("Fichier temporaire introuvable."), 404),
+            (UserCollectionImportInvalidFileError("Fichier invalide."), 422),
+        ]
+        for error, expected_status in cases:
+            FakeUserCollectionImportService.next_error = error
+            response = self.client.post(
+                "/api/users/import/analyze/libreoffice_ods",
+                headers=self.get_user_auth_headers(),
+            )
+            self.assertEqual(expected_status, response.status_code)
 
     def _valid_description(self):
         """Construit une description de fichier valide pour les routes.

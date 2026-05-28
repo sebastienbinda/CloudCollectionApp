@@ -139,6 +139,7 @@ class FakeOdsCollectionImportReader:
         self.error = error
         self._accepted_extensions = accepted_extensions
         self.read_paths = []
+        self.analyze_paths = []
 
     @property
     def accepted_extensions(self):
@@ -171,6 +172,21 @@ class FakeOdsCollectionImportReader:
         if self.error:
             raise self.error
         return self.import_data
+
+    def analyze_sheets(self, file_path):
+        """Retourne des onglets factices.
+
+        Args:
+            file_path (str): Chemin du fichier analyse.
+
+        Returns:
+            list[str]: Onglets factices.
+        """
+
+        self.analyze_paths.append(file_path)
+        if self.error:
+            raise self.error
+        return ["Switch", "NES"]
 
 
 class FakeCollectionFileReaderFactory:

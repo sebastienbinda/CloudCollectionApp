@@ -205,6 +205,11 @@ class CollectionFileDescriptionValidator:
                 available_sheet_names,
                 errors,
             )
+            self._validate_excluded_sheets(
+                shared_layout.excluded_sheets if shared_layout else None,
+                available_sheet_names,
+                errors,
+            )
         elif shared_layout_payload is not None:
             errors.append("multiple_sheets_conf.shared_layout doit etre un objet.")
 
@@ -285,7 +290,21 @@ class CollectionFileDescriptionValidator:
             errors,
             allow_included_sheets,
         )
-        return CollectionSheetLayout(data_range, header_row, parsed_columns, included_sheets)
+        excluded_sheets = self._parse_excluded_sheets(
+            payload.get("excluded_sheets"),
+            path,
+            errors,
+            allow_included_sheets,
+        )
+        if included_sheets is not None and excluded_sheets is not None:
+            errors.append(f"{path}.included_sheets et excluded_sheets sont exclusifs.")
+        return CollectionSheetLayout(
+            data_range,
+            header_row,
+            parsed_columns,
+            included_sheets,
+            excluded_sheets,
+        )
 
     def _parse_sheet_information(
         self,
@@ -376,6 +395,26 @@ class CollectionFileDescriptionValidator:
             errors.append(f"{path}.included_sheets contient un onglet vide.")
         return [sheet_name for sheet_name in sheet_names if sheet_name]
 
+    def _parse_excluded_sheets(
+        self,
+        value: Any,
+        path: str,
+        errors: list[str],
+        allow_excluded_sheets: bool,
+    ) -> Optional[list[str]]:
+        if value is None:
+            return None
+        if not allow_excluded_sheets:
+            errors.append(f"{path}.excluded_sheets n'est pas autorise.")
+            return None
+        if not isinstance(value, list):
+            errors.append(f"{path}.excluded_sheets doit etre une liste.")
+            return None
+        sheet_names = [str(sheet_name).strip() for sheet_name in value]
+        if any(not sheet_name for sheet_name in sheet_names):
+            errors.append(f"{path}.excluded_sheets contient un onglet vide.")
+        return [sheet_name for sheet_name in sheet_names if sheet_name]
+
     def _validate_included_sheets(
         self,
         included_sheets: Optional[list[str]],
@@ -385,5 +424,17 @@ class CollectionFileDescriptionValidator:
         if included_sheets is None or available_sheet_names is None:
             return
         missing_sheets = sorted(set(included_sheets).difference(available_sheet_names))
+        for sheet_name in missing_sheets:
+            errors.append(f"onglet absent du fichier: {sheet_name}.")
+
+    def _validate_excluded_sheets(
+        self,
+        excluded_sheets: Optional[list[str]],
+        available_sheet_names: Optional[set[str]],
+        errors: list[str],
+    ) -> None:
+        if excluded_sheets is None or available_sheet_names is None:
+            return
+        missing_sheets = sorted(set(excluded_sheets).difference(available_sheet_names))
         for sheet_name in missing_sheets:
             errors.append(f"onglet absent du fichier: {sheet_name}.")

@@ -96,6 +96,34 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
             description.multiple_sheets_conf.sheet_information,
         )
 
+    def test_valid_shared_layout_configuration_with_excluded_sheets(self):
+        """Verifie une configuration multi-onglets avec exclusions."""
+
+        payload = {
+            "file_type": "libreoffice_ods",
+            "multiple_sheets_conf": {
+                "sheet_information": "platform",
+                "shared_layout": {
+                    "excluded_sheets": ["Accueil", "Liste de souhaits"],
+                    "data_range": "A1:H200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "studio": "C",
+                        "release_date": "D",
+                    },
+                },
+            },
+        }
+
+        description = self.validator.validate(payload, {"Switch", "Accueil", "Liste de souhaits"})
+
+        self.assertEqual(
+            ["Accueil", "Liste de souhaits"],
+            description.multiple_sheets_conf.shared_layout.excluded_sheets,
+        )
+        self.assertEqual(payload, description.to_dict())
+
     def test_valid_per_sheet_configuration(self):
         """Verifie une configuration multi-onglets avec layout par onglet.
 
@@ -315,6 +343,58 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
             payload,
             ["onglet absent du fichier: Missing."],
             available_sheet_names={"Switch"},
+        )
+
+    def test_rejects_missing_excluded_sheet_when_available_sheets_are_known(self):
+        """Verifie le refus d'un onglet exclu absent du fichier."""
+
+        payload = {
+            "file_type": "libreoffice_ods",
+            "multiple_sheets_conf": {
+                "sheet_information": "platform",
+                "shared_layout": {
+                    "excluded_sheets": ["Missing"],
+                    "data_range": "A1:H200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "studio": "C",
+                        "release_date": "D",
+                    },
+                },
+            },
+        }
+
+        self._assert_errors(
+            payload,
+            ["onglet absent du fichier: Missing."],
+            available_sheet_names={"Switch"},
+        )
+
+    def test_rejects_included_and_excluded_sheets_together(self):
+        """Verifie le refus d'une selection et exclusion simultanees."""
+
+        payload = {
+            "file_type": "libreoffice_ods",
+            "multiple_sheets_conf": {
+                "sheet_information": "platform",
+                "shared_layout": {
+                    "included_sheets": ["Switch"],
+                    "excluded_sheets": ["NES"],
+                    "data_range": "A1:H200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "studio": "C",
+                        "release_date": "D",
+                    },
+                },
+            },
+        }
+
+        self._assert_errors(
+            payload,
+            ["multiple_sheets_conf.shared_layout.included_sheets et excluded_sheets sont exclusifs."],
         )
 
     def test_rejects_missing_or_empty_sheet_name(self):

@@ -57,3 +57,16 @@ class CollectionFileReader(Protocol):
             CollectionFileReadError: Si le fichier est illisible.
             CollectionFileValidationError: Si son contenu ne respecte pas la configuration.
         """
+
+    def analyze_sheets(self, file_path: str) -> list[str]:
+        """Retourne les noms d'onglets disponibles dans le fichier.
+
+        Args:
+            file_path (str): Chemin du fichier a analyser.
+
+        Returns:
+            list[str]: Noms des onglets dans l'ordre du fichier.
+
+        Raises:
+            CollectionFileReadError: Si le fichier est illisible ou d'un autre type.
+        """

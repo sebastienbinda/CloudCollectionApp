@@ -21,7 +21,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.collection.imports import CollectionFileDescriptionValidator
+from services.collection.imports import (
+    CollectionFileDescriptionValidationError,
+    CollectionFileDescriptionValidator,
+)
 from services.ods import (
     OdsCollectionImportReadError,
     OdsCollectionImportReader,
@@ -432,6 +435,46 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         self.assertEqual(["Studio A"], [studio.name for studio in import_data.studios])
         self.assertIn("Jeu duplique ignore", logs.output[0])
 
+    def test_read_shared_layout_excludes_configured_sheets(self):
+        """Verifie que le layout partage ignore les onglets exclus."""
+
+        fake_reader = FakeOdsReader(
+            ["Switch", "Accueil", "NES"],
+            {
+                "Switch": self._dataframe(
+                    [{"Nom du jeu": "Zelda", "Studio": "Nintendo", "Date de sortie": ""}]
+                ),
+                "NES": self._dataframe(
+                    [{"Nom du jeu": "Mario", "Studio": "Nintendo", "Date de sortie": ""}]
+                ),
+            },
+        )
+        service = self._service_for_reader(fake_reader)
+
+        import_data = service.read(
+            "/tmp/excluded-sheets.ods",
+            self._shared_layout_description_with_excluded_sheets(),
+        )
+
+        self.assertEqual(["Switch", "NES"], [game.platform_name for game in import_data.games])
+        self.assertEqual(
+            ["Switch", "NES"],
+            [call[0] for call in fake_reader.sheet_dataframe_calls],
+        )
+
+    def test_read_shared_layout_rejects_missing_excluded_sheet(self):
+        """Verifie le refus d'un onglet exclu absent du fichier."""
+
+        service = self._service_for_reader(FakeOdsReader(["Switch"], {"Switch": self._dataframe([])}))
+
+        with self.assertRaises(CollectionFileDescriptionValidationError) as context:
+            service.read(
+                "/tmp/missing-excluded-sheet.ods",
+                self._shared_layout_description_with_excluded_sheets(),
+            )
+
+        self.assertIn("onglet absent du fichier: Accueil.", context.exception.details)
+
     def _service_for_reader(self, fake_reader, logger=None):
         """Construit le service d'import avec un lecteur factice.
 
@@ -489,6 +532,28 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
                         "platform": "B",
                         "studio": "C",
                         "release_date": "D",
+                    },
+                },
+            }
+        )
+
+    def _shared_layout_description_with_excluded_sheets(self):
+        """Construit une description multi-onglets avec onglets exclus."""
+
+        return CollectionFileDescriptionValidator().validate(
+            {
+                "file_type": "libreoffice_ods",
+                "multiple_sheets_conf": {
+                    "sheet_information": "platform",
+                    "shared_layout": {
+                        "excluded_sheets": ["Accueil"],
+                        "data_range": "A1:D200",
+                        "header_row": 1,
+                        "column_information": {
+                            "name": "A",
+                            "studio": "C",
+                            "release_date": "D",
+                        },
                     },
                 },
             }

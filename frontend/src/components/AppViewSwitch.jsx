@@ -242,9 +242,11 @@ class AppViewSwitch {
         platforms={props.platforms}
         selectedPlatform={props.selectedPlatform}
         selectedCollectionFileName={props.selectedCollectionFileName}
+        availableImportSheets={props.availableImportSheets}
         importConfiguration={props.importConfiguration}
         onboardingError={props.onboardingError}
         isCheckingCollection={props.isCheckingCollection}
+        isAnalyzingCollection={props.isAnalyzingCollection}
         isImportingCollection={props.isImportingCollection}
         isAuthenticated={props.actionPermissions.isAuthenticated}
         canUseCollectionViews={props.canUseCollectionViews}

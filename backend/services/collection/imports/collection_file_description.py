@@ -40,12 +40,14 @@ class CollectionSheetLayout:
         header_row (int): Ligne d'en-tete avec index tableur commencant a `1`.
         column_information (dict[CollectionImportField, str]): Colonnes par champ.
         included_sheets (Optional[list[str]]): Onglets inclus pour un layout partage.
+        excluded_sheets (Optional[list[str]]): Onglets exclus pour un layout partage.
     """
 
     data_range: str
     header_row: int
     column_information: dict[CollectionImportField, str]
     included_sheets: Optional[list[str]] = None
+    excluded_sheets: Optional[list[str]] = None
 
     def to_dict(self, include_included_sheets: bool = True) -> dict:
         """Convertit le layout en dictionnaire serialisable.
@@ -66,6 +68,8 @@ class CollectionSheetLayout:
         }
         if include_included_sheets and self.included_sheets is not None:
             payload["included_sheets"] = list(self.included_sheets)
+        if include_included_sheets and self.excluded_sheets is not None:
+            payload["excluded_sheets"] = list(self.excluded_sheets)
         return payload
 
 
