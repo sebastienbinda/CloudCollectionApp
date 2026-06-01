@@ -22,6 +22,12 @@ from services.database.user_collection_import_repository import (
     UserCollectionAlreadyImportedError,
     UserCollectionImportPersistenceResult,
 )
+from services.collection.imports import (
+    CollectionFileDescription,
+    CollectionFileType,
+    CollectionImportField,
+    CollectionSheetLayout,
+)
 from services.ods import (
     OdsCollectionImportData,
     OdsCollectionImportGame,
@@ -73,13 +79,20 @@ class FakeUserCollectionImportRepository:
 
         return self.has_collection
 
-    def import_collection(self, user_id, collection_file_path, import_data):
+    def import_collection(
+        self,
+        user_id,
+        collection_file_path,
+        import_data,
+        collection_file_description,
+    ):
         """Memorise l'appel de persistance ou leve une erreur.
 
         Args:
             user_id (int): Identifiant utilisateur.
             collection_file_path (str): Chemin final du fichier.
             import_data (OdsCollectionImportData): Donnees importees.
+            collection_file_description (dict): Description sauvegardee.
 
         Returns:
             UserCollectionImportPersistenceResult: Resultat configure.
@@ -88,7 +101,9 @@ class FakeUserCollectionImportRepository:
             Exception: Erreur configuree pour le test.
         """
 
-        self.import_calls.append((user_id, collection_file_path, import_data))
+        self.import_calls.append(
+            (user_id, collection_file_path, import_data, collection_file_description)
+        )
         if self.import_error:
             raise self.import_error
         return self.result
@@ -97,12 +112,13 @@ class FakeUserCollectionImportRepository:
 class FakeOdsCollectionImportReader:
     """Simule le lecteur ODS d'import."""
 
-    def __init__(self, import_data=None, error=None):
+    def __init__(self, import_data=None, error=None, accepted_extensions=(".ods",)):
         """Initialise le lecteur factice.
 
         Args:
             import_data (OdsCollectionImportData | None): Donnees retournees.
             error (Exception | None): Erreur levee pendant la lecture.
+            accepted_extensions (tuple[str, ...]): Extensions acceptees.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -121,13 +137,29 @@ class FakeOdsCollectionImportReader:
             ],
         )
         self.error = error
+        self._accepted_extensions = accepted_extensions
         self.read_paths = []
+        self.analyze_paths = []
 
-    def read(self, ods_path):
+    @property
+    def accepted_extensions(self):
+        """Retourne l'extension acceptee par le lecteur factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[str, ...]: Extension ODS.
+        """
+
+        return self._accepted_extensions
+
+    def read(self, ods_path, file_description):
         """Lit le fichier ODS factice.
 
         Args:
             ods_path (str): Chemin du fichier copie.
+            file_description (object): Description valide.
 
         Returns:
             OdsCollectionImportData: Donnees configurees.
@@ -140,6 +172,51 @@ class FakeOdsCollectionImportReader:
         if self.error:
             raise self.error
         return self.import_data
+
+    def analyze_sheets(self, file_path):
+        """Retourne des onglets factices.
+
+        Args:
+            file_path (str): Chemin du fichier analyse.
+
+        Returns:
+            list[str]: Onglets factices.
+        """
+
+        self.analyze_paths.append(file_path)
+        if self.error:
+            raise self.error
+        return ["Switch", "NES"]
+
+
+class FakeCollectionFileReaderFactory:
+    """Simule la factory de lecteurs de collection."""
+
+    def __init__(self, reader):
+        """Initialise la factory factice.
+
+        Args:
+            reader (FakeOdsCollectionImportReader): Lecteur retourne.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.reader = reader
+        self.file_types = []
+
+    def create(self, file_type):
+        """Retourne le lecteur configure.
+
+        Args:
+            file_type (CollectionFileType): Type de fichier demande.
+
+        Returns:
+            FakeOdsCollectionImportReader: Lecteur configure.
+        """
+
+        self.file_types.append(file_type)
+        return self.reader
 
 
 class UserCollectionImportServiceTest(unittest.TestCase):
@@ -158,7 +235,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             service, repository, reader, source_file = self._build_service(directory)
 
-            result = service.import_collection(7, str(source_file), "collection.ods")
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
 
             target_file = Path(directory) / "workspace" / "7" / "7-collection.ods"
             self.assertTrue(target_file.exists())
@@ -171,6 +253,10 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 result.associated_games,
             ))
             self.assertEqual(str(target_file), repository.import_calls[0][1])
+            self.assertEqual(
+                self._valid_description().to_dict(),
+                repository.import_calls[0][3],
+            )
 
     def test_import_collection_rejects_existing_collection(self):
         """Verifie le refus d'une collection deja importee.
@@ -189,7 +275,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportConflictError):
-                service.import_collection(7, str(source_file), "collection.ods")
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
 
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
@@ -211,7 +302,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportInvalidFileError):
-                service.import_collection(7, str(source_file), "collection.txt")
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.txt",
+                    self._valid_description(),
+                )
 
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
@@ -234,7 +330,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportTooLargeError):
-                service.import_collection(7, str(source_file), "collection.ods")
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
 
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
@@ -256,7 +357,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportInvalidFileError):
-                service.import_collection(7, str(source_file), "collection.ods")
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
 
             self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
             self.assertEqual([], repository.import_calls)
@@ -279,7 +385,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportUnexpectedError):
-                service.import_collection(7, str(source_file), "collection.ods")
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
 
             self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
             self.assertEqual(1, len(repository.import_calls))
@@ -304,7 +415,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportConflictError):
-                service.import_collection(7, str(source_file), "collection.ods")
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
 
             self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
             self.assertEqual(1, len(repository.import_calls))
@@ -333,7 +449,12 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 ),
             )
 
-            result = service.import_collection(7, str(source_file), "collection.ods")
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
 
             self.assertEqual(0, result.created_games)
             self.assertEqual(2, result.associated_games)
@@ -349,20 +470,6 @@ class UserCollectionImportServiceTest(unittest.TestCase):
         source_filename="collection.ods",
         source_content=b"ods-content",
     ):
-        """Construit un service d'import et ses dependances factices.
-
-        Args:
-            directory (str): Repertoire temporaire de test.
-            repository (FakeUserCollectionImportRepository | None): Repository factice.
-            reader (FakeOdsCollectionImportReader | None): Lecteur factice.
-            max_upload_bytes (int): Taille maximale configuree.
-            source_filename (str): Nom du fichier source.
-            source_content (bytes): Contenu du fichier source.
-
-        Returns:
-            tuple: Service, repository, lecteur et chemin source.
-        """
-
         source_file = Path(directory) / source_filename
         source_file.write_bytes(source_content)
         repository = repository or FakeUserCollectionImportRepository()
@@ -372,12 +479,27 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             max_upload_bytes=max_upload_bytes,
         )
         return (
-            UserCollectionImportService(configuration, repository, reader),
+            UserCollectionImportService(
+                configuration,
+                repository,
+                FakeCollectionFileReaderFactory(reader),
+            ),
             repository,
             reader,
             source_file,
         )
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def _valid_description(self):
+        return CollectionFileDescription(
+            file_type=CollectionFileType.LIBREOFFICE_ODS,
+            single_sheet_conf=CollectionSheetLayout(
+                data_range="A1:D10",
+                header_row=1,
+                column_information={
+                    CollectionImportField.NAME: "A",
+                    CollectionImportField.PLATFORM: "B",
+                    CollectionImportField.STUDIO: "C",
+                    CollectionImportField.RELEASE_DATE: "D",
+                },
+            ),
+        )

@@ -13,6 +13,7 @@
  * Description : vue d'onboarding pour importer la collection utilisateur initiale.
  */
 import MainMenu from "./MainMenu";
+import ImportConfigurationFields from "./ImportConfigurationFields";
 import ProgressBar from "./ProgressBar";
 import ProjectIcon from "./ProjectIcon";
 
@@ -29,8 +30,11 @@ function UserCollectionOnboardingView({
   platforms,
   selectedPlatform,
   selectedCollectionFileName,
+  availableImportSheets,
+  importConfiguration,
   onboardingError,
   isCheckingCollection,
+  isAnalyzingCollection,
   isImportingCollection,
   isAuthenticated,
   canUseCollectionViews,
@@ -41,9 +45,17 @@ function UserCollectionOnboardingView({
   onOpenAdminDashboard,
   onLogout,
   onFileChange,
+  onConfigurationChange,
+  onLayoutChange,
+  onLayoutColumnChange,
+  onSheetChange,
+  onSheetLayoutChange,
+  onSheetColumnChange,
+  onAddSheet,
+  onRemoveSheet,
   onSubmitImport,
 }) {
-  const isBusy = isCheckingCollection || isImportingCollection;
+  const isBusy = isCheckingCollection || isAnalyzingCollection || isImportingCollection;
 
   /**
    * Transmet le fichier selectionne au hook d'orchestration.
@@ -124,8 +136,22 @@ function UserCollectionOnboardingView({
           {selectedCollectionFileName ? (
             <p className="collectionSelectedFile">{selectedCollectionFileName}</p>
           ) : null}
+          <ImportConfigurationFields
+            configuration={importConfiguration}
+            availableSheetNames={availableImportSheets}
+            disabled={isBusy}
+            onConfigurationChange={onConfigurationChange}
+            onLayoutChange={onLayoutChange}
+            onLayoutColumnChange={onLayoutColumnChange}
+            onSheetChange={onSheetChange}
+            onSheetLayoutChange={onSheetLayoutChange}
+            onSheetColumnChange={onSheetColumnChange}
+            onAddSheet={onAddSheet}
+            onRemoveSheet={onRemoveSheet}
+          />
           {onboardingError ? <p className="error">{onboardingError}</p> : null}
           {isCheckingCollection ? <ProgressBar label="Verification de votre collection" /> : null}
+          {isAnalyzingCollection ? <ProgressBar label="Analyse de votre fichier" /> : null}
           {isImportingCollection ? <ProgressBar label="Import de votre collection" /> : null}
           <div className="formActions">
             <button type="submit" disabled={isBusy || !selectedCollectionFileName}>

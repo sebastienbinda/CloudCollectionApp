@@ -33,8 +33,12 @@ After sign-in, the frontend must check the connected user's collection status
 before opening Ma collection, except for the configured `ADMIN` account. Users
 with `has_collection: true` continue to `/collection`. Users with
 `has_collection: false` are redirected to `/collection/import`, where they can
-upload an ODS file through `POST /api/users/import`. After a successful import,
-the frontend redirects to `/collection`.
+upload an ODS file, analyze its sheets, configure extraction, and launch final
+import. After a successful import, the frontend redirects to `/collection`.
+
+The import onboarding page lets non-`ADMIN` users configure single-sheet import,
+shared-layout multi-sheet import with included or excluded sheets, and per-sheet
+layouts. Backend validation and persistence remain authoritative.
 
 The `ADMIN` profile keeps backend access through the route catalog and Bearer
 token hierarchy, but the frontend must not offer collection ownership screens to

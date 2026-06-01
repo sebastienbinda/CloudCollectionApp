@@ -30,73 +30,44 @@ class OdsReaderImportTest(unittest.TestCase):
         self.reader = OdsReader(
             ods_path="/tmp/import.ods",
             cache=OdsCache("/tmp/import.ods"),
-            xml_reader=MagicMock(),
         )
         self.reader.cache.reset()
 
-    def test_list_platforms_excludes_non_importable_sheets(self):
-        """Verifie que seuls les onglets plateformes sont exposes.
+    def test_list_sheets_returns_all_sheet_names(self):
+        """Verifie que tous les onglets du fichier sont exposes.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident le filtrage des onglets.
+            None: Les assertions valident la liste brute des onglets.
         """
 
         excel_file = MagicMock()
         excel_file.sheet_names = ["Accueil", "Switch", "Liste de souhaits", "Playstation"]
         with patch("services.ods.ods_reader.pd.ExcelFile", return_value=excel_file):
-            platforms = self.reader.list_platforms()
+            sheets = self.reader.list_sheets()
 
-        self.assertEqual(["Switch", "Playstation"], platforms)
+        self.assertEqual(["Accueil", "Switch", "Liste de souhaits", "Playstation"], sheets)
 
-    def test_read_games_dataframe_normalizes_typographic_columns(self):
-        """Verifie la normalisation des colonnes importables.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident les noms de colonnes.
-        """
-
-        dataframe = pd.DataFrame(
-            [
-                {
-                    "Nom du jeu": "Zelda",
-                    "Date d’achat": "2020-01-01",
-                    "Lieu d’achat": "Paris",
-                    "Prix d’achat": "10",
-                }
-            ]
-        )
-        with patch("services.ods.ods_reader.pd.read_excel", return_value=dataframe):
-            games = self.reader.read_games_dataframe("Switch")
-
-        self.assertIn("Date d'achat", games.columns)
-        self.assertIn("Lieu d'achat", games.columns)
-        self.assertIn("Prix d'achat", games.columns)
-
-    def test_read_games_dataframe_uses_xml_fallback_for_existing_platform(self):
-        """Verifie le secours XML lorsque pandas ne lit pas la feuille.
+    def test_read_sheet_dataframe_uses_selected_columns_when_provided(self):
+        """Verifie que la lecture configurable peut cibler les colonnes utiles.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident l'appel au lecteur XML.
+            None: Les assertions valident les options pandas.
         """
 
-        fallback_dataframe = pd.DataFrame([{"Nom du jeu": "Mario"}])
-        self.reader.xml_reader.read_games_dataframe_from_xml.return_value = fallback_dataframe
-        self.reader.list_platforms = lambda: ["Switch"]
+        dataframe = pd.DataFrame([{"Nom": "Zelda", "Studio": "Nintendo"}])
+        with patch("services.ods.ods_reader.pd.read_excel", return_value=dataframe) as read_excel:
+            sheet = self.reader.read_sheet_dataframe("Collection", "A1:H200", 1, "A,C")
 
-        with patch("services.ods.ods_reader.pd.read_excel", side_effect=TypeError("formula")):
-            games = self.reader.read_games_dataframe("Switch")
-
-        self.assertEqual("Mario", games.iloc[0]["Nom du jeu"])
-        self.reader.xml_reader.read_games_dataframe_from_xml.assert_called_once_with("Switch")
+        self.assertEqual("Zelda", sheet.iloc[0]["Nom"])
+        read_excel.assert_called_once()
+        self.assertEqual("A,C", read_excel.call_args.kwargs["usecols"])
+        self.assertEqual(199, read_excel.call_args.kwargs["nrows"])
 
     def test_xml_reader_returns_none_for_formula_float_without_cached_value(self):
         """Verifie la lecture d'une formule sans resultat calcule en cache.

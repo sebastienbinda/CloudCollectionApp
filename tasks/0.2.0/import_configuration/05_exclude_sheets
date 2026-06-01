@@ -1,0 +1,5 @@
+Il faut rajouter une option a l'import dans le cas multi onglet, et shared_layout pour :
+ - choisir les onglets a importer (cas actuel et exitant)
+ - choisir les onglets exclure. 
+
+ Dans ce nouveau cas d'exclusion, tous les onglets sont importés à l'exception de ceux précisés.

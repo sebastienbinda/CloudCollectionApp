@@ -440,7 +440,9 @@ modify another user's collection.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/users/me/collection` | Returns whether the connected user already has an imported collection. |
-| `POST` | `/api/users/import` | Imports the connected user's ODS collection from `multipart/form-data`. |
+| `POST` | `/api/users/import/file/<file_type>` | Stores the connected user's temporary collection file. |
+| `POST` | `/api/users/import/analyze/<file_type>` | Analyzes the temporary file and returns sheet names. |
+| `POST` | `/api/users/import` | Imports the connected user's collection from the temporary file and JSON configuration. |
 
 ### Current User Collection Status Response
 
@@ -453,32 +455,86 @@ return the stored filesystem path.
 }
 ```
 
-### Import User Collection Payload
+### Upload User Collection File
 
 ```http
-POST /api/users/import
+POST /api/users/import/file/libreoffice_ods
 Content-Type: multipart/form-data
 ```
 
 Field:
 
-- `collection_file`: ODS file to import.
+- `collection_file`: ODS file to stage before configuration.
+
+The backend stores the file as
+`/users/workspace/<user_id>/current-import.ods`, overwriting any previous
+temporary import file for the same user. The copied file is chmod `0440`.
+
+Upload errors use:
+
+- `400` for a missing or invalid file;
+- `409` when the connected user already has a final collection;
+- `413` when the uploaded file exceeds `USER_COLLECTION_MAX_UPLOAD_BYTES`;
+- `500` for unexpected failures.
+
+### Analyze User Collection File
+
+```http
+POST /api/users/import/analyze/libreoffice_ods
+```
+
+Successful response:
+
+```json
+{
+  "sheets": ["Sheet1", "Sheet2"]
+}
+```
+
+Analyze errors use:
+
+- `404` when the temporary file does not exist;
+- `422` when the temporary file does not match the requested `file_type`;
+- `500` for unexpected failures.
+
+### Import User Collection Payload
+
+```http
+POST /api/users/import
+Content-Type: application/json
+```
+
+Body:
+
+- UTF-8 JSON import configuration.
+
+The JSON configuration supports:
+
+- `single_sheet_conf` for a single imported sheet;
+- `multiple_sheets_conf.shared_layout.included_sheets` to import only selected
+  sheets;
+- `multiple_sheets_conf.shared_layout.excluded_sheets` to import every sheet
+  except selected sheets;
+- `multiple_sheets_conf.sheets` for per-sheet layouts.
+
+`included_sheets` and `excluded_sheets` are exclusive. Invalid JSON or
+configuration returns `422` with `error` and `details`.
 
 The upload is accepted only once per user. If `t_user.collection_file_path` is
 already set, the backend returns `409` and does not replace the existing
 collection data.
 
-The backend copies the uploaded file to
+The backend copies the staged temporary file to
 `/users/workspace/<user_id>/<user_id>-collection.ods`, stores this complete path
 in `t_user.collection_file_path` only after a successful import, and removes the
-copied file if the import fails. The copied file is chmod `0440`.
+final copied file if the import fails. The copied file is chmod `0440`.
 
-Only ODS platform sheets are imported. Technical sheets such as `Accueil` and
-`Liste de souhaits` are ignored by the import workflow. Missing platforms,
-studios and games are created; existing records are reused. User-game
-associations are inserted in `t_user_collection` when missing and ignored when
-already present. No existing platform, studio, game or user association is
-updated by this endpoint.
+Only configured ODS sheets are imported. With a shared layout, the user may
+either provide the sheets to import or the sheets to exclude; without either
+list, every sheet is imported. Missing platforms, studios and games are
+created; existing records are reused. User-game associations are inserted in
+`t_user_collection` when missing and ignored when already present. No existing
+platform, studio, game or user association is updated by this endpoint.
 
 Successful response:
 
@@ -497,11 +553,10 @@ request.
 
 Import errors use:
 
-- `400` for a missing, invalid or unreadable ODS file;
+- `400` for an invalid or unreadable ODS file;
+- `404` when the temporary file does not exist;
 - `409` when the connected user already has a collection;
-- `413` when the multipart request exceeds `USER_COLLECTION_MAX_UPLOAD_BYTES`
-  at the proxy or Flask layer, or when the uploaded file exceeds the same
-  configured limit during import validation;
+- `422` for invalid JSON configuration;
 - `500` for an unexpected import failure.
 
 ## Email Configuration

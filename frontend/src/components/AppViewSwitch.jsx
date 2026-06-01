@@ -242,8 +242,11 @@ class AppViewSwitch {
         platforms={props.platforms}
         selectedPlatform={props.selectedPlatform}
         selectedCollectionFileName={props.selectedCollectionFileName}
+        availableImportSheets={props.availableImportSheets}
+        importConfiguration={props.importConfiguration}
         onboardingError={props.onboardingError}
         isCheckingCollection={props.isCheckingCollection}
+        isAnalyzingCollection={props.isAnalyzingCollection}
         isImportingCollection={props.isImportingCollection}
         isAuthenticated={props.actionPermissions.isAuthenticated}
         canUseCollectionViews={props.canUseCollectionViews}
@@ -254,6 +257,14 @@ class AppViewSwitch {
         onOpenAdminDashboard={props.openAdminDashboard}
         onLogout={props.logout}
         onFileChange={props.selectCollectionFile}
+        onConfigurationChange={props.updateImportConfiguration}
+        onLayoutChange={props.updateImportLayout}
+        onLayoutColumnChange={props.updateImportLayoutColumn}
+        onSheetChange={props.updateImportSheet}
+        onSheetLayoutChange={props.updateImportSheetLayout}
+        onSheetColumnChange={props.updateImportSheetColumn}
+        onAddSheet={props.addImportSheetConfiguration}
+        onRemoveSheet={props.removeImportSheetConfiguration}
         onSubmitImport={props.importSelectedCollection}
       />
     );

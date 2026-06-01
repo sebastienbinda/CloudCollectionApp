@@ -109,6 +109,8 @@ Connected-user collection routes are protected routes with the same minimum
 profile:
 
 - `GET /api/users/me/collection`
+- `POST /api/users/import/file/<file_type>`
+- `POST /api/users/import/analyze/<file_type>`
 - `POST /api/users/import`
 - `GET /collections/videogames`
 - `GET /collections/videogames/platforms/search`

@@ -21,6 +21,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from services.collection.imports import (
+    CollectionFileDescriptionValidationError,
+    CollectionFileDescriptionValidator,
+)
 from services.ods import (
     OdsCollectionImportReadError,
     OdsCollectionImportReader,
@@ -31,13 +35,20 @@ from services.ods import (
 class FakeOdsReader:
     """Simule le lecteur ODS bas niveau pour les tests d'import."""
 
-    def __init__(self, platform_names, dataframes_by_platform=None, error=None):
+    def __init__(
+        self,
+        platform_names,
+        dataframes_by_platform=None,
+        error=None,
+        dataframe_error=None,
+    ):
         """Initialise le lecteur ODS factice.
 
         Args:
             platform_names (list[str]): Onglets plateformes retournes.
             dataframes_by_platform (dict[str, pandas.DataFrame] | None): Donnees par onglet.
             error (Exception | None): Erreur a lever lors de la lecture des onglets.
+            dataframe_error (Exception | None): Erreur a lever lors de la lecture d'une feuille.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -46,16 +57,18 @@ class FakeOdsReader:
         self.platform_names = platform_names
         self.dataframes_by_platform = dataframes_by_platform or {}
         self.error = error
+        self.dataframe_error = dataframe_error
         self.cache = FakeOdsCache()
+        self.sheet_dataframe_calls = []
 
-    def list_platforms(self):
-        """Retourne les onglets plateformes factices.
+    def list_sheets(self):
+        """Retourne les onglets factices.
 
         Args:
             Aucun.
 
         Returns:
-            list[str]: Noms d'onglets plateformes.
+            list[str]: Noms d'onglets.
 
         Raises:
             Exception: Si le lecteur est configure avec une erreur.
@@ -65,16 +78,22 @@ class FakeOdsReader:
             raise self.error
         return self.platform_names
 
-    def read_games_dataframe(self, platform):
-        """Retourne les jeux factices d'une plateforme.
+    def read_sheet_dataframe(self, platform, data_range, header_row, selected_columns=None):
+        """Retourne les jeux factices d'une feuille.
 
         Args:
             platform (str): Nom de l'onglet plateforme.
+            data_range (str): Plage ignoree.
+            header_row (int): Ligne d'en-tete ignoree.
+            selected_columns (str | None): Colonnes configurees.
 
         Returns:
             pandas.DataFrame: Jeux de la plateforme.
         """
 
+        self.sheet_dataframe_calls.append((platform, data_range, header_row, selected_columns))
+        if self.dataframe_error:
+            raise self.dataframe_error
         return self.dataframes_by_platform[platform]
 
 
@@ -121,38 +140,41 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         """
 
         fake_reader = FakeOdsReader(
-            ["Switch", "PC"],
+            ["Collection"],
             {
-                "Switch": self._dataframe(
+                "Collection": self._dataframe(
                     [
                         {
                             "Nom du jeu": " Zelda ",
+                            "Plateforme": "Switch",
                             "Studio": " Nintendo ",
                             "Date de sortie": "2017-03-03",
                         },
                         {
                             "Nom du jeu": "Mario",
+                            "Plateforme": "Switch",
                             "Studio": "Retro",
                             "Date de sortie": date(2023, 10, 20),
                         },
-                    ]
-                ),
-                "PC": self._dataframe(
-                    [
                         {
                             "Nom du jeu": "Baldur's Gate 3",
+                            "Plateforme": "PC",
                             "Studio": "Larian",
                             "Date de sortie": "2023-08-03",
-                        }
+                        },
                     ]
-                ),
+                )
             },
         )
         service = self._service_for_reader(fake_reader)
 
-        import_data = service.read("/tmp/collection.ods")
+        import_data = service.read("/tmp/collection.ods", self._single_sheet_description())
 
         self.assertEqual(1, fake_reader.cache.reset_count)
+        self.assertEqual(
+            [("Collection", "A1:D200", 1, "A,B,C,D")],
+            fake_reader.sheet_dataframe_calls,
+        )
         self.assertEqual(["Switch", "PC"], [platform.name for platform in import_data.platforms])
         self.assertEqual(
             ["Nintendo", "Retro", "Larian"],
@@ -177,7 +199,31 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         service = self._service_for_reader(FakeOdsReader([], error=OSError("boom")))
 
         with self.assertRaises(OdsCollectionImportReadError):
-            service.read("/tmp/broken.ods")
+            service.read("/tmp/broken.ods", self._single_sheet_description())
+
+    def test_read_adds_sheet_context_when_dataframe_read_fails(self):
+        """Verifie le contexte retourne quand une feuille ne peut pas etre lue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident onglet, ligne et colonnes.
+        """
+
+        service = self._service_for_reader(
+            FakeOdsReader(["Collection"], dataframe_error=ValueError("bad range"))
+        )
+
+        with self.assertRaises(OdsCollectionImportReadError) as context:
+            service.read("/tmp/bad-range.ods", self._single_sheet_description())
+
+        message = str(context.exception)
+        self.assertIn("Onglet: Collection", message)
+        self.assertIn("Plage: A1:D200", message)
+        self.assertIn("Ligne d'en-tete: 1", message)
+        self.assertIn("name=A", message)
+        self.assertIn("platform=B", message)
 
     def test_read_rejects_file_without_importable_platform_sheet(self):
         """Verifie le refus d'un fichier sans onglet plateforme.
@@ -192,12 +238,12 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         service = self._service_for_reader(FakeOdsReader([]))
 
         with self.assertRaises(OdsCollectionImportValidationError) as context:
-            service.read("/tmp/empty.ods")
+            service.read("/tmp/empty.ods", self._single_sheet_description())
 
-        self.assertIn("aucun onglet plateforme", str(context.exception))
+        self.assertIn("aucun onglet", str(context.exception))
 
-    def test_read_rejects_platform_sheet_with_missing_columns(self):
-        """Verifie le refus d'une feuille plateforme sans colonnes attendues.
+    def test_read_ignores_rows_without_platform_value(self):
+        """Verifie qu'une ligne sans plateforme configuree est ignoree.
 
         Args:
             Aucun.
@@ -208,19 +254,25 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
 
         service = self._service_for_reader(
             FakeOdsReader(
-                ["Switch"],
+                ["Collection"],
                 {
-                    "Switch": pd.DataFrame(
-                        [{"Nom du jeu": "Zelda", "Date de sortie": "2017-03-03"}]
+                    "Collection": self._dataframe(
+                        [
+                            {
+                                "Nom du jeu": "Zelda",
+                                "Plateforme": "",
+                                "Studio": "Nintendo",
+                                "Date de sortie": "2017-03-03",
+                            }
+                        ]
                     )
                 },
             )
         )
 
-        with self.assertRaises(OdsCollectionImportValidationError) as context:
-            service.read("/tmp/missing-column.ods")
+        import_data = service.read("/tmp/missing-column.ods", self._single_sheet_description())
 
-        self.assertIn("Studio", str(context.exception))
+        self.assertEqual([], import_data.games)
 
     def test_read_keeps_empty_release_date_as_none(self):
         """Verifie qu'une date de sortie vide devient `None`.
@@ -243,7 +295,7 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
             )
         )
 
-        import_data = service.read("/tmp/empty-date.ods")
+        import_data = service.read("/tmp/empty-date.ods", self._single_sheet_description())
 
         self.assertIsNone(import_data.games[0].release_date)
 
@@ -277,7 +329,7 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         )
 
         with self.assertLogs(logger, level="WARNING") as logs:
-            import_data = service.read("/tmp/invalid-date.ods")
+            import_data = service.read("/tmp/invalid-date.ods", self._single_sheet_description())
 
         self.assertIsNone(import_data.games[0].release_date)
         self.assertIn("Date de sortie invalide", logs.output[0])
@@ -312,41 +364,10 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         )
 
         with self.assertLogs(logger, level="WARNING") as logs:
-            import_data = service.read("/tmp/out-of-range-date.ods")
+            import_data = service.read("/tmp/out-of-range-date.ods", self._single_sheet_description())
 
         self.assertIsNone(import_data.games[0].release_date)
         self.assertIn("Date de sortie invalide", logs.output[0])
-
-    def test_read_ignores_duplicate_platforms_with_warning(self):
-        """Verifie la deduplication des plateformes du fichier.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident la premiere occurrence conservee.
-        """
-
-        logger = logging.getLogger("tests.ods_import_reader.platform_duplicates")
-        fake_reader = FakeOdsReader(
-            ["Switch", " switch ", "PC"],
-            {
-                "Switch": self._dataframe(
-                    [{"Nom du jeu": "Zelda", "Studio": "Nintendo", "Date de sortie": ""}]
-                ),
-                "PC": self._dataframe(
-                    [{"Nom du jeu": "Doom", "Studio": "id Software", "Date de sortie": ""}]
-                ),
-            },
-        )
-        service = self._service_for_reader(fake_reader, logger=logger)
-
-        with self.assertLogs(logger, level="WARNING") as logs:
-            import_data = service.read("/tmp/platform-duplicates.ods")
-
-        self.assertEqual(["Switch", "PC"], [platform.name for platform in import_data.platforms])
-        self.assertEqual(["Zelda", "Doom"], [game.name for game in import_data.games])
-        self.assertIn("Plateforme dupliquee ignoree", logs.output[0])
 
     def test_read_ignores_duplicate_studios_with_warning(self):
         """Verifie la deduplication des studios du fichier.
@@ -375,7 +396,7 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         )
 
         with self.assertLogs(logger, level="WARNING") as logs:
-            import_data = service.read("/tmp/studio-duplicates.ods")
+            import_data = service.read("/tmp/studio-duplicates.ods", self._single_sheet_description())
 
         self.assertEqual(["École"], [studio.name for studio in import_data.studios])
         self.assertEqual(["Zelda", "Mario"], [game.name for game in import_data.games])
@@ -408,11 +429,51 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         )
 
         with self.assertLogs(logger, level="WARNING") as logs:
-            import_data = service.read("/tmp/game-duplicates.ods")
+            import_data = service.read("/tmp/game-duplicates.ods", self._single_sheet_description())
 
         self.assertEqual(["École"], [game.name for game in import_data.games])
         self.assertEqual(["Studio A"], [studio.name for studio in import_data.studios])
         self.assertIn("Jeu duplique ignore", logs.output[0])
+
+    def test_read_shared_layout_excludes_configured_sheets(self):
+        """Verifie que le layout partage ignore les onglets exclus."""
+
+        fake_reader = FakeOdsReader(
+            ["Switch", "Accueil", "NES"],
+            {
+                "Switch": self._dataframe(
+                    [{"Nom du jeu": "Zelda", "Studio": "Nintendo", "Date de sortie": ""}]
+                ),
+                "NES": self._dataframe(
+                    [{"Nom du jeu": "Mario", "Studio": "Nintendo", "Date de sortie": ""}]
+                ),
+            },
+        )
+        service = self._service_for_reader(fake_reader)
+
+        import_data = service.read(
+            "/tmp/excluded-sheets.ods",
+            self._shared_layout_description_with_excluded_sheets(),
+        )
+
+        self.assertEqual(["Switch", "NES"], [game.platform_name for game in import_data.games])
+        self.assertEqual(
+            ["Switch", "NES"],
+            [call[0] for call in fake_reader.sheet_dataframe_calls],
+        )
+
+    def test_read_shared_layout_rejects_missing_excluded_sheet(self):
+        """Verifie le refus d'un onglet exclu absent du fichier."""
+
+        service = self._service_for_reader(FakeOdsReader(["Switch"], {"Switch": self._dataframe([])}))
+
+        with self.assertRaises(CollectionFileDescriptionValidationError) as context:
+            service.read(
+                "/tmp/missing-excluded-sheet.ods",
+                self._shared_layout_description_with_excluded_sheets(),
+            )
+
+        self.assertIn("onglet absent du fichier: Accueil.", context.exception.details)
 
     def _service_for_reader(self, fake_reader, logger=None):
         """Construit le service d'import avec un lecteur factice.
@@ -440,7 +501,63 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
             pandas.DataFrame: Donnees de jeux factices.
         """
 
-        return pd.DataFrame(rows, columns=["Nom du jeu", "Studio", "Date de sortie"])
+        normalized_rows = []
+        for row in rows:
+            normalized_row = dict(row)
+            normalized_row.setdefault("Plateforme", "Switch")
+            normalized_rows.append(normalized_row)
+        return pd.DataFrame(
+            normalized_rows,
+            columns=["Nom du jeu", "Plateforme", "Studio", "Date de sortie"],
+        )
+
+    def _single_sheet_description(self):
+        """Construit une description feuille unique valide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            CollectionFileDescription: Description utilisee par les tests.
+        """
+
+        return CollectionFileDescriptionValidator().validate(
+            {
+                "file_type": "libreoffice_ods",
+                "single_sheet_conf": {
+                    "data_range": "A1:D200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "platform": "B",
+                        "studio": "C",
+                        "release_date": "D",
+                    },
+                },
+            }
+        )
+
+    def _shared_layout_description_with_excluded_sheets(self):
+        """Construit une description multi-onglets avec onglets exclus."""
+
+        return CollectionFileDescriptionValidator().validate(
+            {
+                "file_type": "libreoffice_ods",
+                "multiple_sheets_conf": {
+                    "sheet_information": "platform",
+                    "shared_layout": {
+                        "excluded_sheets": ["Accueil"],
+                        "data_range": "A1:D200",
+                        "header_row": 1,
+                        "column_information": {
+                            "name": "A",
+                            "studio": "C",
+                            "release_date": "D",
+                        },
+                    },
+                },
+            }
+        )
 
 
 if __name__ == "__main__":

@@ -17,16 +17,19 @@ from pathlib import Path
 from threading import Lock
 from typing import Protocol
 
+from services.collection.imports import (
+    CollectionFileDescription,
+    CollectionFileDescriptionValidationError,
+    CollectionFileReader,
+    CollectionFileReaderFactory,
+    CollectionFileReadError,
+    CollectionFileValidationError,
+    CollectionImportData,
+)
 from services.database.user_collection_import_repository import (
     UserCollectionAlreadyImportedError,
     UserCollectionImportPersistenceResult,
     UserCollectionImportUserNotFoundError,
-)
-from services.ods import (
-    OdsCollectionImportData,
-    OdsCollectionImportReadError,
-    OdsCollectionImportReader,
-    OdsCollectionImportValidationError,
 )
 
 from .user_collection_import_configuration import UserCollectionImportConfiguration
@@ -43,9 +46,27 @@ class UserCollectionImportConflictError(UserCollectionImportError):
 class UserCollectionImportInvalidFileError(UserCollectionImportError):
     """Signale qu'un fichier d'import est invalide ou illisible."""
 
+    def __init__(self, message: str, details: list[str] | None = None):
+        """Initialise l'erreur de fichier invalide.
+
+        Args:
+            message (str): Message fonctionnel principal.
+            details (list[str] | None): Raisons techniques affichables.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.details = details or [message]
+        super().__init__(message)
+
 
 class UserCollectionImportTooLargeError(UserCollectionImportError):
     """Signale qu'un fichier d'import depasse la taille maximale autorisee."""
+
+
+class UserCollectionImportTemporaryFileMissingError(UserCollectionImportError):
+    """Signale que le fichier temporaire d'import est absent."""
 
 
 class UserCollectionImportUnexpectedError(UserCollectionImportError):
@@ -69,14 +90,16 @@ class UserCollectionImportRepository(Protocol):
         self,
         user_id: int,
         collection_file_path: str,
-        import_data: OdsCollectionImportData,
+        import_data: CollectionImportData,
+        collection_file_description: dict,
     ) -> UserCollectionImportPersistenceResult:
         """Persiste les donnees importees dans une transaction.
 
         Args:
             user_id (int): Identifiant utilisateur.
             collection_file_path (str): Chemin final du fichier.
-            import_data (OdsCollectionImportData): Donnees lues depuis l'ODS.
+            import_data (CollectionImportData): Donnees lues depuis le fichier.
+            collection_file_description (dict): Description valide ayant servi a l'import.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de persistance.
@@ -127,14 +150,14 @@ class UserCollectionImportService:
         self,
         configuration: UserCollectionImportConfiguration,
         repository: UserCollectionImportRepository,
-        ods_reader: OdsCollectionImportReader,
+        reader_factory: CollectionFileReaderFactory,
     ):
         """Initialise le service d'import de collection.
 
         Args:
             configuration (UserCollectionImportConfiguration): Configuration d'import.
             repository (UserCollectionImportRepository): Persistance transactionnelle.
-            ods_reader (OdsCollectionImportReader): Lecteur ODS dedie a l'import.
+            reader_factory (CollectionFileReaderFactory): Factory de lecteurs.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -142,13 +165,107 @@ class UserCollectionImportService:
 
         self.configuration = configuration
         self.repository = repository
-        self.ods_reader = ods_reader
+        self.reader_factory = reader_factory
+
+    def upload_import_file(
+        self,
+        user_id: int,
+        source_file_path: str,
+        original_filename: str | None,
+        file_type,
+    ) -> None:
+        """Copie le fichier d'import temporaire d'un utilisateur.
+
+        Args:
+            user_id (int): Identifiant utilisateur connecte.
+            source_file_path (str): Chemin du fichier temporaire uploade.
+            original_filename (str | None): Nom original du fichier uploade.
+            file_type (CollectionFileType): Type de fichier selectionne.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            UserCollectionImportConflictError: Si la collection existe deja.
+            UserCollectionImportInvalidFileError: Si le fichier est invalide.
+            UserCollectionImportTooLargeError: Si le fichier est trop volumineux.
+        """
+
+        user_lock = self._lock_for_user(user_id)
+        with user_lock:
+            self._ensure_user_has_no_collection(user_id)
+            reader = self.reader_factory.create(file_type)
+            source_path = Path(source_file_path)
+            self._validate_source_file(source_path, original_filename, reader)
+            self._copy_file(source_path, self._temporary_file_path(user_id, reader))
+
+    def analyze_import_file(self, user_id: int, file_type) -> list[str]:
+        """Analyse le fichier temporaire et retourne ses onglets.
+
+        Args:
+            user_id (int): Identifiant utilisateur connecte.
+            file_type (CollectionFileType): Type de fichier selectionne.
+
+        Returns:
+            list[str]: Noms d'onglets disponibles.
+
+        Raises:
+            UserCollectionImportTemporaryFileMissingError: Si le fichier temporaire est absent.
+            UserCollectionImportInvalidFileError: Si le fichier ne correspond pas au type.
+        """
+
+        reader = self.reader_factory.create(file_type)
+        temporary_file_path = self._temporary_file_path(user_id, reader)
+        self._ensure_temporary_file_exists(temporary_file_path)
+        try:
+            return reader.analyze_sheets(str(temporary_file_path))
+        except (CollectionFileReadError, CollectionFileValidationError) as exc:
+            raise UserCollectionImportInvalidFileError(
+                "Fichier de collection invalide.",
+                self._import_invalid_file_details(exc),
+            ) from exc
+
+    def import_collection_from_temporary_file(
+        self,
+        user_id: int,
+        file_description: CollectionFileDescription | None,
+    ) -> UserCollectionImportResult:
+        """Importe la collection depuis le fichier temporaire utilisateur.
+
+        Args:
+            user_id (int): Identifiant utilisateur connecte.
+            file_description (CollectionFileDescription | None): Description valide du fichier.
+
+        Returns:
+            UserCollectionImportResult: Compteurs de l'import reussi.
+
+        Raises:
+            UserCollectionImportTemporaryFileMissingError: Si le fichier temporaire est absent.
+            UserCollectionImportError: Si l'import echoue.
+        """
+
+        if file_description is None:
+            raise CollectionFileDescriptionValidationError(
+                ["collection_file_description est requis."]
+            )
+        reader = self.reader_factory.create(file_description.file_type)
+        temporary_file_path = self._temporary_file_path(user_id, reader)
+        self._ensure_temporary_file_exists(temporary_file_path)
+        result = self.import_collection(
+            user_id,
+            str(temporary_file_path),
+            temporary_file_path.name,
+            file_description,
+        )
+        self._delete_copied_file(temporary_file_path)
+        return result
 
     def import_collection(
         self,
         user_id: int,
         source_file_path: str,
         original_filename: str | None = None,
+        file_description: CollectionFileDescription | None = None,
     ) -> UserCollectionImportResult:
         """Importe le fichier de collection d'un utilisateur.
 
@@ -156,6 +273,7 @@ class UserCollectionImportService:
             user_id (int): Identifiant utilisateur connecte.
             source_file_path (str): Chemin du fichier temporaire uploade.
             original_filename (str | None): Nom original du fichier uploade.
+            file_description (CollectionFileDescription | None): Description valide du fichier.
 
         Returns:
             UserCollectionImportResult: Compteurs de l'import reussi.
@@ -173,6 +291,7 @@ class UserCollectionImportService:
                 user_id,
                 Path(source_file_path),
                 original_filename,
+                file_description,
             )
 
     def _import_collection_locked(
@@ -180,36 +299,39 @@ class UserCollectionImportService:
         user_id: int,
         source_file_path: Path,
         original_filename: str | None,
+        file_description: CollectionFileDescription | None,
     ) -> UserCollectionImportResult:
-        """Execute l'import une fois le verrou utilisateur acquis.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-            source_file_path (Path): Chemin du fichier source.
-            original_filename (str | None): Nom original optionnel.
-
-        Returns:
-            UserCollectionImportResult: Compteurs de l'import.
-
-        Raises:
-            UserCollectionImportError: Si l'import echoue.
-        """
-
         self._ensure_user_has_no_collection(user_id)
-        self._validate_source_file(source_file_path, original_filename)
-        target_file_path = self._target_file_path(user_id)
+        if file_description is None:
+            raise CollectionFileDescriptionValidationError(
+                ["collection_file_description est requis."]
+            )
+        reader = self.reader_factory.create(file_description.file_type)
+        self._validate_source_file(source_file_path, original_filename, reader)
+        target_file_path = self._target_file_path(
+            user_id,
+            original_filename or source_file_path.name,
+            reader,
+        )
         copied_file_path = self._copy_file(source_file_path, target_file_path)
         try:
-            import_data = self.ods_reader.read(str(copied_file_path))
+            import_data = reader.read(str(copied_file_path), file_description)
             persistence_result = self.repository.import_collection(
                 user_id,
                 str(copied_file_path),
                 import_data,
+                file_description.to_dict(),
             )
             return self._map_result(persistence_result)
-        except (OdsCollectionImportReadError, OdsCollectionImportValidationError) as exc:
+        except CollectionFileDescriptionValidationError:
             self._delete_copied_file(copied_file_path)
-            raise UserCollectionImportInvalidFileError("Fichier de collection invalide.") from exc
+            raise
+        except (CollectionFileReadError, CollectionFileValidationError) as exc:
+            self._delete_copied_file(copied_file_path)
+            raise UserCollectionImportInvalidFileError(
+                "Fichier de collection invalide.",
+                self._import_invalid_file_details(exc),
+            ) from exc
         except UserCollectionAlreadyImportedError as exc:
             self._delete_copied_file(copied_file_path)
             raise UserCollectionImportConflictError("Collection deja importee.") from exc
@@ -221,18 +343,6 @@ class UserCollectionImportService:
             raise UserCollectionImportUnexpectedError("Erreur pendant l'import.") from exc
 
     def _ensure_user_has_no_collection(self, user_id: int) -> None:
-        """Verifie que l'utilisateur n'a pas deja de collection.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-
-        Raises:
-            UserCollectionImportConflictError: Si une collection existe deja.
-        """
-
         if self.repository.user_has_collection(user_id):
             raise UserCollectionImportConflictError("Collection deja importee.")
 
@@ -240,24 +350,14 @@ class UserCollectionImportService:
         self,
         source_file_path: Path,
         original_filename: str | None,
+        reader: CollectionFileReader,
     ) -> None:
-        """Valide le type et la taille du fichier source.
-
-        Args:
-            source_file_path (Path): Fichier source.
-            original_filename (str | None): Nom original optionnel.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-
-        Raises:
-            UserCollectionImportInvalidFileError: Si le fichier n'est pas un ODS.
-            UserCollectionImportTooLargeError: Si le fichier est trop volumineux.
-        """
-
         checked_filename = original_filename or source_file_path.name
-        if checked_filename.lower().strip().endswith(".ods") is False:
-            raise UserCollectionImportInvalidFileError("Le fichier doit etre au format ODS.")
+        if not self._has_accepted_extension(checked_filename, reader.accepted_extensions):
+            accepted_extensions = ", ".join(reader.accepted_extensions)
+            raise UserCollectionImportInvalidFileError(
+                f"Le fichier doit utiliser une extension acceptee: {accepted_extensions}."
+            )
         try:
             file_size = source_file_path.stat().st_size
         except OSError as exc:
@@ -266,19 +366,6 @@ class UserCollectionImportService:
             raise UserCollectionImportTooLargeError("Le fichier depasse la taille maximale.")
 
     def _copy_file(self, source_file_path: Path, target_file_path: Path) -> Path:
-        """Copie le fichier source vers le workspace utilisateur.
-
-        Args:
-            source_file_path (Path): Fichier source.
-            target_file_path (Path): Chemin cible.
-
-        Returns:
-            Path: Chemin du fichier copie.
-
-        Raises:
-            UserCollectionImportUnexpectedError: Si la copie echoue.
-        """
-
         try:
             target_file_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source_file_path, target_file_path)
@@ -288,47 +375,63 @@ class UserCollectionImportService:
             raise UserCollectionImportUnexpectedError("Impossible de copier le fichier.") from exc
         return target_file_path
 
-    def _target_file_path(self, user_id: int) -> Path:
-        """Construit le chemin final du fichier de collection utilisateur.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-
-        Returns:
-            Path: Chemin `/users/workspace/<user_id>/<user_id>-collection.ods`.
-        """
-
+    def _target_file_path(
+        self,
+        user_id: int,
+        original_filename: str | None,
+        reader: CollectionFileReader,
+    ) -> Path:
         workspace_directory = self.configuration.ensure_workspace_directory()
-        return workspace_directory / str(user_id) / f"{user_id}-collection.ods"
+        extension = self._validated_extension(original_filename, reader.accepted_extensions)
+        return workspace_directory / str(user_id) / f"{user_id}-collection{extension}"
+
+    def _temporary_file_path(self, user_id: int, reader: CollectionFileReader) -> Path:
+        workspace_directory = self.configuration.ensure_workspace_directory()
+        return workspace_directory / str(user_id) / f"current-import{reader.accepted_extensions[0]}"
+
+    def _ensure_temporary_file_exists(self, temporary_file_path: Path) -> None:
+        if not temporary_file_path.exists():
+            raise UserCollectionImportTemporaryFileMissingError(
+                "Fichier temporaire introuvable."
+            )
+
+    def _has_accepted_extension(
+        self,
+        filename: str,
+        accepted_extensions: tuple[str, ...],
+    ) -> bool:
+        return self._validated_extension(filename, accepted_extensions) is not None
+
+    def _validated_extension(
+        self,
+        filename: str | None,
+        accepted_extensions: tuple[str, ...],
+    ) -> str | None:
+        checked_filename = str(filename or "").lower().strip()
+        for extension in accepted_extensions:
+            if checked_filename.endswith(extension):
+                return extension
+        return None
 
     def _delete_copied_file(self, copied_file_path: Path) -> None:
-        """Supprime le fichier copie si l'import echoue.
-
-        Args:
-            copied_file_path (Path): Fichier a supprimer.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-        """
-
         try:
             copied_file_path.unlink(missing_ok=True)
         except OSError:
             pass
 
+    def _import_invalid_file_details(self, error: Exception) -> list[str]:
+        messages = [str(error).strip()]
+        cause = getattr(error, "__cause__", None)
+        if cause is not None:
+            cause_message = str(cause).strip()
+            if cause_message:
+                messages.append(cause_message)
+        return [message for message in messages if message]
+
     def _map_result(
         self,
         persistence_result: UserCollectionImportPersistenceResult,
     ) -> UserCollectionImportResult:
-        """Convertit le resultat de persistance en resultat service.
-
-        Args:
-            persistence_result (UserCollectionImportPersistenceResult): Compteurs SQL.
-
-        Returns:
-            UserCollectionImportResult: Compteurs exposes par le service.
-        """
-
         return UserCollectionImportResult(
             created_platforms=persistence_result.created_platforms,
             created_studios=persistence_result.created_studios,
@@ -338,15 +441,6 @@ class UserCollectionImportService:
 
     @classmethod
     def _lock_for_user(cls, user_id: int) -> Lock:
-        """Retourne le verrou applicatif associe a un utilisateur.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-
-        Returns:
-            Lock: Verrou partage pour l'utilisateur.
-        """
-
         with cls._locks_guard:
             if user_id not in cls._locks_by_user_id:
                 cls._locks_by_user_id[user_id] = Lock()

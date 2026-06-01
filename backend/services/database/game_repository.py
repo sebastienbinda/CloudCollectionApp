@@ -15,7 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from services.library.library_query_contract import LibraryQueryCriteria
-from services.ods import OdsCollectionImportGame
+from services.collection.imports import CollectionImportGame
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
 from .library_query_sql_builder import LibraryQuerySqlBuilder
@@ -73,7 +73,7 @@ class SqlAlchemyGameRepository:
     def insert(
         self,
         connection: Connection,
-        game: OdsCollectionImportGame,
+        game: CollectionImportGame,
         platform_id: int,
         studio_id: int | None,
     ) -> int:
@@ -81,7 +81,7 @@ class SqlAlchemyGameRepository:
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
-            game (OdsCollectionImportGame): Jeu a creer.
+            game (CollectionImportGame): Jeu a creer.
             platform_id (int): Identifiant de plateforme.
             studio_id (int | None): Identifiant du studio developpeur.
 
@@ -103,11 +103,11 @@ class SqlAlchemyGameRepository:
             },
         ).scalar_one())
 
-    def game_key(self, game: OdsCollectionImportGame) -> tuple[str, str]:
+    def game_key(self, game: CollectionImportGame) -> tuple[str, str]:
         """Construit la cle fonctionnelle d'un jeu.
 
         Args:
-            game (OdsCollectionImportGame): Jeu importe.
+            game (CollectionImportGame): Jeu importe.
 
         Returns:
             tuple[str, str]: Cle plateforme/nom.

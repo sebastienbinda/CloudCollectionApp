@@ -12,8 +12,6 @@ import copy
 from typing import Any, Optional
 import xml.etree.ElementTree as ET
 
-import pandas as pd
-
 from .ods_archive_reader import OdsArchiveReader
 from .ods_cache import OdsCache
 from .ods_namespaces import OdsNamespaces
@@ -61,34 +59,6 @@ class OdsXmlReader:
         if sheet is None:
             raise ValueError(f"Sheet '{sheet_name}' not found in ODS file.")
         return sheet
-
-    def read_games_dataframe_from_xml(self, platform: str) -> pd.DataFrame:
-        """Lit les jeux depuis le XML interne de l'ODS en secours de pandas.
-
-        Args:
-            platform (str): Nom de l'onglet ODS a parser.
-
-        Returns:
-            pandas.DataFrame: Donnees de jeux extraites des colonnes F a M.
-        """
-
-        rows = self.read_sheet_rows(platform)
-        selected_rows = [row[5:13] for row in rows if len(row) >= 6]
-        if len(selected_rows) <= 5:
-            return pd.DataFrame()
-
-        columns = [
-            str(value).strip() if value is not None and str(value).strip() else f"Colonne {index + 1}"
-            for index, value in enumerate(selected_rows[5])
-        ]
-        records = []
-        for row in selected_rows[6:]:
-            padded_row = row + [None] * (len(columns) - len(row))
-            record = {column: value for column, value in zip(columns, padded_row)}
-            if any(value is not None and str(value).strip() != "" for value in record.values()):
-                records.append(record)
-
-        return pd.DataFrame(records, columns=columns)
 
     def expanded_cells(self, row: ET.Element) -> list[ET.Element]:
         """Developpe les cellules repetees d'une ligne ODS.

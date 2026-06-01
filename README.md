@@ -126,9 +126,11 @@ collection-example.ods
 
 Structure fonctionnelle attendue pour l'import :
 
-- un onglet par plateforme ;
-- les onglets techniques tels que `Accueil` et `Liste de souhaits` sont ignores
-  par l'import utilisateur.
+- le fichier est d'abord depose dans le workspace utilisateur, puis analyse
+  pour proposer les onglets disponibles ;
+- un onglet par plateforme ou une configuration explicite des onglets ;
+- en mode multi-onglets avec layout partage, l'utilisateur peut lister les
+  onglets a importer ou les onglets a exclure.
 
 ## Lancement Local
 

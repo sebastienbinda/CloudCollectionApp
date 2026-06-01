@@ -24,11 +24,17 @@ from services import (
     UserProfile,
 )
 from services.database import SqlAlchemyUserCollectionImportRepository
-from services.ods import OdsCollectionImportReader
+from services.collection.imports import (
+    CollectionFileDescriptionValidationError,
+    CollectionFileDescriptionValidator,
+    CollectionFileType,
+    CollectionFileReaderFactory,
+)
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
     UserCollectionImportService,
+    UserCollectionImportTemporaryFileMissingError,
     UserCollectionImportTooLargeError,
     UserCollectionImportUnexpectedError,
 )
@@ -43,7 +49,8 @@ class UserCollectionImportController:
         user_repository_class=SqlAlchemyUserRepository,
         import_repository_class=SqlAlchemyUserCollectionImportRepository,
         import_service_class=UserCollectionImportService,
-        ods_reader_class=OdsCollectionImportReader,
+        reader_factory_class=CollectionFileReaderFactory,
+        file_description_validator_class=CollectionFileDescriptionValidator,
         import_configuration_class=UserCollectionImportConfiguration,
         database_configuration_class=DatabaseConfiguration,
     ):
@@ -54,7 +61,8 @@ class UserCollectionImportController:
             user_repository_class (type): Classe de repository utilisateur.
             import_repository_class (type): Classe de repository d'import.
             import_service_class (type): Classe du service metier d'import.
-            ods_reader_class (type): Classe du lecteur ODS d'import.
+            reader_factory_class (type): Classe de factory de lecteurs.
+            file_description_validator_class (type): Classe de validation de description.
             import_configuration_class (type): Classe de configuration d'import.
             database_configuration_class (type): Classe de configuration base.
 
@@ -66,7 +74,8 @@ class UserCollectionImportController:
         self.user_repository_class = user_repository_class
         self.import_repository_class = import_repository_class
         self.import_service_class = import_service_class
-        self.ods_reader_class = ods_reader_class
+        self.reader_factory_class = reader_factory_class
+        self.file_description_validator_class = file_description_validator_class
         self.import_configuration_class = import_configuration_class
         self.database_configuration_class = database_configuration_class
 
@@ -89,6 +98,22 @@ class UserCollectionImportController:
             methods=["GET"],
         )
         flask_app.add_url_rule(
+            "/api/users/import/file/<file_type>",
+            endpoint="upload_current_user_collection_import_file",
+            view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
+                self.upload_current_user_collection_import_file
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/users/import/analyze/<file_type>",
+            endpoint="analyze_current_user_collection_import_file",
+            view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
+                self.analyze_current_user_collection_import_file
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
             "/api/users/import",
             endpoint="import_current_user_collection",
             view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
@@ -96,6 +121,76 @@ class UserCollectionImportController:
             ),
             methods=["POST"],
         )
+
+    def upload_current_user_collection_import_file(self, file_type: str):
+        """Depose le fichier temporaire de collection de l'utilisateur connecte.
+
+        Args:
+            file_type (str): Type de fichier cible depuis la route.
+
+        Returns:
+            tuple[flask.Response, int]: Resultat JSON ou erreur.
+        """
+
+        temporary_file_path = None
+        try:
+            user_id = self._current_user_id()
+            collection_file = request.files.get("collection_file")
+            if collection_file is None or not collection_file.filename:
+                return jsonify({"error": "Le parametre collection_file est requis."}), 400
+            parsed_file_type = self._parse_route_file_type(file_type)
+            temporary_file_path = self._save_temporary_upload(collection_file)
+            self._create_import_service().upload_import_file(
+                user_id,
+                str(temporary_file_path),
+                collection_file.filename,
+                parsed_file_type,
+            )
+            return jsonify({"uploaded": True}), 201
+        except CollectionFileDescriptionValidationError as exc:
+            return jsonify({"error": "Configuration invalide.", "details": exc.details}), 422
+        except UserCollectionImportInvalidFileError as exc:
+            return jsonify({"error": str(exc), "details": exc.details}), 400
+        except UserCollectionImportTooLargeError as exc:
+            return jsonify({"error": str(exc)}), 413
+        except UserCollectionImportConflictError as exc:
+            return jsonify({"error": str(exc)}), 409
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur inattendue pendant le depot du fichier.")
+            return jsonify({"error": "Unable to upload collection file."}), 500
+        finally:
+            if temporary_file_path is not None:
+                self._delete_temporary_file(temporary_file_path)
+
+    def analyze_current_user_collection_import_file(self, file_type: str):
+        """Analyse le fichier temporaire et retourne ses onglets.
+
+        Args:
+            file_type (str): Type de fichier cible depuis la route.
+
+        Returns:
+            tuple[flask.Response, int]: Liste des onglets ou erreur.
+        """
+
+        try:
+            sheets = self._create_import_service().analyze_import_file(
+                self._current_user_id(),
+                self._parse_route_file_type(file_type),
+            )
+            return jsonify({"sheets": sheets})
+        except CollectionFileDescriptionValidationError as exc:
+            return jsonify({"error": "Configuration invalide.", "details": exc.details}), 422
+        except UserCollectionImportTemporaryFileMissingError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except UserCollectionImportInvalidFileError as exc:
+            return jsonify({"error": str(exc), "details": exc.details}), 422
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur inattendue pendant l'analyse collection.")
+            return jsonify({"error": "Unable to analyze collection file."}), 500
 
     def get_current_user_collection_status(self):
         """Retourne l'existence d'une collection pour l'utilisateur connecte.
@@ -127,21 +222,23 @@ class UserCollectionImportController:
             tuple[flask.Response, int]: Resultat JSON ou erreur.
         """
 
-        temporary_file_path = None
         try:
             user_id = self._current_user_id()
-            collection_file = request.files.get("collection_file")
-            if collection_file is None or not collection_file.filename:
-                return jsonify({"error": "Le parametre collection_file est requis."}), 400
-            temporary_file_path = self._save_temporary_upload(collection_file)
-            result = self._create_import_service().import_collection(
+            file_description = self._parse_collection_file_description_json()
+            result = self._create_import_service().import_collection_from_temporary_file(
                 user_id,
-                str(temporary_file_path),
-                collection_file.filename,
+                file_description,
             )
             return jsonify(result.to_dict()), 201
+        except CollectionFileDescriptionValidationError as exc:
+            return jsonify({"error": "Configuration invalide.", "details": exc.details}), 422
+        except UserCollectionImportTemporaryFileMissingError as exc:
+            return jsonify({"error": str(exc)}), 404
         except UserCollectionImportInvalidFileError as exc:
-            return jsonify({"error": str(exc)}), 400
+            current_app.logger.exception(
+                "Fichier de collection refuse pendant l'import utilisateur."
+            )
+            return jsonify({"error": str(exc), "details": exc.details}), 400
         except UserCollectionImportTooLargeError as exc:
             return jsonify({"error": str(exc)}), 413
         except UserCollectionImportConflictError as exc:
@@ -154,9 +251,6 @@ class UserCollectionImportController:
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant l'import collection.")
             return jsonify({"error": "Unable to import collection."}), 500
-        finally:
-            if temporary_file_path is not None:
-                self._delete_temporary_file(temporary_file_path)
 
     def _current_user_id(self) -> int:
         """Retourne l'identifiant base de l'utilisateur connecte.
@@ -195,6 +289,56 @@ class UserCollectionImportController:
         collection_file.save(temporary_file_path)
         return temporary_file_path
 
+    def _parse_collection_file_description(self):
+        """Parse et valide la description JSON du fichier de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            CollectionFileDescription: Description valide du fichier importe.
+
+        Raises:
+            CollectionFileDescriptionValidationError: Si la description est invalide.
+        """
+
+        return self.file_description_validator_class().parse_json_text(
+            request.form.get("collection_file_description")
+        )
+
+    def _parse_collection_file_description_json(self):
+        """Parse et valide la description JSON du body d'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            CollectionFileDescription: Description valide du fichier importe.
+
+        Raises:
+            CollectionFileDescriptionValidationError: Si la description est invalide.
+        """
+
+        return self.file_description_validator_class().validate(request.get_json(silent=True))
+
+    def _parse_route_file_type(self, file_type: str) -> CollectionFileType:
+        """Parse le type de fichier declare dans une route d'import.
+
+        Args:
+            file_type (str): Valeur route.
+
+        Returns:
+            CollectionFileType: Type de fichier reconnu.
+
+        Raises:
+            CollectionFileDescriptionValidationError: Si le type est inconnu.
+        """
+
+        try:
+            return CollectionFileType(file_type)
+        except ValueError as exc:
+            raise CollectionFileDescriptionValidationError(["file_type inconnu."]) from exc
+
     def _delete_temporary_file(self, temporary_file_path: Path) -> None:
         """Supprime le fichier temporaire d'upload.
 
@@ -223,7 +367,7 @@ class UserCollectionImportController:
         return self.import_service_class(
             self.import_configuration_class.from_environment(),
             self._create_import_repository(),
-            self.ods_reader_class(),
+            self.reader_factory_class(),
         )
 
     def _create_import_repository(self):

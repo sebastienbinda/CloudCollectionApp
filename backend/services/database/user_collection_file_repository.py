@@ -11,7 +11,8 @@
 #
 # Description : repository SQL du chemin de collection utilisateur.
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine import Connection
 
 
@@ -85,13 +86,46 @@ class SqlAlchemyUserCollectionFileRepository:
         if row["collection_file_path"]:
             raise UserCollectionAlreadyImportedError("Collection deja importee.")
 
+    def update_collection_file(
+        self,
+        connection: Connection,
+        user_id: int,
+        collection_file_path: str,
+        collection_file_description: dict,
+    ) -> None:
+        """Renseigne le fichier et sa description en fin de transaction.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+            collection_file_path (str): Chemin final du fichier.
+            collection_file_description (dict): Description JSON valide du fichier.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        connection.execute(
+            text(
+                f'UPDATE "{self.schema_name}".t_user '
+                "SET collection_file_path = :collection_file_path, "
+                "collection_file_description = :collection_file_description "
+                "WHERE id = :user_id"
+            ).bindparams(bindparam("collection_file_description", type_=JSONB)),
+            {
+                "user_id": user_id,
+                "collection_file_path": collection_file_path,
+                "collection_file_description": collection_file_description,
+            },
+        )
+
     def update_collection_file_path(
         self,
         connection: Connection,
         user_id: int,
         collection_file_path: str,
     ) -> None:
-        """Renseigne le chemin de collection utilisateur en fin de transaction.
+        """Renseigne seulement le chemin de collection utilisateur.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
@@ -102,10 +136,4 @@ class SqlAlchemyUserCollectionFileRepository:
             None: La methode ne retourne aucune valeur.
         """
 
-        connection.execute(
-            text(
-                f'UPDATE "{self.schema_name}".t_user '
-                "SET collection_file_path = :collection_file_path WHERE id = :user_id"
-            ),
-            {"user_id": user_id, "collection_file_path": collection_file_path},
-        )
+        self.update_collection_file(connection, user_id, collection_file_path, {})

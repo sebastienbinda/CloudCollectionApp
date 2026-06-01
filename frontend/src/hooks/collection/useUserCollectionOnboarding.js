@@ -15,6 +15,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AuthApi from "../../services/AuthApi";
 import UserCollectionApi from "../../services/UserCollectionApi";
+import {
+  buildImportConfigurationDescription,
+  createDefaultImportConfiguration,
+} from "./importConfigurationBuilder";
 
 /**
  * Convertit une erreur d'import en message utilisateur comprehensible.
@@ -25,13 +29,43 @@ import UserCollectionApi from "../../services/UserCollectionApi";
  */
 function getUserCollectionErrorMessage(error) {
   const messagesByCode = {
-    invalid_file: "Le fichier selectionne doit etre un fichier de collection valide.",
+    invalid_file: formatInvalidFileMessage(error),
     file_too_large: "Le fichier selectionne depasse la taille maximale autorisee.",
+    invalid_configuration: formatInvalidConfigurationMessage(error),
+    temporary_file_missing: "Envoyez votre fichier de collection avant de lancer l'import.",
     collection_already_imported: "Une collection est deja associee a ce compte.",
     unauthorized: "Votre session ne permet pas d'importer cette collection.",
     unexpected_error: "L'import de la collection a echoue.",
   };
   return messagesByCode[error?.code] || error?.message || messagesByCode.unexpected_error;
+}
+
+/**
+ * Formate les erreurs 400 de fichier invalide retournees par le backend.
+ *
+ * @param {Error} error - Erreur API normalisee.
+ * @returns {string} Message affichable dans l'onboarding.
+ */
+function formatInvalidFileMessage(error) {
+  const details = Array.isArray(error?.details?.details) ? error.details.details : [];
+  if (!details.length) {
+    return "Le fichier selectionne doit etre un fichier de collection valide.";
+  }
+  return `Le fichier selectionne est invalide : ${details.join(" ")}`;
+}
+
+/**
+ * Formate les erreurs 422 de configuration retournees par le backend.
+ *
+ * @param {Error} error - Erreur API normalisee.
+ * @returns {string} Message affichable dans l'onboarding.
+ */
+function formatInvalidConfigurationMessage(error) {
+  const details = Array.isArray(error?.details?.details) ? error.details.details : [];
+  if (!details.length) {
+    return "La configuration d'import est invalide.";
+  }
+  return `La configuration d'import est invalide : ${details.join(" ")}`;
 }
 
 /**
@@ -67,8 +101,13 @@ function useUserCollectionOnboarding(options) {
   const [hasCollection, setHasCollection] = useState(null);
   const [checkedUsername, setCheckedUsername] = useState("");
   const [selectedCollectionFile, setSelectedCollectionFile] = useState(null);
+  const [availableImportSheets, setAvailableImportSheets] = useState([]);
+  const [importConfiguration, setImportConfiguration] = useState(
+    createDefaultImportConfiguration
+  );
   const [onboardingError, setOnboardingError] = useState("");
   const [isCheckingCollection, setIsCheckingCollection] = useState(false);
+  const [isAnalyzingCollection, setIsAnalyzingCollection] = useState(false);
   const [isImportingCollection, setIsImportingCollection] = useState(false);
   const importInProgressRef = useRef(false);
 
@@ -76,8 +115,11 @@ function useUserCollectionOnboarding(options) {
     setHasCollection(null);
     setCheckedUsername("");
     setSelectedCollectionFile(null);
+    setAvailableImportSheets([]);
+    setImportConfiguration(createDefaultImportConfiguration());
     setOnboardingError("");
     setIsCheckingCollection(false);
+    setIsAnalyzingCollection(false);
     setIsImportingCollection(false);
     importInProgressRef.current = false;
   }, []);
@@ -131,9 +173,147 @@ function useUserCollectionOnboarding(options) {
     openCollectionOnboarding,
   ]);
 
-  const selectCollectionFile = useCallback((collectionFile) => {
+  const applyAnalyzedSheets = useCallback((sheetNames) => {
+    setAvailableImportSheets(sheetNames);
+    setImportConfiguration((currentConfiguration) => {
+      if (sheetNames.length <= 1) {
+        return {
+          ...currentConfiguration,
+          multipleSheets: false,
+          sharedSheetLayout: {
+            ...currentConfiguration.sharedSheetLayout,
+            includedSheets: "",
+            excludedSheets: "",
+          },
+        };
+      }
+      return {
+        ...currentConfiguration,
+        multipleSheets: true,
+        sharedLayout: true,
+        sharedSheetLayout: {
+          ...currentConfiguration.sharedSheetLayout,
+          sheetSelectionMode: "included",
+          includedSheets: sheetNames,
+          excludedSheets: [],
+        },
+      };
+    });
+  }, []);
+
+  const selectCollectionFile = useCallback(async (collectionFile) => {
     setSelectedCollectionFile(collectionFile || null);
+    setAvailableImportSheets([]);
     setOnboardingError("");
+    if (!collectionFile) {
+      return;
+    }
+    setIsAnalyzingCollection(true);
+    try {
+      const fileType = importConfiguration.fileType || "libreoffice_ods";
+      await UserCollectionApi.uploadImportFile(collectionFile, fileType);
+      const analysis = await UserCollectionApi.analyzeImportFile(fileType);
+      applyAnalyzedSheets(Array.isArray(analysis.sheets) ? analysis.sheets : []);
+    } catch (error) {
+      setSelectedCollectionFile(null);
+      setOnboardingError(getUserCollectionErrorMessage(error));
+    } finally {
+      setIsAnalyzingCollection(false);
+    }
+  }, [applyAnalyzedSheets, importConfiguration.fileType]);
+
+  const updateImportConfiguration = useCallback((fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      [fieldName]: value,
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateImportLayout = useCallback((layoutName, fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      [layoutName]: {
+        ...currentConfiguration[layoutName],
+        [fieldName]: value,
+      },
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateImportLayoutColumn = useCallback((layoutName, fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      [layoutName]: {
+        ...currentConfiguration[layoutName],
+        columns: {
+          ...currentConfiguration[layoutName].columns,
+          [fieldName]: value,
+        },
+      },
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateImportSheet = useCallback((sheetIndex, fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      sheets: currentConfiguration.sheets.map((sheet, index) => (
+        index === sheetIndex ? { ...sheet, [fieldName]: value } : sheet
+      )),
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateImportSheetLayout = useCallback((sheetIndex, fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      sheets: currentConfiguration.sheets.map((sheet, index) => (
+        index === sheetIndex
+          ? { ...sheet, layout: { ...sheet.layout, [fieldName]: value } }
+          : sheet
+      )),
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateImportSheetColumn = useCallback((sheetIndex, fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      sheets: currentConfiguration.sheets.map((sheet, index) => (
+        index === sheetIndex
+          ? {
+            ...sheet,
+            layout: {
+              ...sheet.layout,
+              columns: { ...sheet.layout.columns, [fieldName]: value },
+            },
+          }
+          : sheet
+      )),
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const addImportSheetConfiguration = useCallback(() => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      sheets: [
+        ...currentConfiguration.sheets,
+        {
+          sheetName: "",
+          sheetInformation: "platform",
+          layout: createDefaultImportConfiguration().sheets[0].layout,
+        },
+      ],
+    }));
+  }, []);
+
+  const removeImportSheetConfiguration = useCallback((sheetIndex) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      sheets: currentConfiguration.sheets.filter((_, index) => index !== sheetIndex),
+    }));
   }, []);
 
   const importSelectedCollection = useCallback(async () => {
@@ -143,12 +323,17 @@ function useUserCollectionOnboarding(options) {
       }
       return;
     }
+    const { description, errors } = buildImportConfigurationDescription(importConfiguration);
+    if (errors.length || !description) {
+      setOnboardingError(errors.join(" "));
+      return;
+    }
 
     importInProgressRef.current = true;
     setIsImportingCollection(true);
     setOnboardingError("");
     try {
-      await UserCollectionApi.importCollection(selectedCollectionFile);
+      await UserCollectionApi.importCollection(description);
       setHasCollection(true);
       setSelectedCollectionFile(null);
       reloadOds();
@@ -160,7 +345,7 @@ function useUserCollectionOnboarding(options) {
       importInProgressRef.current = false;
       setIsImportingCollection(false);
     }
-  }, [goHome, reloadGames, reloadOds, selectedCollectionFile]);
+  }, [goHome, importConfiguration, reloadGames, reloadOds, selectedCollectionFile]);
 
   useEffect(() => {
     if (hasAccessToken) {
@@ -205,12 +390,23 @@ function useUserCollectionOnboarding(options) {
   return {
     hasCollection,
     selectedCollectionFile,
+    availableImportSheets,
     selectedCollectionFileName: selectedCollectionFile?.name || "",
+    importConfiguration,
     onboardingError,
     isCheckingCollection,
+    isAnalyzingCollection,
     isImportingCollection,
     handleAuthenticatedUser,
     selectCollectionFile,
+    updateImportConfiguration,
+    updateImportLayout,
+    updateImportLayoutColumn,
+    updateImportSheet,
+    updateImportSheetLayout,
+    updateImportSheetColumn,
+    addImportSheetConfiguration,
+    removeImportSheetConfiguration,
     importSelectedCollection,
   };
 }

@@ -98,6 +98,105 @@
   width: 100%;
 }
 
+.collectionImportForm input[type="text"],
+.collectionImportForm input[type="number"],
+.collectionImportForm select,
+.collectionImportForm textarea {
+  background: #f8fafc;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-sizing: border-box;
+  min-height: 2.45rem;
+  padding: 0.55rem;
+  width: 100%;
+}
+
+.importConfiguration {
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+}
+
+.importConfiguration legend {
+  color: #111827;
+  font-weight: 800;
+  padding: 0 0.35rem;
+}
+
+.segmentedField {
+  align-items: center;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  padding: 0.7rem;
+}
+
+.segmentedField > span {
+  color: #334155;
+  font-weight: 800;
+  margin-right: auto;
+}
+
+.segmentedField label {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0.35rem;
+}
+
+.layoutFields,
+.sheetConfigurationList {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.columnGrid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sheetConfiguration {
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+.sheetConfigurationHeader {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.sheetConfigurationHeader h2 {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+.secondaryButton {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1f2937;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.secondaryButton:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .collectionSelectedFile {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
@@ -122,5 +221,14 @@
 
   .collectionOnboardingSteps {
     grid-template-columns: 1fr;
+  }
+
+  .columnGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .segmentedField {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

@@ -30,14 +30,21 @@ database structure in `documentation/database.md`, and frontend navigation in
 }
 ```
 
-- `POST /api/users/import` must use `multipart/form-data` with field
-  `collection_file`.
+- `POST /api/users/import/file/<file_type>` must use `multipart/form-data` with
+  field `collection_file` and stores `/users/workspace/<user_id>/current-import.<extension>`.
+- `POST /api/users/import/analyze/<file_type>` reads the temporary file and
+  returns its sheet names.
+- `POST /api/users/import` must use `application/json` and receives only the
+  import configuration.
 - Both routes require a Bearer token with at least profile `USER`.
 - The connected user must always be derived from the Bearer token. Do not accept
   a user id from the request payload, URL or query string.
 - A second import for a user whose `collection_file_path` is already set must
   return `409`.
+- Missing temporary import files must return `404` from analyze and final import.
 - Invalid or unreadable ODS input must return `400`.
+- Temporary files that do not match the analyzed `file_type` must return `422`
+  from analyze.
 - Oversized upload or multipart body must return `413`.
 - Unexpected failures must return `500` without leaking internal paths, SQL or
   stack traces.
@@ -47,6 +54,7 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Import must be atomic: all database changes succeed together or none are kept.
 - `t_user.collection_file_path` must be updated only after the import data has
   been successfully persisted.
+- The temporary staged file can be overwritten before final import.
 - The stored path format is:
 
 ```text
@@ -63,8 +71,12 @@ database structure in `documentation/database.md`, and frontend navigation in
 
 ## ODS Import Rules
 
-- Only platform sheets are imported.
-- Technical sheets such as `Accueil` and `Liste de souhaits` must be ignored.
+- Only configured sheets are imported.
+- In shared-layout multi-sheet imports, `included_sheets` imports only selected
+  sheets and `excluded_sheets` imports every sheet except selected sheets.
+- `included_sheets` and `excluded_sheets` are exclusive.
+- Technical sheets such as `Accueil` and `Liste de souhaits` must be ignored
+  only when the import configuration excludes them.
 - Platforms are matched by normalized platform name.
 - Studios are matched by normalized studio name.
 - Games are matched by normalized game name and platform.
@@ -97,7 +109,10 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Keep HTTP details in `frontend/src/services/UserCollectionApi.js` or another
   service in `frontend/src/services/`.
 - Use `FormData` for upload and do not manually set the multipart
-  `Content-Type` header.
+  `Content-Type` header on `POST /api/users/import/file/<file_type>`.
+- Analyze the uploaded temporary file before final import and use the returned
+  sheet names to prefill single-sheet or multi-sheet configuration.
+- Send the final import configuration as JSON to `POST /api/users/import`.
 - The import view must not duplicate backend validation rules beyond basic file
   selection UX.
 - Automatic backend calls must use the shared backend availability guard so a

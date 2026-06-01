@@ -7,4 +7,7 @@ Ajout des informations privées sur les jeux de la collection des utilsiateurs :
  - Notice
  - Collector
  - Steelbook
+ - Digital version
+ - Region : US / EUR / JAP
+ - Description
  

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection
 
-from services.ods import OdsCollectionImportData
+from services.collection.imports import CollectionImportData
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
 from .database_configuration import DatabaseConfiguration
@@ -111,14 +111,16 @@ class SqlAlchemyUserCollectionImportRepository:
         self,
         user_id: int,
         collection_file_path: str,
-        import_data: OdsCollectionImportData,
+        import_data: CollectionImportData,
+        collection_file_description: dict,
     ) -> UserCollectionImportPersistenceResult:
         """Importe les donnees de collection dans une transaction SQL.
 
         Args:
             user_id (int): Identifiant de l'utilisateur proprietaire.
             collection_file_path (str): Chemin final du fichier de collection.
-            import_data (OdsCollectionImportData): Donnees ODS deja validees.
+            import_data (CollectionImportData): Donnees de collection deja validees.
+            collection_file_description (dict): Description valide ayant servi a l'import.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de l'import.
@@ -143,10 +145,11 @@ class SqlAlchemyUserCollectionImportRepository:
                 user_id,
                 game_ids,
             )
-            self.user_file_repository.update_collection_file_path(
+            self.user_file_repository.update_collection_file(
                 connection,
                 user_id,
                 collection_file_path,
+                collection_file_description,
             )
         return UserCollectionImportPersistenceResult(
             created_platforms=created_platforms,
@@ -158,13 +161,13 @@ class SqlAlchemyUserCollectionImportRepository:
     def _ensure_platforms(
         self,
         connection: Connection,
-        import_data: OdsCollectionImportData,
+        import_data: CollectionImportData,
     ) -> tuple[dict[str, int], int]:
         """Cree les plateformes absentes et retourne leurs identifiants.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
-            import_data (OdsCollectionImportData): Donnees importees.
+            import_data (CollectionImportData): Donnees importees.
 
         Returns:
             tuple[dict[str, int], int]: Identifiants par cle et nombre de creations.
@@ -186,13 +189,13 @@ class SqlAlchemyUserCollectionImportRepository:
     def _ensure_studios(
         self,
         connection: Connection,
-        import_data: OdsCollectionImportData,
+        import_data: CollectionImportData,
     ) -> tuple[dict[str, int], int]:
         """Cree les studios absents et retourne leurs identifiants.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
-            import_data (OdsCollectionImportData): Donnees importees.
+            import_data (CollectionImportData): Donnees importees.
 
         Returns:
             tuple[dict[str, int], int]: Identifiants par cle et nombre de creations.
@@ -211,7 +214,7 @@ class SqlAlchemyUserCollectionImportRepository:
     def _ensure_games(
         self,
         connection: Connection,
-        import_data: OdsCollectionImportData,
+        import_data: CollectionImportData,
         platform_ids: dict[str, int],
         studio_ids: dict[str, int],
     ) -> tuple[list[int], int]:
@@ -219,7 +222,7 @@ class SqlAlchemyUserCollectionImportRepository:
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
-            import_data (OdsCollectionImportData): Donnees importees.
+            import_data (CollectionImportData): Donnees importees.
             platform_ids (dict[str, int]): Plateformes par cle normalisee.
             studio_ids (dict[str, int]): Studios par cle normalisee.
 
