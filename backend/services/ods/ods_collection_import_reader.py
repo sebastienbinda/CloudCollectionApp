@@ -36,11 +36,11 @@ from services.collection.imports.spreadsheet_cell_reference import (
 from services.formatting import SheetValueFormatter
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
-from .ods_archive_reader import OdsArchiveReader
 from .ods_cache import OdsCache
 from .ods_import_error_context import OdsImportErrorContext
 from .ods_reader import OdsReader
-from .ods_xml_reader import OdsXmlReader
+
+
 class OdsCollectionImportReadError(CollectionFileReadError):
     """Signale qu'un fichier ODS de collection ne peut pas etre lu."""
 
@@ -488,9 +488,7 @@ class OdsCollectionImportReader:
             )
     def _create_ods_reader(self, ods_path: str) -> OdsReader:
         cache = OdsCache(ods_path)
-        archive_reader = OdsArchiveReader(ods_path, cache)
-        xml_reader = OdsXmlReader(archive_reader, cache)
-        return OdsReader(ods_path, cache, xml_reader)
+        return OdsReader(ods_path, cache)
 
     def _reset_reader_cache(self, reader: Optional[OdsReader]) -> None:
         if reader is not None and hasattr(reader, "cache"):
