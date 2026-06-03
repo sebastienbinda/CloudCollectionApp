@@ -32,12 +32,14 @@ class UserCollectionPlatformQueryCriteria:
         page_request (LibraryPageRequest): Pagination normalisee.
         name (str): Filtre `name` nettoye.
         normalized_name (str): Filtre `name` sans casse ni accents.
+        wishlist (bool | None): Filtre wishlist, ou aucun filtre si absent.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises.
     """
 
     page_request: LibraryPageRequest
     name: str
     normalized_name: str
+    wishlist: bool | None
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -126,6 +128,7 @@ class UserCollectionQueryParser:
             page_request=page_request,
             name=self._parse_text(query_parameters, "name"),
             normalized_name=self._parse_normalized_text(query_parameters, "name"),
+            wishlist=self._parse_wishlist(self._get_first_value(query_parameters, "wishlist")),
             sort_rules=self._parse_sort_rules(
                 self.PLATFORM_SORT_COLUMNS,
                 self._get_all_values(query_parameters, "sort"),

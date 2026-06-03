@@ -555,6 +555,21 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertIsNone(self.query_parser.parse_games({"wishlist": "oui"}).wishlist)
         self.assertIsNone(self.query_parser.parse_games({"wishlist": "maybe"}).wishlist)
 
+    def test_parser_reads_platform_wishlist_filter(self):
+        """Verifie le parsing wishlist des plateformes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre plateforme.
+        """
+
+        self.assertFalse(self.query_parser.parse_platforms({"wishlist": "false"}).wishlist)
+        self.assertTrue(self.query_parser.parse_platforms({"wishlist": "true"}).wishlist)
+        self.assertIsNone(self.query_parser.parse_platforms({}).wishlist)
+        self.assertIsNone(self.query_parser.parse_platforms({"wishlist": "1"}).wishlist)
+
     def test_constructor_rejects_missing_database_url_without_injected_engine(self):
         """Verifie qu'un moteur est requis sans configuration SQL.
 

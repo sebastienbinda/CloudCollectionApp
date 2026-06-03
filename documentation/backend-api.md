@@ -258,18 +258,47 @@ user identifier in the URL, query string or payload.
   "total": 420,
   "total_value": 0,
   "average_value": 0,
-  "max_platform": "Switch"
+  "max_platform": "Switch",
+  "collection": {
+    "total": 420,
+    "total_value": 0,
+    "average_value": 0,
+    "max_platform": "Switch"
+  },
+  "wishlist": {
+    "total": 12,
+    "total_value": 0,
+    "average_value": 0,
+    "max_platform": "NES"
+  }
 }
 ```
 
-When the connected user has no game in `t_user_collection`, the response is:
+The root fields are kept for compatibility and mirror the `collection` section.
+Collection statistics are computed with `t_user_collection.wishlist = false`;
+wishlist statistics are computed with `wishlist = true`.
+
+When the connected user has no game in `t_user_collection`, both sections are
+empty:
 
 ```json
 {
   "total": 0,
   "total_value": 0,
   "average_value": 0,
-  "max_platform": ""
+  "max_platform": "",
+  "collection": {
+    "total": 0,
+    "total_value": 0,
+    "average_value": 0,
+    "max_platform": ""
+  },
+  "wishlist": {
+    "total": 0,
+    "total_value": 0,
+    "average_value": 0,
+    "max_platform": ""
+  }
 }
 ```
 
@@ -279,6 +308,9 @@ Supported query parameters:
 
 - `name`: optional platform name filter, matched without case or accent
   sensitivity;
+- `wishlist`: optional boolean filter. Only `true` and `false` are accepted;
+  invalid values are ignored. The current collection page sends
+  `wishlist=false`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule. Allowed column: `name`.
@@ -332,6 +364,9 @@ Supported query parameters:
 - `platform_id`: optional exact platform id. Invalid values return an empty
   list;
 - `release_date`: optional range formatted as `YYYY-MM-DD..YYYY-MM-DD`;
+- `wishlist`: optional boolean filter. Only `true` and `false` are accepted;
+  invalid values are ignored. The current collection page sends
+  `wishlist=false`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule.
@@ -367,7 +402,8 @@ Response:
       "version": "",
       "buy_date": "",
       "buy_location": "",
-      "grade": ""
+      "grade": "",
+      "wishlist": false
     }
   ]
 }
@@ -510,6 +546,7 @@ Body:
 
 The JSON configuration supports:
 
+- a mandatory top-level `wishlist` section;
 - `single_sheet_conf` for a single imported sheet;
 - `multiple_sheets_conf.shared_layout.included_sheets` to import only selected
   sheets;
@@ -519,6 +556,20 @@ The JSON configuration supports:
 
 `included_sheets` and `excluded_sheets` are exclusive. Invalid JSON or
 configuration returns `422` with `error` and `details`.
+
+Wishlist modes:
+
+- `{"mode": "none"}`: no wishlist source, all imported rows are collection
+  rows;
+- `{"mode": "sheet", ...}`: a dedicated sheet supplies wishlist rows and must
+  include `sheet_name`, `data_range`, `header_row` and `column_information`;
+- `{"mode": "column"}`: every collection layout must define
+  `column_information.wishlist`.
+
+Accepted wishlist column values are `Oui/Non`, `O/N`, `True/False`,
+`Yes/No` and `Y/N`, case-insensitively. Empty values are imported as
+`wishlist=false`. Invalid non-empty values make the row ignored and are
+reported in import warnings.
 
 The upload is accepted only once per user. If `t_user.collection_file_path` is
 already set, the backend returns `409` and does not replace the existing
@@ -533,8 +584,9 @@ Only configured ODS sheets are imported. With a shared layout, the user may
 either provide the sheets to import or the sheets to exclude; without either
 list, every sheet is imported. Missing platforms, studios and games are
 created; existing records are reused. User-game associations are inserted in
-`t_user_collection` when missing and ignored when already present. No existing
-platform, studio, game or user association is updated by this endpoint.
+`t_user_collection` when missing with their `wishlist` value and ignored when
+already present. No existing platform, studio, game or user association is
+updated by this endpoint.
 
 Successful response:
 
@@ -543,13 +595,19 @@ Successful response:
   "created_platforms": 3,
   "created_studios": 12,
   "created_games": 42,
-  "associated_games": 58
+  "associated_games": 58,
+  "wishlisted_games": 12,
+  "warnings": {
+    "invalid_wishlist": 3,
+    "invalid_wishlist_values_found": ["Ok", "Peut etre", "Nop"]
+  }
 }
 ```
 
 The `associated_games` counter is the number of games attached to the user after
 the import payload is processed, including games that already existed before the
-request.
+request. `wishlisted_games` counts imported games whose final retained import
+value is `wishlist=true`.
 
 Import errors use:
 

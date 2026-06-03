@@ -73,22 +73,23 @@ class VideoGamesApi {
         requestOptions
       ),
       this.fetchJson(
-        "/collections/videogames/platforms/search",
+        `/collections/videogames/platforms/search?${this.buildCollectionGameSearchQuery({ wishlist: false })}`,
         "Impossible de recuperer les plateformes.",
         requestOptions
       ),
     ]);
+    const collectionStatistics = this.normalizeCollectionStatistics(statistics);
     const platforms = this.normalizeCollectionPlatforms(platformsPayload.platforms || []);
     return {
       title: "Ma collection",
       first_game_date: "",
       last_game_date: "",
       totals: {
-        games_count: statistics.total || 0,
-        total_price: statistics.total_value || 0,
-        average_price: statistics.average_value || 0,
+        games_count: collectionStatistics.total || 0,
+        total_price: collectionStatistics.total_value || 0,
+        average_price: collectionStatistics.average_value || 0,
       },
-      max_platform: statistics.max_platform || "",
+      max_platform: collectionStatistics.max_platform || "",
       platforms,
     };
   }
@@ -100,8 +101,9 @@ class VideoGamesApi {
    * @returns {Promise<Object>} Objet contenant `platforms`.
    */
   static async fetchPlatforms() {
+    const query = this.buildCollectionGameSearchQuery({ wishlist: false });
     const data = await this.fetchJson(
-      "/collections/videogames/platforms/search",
+      `/collections/videogames/platforms/search?${query}`,
       "Impossible de recuperer les plateformes.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -120,8 +122,12 @@ class VideoGamesApi {
    * @returns {Promise<Array>} Liste des jeux normalisee pour le tableau.
    */
   static async fetchGames(platformId) {
+    const query = this.buildCollectionGameSearchQuery({
+      platform_id: platformId,
+      wishlist: false,
+    });
     const data = await this.fetchJson(
-      `/collections/videogames/games/search?platform_id=${encodeURIComponent(platformId)}`,
+      `/collections/videogames/games/search?${query}`,
       "Impossible de recuperer les jeux video.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -197,8 +203,12 @@ class VideoGamesApi {
    * @returns {Promise<Object>} Objet contenant les resultats.
    */
   static async searchGamesByName(query) {
+    const searchQuery = this.buildCollectionGameSearchQuery({
+      name: query,
+      wishlist: false,
+    });
     const data = await this.fetchJson(
-      `/collections/videogames/games/search?name=${encodeURIComponent(query)}`,
+      `/collections/videogames/games/search?${searchQuery}`,
       "Impossible de rechercher les jeux.",
       {
         headers: AuthApi.getAuthorizationHeaders(),
@@ -208,6 +218,33 @@ class VideoGamesApi {
       ...data,
       items: this.normalizeCollectionGames(data.games || []),
     };
+  }
+
+  /**
+   * Extrait les statistiques de collection reelle depuis le contrat SQL.
+   *
+   * @param {Object} statistics - Payload retourne par `GET /collections/videogames`.
+   * @returns {Object} Section collection normalisee.
+   */
+  static normalizeCollectionStatistics(statistics = {}) {
+    return statistics.collection || statistics;
+  }
+
+  /**
+   * Construit une query string de recherche collection.
+   *
+   * @param {Object} criteria - Criteres de recherche.
+   * @returns {string} Query string encodee.
+   */
+  static buildCollectionGameSearchQuery(criteria) {
+    const parameters = new URLSearchParams();
+    Object.entries(criteria).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") {
+        return;
+      }
+      parameters.set(key, String(value));
+    });
+    return parameters.toString();
   }
 
   /**

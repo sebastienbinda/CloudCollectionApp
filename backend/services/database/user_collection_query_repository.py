@@ -318,6 +318,9 @@ class SqlAlchemyUserCollectionQueryRepository:
             criteria.normalized_name,
             "platform_name_pattern",
         )
+        if criteria.wishlist is not None:
+            filters.append("user_collection.wishlist = :wishlist")
+            parameters["wishlist"] = criteria.wishlist
         return "WHERE " + " AND ".join(filters)
 
     def _build_game_where_clause(

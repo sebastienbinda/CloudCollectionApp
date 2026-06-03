@@ -201,7 +201,13 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         """
 
         criteria = self.query_parser.parse_platforms(
-            {"name": " École ", "page": "2", "size": "25", "sort": "name,desc"}
+            {
+                "name": " École ",
+                "page": "2",
+                "size": "25",
+                "sort": "name,desc",
+                "wishlist": "false",
+            }
         )
         connection = FakeRepositoryConnection(rows=[{"id": 1, "name": "Switch", "nb_games": 3}])
 
@@ -211,13 +217,35 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertEqual([{"id": 1, "name": "Switch", "nb_games": 3}], rows)
         self.assertIn("COUNT(game.id) AS nb_games", sql)
         self.assertIn("user_collection.user_id = :user_id", sql)
+        self.assertIn("user_collection.wishlist = :wishlist", sql)
         self.assertIn("TRANSLATE(LOWER(platform.name)", sql)
         self.assertIn("GROUP BY platform.id, platform.name", sql)
         self.assertIn("ORDER BY platform.name DESC", sql)
         self.assertEqual(12, parameters["user_id"])
+        self.assertFalse(parameters["wishlist"])
         self.assertEqual("%ecole%", parameters["platform_name_pattern"])
         self.assertEqual(25, parameters["limit"])
         self.assertEqual(50, parameters["offset"])
+
+    def test_count_platforms_filters_collection_entries_when_requested(self):
+        """Verifie le compteur des plateformes hors wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre wishlist.
+        """
+
+        criteria = self.query_parser.parse_platforms({"wishlist": "false"})
+        connection = FakeRepositoryConnection(scalar_value=2)
+
+        count = self.repository.count_platforms_by_criteria(connection, 12, criteria)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual(2, count)
+        self.assertIn("user_collection.wishlist = :wishlist", sql)
+        self.assertEqual({"user_id": 12, "wishlist": False}, parameters)
 
     def test_list_games_applies_all_filters_and_allowed_sort(self):
         """Verifie la liste paginee des jeux utilisateur.
