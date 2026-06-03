@@ -18,6 +18,8 @@ from .collection_file_description import (
     CollectionMultipleSheetsConfiguration,
     CollectionPerSheetConfiguration,
     CollectionSheetLayout,
+    WishlistImportConfiguration,
+    WishlistImportMode,
 )
 from .collection_file_description_validator import (
     CollectionFileDescriptionValidationError,
@@ -35,6 +37,8 @@ from .collection_import_models import (
     CollectionImportPlatform,
     CollectionImportStudio,
 )
+from .wishlist_duplicate_policy import WishlistDuplicatePolicy
+from .wishlist_value_parser import WishlistValueParseResult, WishlistValueParser
 
 __all__ = [
     "CollectionFileDescription",
@@ -53,4 +57,9 @@ __all__ = [
     "CollectionMultipleSheetsConfiguration",
     "CollectionPerSheetConfiguration",
     "CollectionSheetLayout",
+    "WishlistImportConfiguration",
+    "WishlistImportMode",
+    "WishlistDuplicatePolicy",
+    "WishlistValueParseResult",
+    "WishlistValueParser",
 ]

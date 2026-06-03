@@ -140,6 +140,7 @@ class ConfigurableOdsCollectionImportReaderTest(unittest.TestCase):
         return CollectionFileDescriptionValidator().validate(
             {
                 "file_type": "libreoffice_ods",
+                "wishlist": {"mode": "none"},
                 "multiple_sheets_conf": {
                     "sheet_information": "platform",
                     "shared_layout": {
@@ -159,6 +160,7 @@ class ConfigurableOdsCollectionImportReaderTest(unittest.TestCase):
         return CollectionFileDescriptionValidator().validate(
             {
                 "file_type": "libreoffice_ods",
+                "wishlist": {"mode": "none"},
                 "multiple_sheets_conf": {
                     "sheets": [
                         {
@@ -192,6 +194,7 @@ class ConfigurableOdsCollectionImportReaderTest(unittest.TestCase):
         return CollectionFileDescriptionValidator().validate(
             {
                 "file_type": "libreoffice_ods",
+                "wishlist": {"mode": "none"},
                 "multiple_sheets_conf": {
                     "sheet_information": "studio",
                     "shared_layout": {

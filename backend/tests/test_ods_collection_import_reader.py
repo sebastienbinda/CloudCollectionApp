@@ -524,6 +524,7 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         return CollectionFileDescriptionValidator().validate(
             {
                 "file_type": "libreoffice_ods",
+                "wishlist": {"mode": "none"},
                 "single_sheet_conf": {
                     "data_range": "A1:D200",
                     "header_row": 1,
@@ -543,6 +544,7 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
         return CollectionFileDescriptionValidator().validate(
             {
                 "file_type": "libreoffice_ods",
+                "wishlist": {"mode": "none"},
                 "multiple_sheets_conf": {
                     "sheet_information": "platform",
                     "shared_layout": {

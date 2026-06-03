@@ -73,6 +73,7 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
 
         payload = {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "multiple_sheets_conf": {
                 "sheet_information": "platform",
                 "shared_layout": {
@@ -101,6 +102,7 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
 
         payload = {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "multiple_sheets_conf": {
                 "sheet_information": "platform",
                 "shared_layout": {
@@ -136,6 +138,7 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
 
         payload = {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "multiple_sheets_conf": {
                 "sheets": [
                     {
@@ -443,6 +446,7 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
 
         return {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "single_sheet_conf": {
                 "data_range": "A1:H200",
                 "header_row": 1,

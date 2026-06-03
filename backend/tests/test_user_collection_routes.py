@@ -298,6 +298,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
 
         return {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "single_sheet_conf": {
                 "data_range": "A1:H200",
                 "header_row": 1,
@@ -322,6 +323,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
 
         return {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "multiple_sheets_conf": {
                 "sheet_information": "platform",
                 "shared_layout": {
@@ -348,6 +350,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
 
         return {
             "file_type": "libreoffice_ods",
+            "wishlist": {"mode": "none"},
             "multiple_sheets_conf": {
                 "sheets": [
                     {
