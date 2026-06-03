@@ -106,33 +106,35 @@ class FakeUserCollectionQueryRepository:
 
         self.calls = []
 
-    def count_collection_games(self, connection, user_id):
+    def count_collection_games(self, connection, user_id, wishlist=None):
         """Compte les jeux factices.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist recu.
 
         Returns:
             int: Nombre de jeux configure.
         """
 
-        self.calls.append(("count_collection_games", connection, user_id))
-        return 42
+        self.calls.append(("count_collection_games", connection, user_id, wishlist))
+        return 3 if wishlist is True else 42
 
-    def find_max_platform_name(self, connection, user_id):
+    def find_max_platform_name(self, connection, user_id, wishlist=None):
         """Retourne la plateforme max factice.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist recu.
 
         Returns:
             str: Nom de plateforme.
         """
 
-        self.calls.append(("find_max_platform_name", connection, user_id))
-        return "Switch"
+        self.calls.append(("find_max_platform_name", connection, user_id, wishlist))
+        return "NES" if wishlist is True else "Switch"
 
     def find_collection_file_path(self, connection, user_id):
         """Retourne un chemin de fichier factice.
@@ -215,6 +217,7 @@ class FakeUserCollectionQueryRepository:
                 "release_date": datetime(1987, 12, 18),
                 "studio_name": None,
                 "studio_id": None,
+                "wishlist": True,
             }
         ]
 
@@ -222,18 +225,19 @@ class FakeUserCollectionQueryRepository:
 class EmptyUserCollectionQueryRepository(FakeUserCollectionQueryRepository):
     """Repository factice pour un utilisateur sans collection."""
 
-    def count_collection_games(self, connection, user_id):
+    def count_collection_games(self, connection, user_id, wishlist=None):
         """Compte une collection vide.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist recu.
 
         Returns:
             int: Zero.
         """
 
-        self.calls.append(("count_collection_games", connection, user_id))
+        self.calls.append(("count_collection_games", connection, user_id, wishlist))
         return 0
 
     def count_platforms_by_criteria(self, connection, user_id, criteria):
@@ -332,7 +336,24 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         payload = self.service.get_statistics(7)
 
         self.assertEqual(
-            {"total": 42, "total_value": 0, "average_value": 0, "max_platform": "Switch"},
+            {
+                "total": 42,
+                "total_value": 0,
+                "average_value": 0,
+                "max_platform": "Switch",
+                "collection": {
+                    "total": 42,
+                    "total_value": 0,
+                    "average_value": 0,
+                    "max_platform": "Switch",
+                },
+                "wishlist": {
+                    "total": 3,
+                    "total_value": 0,
+                    "average_value": 0,
+                    "max_platform": "NES",
+                },
+            },
             payload,
         )
         self.assertEqual(1, self.engine.connect_count)
@@ -358,7 +379,24 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         games = service.list_games(7, self.query_parser.parse_games({}))
 
         self.assertEqual(
-            {"total": 0, "total_value": 0, "average_value": 0, "max_platform": ""},
+            {
+                "total": 0,
+                "total_value": 0,
+                "average_value": 0,
+                "max_platform": "",
+                "collection": {
+                    "total": 0,
+                    "total_value": 0,
+                    "average_value": 0,
+                    "max_platform": "",
+                },
+                "wishlist": {
+                    "total": 0,
+                    "total_value": 0,
+                    "average_value": 0,
+                    "max_platform": "",
+                },
+            },
             statistics,
         )
         self.assertEqual(
@@ -428,6 +466,7 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                     "buy_date": "",
                     "buy_location": "",
                     "grade": "",
+                    "wishlist": True,
                 }
             ],
             payload["games"],
@@ -489,11 +528,32 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertEqual("dev", criteria.normalized_studio_name)
         self.assertEqual("nes", criteria.normalized_platform_name)
         self.assertEqual(12, criteria.platform_id)
+        self.assertIsNone(criteria.wishlist)
         self.assertFalse(criteria.has_invalid_platform_id)
         self.assertEqual("1980-01-01", criteria.release_date_from.isoformat())
         self.assertEqual("1990-12-31", criteria.release_date_to.isoformat())
         self.assertEqual(("platform_name", "desc"), (criteria.sort_rules[0].column, criteria.sort_rules[0].direction))
         self.assertEqual(("name", "asc"), (criteria.sort_rules[1].column, criteria.sort_rules[1].direction))
+
+    def test_parser_reads_only_boolean_wishlist_filter_values(self):
+        """Verifie le parsing du filtre wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les valeurs booleennes.
+        """
+
+        self.assertFalse(self.query_parser.parse_games({"wishlist": "false"}).wishlist)
+        self.assertTrue(self.query_parser.parse_games({"wishlist": "true"}).wishlist)
+        self.assertFalse(self.query_parser.parse_games({"wishlist": False}).wishlist)
+        self.assertTrue(self.query_parser.parse_games({"wishlist": True}).wishlist)
+        self.assertIsNone(self.query_parser.parse_games({}).wishlist)
+        self.assertIsNone(self.query_parser.parse_games({"wishlist": "0"}).wishlist)
+        self.assertIsNone(self.query_parser.parse_games({"wishlist": "1"}).wishlist)
+        self.assertIsNone(self.query_parser.parse_games({"wishlist": "oui"}).wishlist)
+        self.assertIsNone(self.query_parser.parse_games({"wishlist": "maybe"}).wishlist)
 
     def test_constructor_rejects_missing_database_url_without_injected_engine(self):
         """Verifie qu'un moteur est requis sans configuration SQL.

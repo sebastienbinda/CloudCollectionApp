@@ -34,12 +34,18 @@ EngineFactory = Callable[[str], Engine]
 class UserCollectionQueryRepository(Protocol):
     """Decrit les lectures SQL attendues pour la collection utilisateur."""
 
-    def count_collection_games(self, connection: Connection, user_id: int) -> int:
+    def count_collection_games(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> int:
         """Compte les jeux rattaches a l'utilisateur.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist optionnel.
 
         Returns:
             int: Nombre de jeux.
@@ -48,12 +54,18 @@ class UserCollectionQueryRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
-    def find_max_platform_name(self, connection: Connection, user_id: int) -> str:
+    def find_max_platform_name(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> str:
         """Retourne la plateforme la plus representee.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist optionnel.
 
         Returns:
             str: Nom de plateforme ou chaine vide.
@@ -205,12 +217,26 @@ class UserCollectionQueryService:
         """
 
         with self.engine.connect() as connection:
-            total = self.repository.count_collection_games(connection, user_id)
-            max_platform = (
-                self.repository.find_max_platform_name(connection, user_id)
-                if total
-                else ""
-            )
+            collection_statistics = self._statistics_payload(connection, user_id, False)
+            wishlist_statistics = self._statistics_payload(connection, user_id, True)
+        return {
+            **collection_statistics,
+            "collection": collection_statistics,
+            "wishlist": wishlist_statistics,
+        }
+
+    def _statistics_payload(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool,
+    ) -> dict[str, Any]:
+        total = self.repository.count_collection_games(connection, user_id, wishlist)
+        max_platform = (
+            self.repository.find_max_platform_name(connection, user_id, wishlist)
+            if total
+            else ""
+        )
         return {
             "total": total,
             "total_value": 0,
@@ -334,6 +360,7 @@ class UserCollectionQueryService:
             "buy_date": "",
             "buy_location": "",
             "grade": "",
+            "wishlist": bool(row.get("wishlist")),
         }
 
     def _date_value(self, value: Any) -> str:

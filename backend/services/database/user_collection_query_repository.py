@@ -53,12 +53,18 @@ class SqlAlchemyUserCollectionQueryRepository:
 
         self.schema_name = schema_name
 
-    def count_collection_games(self, connection: Connection, user_id: int) -> int:
+    def count_collection_games(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> int:
         """Compte les jeux de la collection d'un utilisateur.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant de l'utilisateur connecte.
+            wishlist (bool | None): Filtre wishlist optionnel.
 
         Returns:
             int: Nombre de jeux rattaches a l'utilisateur.
@@ -67,12 +73,14 @@ class SqlAlchemyUserCollectionQueryRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+        parameters: dict[str, Any] = {"user_id": user_id}
+        where_clause = self._build_user_collection_where_clause(parameters, wishlist)
         return int(connection.execute(
             text(
-                f'SELECT COUNT(*) FROM "{self.schema_name}".t_user_collection '
-                "WHERE user_id = :user_id"
+                f'SELECT COUNT(*) FROM "{self.schema_name}".t_user_collection user_collection '
+                f"{where_clause}"
             ),
-            {"user_id": user_id},
+            parameters,
         ).scalar_one())
 
     def find_collection_file_path(self, connection: Connection, user_id: int) -> str:
@@ -98,12 +106,18 @@ class SqlAlchemyUserCollectionQueryRepository:
         ).scalar_one_or_none()
         return "" if collection_file_path is None else str(collection_file_path)
 
-    def find_max_platform_name(self, connection: Connection, user_id: int) -> str:
+    def find_max_platform_name(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> str:
         """Recherche la plateforme la plus representee dans la collection.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant de l'utilisateur connecte.
+            wishlist (bool | None): Filtre wishlist optionnel.
 
         Returns:
             str: Nom de plateforme ou chaine vide si la collection est vide.
@@ -112,18 +126,20 @@ class SqlAlchemyUserCollectionQueryRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+        parameters: dict[str, Any] = {"user_id": user_id}
+        where_clause = self._build_user_collection_where_clause(parameters, wishlist)
         row = connection.execute(
             text(
                 "SELECT platform.name "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
-                "WHERE user_collection.user_id = :user_id "
+                f"{where_clause} "
                 "GROUP BY platform.id, platform.name "
                 "ORDER BY COUNT(game.id) DESC, platform.name ASC "
                 "LIMIT 1"
             ),
-            {"user_id": user_id},
+            parameters,
         ).scalar_one_or_none()
         return "" if row is None else str(row)
 
@@ -264,7 +280,8 @@ class SqlAlchemyUserCollectionQueryRepository:
                 "SELECT "
                 "game.id, game.name, game.release_date, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
-                "studio.id AS studio_id, studio.name AS studio_name "
+                "studio.id AS studio_id, studio.name AS studio_name, "
+                "user_collection.wishlist "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
@@ -276,6 +293,17 @@ class SqlAlchemyUserCollectionQueryRepository:
             parameters,
         ).mappings()
         return [dict(row) for row in rows]
+
+    def _build_user_collection_where_clause(
+        self,
+        parameters: dict[str, Any],
+        wishlist: bool | None,
+    ) -> str:
+        filters = ["user_collection.user_id = :user_id"]
+        if wishlist is not None:
+            filters.append("user_collection.wishlist = :wishlist")
+            parameters["wishlist"] = wishlist
+        return "WHERE " + " AND ".join(filters)
 
     def _build_platform_where_clause(
         self,
@@ -322,6 +350,9 @@ class SqlAlchemyUserCollectionQueryRepository:
         if criteria.release_date_to is not None:
             filters.append("game.release_date <= :release_date_to")
             parameters["release_date_to"] = criteria.release_date_to
+        if criteria.wishlist is not None:
+            filters.append("user_collection.wishlist = :wishlist")
+            parameters["wishlist"] = criteria.wishlist
         return "WHERE " + " AND ".join(filters)
 
     def _append_text_filter(

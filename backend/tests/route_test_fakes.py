@@ -107,6 +107,18 @@ class FakeUserCollectionQueryService:
             "total_value": 0,
             "average_value": 0,
             "max_platform": "Switch",
+            "collection": {
+                "total": 42,
+                "total_value": 0,
+                "average_value": 0,
+                "max_platform": "Switch",
+            },
+            "wishlist": {
+                "total": 3,
+                "total_value": 0,
+                "average_value": 0,
+                "max_platform": "NES",
+            },
         }
 
     def list_platforms(self, user_id, criteria):
@@ -161,6 +173,7 @@ class FakeUserCollectionQueryService:
                     "buy_date": "",
                     "buy_location": "",
                     "grade": "",
+                    "wishlist": criteria.wishlist is True,
                 }
             ],
         }

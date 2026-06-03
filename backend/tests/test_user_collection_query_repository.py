@@ -139,12 +139,35 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         count_sql, count_parameters = count_connection.executed_statements[0]
         max_sql, max_parameters = max_connection.executed_statements[0]
         self.assertIn("t_user_collection", count_sql)
-        self.assertIn("WHERE user_id = :user_id", count_sql)
+        self.assertIn("WHERE user_collection.user_id = :user_id", count_sql)
         self.assertIn("JOIN", max_sql)
         self.assertIn("t_platform", max_sql)
         self.assertIn("user_collection.user_id = :user_id", max_sql)
         self.assertEqual({"user_id": 12}, count_parameters)
         self.assertEqual({"user_id": 12}, max_parameters)
+
+    def test_statistics_queries_can_filter_collection_and_wishlist(self):
+        """Verifie le filtrage wishlist des statistiques.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le SQL et les parametres.
+        """
+
+        count_connection = FakeRepositoryConnection(scalar_value=4)
+        max_connection = FakeRepositoryConnection(scalar_value="NES")
+
+        self.assertEqual(4, self.repository.count_collection_games(count_connection, 12, False))
+        self.assertEqual("NES", self.repository.find_max_platform_name(max_connection, 12, True))
+
+        count_sql, count_parameters = count_connection.executed_statements[0]
+        max_sql, max_parameters = max_connection.executed_statements[0]
+        self.assertIn("user_collection.wishlist = :wishlist", count_sql)
+        self.assertIn("user_collection.wishlist = :wishlist", max_sql)
+        self.assertEqual({"user_id": 12, "wishlist": False}, count_parameters)
+        self.assertEqual({"user_id": 12, "wishlist": True}, max_parameters)
 
     def test_find_collection_file_path_reads_user_table_by_id(self):
         """Verifie la lecture du chemin de fichier utilisateur.
@@ -213,6 +236,7 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
                 "platform_name": " Switch ",
                 "platform_id": "5",
                 "release_date": "1986-01-01..1986-12-31",
+                "wishlist": "false",
                 "sort": ["studio_name,desc", "grade,asc"],
             }
         )
@@ -232,14 +256,38 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertIn("platform.id = :platform_id", sql)
         self.assertIn("game.release_date >= :release_date_from", sql)
         self.assertIn("game.release_date <= :release_date_to", sql)
+        self.assertIn("user_collection.wishlist", sql)
+        self.assertIn("user_collection.wishlist = :wishlist", sql)
         self.assertIn("ORDER BY studio.name DESC, NULL ASC, game.name ASC", sql)
         self.assertEqual(12, parameters["user_id"])
         self.assertEqual(5, parameters["platform_id"])
         self.assertEqual("%zelda%", parameters["name_pattern"])
         self.assertEqual("%equipe%", parameters["studio_name_pattern"])
         self.assertEqual("%switch%", parameters["platform_name_pattern"])
+        self.assertFalse(parameters["wishlist"])
         self.assertEqual("1986-01-01", parameters["release_date_from"].isoformat())
         self.assertEqual("1986-12-31", parameters["release_date_to"].isoformat())
+
+    def test_list_games_filters_wishlist_true(self):
+        """Verifie la recherche explicite des souhaits.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre `wishlist=true`.
+        """
+
+        criteria = self.query_parser.parse_games({"wishlist": "true"})
+        connection = FakeRepositoryConnection(rows=[{"id": 3, "name": "Zelda", "wishlist": True}])
+
+        rows = self.repository.list_games(connection, 12, criteria)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual([{"id": 3, "name": "Zelda", "wishlist": True}], rows)
+        self.assertIn("user_collection.wishlist", sql)
+        self.assertIn("user_collection.wishlist = :wishlist", sql)
+        self.assertTrue(parameters["wishlist"])
 
     def test_count_games_uses_same_filters_without_pagination(self):
         """Verifie le compteur des jeux utilisateur filtres.
