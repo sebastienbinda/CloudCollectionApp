@@ -15,58 +15,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AuthApi from "../../services/AuthApi";
 import UserCollectionApi from "../../services/UserCollectionApi";
+import getUserCollectionErrorMessage from "./userCollectionImportMessages";
 import {
+  applyDataRangeDefaults,
   buildImportConfigurationDescription,
+  collectionRequiredFields,
   createDefaultImportConfiguration,
 } from "./importConfigurationBuilder";
-
-/**
- * Convertit une erreur d'import en message utilisateur comprehensible.
- *
- * @param {Error} error - Erreur retournee par le client API.
- * @returns {string} Message affichable par la vue d'onboarding.
- * @throws {void} Ne leve pas d'exception.
- */
-function getUserCollectionErrorMessage(error) {
-  const messagesByCode = {
-    invalid_file: formatInvalidFileMessage(error),
-    file_too_large: "Le fichier selectionne depasse la taille maximale autorisee.",
-    invalid_configuration: formatInvalidConfigurationMessage(error),
-    temporary_file_missing: "Envoyez votre fichier de collection avant de lancer l'import.",
-    collection_already_imported: "Une collection est deja associee a ce compte.",
-    unauthorized: "Votre session ne permet pas d'importer cette collection.",
-    unexpected_error: "L'import de la collection a echoue.",
-  };
-  return messagesByCode[error?.code] || error?.message || messagesByCode.unexpected_error;
-}
-
-/**
- * Formate les erreurs 400 de fichier invalide retournees par le backend.
- *
- * @param {Error} error - Erreur API normalisee.
- * @returns {string} Message affichable dans l'onboarding.
- */
-function formatInvalidFileMessage(error) {
-  const details = Array.isArray(error?.details?.details) ? error.details.details : [];
-  if (!details.length) {
-    return "Le fichier selectionne doit etre un fichier de collection valide.";
-  }
-  return `Le fichier selectionne est invalide : ${details.join(" ")}`;
-}
-
-/**
- * Formate les erreurs 422 de configuration retournees par le backend.
- *
- * @param {Error} error - Erreur API normalisee.
- * @returns {string} Message affichable dans l'onboarding.
- */
-function formatInvalidConfigurationMessage(error) {
-  const details = Array.isArray(error?.details?.details) ? error.details.details : [];
-  if (!details.length) {
-    return "La configuration d'import est invalide.";
-  }
-  return `La configuration d'import est invalide : ${details.join(" ")}`;
-}
 
 /**
  * Indique si le token courant peut ouvrir les vues de collection.
@@ -77,6 +32,26 @@ function formatInvalidConfigurationMessage(error) {
 function canCurrentTokenUseCollectionViews() {
   const profile = String(AuthApi.getAccessTokenPayload().profile || "USER").trim().toUpperCase();
   return profile !== "ADMIN";
+}
+
+/**
+ * Met a jour un layout et applique les colonnes deduites si la plage change.
+ *
+ * @param {Object} layout - Layout courant.
+ * @param {string} fieldName - Champ modifie.
+ * @param {string} value - Nouvelle valeur.
+ * @param {string[]} columnFields - Champs colonnes a pre-remplir.
+ * @returns {Object} Layout mis a jour.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function updatedLayoutValue(layout, fieldName, value, columnFields) {
+  if (fieldName === "dataRange") {
+    return applyDataRangeDefaults(layout, value, columnFields);
+  }
+  return {
+    ...layout,
+    [fieldName]: value,
+  };
 }
 
 /**
@@ -102,6 +77,8 @@ function useUserCollectionOnboarding(options) {
   const [checkedUsername, setCheckedUsername] = useState("");
   const [selectedCollectionFile, setSelectedCollectionFile] = useState(null);
   const [availableImportSheets, setAvailableImportSheets] = useState([]);
+  const [hasAnalyzedImportFile, setHasAnalyzedImportFile] = useState(false);
+  const [importResult, setImportResult] = useState(null);
   const [importConfiguration, setImportConfiguration] = useState(
     createDefaultImportConfiguration
   );
@@ -116,6 +93,8 @@ function useUserCollectionOnboarding(options) {
     setCheckedUsername("");
     setSelectedCollectionFile(null);
     setAvailableImportSheets([]);
+    setHasAnalyzedImportFile(false);
+    setImportResult(null);
     setImportConfiguration(createDefaultImportConfiguration());
     setOnboardingError("");
     setIsCheckingCollection(false);
@@ -175,6 +154,7 @@ function useUserCollectionOnboarding(options) {
 
   const applyAnalyzedSheets = useCallback((sheetNames) => {
     setAvailableImportSheets(sheetNames);
+    setHasAnalyzedImportFile(true);
     setImportConfiguration((currentConfiguration) => {
       if (sheetNames.length <= 1) {
         return {
@@ -204,6 +184,8 @@ function useUserCollectionOnboarding(options) {
   const selectCollectionFile = useCallback(async (collectionFile) => {
     setSelectedCollectionFile(collectionFile || null);
     setAvailableImportSheets([]);
+    setHasAnalyzedImportFile(false);
+    setImportResult(null);
     setOnboardingError("");
     if (!collectionFile) {
       return;
@@ -234,8 +216,15 @@ function useUserCollectionOnboarding(options) {
     setImportConfiguration((currentConfiguration) => ({
       ...currentConfiguration,
       [layoutName]: {
-        ...currentConfiguration[layoutName],
-        [fieldName]: value,
+        ...updatedLayoutValue(
+          currentConfiguration[layoutName],
+          fieldName,
+          value,
+          collectionRequiredFields(
+            currentConfiguration,
+            layoutName === "singleSheetLayout"
+          )
+        ),
       },
     }));
     setOnboardingError("");
@@ -270,7 +259,15 @@ function useUserCollectionOnboarding(options) {
       ...currentConfiguration,
       sheets: currentConfiguration.sheets.map((sheet, index) => (
         index === sheetIndex
-          ? { ...sheet, layout: { ...sheet.layout, [fieldName]: value } }
+          ? {
+            ...sheet,
+            layout: updatedLayoutValue(
+              sheet.layout,
+              fieldName,
+              value,
+              collectionRequiredFields(currentConfiguration, false)
+            ),
+          }
           : sheet
       )),
     }));
@@ -316,11 +313,62 @@ function useUserCollectionOnboarding(options) {
     }));
   }, []);
 
+  const updateWishlistConfiguration = useCallback((fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      wishlist: {
+        ...currentConfiguration.wishlist,
+        [fieldName]: value,
+      },
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateWishlistLayout = useCallback((fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      wishlist: {
+        ...currentConfiguration.wishlist,
+        layout: updatedLayoutValue(
+          currentConfiguration.wishlist.layout,
+          fieldName,
+          value,
+          collectionRequiredFields(
+            { ...currentConfiguration, wishlist: { mode: "none" } },
+            true
+          )
+        ),
+      },
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateWishlistLayoutColumn = useCallback((fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      wishlist: {
+        ...currentConfiguration.wishlist,
+        layout: {
+          ...currentConfiguration.wishlist.layout,
+          columns: {
+            ...currentConfiguration.wishlist.layout.columns,
+            [fieldName]: value,
+          },
+        },
+      },
+    }));
+    setOnboardingError("");
+  }, []);
+
   const importSelectedCollection = useCallback(async () => {
     if (!selectedCollectionFile || importInProgressRef.current) {
       if (!selectedCollectionFile) {
         setOnboardingError("Selectionnez un fichier de collection avant de lancer l'import.");
       }
+      return;
+    }
+    if (!hasAnalyzedImportFile) {
+      setOnboardingError("Attendez la fin de l'analyse du fichier avant de lancer l'import.");
       return;
     }
     const { description, errors } = buildImportConfigurationDescription(importConfiguration);
@@ -333,19 +381,19 @@ function useUserCollectionOnboarding(options) {
     setIsImportingCollection(true);
     setOnboardingError("");
     try {
-      await UserCollectionApi.importCollection(description);
+      const result = await UserCollectionApi.importCollection(description);
       setHasCollection(true);
       setSelectedCollectionFile(null);
+      setImportResult(result);
       reloadOds();
       reloadGames();
-      goHome();
     } catch (error) {
       setOnboardingError(getUserCollectionErrorMessage(error));
     } finally {
       importInProgressRef.current = false;
       setIsImportingCollection(false);
     }
-  }, [goHome, importConfiguration, reloadGames, reloadOds, selectedCollectionFile]);
+  }, [hasAnalyzedImportFile, importConfiguration, reloadGames, reloadOds, selectedCollectionFile]);
 
   useEffect(() => {
     if (hasAccessToken) {
@@ -391,7 +439,9 @@ function useUserCollectionOnboarding(options) {
     hasCollection,
     selectedCollectionFile,
     availableImportSheets,
+    hasAnalyzedImportFile,
     selectedCollectionFileName: selectedCollectionFile?.name || "",
+    importResult,
     importConfiguration,
     onboardingError,
     isCheckingCollection,
@@ -405,6 +455,9 @@ function useUserCollectionOnboarding(options) {
     updateImportSheet,
     updateImportSheetLayout,
     updateImportSheetColumn,
+    updateWishlistConfiguration,
+    updateWishlistLayout,
+    updateWishlistLayoutColumn,
     addImportSheetConfiguration,
     removeImportSheetConfiguration,
     importSelectedCollection,

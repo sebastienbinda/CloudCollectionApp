@@ -243,6 +243,8 @@ class AppViewSwitch {
         selectedPlatform={props.selectedPlatform}
         selectedCollectionFileName={props.selectedCollectionFileName}
         availableImportSheets={props.availableImportSheets}
+        hasAnalyzedImportFile={props.hasAnalyzedImportFile}
+        importResult={props.importResult}
         importConfiguration={props.importConfiguration}
         onboardingError={props.onboardingError}
         isCheckingCollection={props.isCheckingCollection}
@@ -263,6 +265,9 @@ class AppViewSwitch {
         onSheetChange={props.updateImportSheet}
         onSheetLayoutChange={props.updateImportSheetLayout}
         onSheetColumnChange={props.updateImportSheetColumn}
+        onWishlistConfigurationChange={props.updateWishlistConfiguration}
+        onWishlistLayoutChange={props.updateWishlistLayout}
+        onWishlistLayoutColumnChange={props.updateWishlistLayoutColumn}
         onAddSheet={props.addImportSheetConfiguration}
         onRemoveSheet={props.removeImportSheetConfiguration}
         onSubmitImport={props.importSelectedCollection}
