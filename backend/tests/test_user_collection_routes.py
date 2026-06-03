@@ -125,7 +125,13 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         )
 
         self.assertEqual(201, response.status_code)
-        self.assertEqual(4, response.get_json()["associated_games"])
+        payload = response.get_json()
+        self.assertEqual(4, payload["associated_games"])
+        self.assertEqual(0, payload["wishlisted_games"])
+        self.assertEqual(
+            {"invalid_wishlist": 0, "invalid_wishlist_values_found": []},
+            payload["warnings"],
+        )
         self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
         self.assertIsNotNone(FakeUserCollectionImportService.last_call[1])
 

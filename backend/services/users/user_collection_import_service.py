@@ -115,14 +115,18 @@ class UserCollectionImportResult:
         created_studios (int): Nombre de studios crees.
         created_games (int): Nombre de jeux crees.
         associated_games (int): Nombre de jeux associes a l'utilisateur.
+        wishlisted_games (int): Nombre de jeux importes comme souhaits.
+        warnings (dict): Avertissements fonctionnels de l'import.
     """
 
     created_platforms: int
     created_studios: int
     created_games: int
     associated_games: int
+    wishlisted_games: int = 0
+    warnings: dict | None = None
 
-    def to_dict(self) -> dict[str, int]:
+    def to_dict(self) -> dict[str, int | dict]:
         """Convertit le resultat en dictionnaire serialisable.
 
         Args:
@@ -137,6 +141,11 @@ class UserCollectionImportResult:
             "created_studios": self.created_studios,
             "created_games": self.created_games,
             "associated_games": self.associated_games,
+            "wishlisted_games": self.wishlisted_games,
+            "warnings": self.warnings or {
+                "invalid_wishlist": 0,
+                "invalid_wishlist_values_found": [],
+            },
         }
 
 
@@ -322,7 +331,7 @@ class UserCollectionImportService:
                 import_data,
                 file_description.to_dict(),
             )
-            return self._map_result(persistence_result)
+            return self._map_result(persistence_result, import_data)
         except CollectionFileDescriptionValidationError:
             self._delete_copied_file(copied_file_path)
             raise
@@ -431,12 +440,15 @@ class UserCollectionImportService:
     def _map_result(
         self,
         persistence_result: UserCollectionImportPersistenceResult,
+        import_data: CollectionImportData,
     ) -> UserCollectionImportResult:
         return UserCollectionImportResult(
             created_platforms=persistence_result.created_platforms,
             created_studios=persistence_result.created_studios,
             created_games=persistence_result.created_games,
             associated_games=persistence_result.associated_games,
+            wishlisted_games=sum(1 for game in import_data.games if game.wishlist),
+            warnings=import_data.warnings.to_dict(),
         )
 
     @classmethod
