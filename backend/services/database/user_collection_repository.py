@@ -11,8 +11,23 @@
 #
 # Description : repository SQL des associations utilisateur-collection.
 
+from dataclasses import dataclass
+
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
+
+
+@dataclass(frozen=True)
+class UserGameAssociation:
+    """Represente une association utilisateur-jeu a persister.
+
+    Attributes:
+        game_id (int): Identifiant du jeu rattache.
+        wishlist (bool): Indique si le jeu est un souhait.
+    """
+
+    game_id: int
+    wishlist: bool = False
 
 
 class SqlAlchemyUserCollectionRepository:
@@ -30,42 +45,86 @@ class SqlAlchemyUserCollectionRepository:
 
         self.schema_name = schema_name
 
+    def find_user_game_wishlist_values(
+        self,
+        connection: Connection,
+        user_id: int,
+    ) -> dict[int, bool]:
+        """Lit les valeurs wishlist des jeux deja associes a un utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            dict[int, bool]: Valeur wishlist par identifiant de jeu.
+        """
+
+        return {
+            int(row["game_id"]): bool(row["wishlist"])
+            for row in connection.execute(
+                text(
+                    f'SELECT game_id, wishlist FROM "{self.schema_name}".t_user_collection '
+                    "WHERE user_id = :user_id"
+                ),
+                {"user_id": user_id},
+            ).mappings()
+        }
+
     def ensure_user_game_associations(
         self,
         connection: Connection,
         user_id: int,
-        game_ids: list[int],
+        game_associations: list[int | UserGameAssociation],
     ) -> int:
         """Cree les associations utilisateur-jeu manquantes.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
-            game_ids (list[int]): Jeux a rattacher.
+            game_associations (list[int | UserGameAssociation]): Jeux a rattacher.
 
         Returns:
             int: Nombre de jeux associes apres import.
         """
 
-        existing_game_ids = {
-            int(row["game_id"])
-            for row in connection.execute(
-                text(
-                    f'SELECT game_id FROM "{self.schema_name}".t_user_collection '
-                    "WHERE user_id = :user_id"
-                ),
-                {"user_id": user_id},
-            ).mappings()
-        }
-        for game_id in game_ids:
-            if game_id in existing_game_ids:
+        normalized_associations = self._normalize_associations(game_associations)
+        existing_wishlist_values = self.find_user_game_wishlist_values(connection, user_id)
+        existing_game_ids = set(existing_wishlist_values.keys())
+        for association in normalized_associations:
+            if association.game_id in existing_game_ids:
                 continue
             connection.execute(
                 text(
                     f'INSERT INTO "{self.schema_name}".t_user_collection '
-                    "(user_id, game_id, game_additional_name) VALUES (:user_id, :game_id, NULL)"
+                    "(user_id, game_id, game_additional_name, wishlist) "
+                    "VALUES (:user_id, :game_id, NULL, :wishlist)"
                 ),
-                {"user_id": user_id, "game_id": game_id},
+                {
+                    "user_id": user_id,
+                    "game_id": association.game_id,
+                    "wishlist": association.wishlist,
+                },
             )
-            existing_game_ids.add(game_id)
-        return len(game_ids)
+            existing_game_ids.add(association.game_id)
+        return len(normalized_associations)
+
+    def _normalize_associations(
+        self,
+        game_associations: list[int | UserGameAssociation],
+    ) -> list[UserGameAssociation]:
+        """Normalise les associations en conservant `wishlist=false` par defaut.
+
+        Args:
+            game_associations (list[int | UserGameAssociation]): Associations source.
+
+        Returns:
+            list[UserGameAssociation]: Associations normalisees.
+        """
+
+        return [
+            association
+            if isinstance(association, UserGameAssociation)
+            else UserGameAssociation(int(association), False)
+            for association in game_associations
+        ]

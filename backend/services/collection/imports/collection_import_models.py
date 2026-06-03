@@ -47,12 +47,14 @@ class CollectionImportGame:
         platform_name (str): Nom de la plateforme de rattachement.
         studio_name (Optional[str]): Nom du studio developpeur si renseigne.
         release_date (Optional[date]): Date de sortie valide ou `None`.
+        wishlist (bool): Indique si le jeu est un souhait.
     """
 
     name: str
     platform_name: str
     studio_name: Optional[str]
     release_date: Optional[date]
+    wishlist: bool = False
 
 
 @dataclass(frozen=True)

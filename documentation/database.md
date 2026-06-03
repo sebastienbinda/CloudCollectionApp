@@ -131,6 +131,7 @@ instead of replacing existing data.
 | `user_id` | `BIGINT` | No | User who owns the collection entry. |
 | `game_id` | `BIGINT` | No | Game attached to the user. |
 | `game_additional_name` | `VARCHAR(256)` | Yes | Additional game name in the user collection. |
+| `wishlist` | `BOOLEAN` | No | Indicates whether the attached game is a wishlist entry instead of an owned collection entry. |
 
 Constraints:
 
@@ -145,7 +146,8 @@ Indexes:
 Rows are created by the user collection import workflow for every imported game
 attached to the connected user. Existing `(user_id, game_id)` rows are reused and
 must not be treated as errors. `game_additional_name` remains nullable and is not
-filled by the current import workflow.
+filled by the current import workflow. `wishlist` defaults to `false`; existing
+rows are backfilled to `false` by the schema migration.
 
 ### Import Normalization Rules
 

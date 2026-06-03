@@ -31,7 +31,7 @@ from .user_collection_import_repository import (
     UserCollectionImportUserNotFoundError,
 )
 from .user_collection_query_repository import SqlAlchemyUserCollectionQueryRepository
-from .user_collection_repository import SqlAlchemyUserCollectionRepository
+from .user_collection_repository import SqlAlchemyUserCollectionRepository, UserGameAssociation
 from .user_repository import SqlAlchemyUserRepository
 
 __all__ = [
@@ -55,4 +55,5 @@ __all__ = [
     "UserCollection",
     "UserCollectionImportPersistenceResult",
     "UserCollectionImportUserNotFoundError",
+    "UserGameAssociation",
 ]

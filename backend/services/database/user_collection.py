@@ -13,7 +13,7 @@
 
 from typing import Optional
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database_model_base import DatabaseModelBase
@@ -27,6 +27,7 @@ class UserCollection(DatabaseModelBase):
         game_id (int): Identifiant du jeu rattache a la collection.
         game_additional_name (Optional[str]): Nom complementaire du jeu dans la
             collection utilisateur.
+        wishlist (bool): Indique si l'association represente un souhait.
     """
 
     __tablename__ = "t_user_collection"
@@ -34,3 +35,8 @@ class UserCollection(DatabaseModelBase):
     user_id: Mapped[int] = mapped_column(ForeignKey("t_user.id"), primary_key=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("t_game.id"), primary_key=True)
     game_additional_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    wishlist: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("false"),
+    )
