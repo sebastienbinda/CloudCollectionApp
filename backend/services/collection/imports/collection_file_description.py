@@ -11,7 +11,7 @@
 #
 # Description : DTOs du contrat de configuration d'import de collection.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
@@ -23,12 +23,65 @@ class CollectionImportField(str, Enum):
     PLATFORM = "platform"
     STUDIO = "studio"
     RELEASE_DATE = "release_date"
+    WISHLIST = "wishlist"
+
+
+class WishlistImportMode(str, Enum):
+    """Enumere les modes de lecture de l'information wishlist."""
+
+    NONE = "none"
+    SHEET = "sheet"
+    COLUMN = "column"
 
 
 class CollectionFileType(str, Enum):
     """Enumere les formats de fichiers de collection pris en charge."""
 
     LIBREOFFICE_ODS = "libreoffice_ods"
+
+
+@dataclass(frozen=True)
+class WishlistImportConfiguration:
+    """Represente la configuration de lecture de la wishlist.
+
+    Attributes:
+        mode (WishlistImportMode): Mode de lecture de la wishlist.
+        sheet_name (Optional[str]): Onglet dedie aux souhaits en mode `sheet`.
+        layout (Optional[CollectionSheetLayout]): Layout de l'onglet dedie.
+    """
+
+    mode: WishlistImportMode
+    sheet_name: Optional[str] = None
+    layout: Optional["CollectionSheetLayout"] = None
+
+    @classmethod
+    def none(cls) -> "WishlistImportConfiguration":
+        """Construit une configuration sans information wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            WishlistImportConfiguration: Configuration `mode=none`.
+        """
+
+        return cls(WishlistImportMode.NONE)
+
+    def to_dict(self) -> dict:
+        """Convertit la configuration wishlist en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Representation JSON de la configuration wishlist.
+        """
+
+        payload = {"mode": self.mode.value}
+        if self.mode == WishlistImportMode.SHEET and self.layout is not None:
+            payload["sheet_name"] = self.sheet_name or ""
+            payload.update(self.layout.to_dict(include_included_sheets=False))
+        return payload
 
 
 @dataclass(frozen=True)
@@ -146,11 +199,13 @@ class CollectionFileDescription:
 
     Attributes:
         file_type (CollectionFileType): Type de fichier cible.
+        wishlist (WishlistImportConfiguration): Configuration wishlist valide.
         single_sheet_conf (Optional[CollectionSheetLayout]): Configuration feuille unique.
         multiple_sheets_conf (Optional[CollectionMultipleSheetsConfiguration]): Configuration multi-onglets.
     """
 
     file_type: CollectionFileType
+    wishlist: WishlistImportConfiguration = field(default_factory=WishlistImportConfiguration.none)
     single_sheet_conf: Optional[CollectionSheetLayout] = None
     multiple_sheets_conf: Optional[CollectionMultipleSheetsConfiguration] = None
 
@@ -165,6 +220,7 @@ class CollectionFileDescription:
         """
 
         payload = {"file_type": self.file_type.value}
+        payload["wishlist"] = self.wishlist.to_dict()
         if self.single_sheet_conf is not None:
             payload["single_sheet_conf"] = self.single_sheet_conf.to_dict(
                 include_included_sheets=False

@@ -21,7 +21,9 @@ from .collection_file_description import (
     CollectionMultipleSheetsConfiguration,
     CollectionPerSheetConfiguration,
     CollectionSheetLayout,
+    WishlistImportConfiguration,
 )
+from .wishlist_import_configuration_validator import WishlistImportConfigurationValidator
 from .spreadsheet_cell_reference import SpreadsheetCellReferenceParser
 
 
@@ -55,17 +57,20 @@ class CollectionFileDescriptionValidator:
     def __init__(
         self,
         cell_reference_parser: Optional[SpreadsheetCellReferenceParser] = None,
+        wishlist_validator: Optional[WishlistImportConfigurationValidator] = None,
     ):
         """Initialise le validateur de description.
 
         Args:
             cell_reference_parser (Optional[SpreadsheetCellReferenceParser]): Parser tableur.
+            wishlist_validator (Optional[WishlistImportConfigurationValidator]): Validateur wishlist.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.cell_reference_parser = cell_reference_parser or SpreadsheetCellReferenceParser()
+        self.wishlist_validator = wishlist_validator or WishlistImportConfigurationValidator()
 
     def parse_json_text(
         self,
@@ -118,9 +123,16 @@ class CollectionFileDescriptionValidator:
             raise CollectionFileDescriptionValidationError(["JSON invalide."])
 
         file_type = self._parse_file_type(payload.get("file_type"), errors)
+        wishlist_payload = payload.get("wishlist")
         single_sheet_conf = payload.get("single_sheet_conf")
         multiple_sheets_conf = payload.get("multiple_sheets_conf")
         self._validate_top_level_modes(single_sheet_conf, multiple_sheets_conf, errors)
+        wishlist_configuration = self.wishlist_validator.build(
+            wishlist_payload,
+            errors,
+            available_sheet_names,
+            self._build_layout,
+        )
 
         single_sheet = None
         multiple_sheets = None
@@ -138,11 +150,19 @@ class CollectionFileDescriptionValidator:
                 errors,
                 available_sheet_names,
             )
+        self.wishlist_validator.validate_collection_configuration(
+            wishlist_configuration,
+            wishlist_payload,
+            single_sheet,
+            multiple_sheets,
+            errors,
+        )
 
         if errors:
             raise CollectionFileDescriptionValidationError(errors)
         return CollectionFileDescription(
             file_type=file_type or CollectionFileType.LIBREOFFICE_ODS,
+            wishlist=wishlist_configuration or WishlistImportConfiguration.none(),
             single_sheet_conf=single_sheet,
             multiple_sheets_conf=multiple_sheets,
         )
@@ -315,10 +335,14 @@ class CollectionFileDescriptionValidator:
         if value is None:
             return None
         try:
-            return CollectionImportField(value)
+            field = CollectionImportField(value)
         except ValueError:
             errors.append(f"{path} inconnu.")
             return None
+        if field == CollectionImportField.WISHLIST:
+            errors.append(f"{path} inconnu.")
+            return None
+        return field
 
     def _parse_data_range(
         self,

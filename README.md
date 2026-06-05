@@ -130,7 +130,11 @@ Structure fonctionnelle attendue pour l'import :
   pour proposer les onglets disponibles ;
 - un onglet par plateforme ou une configuration explicite des onglets ;
 - en mode multi-onglets avec layout partage, l'utilisateur peut lister les
-  onglets a importer ou les onglets a exclure.
+  onglets a importer ou les onglets a exclure ;
+- l'import peut lire une wishlist depuis aucun emplacement, un onglet dedie ou
+  une colonne dediee ;
+- apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
+  collection.
 
 ## Lancement Local
 
@@ -240,6 +244,7 @@ Documents fonctionnels et techniques principaux :
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.
 - `documentation/bibliotheque.md` : consultation publique du referentiel commun.
+- `documentation/collection.md` : consultation SQL de la collection utilisateur.
 - `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
 - `documentation/register.md` : inscription utilisateur et validation email.
 - `documentation/users.md` : administration des utilisateurs.

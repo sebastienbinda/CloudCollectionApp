@@ -47,12 +47,55 @@ class CollectionImportGame:
         platform_name (str): Nom de la plateforme de rattachement.
         studio_name (Optional[str]): Nom du studio developpeur si renseigne.
         release_date (Optional[date]): Date de sortie valide ou `None`.
+        wishlist (bool): Indique si le jeu est un souhait.
     """
 
     name: str
     platform_name: str
     studio_name: Optional[str]
     release_date: Optional[date]
+    wishlist: bool = False
+
+
+@dataclass(frozen=True)
+class CollectionImportWarnings:
+    """Regroupe les avertissements fonctionnels produits par l'import.
+
+    Attributes:
+        invalid_wishlist (int): Nombre de lignes ignorees pour valeur wishlist invalide.
+        invalid_wishlist_values_found (list[str]): Valeurs wishlist invalides distinctes.
+    """
+
+    invalid_wishlist: int = 0
+    invalid_wishlist_values_found: Optional[list[str]] = None
+
+    def __post_init__(self):
+        """Initialise les listes optionnelles de warnings.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: La methode normalise les valeurs internes.
+        """
+
+        if self.invalid_wishlist_values_found is None:
+            object.__setattr__(self, "invalid_wishlist_values_found", [])
+
+    def to_dict(self) -> dict[str, int | list[str]]:
+        """Convertit les warnings en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict[str, int | list[str]]: Warnings d'import.
+        """
+
+        return {
+            "invalid_wishlist": self.invalid_wishlist,
+            "invalid_wishlist_values_found": list(self.invalid_wishlist_values_found),
+        }
 
 
 @dataclass(frozen=True)
@@ -63,8 +106,23 @@ class CollectionImportData:
         platforms (list[CollectionImportPlatform]): Plateformes importables.
         studios (list[CollectionImportStudio]): Studios presents dans les jeux.
         games (list[CollectionImportGame]): Jeux presents dans le fichier.
+        warnings (CollectionImportWarnings): Avertissements fonctionnels d'import.
     """
 
     platforms: list[CollectionImportPlatform]
     studios: list[CollectionImportStudio]
     games: list[CollectionImportGame]
+    warnings: Optional[CollectionImportWarnings] = None
+
+    def __post_init__(self):
+        """Initialise les warnings optionnels.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: La methode normalise les valeurs internes.
+        """
+
+        if self.warnings is None:
+            object.__setattr__(self, "warnings", CollectionImportWarnings())

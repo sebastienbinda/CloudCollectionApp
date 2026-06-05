@@ -1,4 +1,4 @@
-Ajouter l'import de la wishlist si défini (conf lors de l'import par le user qui indique l'onglet).
+Ajouter l'import de la wishlist si défini.
 
 Ajouter la page de consultation de la wishlist
 

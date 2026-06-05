@@ -58,16 +58,20 @@ class CollectionRoutesTest(BaseAppRoutesTest):
             headers=headers,
         ).get_json()
         games = self.client.get(
-            "/collections/videogames/games/search?name=mario&platform_id=1&sort=studio_name,desc",
+            "/collections/videogames/games/search?name=mario&platform_id=1&wishlist=false&sort=studio_name,desc",
             headers=headers,
         ).get_json()
 
         self.assertEqual(42, statistics["total"])
         self.assertEqual("Switch", statistics["max_platform"])
+        self.assertEqual(42, statistics["collection"]["total"])
+        self.assertEqual(3, statistics["wishlist"]["total"])
         self.assertEqual("Switch", platforms["platforms"][0]["name"])
         self.assertEqual(25, platforms["platforms"][0]["nb_games"])
         self.assertEqual("Mario Kart", games["games"][0]["name"])
         self.assertEqual(1, games["games"][0]["platform_id"])
+        self.assertFalse(games["games"][0]["wishlist"])
+        self.assertFalse(FakeUserCollectionQueryService.last_games_criteria.wishlist)
         self.assertEqual("ecole", FakeUserCollectionQueryService.last_platforms_criteria.normalized_name)
         self.assertEqual(("studio_name", "desc"), (
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].column,

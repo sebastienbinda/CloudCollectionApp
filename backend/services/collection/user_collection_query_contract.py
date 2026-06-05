@@ -32,12 +32,14 @@ class UserCollectionPlatformQueryCriteria:
         page_request (LibraryPageRequest): Pagination normalisee.
         name (str): Filtre `name` nettoye.
         normalized_name (str): Filtre `name` sans casse ni accents.
+        wishlist (bool | None): Filtre wishlist, ou aucun filtre si absent.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises.
     """
 
     page_request: LibraryPageRequest
     name: str
     normalized_name: str
+    wishlist: bool | None
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -57,6 +59,7 @@ class UserCollectionGameQueryCriteria:
         has_invalid_platform_id (bool): Indique un identifiant plateforme invalide.
         release_date_from (date | None): Debut de plage de date de sortie.
         release_date_to (date | None): Fin de plage de date de sortie.
+        wishlist (bool | None): Filtre wishlist, ou aucun filtre si absent.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises.
     """
 
@@ -71,6 +74,7 @@ class UserCollectionGameQueryCriteria:
     has_invalid_platform_id: bool
     release_date_from: date | None
     release_date_to: date | None
+    wishlist: bool | None
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -124,6 +128,7 @@ class UserCollectionQueryParser:
             page_request=page_request,
             name=self._parse_text(query_parameters, "name"),
             normalized_name=self._parse_normalized_text(query_parameters, "name"),
+            wishlist=self._parse_wishlist(self._get_first_value(query_parameters, "wishlist")),
             sort_rules=self._parse_sort_rules(
                 self.PLATFORM_SORT_COLUMNS,
                 self._get_all_values(query_parameters, "sort"),
@@ -167,6 +172,7 @@ class UserCollectionQueryParser:
             has_invalid_platform_id=has_invalid_platform_id,
             release_date_from=release_date_from,
             release_date_to=release_date_to,
+            wishlist=self._parse_wishlist(self._get_first_value(query_parameters, "wishlist")),
             sort_rules=self._parse_sort_rules(
                 self.GAME_SORT_COLUMNS,
                 self._get_all_values(query_parameters, "sort"),
@@ -305,6 +311,30 @@ class UserCollectionQueryParser:
             return date.fromisoformat(value.strip())
         except ValueError:
             return None
+
+    def _parse_wishlist(self, value: Any) -> bool | None:
+        """Parse le filtre booleen `wishlist`.
+
+        Args:
+            value (Any): Valeur brute du parametre `wishlist`.
+
+        Returns:
+            bool | None: Filtre booleen, ou `None` si le parametre est absent ou invalide.
+
+        Raises:
+            Aucun.
+        """
+
+        if value is True:
+            return True
+        if value is False:
+            return False
+        normalized_value = str(value or "").strip().lower()
+        if normalized_value == "true":
+            return True
+        if normalized_value == "false":
+            return False
+        return None
 
     def _get_first_value(
         self,

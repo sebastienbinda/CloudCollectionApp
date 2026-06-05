@@ -28,7 +28,7 @@ from .user_collection_file_repository import (
     UserCollectionAlreadyImportedError,
     UserCollectionImportUserNotFoundError,
 )
-from .user_collection_repository import SqlAlchemyUserCollectionRepository
+from .user_collection_repository import SqlAlchemyUserCollectionRepository, UserGameAssociation
 
 
 @dataclass(frozen=True)
@@ -134,7 +134,7 @@ class SqlAlchemyUserCollectionImportRepository:
             self.user_file_repository.lock_user_without_collection(connection, user_id)
             platform_ids, created_platforms = self._ensure_platforms(connection, import_data)
             studio_ids, created_studios = self._ensure_studios(connection, import_data)
-            game_ids, created_games = self._ensure_games(
+            game_associations, created_games = self._ensure_games(
                 connection,
                 import_data,
                 platform_ids,
@@ -143,7 +143,7 @@ class SqlAlchemyUserCollectionImportRepository:
             associated_games = self.user_collection_repository.ensure_user_game_associations(
                 connection,
                 user_id,
-                game_ids,
+                game_associations,
             )
             self.user_file_repository.update_collection_file(
                 connection,
@@ -217,7 +217,7 @@ class SqlAlchemyUserCollectionImportRepository:
         import_data: CollectionImportData,
         platform_ids: dict[str, int],
         studio_ids: dict[str, int],
-    ) -> tuple[list[int], int]:
+    ) -> tuple[list[UserGameAssociation], int]:
         """Cree les jeux absents et retourne leurs identifiants.
 
         Args:
@@ -227,11 +227,11 @@ class SqlAlchemyUserCollectionImportRepository:
             studio_ids (dict[str, int]): Studios par cle normalisee.
 
         Returns:
-            tuple[list[int], int]: Identifiants des jeux importes et nombre de creations.
+            tuple[list[UserGameAssociation], int]: Associations importees et nombre de creations.
         """
 
         existing_game_ids = self.game_repository.load_ids_by_key(connection)
-        game_ids: list[int] = []
+        game_associations: list[UserGameAssociation] = []
         created_count = 0
         for game in import_data.games:
             game_key = self.game_repository.game_key(game)
@@ -243,5 +243,7 @@ class SqlAlchemyUserCollectionImportRepository:
                     studio_ids.get(self.name_normalizer.comparison_key(game.studio_name)),
                 )
                 created_count += 1
-            game_ids.append(existing_game_ids[game_key])
-        return game_ids, created_count
+            game_associations.append(
+                UserGameAssociation(existing_game_ids[game_key], game.wishlist)
+            )
+        return game_associations, created_count

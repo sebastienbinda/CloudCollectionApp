@@ -40,6 +40,22 @@ class DatabaseConfigurationTest(unittest.TestCase):
             set(DatabaseModelBase.metadata.tables.keys()),
         )
 
+    def test_user_collection_model_exposes_wishlist_column(self):
+        """Verifie que le modele ORM expose la colonne wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la colonne et son defaut.
+        """
+
+        table = DatabaseModelBase.metadata.tables["t_user_collection"]
+
+        self.assertIn("wishlist", table.columns)
+        self.assertFalse(table.columns["wishlist"].nullable)
+        self.assertEqual("false", str(table.columns["wishlist"].server_default.arg))
+
     def test_from_environment_reads_database_settings(self):
         """Verifie la lecture des variables d'environnement SQL.
 

@@ -203,8 +203,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260525_0005"], script_directory.get_heads())
-        self.assertEqual(2, len(revisions))
+        self.assertEqual(["20260603_0006"], script_directory.get_heads())
+        self.assertEqual(3, len(revisions))
+        self.assertEqual("20260525_0005", revisions_by_id["20260603_0006"].down_revision)
         self.assertEqual("20260522_0004", revisions_by_id["20260525_0005"].down_revision)
         self.assertIsNone(revisions_by_id["20260522_0004"].down_revision)
 
@@ -233,6 +234,31 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn('["platform"]', migration_source)
         self.assertIn('"ix_t_game_developer"', migration_source)
         self.assertIn('["developer"]', migration_source)
+
+    def test_wishlist_migration_declares_expected_column_and_backfill(self):
+        """Verifie que la migration wishlist preserve les donnees existantes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la colonne et le backfill.
+        """
+
+        migration_path = (
+            Path(__file__).resolve().parents[1]
+            / "migrations"
+            / "versions"
+            / "20260603_0006_add_user_collection_wishlist.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn('"wishlist"', migration_source)
+        self.assertIn("sa.Boolean()", migration_source)
+        self.assertIn("server_default=sa.text(\"false\")", migration_source)
+        self.assertIn("nullable=False", migration_source)
+        self.assertIn("SET wishlist = false WHERE wishlist IS NULL", migration_source)
+        self.assertIn("op.drop_column", migration_source)
 
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.

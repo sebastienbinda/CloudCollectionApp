@@ -31,6 +31,8 @@ function UserCollectionOnboardingView({
   selectedPlatform,
   selectedCollectionFileName,
   availableImportSheets,
+  hasAnalyzedImportFile,
+  importResult,
   importConfiguration,
   onboardingError,
   isCheckingCollection,
@@ -51,6 +53,9 @@ function UserCollectionOnboardingView({
   onSheetChange,
   onSheetLayoutChange,
   onSheetColumnChange,
+  onWishlistConfigurationChange,
+  onWishlistLayoutChange,
+  onWishlistLayoutColumnChange,
   onAddSheet,
   onRemoveSheet,
   onSubmitImport,
@@ -124,11 +129,14 @@ function UserCollectionOnboardingView({
           <article>
             <span>3</span>
             <h2>Consulter</h2>
-            <p>Apres succes, Ma collection s'ouvre automatiquement.</p>
+            <p>Apres succes, ouvrez Ma collection depuis le resume.</p>
           </article>
         </div>
 
-        <form className="collectionImportForm" onSubmit={handleSubmit}>
+        {importResult ? (
+          <ImportSummary result={importResult} onOpenHome={onOpenHome} />
+        ) : (
+          <form className="collectionImportForm" onSubmit={handleSubmit}>
           <label>
             Fichier de collection
             <input type="file" accept=".ods" onChange={handleFileChange} disabled={isBusy} />
@@ -136,31 +144,82 @@ function UserCollectionOnboardingView({
           {selectedCollectionFileName ? (
             <p className="collectionSelectedFile">{selectedCollectionFileName}</p>
           ) : null}
-          <ImportConfigurationFields
-            configuration={importConfiguration}
-            availableSheetNames={availableImportSheets}
-            disabled={isBusy}
-            onConfigurationChange={onConfigurationChange}
-            onLayoutChange={onLayoutChange}
-            onLayoutColumnChange={onLayoutColumnChange}
-            onSheetChange={onSheetChange}
-            onSheetLayoutChange={onSheetLayoutChange}
-            onSheetColumnChange={onSheetColumnChange}
-            onAddSheet={onAddSheet}
-            onRemoveSheet={onRemoveSheet}
-          />
+          <label>
+            Type de fichier
+            <select value={importConfiguration.fileType} disabled>
+              <option value="libreoffice_ods">LibreOffice ODS</option>
+            </select>
+          </label>
+          {hasAnalyzedImportFile ? (
+            <ImportConfigurationFields
+              configuration={importConfiguration}
+              availableSheetNames={availableImportSheets}
+              disabled={isBusy}
+              onConfigurationChange={onConfigurationChange}
+              onLayoutChange={onLayoutChange}
+              onLayoutColumnChange={onLayoutColumnChange}
+              onSheetChange={onSheetChange}
+              onSheetLayoutChange={onSheetLayoutChange}
+              onSheetColumnChange={onSheetColumnChange}
+              onWishlistConfigurationChange={onWishlistConfigurationChange}
+              onWishlistLayoutChange={onWishlistLayoutChange}
+              onWishlistLayoutColumnChange={onWishlistLayoutColumnChange}
+              onAddSheet={onAddSheet}
+              onRemoveSheet={onRemoveSheet}
+            />
+          ) : null}
           {onboardingError ? <p className="error">{onboardingError}</p> : null}
           {isCheckingCollection ? <ProgressBar label="Verification de votre collection" /> : null}
           {isAnalyzingCollection ? <ProgressBar label="Analyse de votre fichier" /> : null}
           {isImportingCollection ? <ProgressBar label="Import de votre collection" /> : null}
           <div className="formActions">
-            <button type="submit" disabled={isBusy || !selectedCollectionFileName}>
+            <button type="submit" disabled={isBusy || !selectedCollectionFileName || !hasAnalyzedImportFile}>
               {isImportingCollection ? "Import..." : "Importer"}
             </button>
           </div>
-        </form>
+          </form>
+        )}
       </section>
     </main>
+  );
+}
+
+/**
+ * Affiche le resume d'un import termine.
+ *
+ * @param {Object} props - Resultat d'import et callback de navigation.
+ * @returns {import("react").JSX.Element} Resume d'import.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function ImportSummary({ result, onOpenHome }) {
+  const counters = [
+    ["Plateformes creees", result.created_platforms],
+    ["Studios crees", result.created_studios],
+    ["Jeux crees", result.created_games],
+    ["Jeux associes", result.associated_games],
+    ["Souhaits importes", result.wishlisted_games],
+  ];
+  const invalidWishlist = result.warnings?.invalid_wishlist || 0;
+  return (
+    <section className="importSummary" aria-label="Resume de l'import">
+      <h2>Import termine</h2>
+      <dl>
+        {counters.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{Number(value || 0)}</dd>
+          </div>
+        ))}
+      </dl>
+      {invalidWishlist ? (
+        <p className="warningText">
+          {invalidWishlist} ligne(s) wishlist ignoree(s).
+        </p>
+      ) : null}
+      <button type="button" onClick={onOpenHome}>
+        Ouvrir Ma collection
+      </button>
+    </section>
   );
 }
 

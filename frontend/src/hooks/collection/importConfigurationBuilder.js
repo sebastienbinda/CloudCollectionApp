@@ -46,6 +46,11 @@ function createDefaultImportConfiguration() {
     multipleSheets: false,
     sharedLayout: true,
     sheetInformation: SHEET_INFORMATION,
+    wishlist: {
+      mode: "none",
+      sheetName: "",
+      layout: createDefaultLayout(true),
+    },
     singleSheetLayout: createDefaultLayout(true),
     sharedSheetLayout: {
       ...createDefaultLayout(false),
@@ -72,15 +77,24 @@ function createDefaultImportConfiguration() {
 function buildImportConfigurationDescription(configuration) {
   const errors = [];
   const fileType = "libreoffice_ods";
+  const wishlist = buildWishlistConfiguration(configuration, errors);
   if (!configuration.multipleSheets) {
-    const layout = buildLayout(configuration.singleSheetLayout, REQUIRED_FIELDS, errors);
+    const layout = buildLayout(
+      configuration.singleSheetLayout,
+      collectionRequiredFields(configuration, true),
+      errors
+    );
     return {
-      description: errors.length ? null : { file_type: fileType, single_sheet_conf: layout },
+      description: errors.length ? null : {
+        file_type: fileType,
+        wishlist,
+        single_sheet_conf: layout,
+      },
       errors,
     };
   }
   if (configuration.sharedLayout) {
-    const requiredFields = REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION);
+    const requiredFields = collectionRequiredFields(configuration, false);
     const layout = buildLayout(configuration.sharedSheetLayout, requiredFields, errors);
     const selectionMode = configuration.sharedSheetLayout.sheetSelectionMode;
     if (selectionMode === "excluded") {
@@ -97,6 +111,7 @@ function buildImportConfigurationDescription(configuration) {
     return {
       description: errors.length ? null : {
         file_type: fileType,
+        wishlist,
         multiple_sheets_conf: {
           sheet_information: SHEET_INFORMATION,
           shared_layout: layout,
@@ -110,7 +125,7 @@ function buildImportConfigurationDescription(configuration) {
     if (!sheetName) {
       errors.push(`Renseignez le nom de l'onglet ${index + 1}.`);
     }
-    const requiredFields = REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION);
+    const requiredFields = collectionRequiredFields(configuration, false);
     return {
       sheet_name: sheetName,
       sheet_information: SHEET_INFORMATION,
@@ -120,9 +135,54 @@ function buildImportConfigurationDescription(configuration) {
   return {
     description: errors.length ? null : {
       file_type: fileType,
+      wishlist,
       multiple_sheets_conf: { sheets },
     },
     errors,
+  };
+}
+
+/**
+ * Retourne les champs requis pour les layouts collection.
+ *
+ * @param {Object} configuration - Etat frontend de configuration.
+ * @param {boolean} includePlatformColumn - Indique si le layout porte la plateforme.
+ * @returns {string[]} Champs requis dans `column_information`.
+ */
+function collectionRequiredFields(configuration, includePlatformColumn) {
+  const fields = includePlatformColumn
+    ? [...REQUIRED_FIELDS]
+    : REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION);
+  if (configuration.wishlist.mode === "column") {
+    fields.push("wishlist");
+  }
+  return fields;
+}
+
+/**
+ * Construit la section wishlist du contrat backend.
+ *
+ * @param {Object} configuration - Etat frontend de configuration.
+ * @param {string[]} errors - Erreurs UX a enrichir.
+ * @returns {Object} Configuration wishlist serialisable.
+ */
+function buildWishlistConfiguration(configuration, errors) {
+  const mode = configuration.wishlist?.mode || "none";
+  if (mode === "none" || mode === "column") {
+    return { mode };
+  }
+  if (mode !== "sheet") {
+    errors.push("Selectionnez un mode wishlist valide.");
+    return { mode: "none" };
+  }
+  const sheetName = String(configuration.wishlist.sheetName || "").trim();
+  if (!sheetName) {
+    errors.push("Renseignez l'onglet wishlist.");
+  }
+  return {
+    mode,
+    sheet_name: sheetName,
+    ...buildLayout(configuration.wishlist.layout, REQUIRED_FIELDS, errors),
   };
 }
 
@@ -175,8 +235,89 @@ function splitSheetNames(value) {
     .filter(Boolean);
 }
 
+/**
+ * Applique les valeurs deduites d'une plage tableur a un layout.
+ *
+ * @param {Object} layout - Layout courant.
+ * @param {string} dataRange - Plage saisie.
+ * @param {string[]} columnFields - Champs a pre-remplir dans l'ordre.
+ * @returns {Object} Layout enrichi.
+ */
+function applyDataRangeDefaults(layout, dataRange, columnFields) {
+  const parsedRange = parseDataRange(dataRange);
+  if (!parsedRange) {
+    return { ...layout, dataRange };
+  }
+  const nextColumns = { ...layout.columns };
+  parsedRange.columns.slice(0, columnFields.length).forEach((column, index) => {
+    nextColumns[columnFields[index]] = column;
+  });
+  return {
+    ...layout,
+    dataRange,
+    headerRow: String(parsedRange.headerRow),
+    columns: nextColumns,
+  };
+}
+
+/**
+ * Parse une plage simple de type `A1:D200`.
+ *
+ * @param {string} dataRange - Plage saisie.
+ * @returns {{headerRow: number, columns: string[]}|null} Details deduits.
+ */
+function parseDataRange(dataRange) {
+  const match = String(dataRange || "").trim().toUpperCase().match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+  if (!match) {
+    return null;
+  }
+  const startColumnIndex = columnNameToIndex(match[1]);
+  const endColumnIndex = columnNameToIndex(match[3]);
+  if (startColumnIndex > endColumnIndex) {
+    return null;
+  }
+  return {
+    headerRow: Number.parseInt(match[2], 10),
+    columns: Array.from(
+      { length: endColumnIndex - startColumnIndex + 1 },
+      (_, index) => columnIndexToName(startColumnIndex + index)
+    ),
+  };
+}
+
+/**
+ * Convertit une colonne tableur en index.
+ *
+ * @param {string} columnName - Nom de colonne.
+ * @returns {number} Index base 1.
+ */
+function columnNameToIndex(columnName) {
+  return columnName.split("").reduce((total, character) => (
+    total * 26 + character.charCodeAt(0) - 64
+  ), 0);
+}
+
+/**
+ * Convertit un index en colonne tableur.
+ *
+ * @param {number} index - Index base 1.
+ * @returns {string} Nom de colonne.
+ */
+function columnIndexToName(index) {
+  let value = index;
+  let columnName = "";
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    columnName = String.fromCharCode(65 + remainder) + columnName;
+    value = Math.floor((value - 1) / 26);
+  }
+  return columnName;
+}
+
 export {
   REQUIRED_FIELDS,
+  applyDataRangeDefaults,
+  collectionRequiredFields,
   createDefaultImportConfiguration,
   buildImportConfigurationDescription,
 };

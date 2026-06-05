@@ -18,7 +18,12 @@ database structure in `documentation/database.md`, and frontend navigation in
   two paths.
 - The import page only collects the ODS file and displays interaction state.
   Validation, storage, deduplication and persistence belong to the backend.
-- After a successful import, the frontend must redirect to `/collection`.
+- Before file analysis, the import page displays only the upload control and
+  file type. The detailed collection and wishlist configuration is displayed
+  after `POST /api/users/import/analyze/<file_type>` succeeds.
+- After a successful import, the frontend displays an import summary using the
+  backend counters and offers a link to `/collection`; it must not redirect
+  automatically.
 
 ## Backend API Contract
 
@@ -35,7 +40,7 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `POST /api/users/import/analyze/<file_type>` reads the temporary file and
   returns its sheet names.
 - `POST /api/users/import` must use `application/json` and receives only the
-  import configuration.
+  import configuration, including a mandatory top-level `wishlist` section.
 - Both routes require a Bearer token with at least profile `USER`.
 - The connected user must always be derived from the Bearer token. Do not accept
   a user id from the request payload, URL or query string.
@@ -68,6 +73,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `t_user_collection` rows are inserted only when missing. Existing
   `(user_id, game_id)` rows are not errors.
 - `game_additional_name` is not filled by the current import workflow.
+- `t_user_collection.wishlist` is persisted for every inserted association:
+  `false` means an owned collection entry and `true` means a wishlist entry.
 
 ## ODS Import Rules
 
@@ -85,6 +92,30 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Empty or invalid game release dates must be persisted as `NULL`, not as
   invalid text values.
 - The editor field remains empty until a dedicated rule is specified.
+
+## Wishlist Import Rules
+
+- The import payload must include `wishlist.mode`.
+- `wishlist.mode = "none"` means every imported row is persisted with
+  `wishlist=false`.
+- `wishlist.mode = "sheet"` reads a dedicated sheet with its own `sheet_name`,
+  `data_range`, `header_row` and `column_information`; every valid row from
+  that sheet is imported with `wishlist=true`.
+- `wishlist.mode = "column"` reads a `wishlist` column from every collection
+  layout.
+- Accepted wishlist column values are `Oui/Non`, `O/N`, `True/False`,
+  `Yes/No` and `Y/N`, case-insensitively.
+- An empty wishlist value in column mode is treated as `wishlist=false`.
+- An invalid wishlist value in column mode does not roll back the import; the
+  row is ignored, a warning is logged, and the import response exposes the
+  warning count and distinct invalid values.
+- If the same game appears both in the collection and in a dedicated wishlist
+  sheet, the collection value wins and the final association is
+  `wishlist=false`.
+- If duplicate rows appear inside wishlist input, the first normalized game is
+  kept.
+- If duplicate rows in column mode contain `wishlist=true` and `wishlist=false`,
+  the final retained row is `wishlist=true`.
 
 ## Normalization Rules
 
@@ -112,7 +143,11 @@ database structure in `documentation/database.md`, and frontend navigation in
   `Content-Type` header on `POST /api/users/import/file/<file_type>`.
 - Analyze the uploaded temporary file before final import and use the returned
   sheet names to prefill single-sheet or multi-sheet configuration.
+- Prefill `header_row` from the first row of the selected data range and prefill
+  mapping columns from the range columns in order.
 - Send the final import configuration as JSON to `POST /api/users/import`.
+- Display the successful import summary and let the user open `/collection`
+  explicitly instead of redirecting immediately.
 - The import view must not duplicate backend validation rules beyond basic file
   selection UX.
 - Automatic backend calls must use the shared backend availability guard so a
@@ -126,6 +161,7 @@ When changing this feature, update or run tests covering:
 - existing collection status returns `has_collection: true`;
 - unauthenticated access is rejected;
 - successful import returns counters;
+- successful import returns `wishlisted_games` and `warnings`;
 - duplicate import returns `409`;
 - invalid file returns `400`;
 - oversized file returns `413`;

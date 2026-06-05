@@ -81,23 +81,29 @@ Use the following domain folders for new or modified hooks:
   `POST /api/users/import/analyze/<file_type>` to prefill sheet choices, then
   `POST /api/users/import` with JSON configuration. The backend owns validation
   and persistence decisions.
-- Redirect to `/collection` only after a successful import or when the status route
-  confirms `has_collection: true`.
+- Display the import summary after a successful import and expose a user action
+  to open `/collection`. Redirect to `/collection` only when the status route
+  confirms `has_collection: true` outside the just-finished import workflow.
 
 ### `hooks/home`
 
 - Own connected-user collection statistics loading.
 - Own home search state and search submissions.
+- Load collection statistics and searches as owned collection data, not
+  wishlist data.
 
 ### `hooks/platforms`
 
 - Own platform list loading.
 - Load connected-user collection platforms from backend SQL endpoints.
+- Request `wishlist=false` for collection platform lists so wishlist-only
+  platforms do not appear in Ma collection.
 - Initialize selected platform from URL or first available platform.
 
 ### `hooks/games`
 
 - Own platform game loading.
+- Request `wishlist=false` for collection game lists.
 - Own table filters, sorting and derived game collections.
 - Own add-game form state and future submit workflow while backend actions
   remain reserved.
