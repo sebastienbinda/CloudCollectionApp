@@ -13,7 +13,6 @@
  * Description : menu principal React partage par les pages A propos et Ma collection.
  */
 import { useEffect, useRef, useState } from "react";
-import AuthStatusMenu from "./AuthStatusMenu";
 
 /**
  * Affiche le menu principal de navigation applicative.
@@ -102,6 +101,12 @@ function MainMenu({
     callback();
   };
 
+  const runLoginAction = () => {
+    closeMenu();
+  };
+
+  const normalizedProfile = String(profile || "").trim().toUpperCase();
+
   return (
     <div className="pageHeaderTopActions">
       <div
@@ -134,27 +139,48 @@ function MainMenu({
           <button
             className="secondaryButton"
             type="button"
+            onClick={() => runMenuAction(onOpenLibrary)}
+          >
+            Bibliotheque
+          </button>
+          {!isAuthenticated ? (
+            <a className="secondaryButton" href="/auth" onClick={runLoginAction}>
+              Connexion
+            </a>
+          ) : null}
+          {isAuthenticated ? (
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={() => runMenuAction(onOpenAdminDashboard)}
+            >
+              Dashboard admin
+            </button>
+          ) : null}
+          {isAuthenticated ? (
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={() => runMenuAction(onLogout)}
+            >
+              Deconnexion
+            </button>
+          ) : null}
+          <button
+            className="secondaryButton"
+            type="button"
             onClick={() => runMenuAction(onOpenHome)}
             disabled={!isAuthenticated || !canUseCollectionViews}
           >
             Ma collection
           </button>
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(onOpenLibrary)}
-          >
-            Bibliotheque
-          </button>
         </div>
       </div>
-      {AuthStatusMenu.render({
-        isAuthenticated,
-        username,
-        profile,
-        onOpenAdminDashboard,
-        onLogout,
-      })}
+      {isAuthenticated ? (
+        <p className={`pageHeaderConnectedUser pageHeaderConnectedUser${normalizedProfile}`}>
+          Utilisateur connecte : {username || "utilisateur"}
+        </p>
+      ) : null}
     </div>
   );
 }

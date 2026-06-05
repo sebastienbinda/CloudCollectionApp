@@ -10,43 +10,8 @@
  * Auteurs : Codex et Binda Sébastien
  * Licence : Apache 2.0
  *
- * Description : styles du menu de session et du dashboard administrateur.
+ * Description : styles du dashboard administrateur.
  */
-.authStatusMenu {
-  min-width: 11rem;
-}
-
-.authStatusTrigger {
-  width: 100%;
-}
-
-.authStatusDropdown {
-  background: #ffffff;
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
-  display: none;
-  gap: 0.35rem;
-  margin-top: 0.35rem;
-  padding: 0.45rem;
-}
-
-.authStatusMenu:hover .authStatusDropdown,
-.authStatusMenu:focus-within .authStatusDropdown {
-  display: grid;
-}
-
-.authStatusDropdown button {
-  background: transparent;
-  color: #111827;
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.authStatusDropdown button:hover:not(:disabled) {
-  background: #eef2f7;
-}
-
 .adminActionGrid {
   display: grid;
   gap: 1rem;

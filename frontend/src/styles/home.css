@@ -273,10 +273,6 @@
   z-index: 6;
 }
 
-.pageHeaderTopActions .pageHeaderAuthButton {
-  position: static;
-}
-
 .pageHeaderActions {
   background: #ffffff;
   border: 1px solid #dbe4f0;
@@ -341,7 +337,17 @@
 }
 
 .pageHeaderActions .secondaryButton {
+  align-items: center;
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  justify-content: flex-start;
+  line-height: 1.2;
   text-align: left;
+  text-decoration: none;
   width: 100%;
 }
 
@@ -356,57 +362,23 @@
   border-color: #9a3412;
 }
 
-.authButtonLink {
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #0f766e;
+.pageHeaderConnectedUser {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #dbe4f0;
   border-radius: 6px;
-  box-sizing: border-box;
-  color: #0f766e;
-  gap: 0.45rem;
-  display: inline-flex;
+  color: #0f172a;
+  font-size: 0.86rem;
   font-weight: 800;
-  justify-content: center;
+  margin: 0;
+  max-width: min(24rem, calc(100% - 4rem));
   min-height: 2.45rem;
-  min-width: 2.45rem;
+  overflow-wrap: anywhere;
   padding: 0.62rem 0.9rem;
-  text-decoration: none;
 }
 
-.authButtonLink:hover {
-  background: #ccfbf1;
-}
-
-.authButtonConnected {
-  background: #0f766e;
-  color: #ffffff;
-}
-
-.authButtonConnected:hover {
-  background: #115e59;
-}
-
-.authButtonProfileADMIN {
-  background: #b91c1c;
-  border-color: #b91c1c;
-  color: #ffffff;
-}
-
-.authButtonProfileADMIN:hover {
-  background: #991b1b;
-  border-color: #991b1b;
-}
-
-.authStatusIcon {
-  fill: currentColor;
-  height: 1.1rem;
-  width: 1.1rem;
-}
-
-.pageHeaderAuthButton {
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
+.pageHeaderConnectedUserADMIN {
+  border-color: #fecaca;
+  color: #7f1d1d;
 }
 
 .pageHeaderDateSummary {
@@ -749,10 +721,6 @@
     top: 0.75rem;
   }
 
-  .pageHeaderTopActions .pageHeaderAuthButton {
-    position: static;
-  }
-
   .pageHeaderOptionsTrigger {
     box-sizing: border-box;
     min-height: 2rem;
@@ -768,21 +736,12 @@
     min-width: 10rem;
   }
 
-  .authButtonLink {
-    border-radius: 6px;
-    gap: 0;
+  .pageHeaderConnectedUser {
+    font-size: 0.72rem;
+    line-height: 1.2;
+    max-width: calc(100% - 3rem);
     min-height: 2rem;
-    min-width: 2rem;
-    padding: 0.35rem;
-  }
-
-  .authButtonLink span {
-    display: none;
-  }
-
-  .authStatusIcon {
-    height: 1rem;
-    width: 1rem;
+    padding: 0.45rem 0.55rem;
   }
 
   .pageHeader .subtitle {
