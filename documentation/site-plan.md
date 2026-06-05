@@ -48,6 +48,13 @@ that profile. `Ma collection`, platform detail, add-game and collection import
 routes must be disabled or redirected to the administration dashboard for
 `ADMIN`.
 
+The `/users` administration page lets an `ADMIN` validate users with status
+`WAITING_VALIDATION`. Validation activates the account on the backend and sends
+the user an activation email containing the sign-in link.
+Administrator notification emails may link directly to
+`/users?status=WAITING_VALIDATION`, which must open the users page filtered to
+all accounts waiting for validation.
+
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the
 backend.

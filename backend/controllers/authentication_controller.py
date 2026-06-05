@@ -12,6 +12,7 @@
 # Description : controleur HTTP d'authentification, inscription et validation email.
 
 from html import escape
+import os
 
 from flask import Flask, current_app, jsonify, request
 
@@ -169,6 +170,12 @@ class AuthenticationController:
             registration_service = self.user_registration_service_class(
                 user_repository,
                 email_verification_service,
+                admin_notification_sender=self._create_email_sender(),
+                admin_notification_email=os.getenv("ADMIN_NOTIFICATION_EMAIL", ""),
+                frontend_public_url=os.getenv(
+                    "FRONTEND_PUBLIC_URL",
+                    os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777"),
+                ),
             )
             registered_user = registration_service.register_user(email=email, password=password)
             current_app.logger.info("Utilisateur inscrit avec succes: id=%s.", registered_user.id)
@@ -404,7 +411,16 @@ class AuthenticationController:
             EmailVerificationService: Service pret a valider ou envoyer les emails.
         """
 
-        email_sender = self.email_sender_factory.create(
-            self.email_configuration_class.from_environment()
-        )
-        return self.email_verification_service_class(user_repository, email_sender)
+        return self.email_verification_service_class(user_repository, self._create_email_sender())
+
+    def _create_email_sender(self):
+        """Cree l'expediteur email configure.
+
+        Args:
+            Aucun.
+
+        Returns:
+            object: Expediteur email applicatif.
+        """
+
+        return self.email_sender_factory.create(self.email_configuration_class.from_environment())

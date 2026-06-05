@@ -19,10 +19,12 @@ class UserStatus(str, Enum):
 
     Attributes:
         ACTIVE (str): Compte autorise a se connecter si l'email est verifie.
+        WAITING_VALIDATION (str): Compte en attente de validation administrateur.
         LOCKED (str): Compte bloque, refuse par le flux d'authentification.
     """
 
     ACTIVE = "ACTIVE"
+    WAITING_VALIDATION = "WAITING_VALIDATION"
     LOCKED = "LOCKED"
 
     @classmethod

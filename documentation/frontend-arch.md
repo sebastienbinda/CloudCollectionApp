@@ -119,6 +119,16 @@ Use the following domain folders for new or modified hooks:
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
 
+### User Administration
+
+- Keep user administration API calls in `frontend/src/services/UsersApi.js`.
+- Keep the `/users` page focused on display, filters and user-triggered
+  actions.
+- Validate waiting users only through the backend `POST
+  /api/users/<id>/validate` route when route discovery confirms access.
+- Support the `status=WAITING_VALIDATION` query parameter on `/users` as a
+  backend search filter for administrator notification links.
+
 ### `services`
 
 - Keep HTTP details, URLs, headers and response normalization in services.

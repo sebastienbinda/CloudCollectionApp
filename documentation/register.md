@@ -26,7 +26,16 @@ email verification.
 - Store only non-reversible password hashes.
 - Store only the email verification token hash in database.
 - Registered users must receive the `USER` profile by default.
-- Registered users must receive the `ACTIVE` status by default.
+- Registered users must receive the `WAITING_VALIDATION` status by default.
+- Email verification confirms ownership of the address only; it must not change
+  the status to `ACTIVE`.
+- The verification email must explain that administrator validation is required
+  after email verification.
+- After a user is created with `WAITING_VALIDATION`, the backend must send an
+  administrator notification email when `ADMIN_NOTIFICATION_EMAIL` is
+  configured. This email must include the new user's email, the total number of
+  users waiting for administrator validation and a direct link to
+  `/users?status=WAITING_VALIDATION`.
 - Treat duplicate email, invalid password and invalid verification token as
   controlled business errors.
 - Do not hardcode SMTP secrets, passwords, tokens or signing keys.
@@ -44,6 +53,10 @@ without a real SMTP account or production domain.
 - `BACKEND_PUBLIC_URL` must point to the local web entrypoint, for example
   `http://localhost:8080`, so verification links opened from Mailpit target the
   local application.
+- `FRONTEND_PUBLIC_URL` must point to the public frontend origin used in
+  administrator notification links.
+- `ADMIN_NOTIFICATION_EMAIL` configures the administrator recipient for new user
+  validation notifications.
 - The production SMTP variables (`SMTP_HOST`, `SMTP_FROM_EMAIL`,
   `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`) remain reserved for the
   online Docker stack and must not be required to test registration locally.
@@ -61,6 +74,9 @@ When modifying registration or email verification, update backend tests for:
 - browser email verification page from `GET /api/auth/verify-email`;
 - JSON email verification from `POST /api/auth/verify-email`;
 - missing or invalid verification token rejection;
+- created users receiving `WAITING_VALIDATION`;
+- administrator notification email after user creation when
+  `ADMIN_NOTIFICATION_EMAIL` is configured;
 - `/api/routes` public indicators for registration and verification routes.
 
 Run `./test_backend.sh` after changes.

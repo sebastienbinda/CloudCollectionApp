@@ -137,7 +137,7 @@ class EmailVerificationServiceTest(unittest.TestCase):
             email_sender.sent_email["body"],
         )
         self.assertIn(
-            "obligatoire avant de pouvoir vous connecter",
+            "votre compte restera en attente jusqu'a son activation par un administrateur",
             email_sender.sent_email["body"],
         )
         self.assertIn(

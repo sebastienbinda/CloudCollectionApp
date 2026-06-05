@@ -101,7 +101,7 @@ Indexes:
 | `email` | `VARCHAR(256)` | No | User email address. |
 | `password_hash` | `VARCHAR(512)` | No | Non-reversible password hash. |
 | `profile` | `VARCHAR(16)` | No | Application profile, either `USER` or `ADMIN`. |
-| `status` | `VARCHAR(16)` | No | Functional user status, either `ACTIVE` or `LOCKED`. |
+| `status` | `VARCHAR(32)` | No | Functional user status, either `ACTIVE`, `WAITING_VALIDATION` or `LOCKED`. |
 | `is_email_verified` | `BOOLEAN` | No | Indicates whether the email address has been verified. |
 | `email_verification_token_hash` | `VARCHAR(64)` | Yes | SHA-256 hash of the email verification token. |
 | `email_verification_expires_at` | `TIMESTAMP` | Yes | Email verification token expiration date. |
@@ -116,7 +116,7 @@ Constraints:
 - Primary key: `id`
 - Unique key: `email`
 - Check: `profile` in `USER`, `ADMIN`
-- Check: `status` in `ACTIVE`, `LOCKED`
+- Check: `status` in `ACTIVE`, `WAITING_VALIDATION`, `LOCKED`
 
 `collection_file_path` is set by the user collection import workflow only after
 a successful import. It stores the complete container path

@@ -128,7 +128,7 @@ class SqlAlchemyUserRepository:
                         "email": email,
                         "password_hash": password_hash,
                         "profile": UserProfile.normalize(profile).value,
-                        "status": UserStatus.ACTIVE.value,
+                        "status": UserStatus.WAITING_VALIDATION.value,
                         "token_hash": verification_token.token_hash,
                         "token_expires_at": verification_token.expires_at,
                         "creation_date": creation_date,
@@ -293,6 +293,30 @@ class SqlAlchemyUserRepository:
             ).mappings().first()
         return self._map_user_summary(row) if row else None
 
+    def validate_user(self, user_id: int) -> UserSummary | None:
+        """Valide un compte utilisateur en attente.
+
+        Args:
+            user_id (int): Identifiant technique du compte a valider.
+
+        Returns:
+            UserSummary | None: Utilisateur active, ou `None` si absent.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.begin() as connection:
+            row = connection.execute(
+                text(
+                    f'UPDATE "{schema_name}".t_user '
+                    "SET status = :status "
+                    "WHERE id = :user_id "
+                    "RETURNING id, email, profile, status, is_email_verified, "
+                    "creation_date, last_connexion_date"
+                ),
+                {"user_id": user_id, "status": UserStatus.ACTIVE.value},
+            ).mappings().first()
+        return self._map_user_summary(row) if row else None
+
     def update_last_connexion_date(
         self,
         user_id: int,
@@ -381,3 +405,22 @@ class SqlAlchemyUserRepository:
             creation_date=row["creation_date"],
             last_connexion_date=row["last_connexion_date"],
         )
+
+    def count_users_by_status(self, status: str) -> int:
+        """Compte les utilisateurs ayant un statut fonctionnel donne.
+
+        Args:
+            status (str): Statut fonctionnel a compter.
+
+        Returns:
+            int: Nombre d'utilisateurs correspondant au statut.
+        """
+
+        schema_name = self.configuration.schema_name
+        normalized_status = UserStatus.normalize(status).value
+        with self.engine.connect() as connection:
+            user_count = connection.execute(
+                text(f'SELECT COUNT(*) FROM "{schema_name}".t_user WHERE status = :status'),
+                {"status": normalized_status},
+            ).scalar_one()
+        return int(user_count)

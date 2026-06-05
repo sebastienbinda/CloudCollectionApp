@@ -100,6 +100,23 @@ class UsersApi {
       }
     );
   }
+
+  /**
+   * Valide un utilisateur en attente.
+   *
+   * @param {number|string} userId - Identifiant technique de l'utilisateur.
+   * @returns {Promise<Object>} Objet contenant l'utilisateur modifie.
+   */
+  static async validateUser(userId) {
+    return VideoGamesApi.fetchJson(
+      `/api/users/${encodeURIComponent(userId)}/validate`,
+      "Impossible de valider l'utilisateur.",
+      {
+        method: "POST",
+        headers: AuthApi.getAuthorizationHeaders(),
+      }
+    );
+  }
 }
 
 export default UsersApi;

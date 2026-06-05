@@ -117,6 +117,7 @@ class FakeSqlAlchemyUserRepository:
         users = [
             UserSummary(7, "user@example.com", "USER", "ACTIVE", True, datetime(2026, 5, 13, 12), datetime(2026, 5, 22, 8, 30)),
             UserSummary(8, "locked@example.com", "USER", "LOCKED", True, datetime(2026, 5, 20, 12), None),
+            UserSummary(9, "waiting@example.com", "USER", "WAITING_VALIDATION", True, datetime(2026, 5, 21, 12), None),
         ]
         if criteria.name:
             users = [user for user in users if criteria.name.lower() in user.email.lower()]
@@ -170,6 +171,37 @@ class FakeSqlAlchemyUserRepository:
             return None
         return UserSummary(7, "user@example.com", "USER", "ACTIVE", True, datetime(2026, 5, 13, 12), datetime(2026, 5, 22, 8, 30))
 
+    def validate_user(self, user_id):
+        """Valide l'utilisateur 9.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            UserSummary | None: Utilisateur actif ou absence.
+        """
+
+        if user_id != 9:
+            return None
+        return UserSummary(9, "waiting@example.com", "USER", "ACTIVE", True, datetime(2026, 5, 21, 12), None)
+
+    def count_users_by_status(self, status):
+        """Compte les utilisateurs factices par statut.
+
+        Args:
+            status (str): Statut fonctionnel a compter.
+
+        Returns:
+            int: Nombre d'utilisateurs factices correspondant au statut.
+        """
+
+        users = [
+            UserSummary(7, "user@example.com", "USER", "ACTIVE", True, datetime(2026, 5, 13, 12), datetime(2026, 5, 22, 8, 30)),
+            UserSummary(8, "locked@example.com", "USER", "LOCKED", True, datetime(2026, 5, 20, 12), None),
+            UserSummary(9, "waiting@example.com", "USER", "WAITING_VALIDATION", True, datetime(2026, 5, 21, 12), None),
+        ]
+        return len([user for user in users if user.status == status])
+
     def verify_email_by_token_hash(self, token_hash, verified_at):
         """Valide un token email factice.
 
@@ -221,12 +253,13 @@ class FakeDatabaseConfiguration:
 class FakeUserRegistrationService:
     """Service d'inscription factice."""
 
-    def __init__(self, user_repository, email_verification_service):
+    def __init__(self, user_repository, email_verification_service, **kwargs):
         """Initialise le service factice.
 
         Args:
             user_repository (object): Repository injecte.
             email_verification_service (object): Service email injecte.
+            **kwargs (dict): Options ignorees pour rester compatible avec le service reel.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -254,7 +287,70 @@ class FakeUserRegistrationService:
             raise ValueError("L'email est obligatoire.")
         if password != "VeryStrongPassword123!":
             raise PasswordPolicyError("Le mot de passe doit contenir au moins 8 caracteres, au moins un chiffre, un caractere special, une minuscule et une majuscule.")
-        return RegisteredUser(7, str(email).strip().lower(), datetime(2026, 5, 13, 12), False, "USER")
+        return RegisteredUser(
+            7,
+            str(email).strip().lower(),
+            datetime(2026, 5, 13, 12),
+            False,
+            "USER",
+            UserStatus.WAITING_VALIDATION.value,
+        )
+
+
+class FakeEmailSender:
+    """Expediteur email factice pour les tests de routes."""
+
+    sent_emails = []
+
+    def send_email(self, recipient_email, subject, body):
+        """Memorise l'email envoye.
+
+        Args:
+            recipient_email (str): Adresse destinataire.
+            subject (str): Sujet du message.
+            body (str): Corps texte.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.__class__.sent_emails.append(
+            {"recipient_email": recipient_email, "subject": subject, "body": body}
+        )
+
+
+class FakeEmailSenderFactory:
+    """Fabrique d'expediteurs email factice."""
+
+    @staticmethod
+    def create(configuration):
+        """Retourne un expediteur factice.
+
+        Args:
+            configuration (object): Configuration ignoree.
+
+        Returns:
+            FakeEmailSender: Expediteur de test.
+        """
+
+        return FakeEmailSender()
+
+
+class FakeEmailConfiguration:
+    """Configuration email factice."""
+
+    @classmethod
+    def from_environment(cls):
+        """Retourne une configuration factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            FakeEmailConfiguration: Configuration de test.
+        """
+
+        return cls()
 
 
 class FakeUserCollectionImportRepository:
@@ -404,6 +500,8 @@ class BaseAppRoutesTest(unittest.TestCase):
         self.original_user_repository = app_module.authentication_controller.user_repository_class
         self.original_user_controller_repository = app_module.user_controller.user_repository_class
         self.original_user_controller_database_configuration = app_module.user_controller.database_configuration_class
+        self.original_user_controller_email_sender_factory = app_module.user_controller.email_sender_factory
+        self.original_user_controller_email_configuration = app_module.user_controller.email_configuration_class
         self.original_collection_user_repository = app_module.user_collection_import_controller.user_repository_class
         self.original_collection_import_repository = app_module.user_collection_import_controller.import_repository_class
         self.original_collection_import_service = app_module.user_collection_import_controller.import_service_class
@@ -420,6 +518,8 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.database_configuration_class = FakeDatabaseConfiguration
+        app_module.user_controller.email_sender_factory = FakeEmailSenderFactory
+        app_module.user_controller.email_configuration_class = FakeEmailConfiguration
         app_module.user_collection_import_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_collection_import_controller.import_repository_class = FakeUserCollectionImportRepository
         app_module.user_collection_import_controller.import_service_class = FakeUserCollectionImportService
@@ -444,6 +544,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeUserCollectionQueryService.last_platforms_criteria = None
         FakeUserCollectionQueryService.last_games_criteria = None
         FakeUserCollectionQueryService.collection_file_path = __file__
+        FakeEmailSender.sent_emails = []
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
 
@@ -460,6 +561,8 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.authentication_controller.user_repository_class = self.original_user_repository
         app_module.user_controller.user_repository_class = self.original_user_controller_repository
         app_module.user_controller.database_configuration_class = self.original_user_controller_database_configuration
+        app_module.user_controller.email_sender_factory = self.original_user_controller_email_sender_factory
+        app_module.user_controller.email_configuration_class = self.original_user_controller_email_configuration
         app_module.user_collection_import_controller.user_repository_class = self.original_collection_user_repository
         app_module.user_collection_import_controller.import_repository_class = self.original_collection_import_repository
         app_module.user_collection_import_controller.import_service_class = self.original_collection_import_service

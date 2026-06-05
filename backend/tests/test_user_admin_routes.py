@@ -12,9 +12,9 @@
 # Description : tests des routes d'administration utilisateur.
 
 try:
-    from tests.route_test_support import BaseAppRoutesTest
+    from tests.route_test_support import BaseAppRoutesTest, FakeEmailSender
 except ModuleNotFoundError:
-    from route_test_support import BaseAppRoutesTest
+    from route_test_support import BaseAppRoutesTest, FakeEmailSender
 
 
 class UserAdministrationRoutesTest(BaseAppRoutesTest):
@@ -81,3 +81,24 @@ class UserAdministrationRoutesTest(BaseAppRoutesTest):
         self.assertEqual(404, self.client.post("/api/users/404/lock", headers=headers).status_code)
         self.assertEqual("ACTIVE", self.client.post("/api/users/7/unlock", headers=headers).get_json()["user"]["status"])
         self.assertEqual(404, self.client.post("/api/users/404/unlock", headers=headers).status_code)
+
+    def test_user_validate_route_activates_user_and_sends_email(self):
+        """Verifie la validation administrateur d'un nouvel utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et l'email.
+        """
+
+        headers = self.get_admin_auth_headers()
+
+        response = self.client.post("/api/users/9/validate", headers=headers)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("ACTIVE", response.get_json()["user"]["status"])
+        self.assertEqual("waiting@example.com", FakeEmailSender.sent_emails[0]["recipient_email"])
+        self.assertIn("valide par un administrateur", FakeEmailSender.sent_emails[0]["body"])
+        self.assertIn("/auth", FakeEmailSender.sent_emails[0]["body"])
+        self.assertEqual(404, self.client.post("/api/users/404/validate", headers=headers).status_code)

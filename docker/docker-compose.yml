@@ -1,0 +1,47 @@
+#   ____ _                 _  ____      _ _           _   _             ___
+#  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+# | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+#                                                                            |_|   |_|
+# Projet : CloudCollectionApp
+# Date de creation : 2026-05-03
+# Auteurs : Codex et Binda Sébastien
+#
+name: cloudcollectionapp
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    environment:
+      APP_HOME_TITLE: ${APP_HOME_TITLE:-Ma collection}
+      BACKEND_PORT: "7777"
+      JEUXVIDEO_ODS_PATH: /project/collection.ods
+      JEUXVIDEO_ODS_TMP_DIR: /project/tmp
+      JEUXVIDEO_ODS_BACKUP_DIR: /project/backup
+      ODS_FORMULA_RECALCULATION: required
+      AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-3600}
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_ENV_ENCRYPTION_KEY: ${AUTH_ENV_ENCRYPTION_KEY:-}
+      AUTH_PASSWORD_ENCRYPTED: ${AUTH_PASSWORD_ENCRYPTED:-}
+      AUTH_SECRET_KEY_ENCRYPTED: ${AUTH_SECRET_KEY_ENCRYPTED:-}
+    volumes:
+      - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods
+      - ${JEUXVIDEO_BACKUP_DIR:-../backup}:/project/backup
+    tmpfs:
+      - /project/tmp
+    expose:
+      - "7777"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped

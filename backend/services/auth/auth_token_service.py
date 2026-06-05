@@ -68,6 +68,9 @@ class AuthTokenService:
     """
 
     DEFAULT_TOKEN_TTL_SECONDS = 3600
+    WAITING_VALIDATION_MESSAGE = (
+        "Votre compte est en attente de validation par un administrateur."
+    )
 
     def __init__(
         self,
@@ -216,7 +219,10 @@ class AuthTokenService:
         database_user = user_repository.find_verified_user_credentials_by_email(normalized_email)
         if not database_user:
             return None
-        if UserStatus.normalize(database_user.status) is UserStatus.LOCKED:
+        user_status = UserStatus.normalize(database_user.status)
+        if user_status is UserStatus.WAITING_VALIDATION:
+            raise ValueError(self.WAITING_VALIDATION_MESSAGE)
+        if user_status is UserStatus.LOCKED:
             return None
         if not self.password_hash_service.verify_password(database_user.password_hash, password):
             return None
