@@ -51,7 +51,10 @@ Supported identities:
 - configured technical account from `AUTH_USERNAME` and encrypted password,
   with profile `ADMIN`;
 - registered database users using their verified email as username, with their
-  database profile and only while their status is not `LOCKED`.
+  database profile and only while their status is `ACTIVE`.
+
+Users with status `WAITING_VALIDATION` receive `401` with a clear message
+indicating that administrator validation is still required.
 
 ### Register User
 
@@ -71,7 +74,7 @@ Request:
 
 This route is public because the user does not yet own a Bearer token. The
 password is stored as a non-reversible hash. The created user remains unusable
-until email verification succeeds.
+until email verification succeeds and an administrator validates the account.
 
 ### Verify Email
 
@@ -457,6 +460,7 @@ The routes in this section require profile `ADMIN`.
 | `DELETE` | `/api/users/<id>` | Deletes a user. |
 | `POST` | `/api/users/<id>/lock` | Locks a user with status `LOCKED`. |
 | `POST` | `/api/users/<id>/unlock` | Unlocks a user with status `ACTIVE`. |
+| `POST` | `/api/users/<id>/validate` | Validates a waiting user with status `ACTIVE` and sends an activation email. |
 
 Supported search query parameters:
 
@@ -623,7 +627,9 @@ Registration sends verification emails. Useful variables:
 
 ```bash
 BACKEND_PUBLIC_URL=https://api.example.com
+FRONTEND_PUBLIC_URL=https://app.example.com
 EMAIL_DELIVERY_MODE=smtp
+ADMIN_NOTIFICATION_EMAIL=admin@example.com
 EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
 SMTP_FROM_EMAIL=noreply@example.com
 SMTP_HOST=smtp.example.com
@@ -632,6 +638,12 @@ SMTP_USERNAME=...
 SMTP_PASSWORD=...
 SMTP_USE_TLS=true
 ```
+
+`ADMIN_NOTIFICATION_EMAIL` receives a message after every successful public
+registration. The message links to `/users?status=WAITING_VALIDATION` on
+`FRONTEND_PUBLIC_URL` so an administrator can validate the waiting accounts. The
+message includes the new user's email and the total number of users currently
+waiting for administrator validation.
 
 In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
 the Docker local stack can use Mailpit.

@@ -40,7 +40,7 @@ class RegisteredUser:
     creation_date: datetime
     is_email_verified: bool
     profile: str = UserProfile.USER.value
-    status: str = UserStatus.ACTIVE.value
+    status: str = UserStatus.WAITING_VALIDATION.value
 
     def to_public_dict(self) -> dict[str, object]:
         """Convertit l'utilisateur en dictionnaire JSON public.
@@ -103,6 +103,32 @@ class UserRepository(Protocol):
             DuplicateUserEmailError: Si l'email existe deja.
         """
 
+    def count_users_by_status(self, status: str) -> int:
+        """Compte les utilisateurs ayant un statut donne.
+
+        Args:
+            status (str): Statut fonctionnel a compter.
+
+        Returns:
+            int: Nombre d'utilisateurs correspondant au statut.
+        """
+
+
+class RegistrationAdminNotificationSender(Protocol):
+    """Decrit l'envoi d'une notification administrateur apres inscription."""
+
+    def send_email(self, recipient_email: str, subject: str, body: str) -> None:
+        """Envoie un email texte.
+
+        Args:
+            recipient_email (str): Adresse destinataire.
+            subject (str): Sujet du message.
+            body (str): Corps texte du message.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
 
 class DuplicateUserEmailError(ValueError):
     """Signale qu'une adresse email est deja rattachee a un compte."""
@@ -127,6 +153,9 @@ class UserRegistrationService:
         user_repository: UserRepository,
         email_verification_service: EmailVerificationService,
         password_hash_service: PasswordHashService | None = None,
+        admin_notification_sender: RegistrationAdminNotificationSender | None = None,
+        admin_notification_email: str = "",
+        frontend_public_url: str = "http://localhost:7777",
     ):
         """Initialise le service d'enregistrement.
 
@@ -134,6 +163,10 @@ class UserRegistrationService:
             user_repository (UserRepository): Port de persistance utilisateur.
             email_verification_service (EmailVerificationService): Service de validation email.
             password_hash_service (PasswordHashService | None): Service de hachage injectable.
+            admin_notification_sender (RegistrationAdminNotificationSender | None):
+                Expediteur email optionnel pour notifier l'administrateur.
+            admin_notification_email (str): Adresse email administrateur a notifier.
+            frontend_public_url (str): URL publique frontend pour construire le lien admin.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -142,6 +175,9 @@ class UserRegistrationService:
         self.user_repository = user_repository
         self.email_verification_service = email_verification_service
         self.password_hash_service = password_hash_service or PasswordHashService()
+        self.admin_notification_sender = admin_notification_sender
+        self.admin_notification_email = str(admin_notification_email or "").strip()
+        self.frontend_public_url = str(frontend_public_url or "http://localhost:7777").rstrip("/")
 
     def register_user(self, email: str, password: str) -> RegisteredUser:
         """Cree un utilisateur apres validation des donnees d'inscription.
@@ -179,7 +215,43 @@ class UserRegistrationService:
             email=registered_user.email,
             raw_token=verification_token.raw_token,
         )
+        self._send_admin_notification(registered_user)
         return registered_user
+
+    def _send_admin_notification(self, registered_user: RegisteredUser) -> None:
+        """Notifie l'administrateur qu'un compte attend validation.
+
+        Args:
+            registered_user (RegisteredUser): Utilisateur cree en attente.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        if not self.admin_notification_sender or not self.admin_notification_email:
+            return
+
+        validation_link = f"{self.frontend_public_url}/users?status={UserStatus.WAITING_VALIDATION.value}"
+        waiting_users_count = self.user_repository.count_users_by_status(
+            UserStatus.WAITING_VALIDATION.value,
+        )
+        self.admin_notification_sender.send_email(
+            recipient_email=self.admin_notification_email,
+            subject="Nouvel utilisateur en attente de validation",
+            body=(
+                "Bonjour,\n\n"
+                "Un nouvel utilisateur attend une validation administrateur sur "
+                "CloudCollectionApp.\n\n"
+                f"Email utilisateur : {registered_user.email}\n"
+                f"Identifiant utilisateur : {registered_user.id}\n\n"
+                "Nombre total d'utilisateurs en attente : "
+                f"{waiting_users_count}\n\n"
+                "Vous pouvez ouvrir directement la page de validation avec le lien "
+                "suivant :\n"
+                f"{validation_link}\n\n"
+                "Cet email est envoye automatiquement apres la creation du compte."
+            ),
+        )
 
     def _normalize_email(self, email: str) -> str:
         """Normalise une adresse email pour eviter les doublons triviaux.

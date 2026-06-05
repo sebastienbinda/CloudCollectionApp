@@ -29,11 +29,12 @@ from services.auth import (
 class FakeUserRepository:
     """Repository utilisateur factice pour les tests d'inscription."""
 
-    def __init__(self, existing_emails=None):
+    def __init__(self, existing_emails=None, waiting_users_count=3):
         """Initialise le repository factice.
 
         Args:
             existing_emails (set[str] | None): Emails consideres comme deja existants.
+            waiting_users_count (int): Nombre d'utilisateurs en attente retourne.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -44,6 +45,8 @@ class FakeUserRepository:
         self.created_password_hash = None
         self.created_verification_token = None
         self.created_profile = None
+        self.waiting_users_count = waiting_users_count
+        self.counted_status = None
 
     def email_exists(self, email):
         """Indique si l'email existe dans le jeu de test.
@@ -81,8 +84,21 @@ class FakeUserRepository:
             creation_date=creation_date,
             is_email_verified=False,
             profile=profile,
-            status=UserStatus.ACTIVE.value,
+            status=UserStatus.WAITING_VALIDATION.value,
         )
+
+    def count_users_by_status(self, status):
+        """Retourne le nombre factice d'utilisateurs pour un statut.
+
+        Args:
+            status (str): Statut fonctionnel a compter.
+
+        Returns:
+            int: Nombre d'utilisateurs configure pour le test.
+        """
+
+        self.counted_status = status
+        return self.waiting_users_count
 
 
 class FakeEmailVerificationService:
@@ -131,6 +147,40 @@ class FakeEmailVerificationService:
         self.sent_email = {"email": email, "raw_token": raw_token}
 
 
+class FakeAdminNotificationSender:
+    """Expediteur factice de notification administrateur."""
+
+    def __init__(self):
+        """Initialise l'expediteur factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.sent_email = None
+
+    def send_email(self, recipient_email, subject, body):
+        """Memorise l'email administrateur.
+
+        Args:
+            recipient_email (str): Adresse destinataire.
+            subject (str): Sujet de l'email.
+            body (str): Corps texte.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.sent_email = {
+            "recipient_email": recipient_email,
+            "subject": subject,
+            "body": body,
+        }
+
+
 class UserRegistrationServiceTest(unittest.TestCase):
     def test_register_user_normalizes_email_and_hashes_password(self):
         """Verifie la normalisation email et le stockage d'une empreinte.
@@ -152,7 +202,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         self.assertEqual("user@example.com", repository.created_email)
         self.assertFalse(user.is_email_verified)
         self.assertEqual(UserProfile.USER.value, user.profile)
-        self.assertEqual(UserStatus.ACTIVE.value, user.status)
+        self.assertEqual(UserStatus.WAITING_VALIDATION.value, user.status)
         self.assertEqual(UserProfile.USER.value, repository.created_profile)
         self.assertNotEqual("VeryStrongPassword123!", repository.created_password_hash)
         self.assertTrue(repository.created_password_hash.startswith("scrypt:"))
@@ -161,6 +211,66 @@ class UserRegistrationServiceTest(unittest.TestCase):
             {"email": "user@example.com", "raw_token": "raw-token"},
             email_verification_service.sent_email,
         )
+
+    def test_register_user_notifies_admin_when_email_is_configured(self):
+        """Verifie l'envoi d'un email administrateur apres creation.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le destinataire et le lien.
+        """
+
+        admin_sender = FakeAdminNotificationSender()
+        repository = FakeUserRepository(waiting_users_count=5)
+        service = UserRegistrationService(
+            repository,
+            FakeEmailVerificationService(),
+            admin_notification_sender=admin_sender,
+            admin_notification_email="admin@example.com",
+            frontend_public_url="https://cloud.example.com",
+        )
+
+        service.register_user("user@example.com", "VeryStrongPassword123!")
+
+        self.assertEqual("admin@example.com", admin_sender.sent_email["recipient_email"])
+        self.assertEqual(
+            "Nouvel utilisateur en attente de validation",
+            admin_sender.sent_email["subject"],
+        )
+        self.assertIn("user@example.com", admin_sender.sent_email["body"])
+        self.assertEqual(UserStatus.WAITING_VALIDATION.value, repository.counted_status)
+        self.assertIn(
+            "Nombre total d'utilisateurs en attente : 5",
+            admin_sender.sent_email["body"],
+        )
+        self.assertIn(
+            "https://cloud.example.com/users?status=WAITING_VALIDATION",
+            admin_sender.sent_email["body"],
+        )
+
+    def test_register_user_skips_admin_notification_without_admin_email(self):
+        """Verifie qu'aucun email admin n'est envoye sans destinataire.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence d'envoi.
+        """
+
+        admin_sender = FakeAdminNotificationSender()
+        service = UserRegistrationService(
+            FakeUserRepository(),
+            FakeEmailVerificationService(),
+            admin_notification_sender=admin_sender,
+            admin_notification_email="",
+        )
+
+        service.register_user("user@example.com", "VeryStrongPassword123!")
+
+        self.assertIsNone(admin_sender.sent_email)
 
     def test_register_user_rejects_invalid_email(self):
         """Verifie le refus d'un email invalide.

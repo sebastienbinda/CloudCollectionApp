@@ -55,7 +55,11 @@ class User(DatabaseModelBase):
     email: Mapped[str] = mapped_column(String(256), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
     profile: Mapped[str] = mapped_column(String(16), nullable=False, default=UserProfile.USER.value)
-    status: Mapped[str] = mapped_column(String(16), nullable=False, default=UserStatus.ACTIVE.value)
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default=UserStatus.WAITING_VALIDATION.value,
+    )
     is_email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     email_verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(

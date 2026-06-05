@@ -229,6 +229,25 @@ class AuthTokenServiceTest(unittest.TestCase):
 
         self.assertIsNone(repository.last_connexion_user_id)
 
+    def test_issue_token_rejects_waiting_validation_database_user_with_clear_message(self):
+        """Verifie le refus explicite d'un utilisateur en attente de validation.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur et l'absence de connexion.
+        """
+
+        password_hash = PasswordHashService().hash_password("VeryStrongPassword123!")
+        repository = FakeUserRepository(password_hash, status=UserStatus.WAITING_VALIDATION.value)
+
+        with self.assertRaises(ValueError) as context:
+            self.service.issue_token("user@example.com", "VeryStrongPassword123!", repository)
+
+        self.assertEqual(AuthTokenService.WAITING_VALIDATION_MESSAGE, str(context.exception))
+        self.assertIsNone(repository.last_connexion_user_id)
+
     def test_validate_access_token_rejects_invalid_signature(self):
         """Verifie le refus d'un token modifie.
 

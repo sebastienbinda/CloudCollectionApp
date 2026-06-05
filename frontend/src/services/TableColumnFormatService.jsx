@@ -21,6 +21,7 @@ const profileLabels = {
 
 const statusLabels = {
   ACTIVE: "Actif",
+  WAITING_VALIDATION: "En attente de validation",
   LOCKED: "Bloque",
 };
 

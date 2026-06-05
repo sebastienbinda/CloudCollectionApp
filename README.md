@@ -32,7 +32,7 @@ frontend fournit une interface web de consultation, recherche et import.
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
 - Import de collection ODS personnelle pour les utilisateurs inscrits.
-- Page About publique, authentification Bearer et creation de compte avec validation email.
+- Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
 
@@ -117,6 +117,8 @@ Variables principales :
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
+- `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
+  attente de validation administrateur.
 
 Un fichier exemple versionnable est fourni :
 

@@ -13,6 +13,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+import os
 from typing import Protocol
 
 from .user_status import UserStatus
@@ -127,6 +128,32 @@ class UserAdministrationRepository(Protocol):
             UserSummary | None: Utilisateur debloque, ou `None` si absent.
         """
 
+    def validate_user(self, user_id: int) -> UserSummary | None:
+        """Valide un utilisateur en attente.
+
+        Args:
+            user_id (int): Identifiant technique du compte.
+
+        Returns:
+            UserSummary | None: Utilisateur active, ou `None` si absent.
+        """
+
+
+class UserActivationEmailSender(Protocol):
+    """Decrit l'envoi d'un email d'activation de compte."""
+
+    def send_email(self, recipient_email: str, subject: str, body: str) -> None:
+        """Envoie un email texte.
+
+        Args:
+            recipient_email (str): Adresse destinataire.
+            subject (str): Sujet du message.
+            body (str): Corps texte du message.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
 
 class UserNotFoundError(ValueError):
     """Signale qu'aucun utilisateur ne correspond a l'identifiant demande."""
@@ -135,17 +162,30 @@ class UserNotFoundError(ValueError):
 class UserManagementService:
     """Orchestre la recherche et les actions d'administration des utilisateurs."""
 
-    def __init__(self, user_repository: UserAdministrationRepository):
+    def __init__(
+        self,
+        user_repository: UserAdministrationRepository,
+        activation_email_sender: UserActivationEmailSender | None = None,
+        frontend_public_url: str | None = None,
+    ):
         """Initialise le service de gestion utilisateur.
 
         Args:
             user_repository (UserAdministrationRepository): Port de persistance utilisateur.
+            activation_email_sender (UserActivationEmailSender | None): Expediteur email optionnel.
+            frontend_public_url (str | None): URL publique frontend pour le lien de connexion.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.user_repository = user_repository
+        self.activation_email_sender = activation_email_sender
+        self.frontend_public_url = (
+            frontend_public_url
+            or os.getenv("FRONTEND_PUBLIC_URL")
+            or os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777")
+        ).rstrip("/")
 
     def search_users(self, criteria: UserSearchCriteria) -> list[UserSummary]:
         """Recherche les utilisateurs avec les criteres fournis.
@@ -221,6 +261,53 @@ class UserManagementService:
         if not unlocked_user:
             raise UserNotFoundError("Utilisateur introuvable.")
         return unlocked_user
+
+    def validate_user(self, user_id: int) -> UserSummary:
+        """Valide un utilisateur en attente et notifie le titulaire du compte.
+
+        Args:
+            user_id (int): Identifiant technique du compte.
+
+        Returns:
+            UserSummary: Utilisateur apres passage au statut `ACTIVE`.
+
+        Raises:
+            ValueError: Si l'identifiant est invalide.
+            UserNotFoundError: Si aucun compte ne correspond.
+        """
+
+        normalized_user_id = self._validate_user_id(user_id)
+        validated_user = self.user_repository.validate_user(normalized_user_id)
+        if not validated_user:
+            raise UserNotFoundError("Utilisateur introuvable.")
+        self._send_activation_email(validated_user)
+        return validated_user
+
+    def _send_activation_email(self, user: UserSummary) -> None:
+        """Envoie l'email d'activation si un expediteur est configure.
+
+        Args:
+            user (UserSummary): Utilisateur valide a notifier.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        if not self.activation_email_sender:
+            return
+        login_link = f"{self.frontend_public_url}/auth"
+        self.activation_email_sender.send_email(
+            recipient_email=user.email,
+            subject="Votre compte CloudCollectionApp est active",
+            body=(
+                "Bonjour,\n\n"
+                "Votre compte CloudCollectionApp a ete valide par un administrateur.\n\n"
+                "Vous pouvez maintenant vous connecter avec votre adresse email depuis le lien "
+                "suivant :\n"
+                f"{login_link}\n\n"
+                "Si vous n'etes pas a l'origine de cette demande, contactez l'administrateur."
+            ),
+        )
 
     def _validate_user_id(self, user_id: int) -> int:
         """Valide un identifiant utilisateur.

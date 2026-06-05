@@ -18,6 +18,8 @@ from flask import Flask, current_app, jsonify, request
 from services import (
     AuthGuard,
     DatabaseConfiguration,
+    EmailConfiguration,
+    EmailSenderFactory,
     SqlAlchemyUserRepository,
     UserManagementService,
     UserNotFoundError,
@@ -35,6 +37,8 @@ class UserController:
         user_repository_class=SqlAlchemyUserRepository,
         user_management_service_class=UserManagementService,
         database_configuration_class=DatabaseConfiguration,
+        email_sender_factory=EmailSenderFactory,
+        email_configuration_class=EmailConfiguration,
     ):
         """Initialise le controleur utilisateur et ses dependances.
 
@@ -43,6 +47,8 @@ class UserController:
             user_repository_class (type): Classe de persistance des utilisateurs.
             user_management_service_class (type): Classe de service de gestion utilisateur.
             database_configuration_class (type): Classe de configuration base de donnees.
+            email_sender_factory (type): Fabrique d'expediteurs email.
+            email_configuration_class (type): Classe de configuration email.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -52,6 +58,8 @@ class UserController:
         self.user_repository_class = user_repository_class
         self.user_management_service_class = user_management_service_class
         self.database_configuration_class = database_configuration_class
+        self.email_sender_factory = email_sender_factory
+        self.email_configuration_class = email_configuration_class
 
     def register_routes(self, flask_app: Flask) -> None:
         """Enregistre les routes utilisateur dans l'application Flask.
@@ -87,6 +95,12 @@ class UserController:
             view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(self.unlock_user),
             methods=["POST"],
         )
+        flask_app.add_url_rule(
+            "/api/users/<int:user_id>/validate",
+            endpoint="validate_user",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(self.validate_user),
+            methods=["POST"],
+        )
 
     def search_users(self):
         """Recherche les utilisateurs selon les criteres de requete.
@@ -100,7 +114,7 @@ class UserController:
             creation_date_to (str): Date ISO maximale de creation.
             last_connexion_date_from (str): Date ISO minimale de derniere connexion.
             last_connexion_date_to (str): Date ISO maximale de derniere connexion.
-            status (str): Statut exact, par exemple `ACTIVE` ou `LOCKED`.
+            status (str): Statut exact, par exemple `ACTIVE`, `WAITING_VALIDATION` ou `LOCKED`.
 
         Returns:
             tuple[flask.Response, int] | flask.Response: Liste JSON des utilisateurs ou erreur.
@@ -179,6 +193,29 @@ class UserController:
             current_app.logger.exception("Erreur inattendue pendant le deblocage utilisateur.")
             return jsonify({"error": "Unable to unlock user."}), 500
 
+    def validate_user(self, user_id: int):
+        """Valide un utilisateur en attente.
+
+        Args:
+            user_id (int): Identifiant technique du compte a valider.
+
+        Returns:
+            tuple[flask.Response, int] | flask.Response: Utilisateur active ou erreur JSON.
+        """
+
+        try:
+            user = self._create_user_management_service(
+                activation_email_sender=self._create_activation_email_sender()
+            ).validate_user(user_id)
+            return jsonify({"user": user.to_dict()})
+        except UserNotFoundError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur inattendue pendant la validation utilisateur.")
+            return jsonify({"error": "Unable to validate user."}), 500
+
     def _build_search_criteria(self) -> UserSearchCriteria:
         """Construit les criteres de recherche depuis la requete HTTP.
 
@@ -222,17 +259,37 @@ class UserController:
         except ValueError as exc:
             raise ValueError(f"Le parametre {query_parameter_name} doit etre une date ISO.") from exc
 
-    def _create_user_management_service(self) -> UserManagementService:
+    def _create_user_management_service(
+        self,
+        activation_email_sender=None,
+    ) -> UserManagementService:
         """Construit le service de gestion utilisateur.
 
         Args:
-            Aucun.
+            activation_email_sender (object | None): Expediteur email optionnel.
 
         Returns:
             UserManagementService: Service initialise avec le repository SQL.
         """
 
-        return self.user_management_service_class(self._create_user_repository())
+        return self.user_management_service_class(
+            self._create_user_repository(),
+            activation_email_sender,
+        )
+
+    def _create_activation_email_sender(self):
+        """Construit l'expediteur email d'activation.
+
+        Args:
+            Aucun.
+
+        Returns:
+            object: Expediteur email configure.
+        """
+
+        return self.email_sender_factory.create(
+            self.email_configuration_class.from_environment()
+        )
 
     def _create_user_repository(self):
         """Construit le repository utilisateur SQL.

@@ -88,7 +88,9 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
       setRegistrationPasswordConfirmation("");
       setActiveMode("login");
       setUsername(createdEmail);
-      setMessage("Compte cree. Consultez votre email pour valider votre adresse avant connexion.");
+      setMessage(
+        "Compte cree. Consultez votre email pour valider votre adresse, puis attendez la validation administrateur avant connexion."
+      );
     } catch (e) {
       setError(e.message || "Inscription impossible.");
     } finally {

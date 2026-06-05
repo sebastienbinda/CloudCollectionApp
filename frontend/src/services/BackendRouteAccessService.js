@@ -30,6 +30,7 @@ class BackendRouteAccessService {
       canDeleteUser: false,
       canLockUser: false,
       canUnlockUser: false,
+      canValidateUser: false,
       isAuthenticated,
     };
   }
@@ -160,6 +161,7 @@ class BackendRouteAccessService {
       canDeleteUser: this.canAccess("DELETE", "/api/users/<int:user_id>"),
       canLockUser: this.canAccess("POST", "/api/users/<int:user_id>/lock"),
       canUnlockUser: this.canAccess("POST", "/api/users/<int:user_id>/unlock"),
+      canValidateUser: this.canAccess("POST", "/api/users/<int:user_id>/validate"),
     };
   }
 }

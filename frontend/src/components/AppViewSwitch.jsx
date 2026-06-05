@@ -183,6 +183,7 @@ class AppViewSwitch {
         canDeleteUser={props.actionPermissions.canDeleteUser}
         canLockUser={props.actionPermissions.canLockUser}
         canUnlockUser={props.actionPermissions.canUnlockUser}
+        canValidateUser={props.actionPermissions.canValidateUser}
         onBack={props.openAdminDashboard}
       />
     );

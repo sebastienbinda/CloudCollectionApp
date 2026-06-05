@@ -81,7 +81,7 @@ The endpoint accepts both authentication sources:
 - the configured backend credentials from `AUTH_USERNAME` and
   `AUTH_PASSWORD_ENCRYPTED`, which receive the `ADMIN` profile;
 - registered database users, using their verified email as `username`, only
-  after email verification has succeeded and while their status is not `LOCKED`,
+  after email verification has succeeded and while their status is `ACTIVE`,
   which receive their database profile.
 
 Invalid credentials, unknown users, unverified users, locked users or wrong
@@ -139,8 +139,8 @@ treated as a security boundary.
 Registration and email verification are public by design because they happen
 before the user can authenticate.
 
-- `POST /api/auth/register` creates an unverified user and sends a verification
-  link.
+- `POST /api/auth/register` creates an unverified user with status
+  `WAITING_VALIDATION` and sends a verification link.
 - `GET /api/auth/verify-email?token=<token>` validates an email from a browser
   link and returns an HTML confirmation page with a sign-in action.
 - `POST /api/auth/verify-email` validates an email from an API payload.
@@ -244,6 +244,8 @@ Any authentication change must update or add backend tests covering at least:
 
 - `POST /auth/token` with valid credentials.
 - `POST /auth/token` with invalid credentials.
+- `POST /auth/token` rejecting a `WAITING_VALIDATION` user with a clear
+  user-facing message.
 - `POST /api/auth/register` without a Bearer token preserving registration
   behavior.
 - `GET` or `POST /api/auth/verify-email` without a Bearer token preserving

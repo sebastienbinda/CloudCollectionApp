@@ -203,8 +203,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260603_0006"], script_directory.get_heads())
-        self.assertEqual(3, len(revisions))
+        self.assertEqual(["20260605_0007"], script_directory.get_heads())
+        self.assertEqual(4, len(revisions))
+        self.assertEqual("20260603_0006", revisions_by_id["20260605_0007"].down_revision)
         self.assertEqual("20260525_0005", revisions_by_id["20260603_0006"].down_revision)
         self.assertEqual("20260522_0004", revisions_by_id["20260525_0005"].down_revision)
         self.assertIsNone(revisions_by_id["20260522_0004"].down_revision)

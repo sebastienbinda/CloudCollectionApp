@@ -32,8 +32,14 @@ const initialUserFilters = {
   emailMode: "contains",
   creationPeriod: "",
   lastConnexionPeriod: "",
-  emailVerified: "",
+  status: "",
 };
+
+const statusFilterOptions = [
+  { value: "WAITING_VALIDATION", label: "En attente de validation" },
+  { value: "ACTIVE", label: "Actif" },
+  { value: "LOCKED", label: "Bloque" },
+];
 
 /**
  * Affiche la liste des utilisateurs dans un tableau administrateur.
@@ -46,12 +52,13 @@ function UsersView({
   canDeleteUser,
   canLockUser,
   canUnlockUser,
+  canValidateUser,
   authenticatedProfile,
   onBack,
 }) {
   const [users, setUsers] = useState([]);
-  const [filters, setFilters] = useState(initialUserFilters);
-  const [activeFilters, setActiveFilters] = useState(initialUserFilters);
+  const [filters, setFilters] = useState(createInitialUserFilters);
+  const [activeFilters, setActiveFilters] = useState(createInitialUserFilters);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [activeUserActionId, setActiveUserActionId] = useState(null);
   const [error, setError] = useState("");
@@ -175,6 +182,20 @@ function UsersView({
   };
 
   /**
+   * Valide un utilisateur en attente de confirmation administrateur.
+   *
+   * @param {Object} user - Utilisateur cible.
+   * @returns {Promise<void>} Met a jour la ligne utilisateur.
+   */
+  const validateUser = async (user) => {
+    await runUserAction(user.id, async () => {
+      const data = await UsersApi.validateUser(user.id);
+      setUsers((previous) => replaceUser(previous, data.user));
+      setMessage("Utilisateur valide.");
+    });
+  };
+
+  /**
    * Execute une action utilisateur avec etat de chargement local.
    *
    * @param {number|string} userId - Identifiant utilisateur cible.
@@ -265,14 +286,17 @@ function UsersView({
               </select>
             </label>
             <label>
-              Email verifie
+              Statut
               <select
-                value={filters.emailVerified}
-                onChange={(event) => updateFilter("emailVerified", event.target.value)}
+                value={filters.status}
+                onChange={(event) => updateFilter("status", event.target.value)}
               >
                 <option value="">Tous</option>
-                <option value="yes">Verifie</option>
-                <option value="no">Non verifie</option>
+                {statusFilterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
             <div className="usersFilterActions">
@@ -317,6 +341,20 @@ function UsersView({
                           ))}
                           <td>
                             <div className="usersRowActions">
+                              {user.status === "WAITING_VALIDATION" ? (
+                                <button
+                                  className="iconActionButton"
+                                  type="button"
+                                  onClick={() => validateUser(user)}
+                                  aria-label={`Valider ${user.email}`}
+                                  title="Valider l'utilisateur"
+                                  disabled={activeUserActionId === user.id || !canValidateUser}
+                                >
+                                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                                    <path d="M9.55 17.3 4.9 12.65l1.4-1.4 3.25 3.25 8.15-8.15 1.4 1.4-9.55 9.55Z" />
+                                  </svg>
+                                </button>
+                              ) : null}
                               <button
                                 className="iconActionButton"
                                 type="button"
@@ -399,6 +437,9 @@ function buildBackendCriteria(currentFilters) {
   if (email) {
     criteria.name = email;
   }
+  if (currentFilters.status) {
+    criteria.status = currentFilters.status;
+  }
   Object.assign(
     criteria,
     buildPeriodCriteria("creation_date", currentFilters.creationPeriod),
@@ -480,14 +521,28 @@ function filterUsersLocally(users, currentFilters) {
     if (email && currentFilters.emailMode !== "exact" && !userEmail.includes(email)) {
       return false;
     }
-    if (currentFilters.emailVerified === "yes" && !user.is_email_verified) {
-      return false;
-    }
-    if (currentFilters.emailVerified === "no" && user.is_email_verified) {
-      return false;
-    }
     return true;
   });
+}
+
+/**
+ * Cree les filtres initiaux depuis les parametres d'URL supportes.
+ *
+ * @param {void} Aucun.
+ * @returns {Object} Filtres utilisateur initiaux.
+ */
+function createInitialUserFilters() {
+  const filters = { ...initialUserFilters };
+  if (typeof window === "undefined") {
+    return filters;
+  }
+  const status = String(new URLSearchParams(window.location.search).get("status") || "")
+    .trim()
+    .toUpperCase();
+  if (["ACTIVE", "WAITING_VALIDATION", "LOCKED"].includes(status)) {
+    filters.status = status;
+  }
+  return filters;
 }
 
 export default UsersView;
