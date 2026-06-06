@@ -15,8 +15,8 @@
 import { useEffect, useState } from "react";
 import TableColumnFormatService from "../services/TableColumnFormatService.jsx";
 import UsersApi from "../services/UsersApi";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
 
 const userColumns = [
   { key: "email", label: "Email" },
@@ -53,8 +53,16 @@ function UsersView({
   canLockUser,
   canUnlockUser,
   canValidateUser,
+  isAuthenticated,
+  canUseCollectionViews,
+  authenticatedUsername,
   authenticatedProfile,
-  onBack,
+  onOpenAbout,
+  onOpenAuth,
+  onOpenHome,
+  onOpenLibrary,
+  onOpenAdminDashboard,
+  onLogout,
 }) {
   const [users, setUsers] = useState([]);
   const [filters, setFilters] = useState(createInitialUserFilters);
@@ -216,21 +224,22 @@ function UsersView({
   };
 
   return (
-    <main className="container usersPage">
-      <button className="backButton" type="button" onClick={onBack}>
-        Dashboard admin
-      </button>
-
-      <section className="addGameHeader">
-        <p className="eyebrow">Administration</p>
-        <h1>
-          <span className="pageTitleWithIcon">
-            <ProjectIcon />
-            <span>Utilisateurs</span>
-          </span>
-        </h1>
-      </section>
-
+    <PageLayout
+      shellClassName="container usersPage"
+      headerClassName="pageHeader addGameHeader"
+      eyebrow="Administration"
+      title="Utilisateurs"
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenAdminDashboard={onOpenAdminDashboard}
+      onLogout={onLogout}
+    >
       {!isAdmin ? <p className="error">Acces reserve aux administrateurs.</p> : null}
       {isAdmin && !canSearchUsers ? (
         <p className="error">La route de gestion des utilisateurs n'est pas disponible.</p>
@@ -410,7 +419,7 @@ function UsersView({
           ) : null}
         </>
       ) : null}
-    </main>
+    </PageLayout>
   );
 }
 

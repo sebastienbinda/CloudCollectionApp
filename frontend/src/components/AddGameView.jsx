@@ -9,7 +9,7 @@
  * Date de creation : 2026-05-03
  * Auteurs : Codex et Binda Sébastien
  */
-import ProjectIcon from "./ProjectIcon";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
 
 /**
@@ -26,6 +26,16 @@ function AddGameView({
   addGameMessage,
   isAddingGame,
   canAddGame,
+  isAuthenticated,
+  canUseCollectionViews,
+  authenticatedUsername,
+  authenticatedProfile,
+  onOpenAbout,
+  onOpenAuth,
+  onOpenHome,
+  onOpenLibrary,
+  onOpenAdminDashboard,
+  onLogout,
   onBack,
   onSubmit,
   onFieldChange,
@@ -35,23 +45,23 @@ function AddGameView({
     : platforms.map((platform) => platform.name || "");
 
   return (
-    <main className="container">
-      <button className="backButton" type="button" onClick={onBack}>
-        Ma collection
-      </button>
-      <section className="addGameHeader">
-        <p className="eyebrow">Nouveau jeu</p>
-        <h1>
-          <span className="pageTitleWithIcon">
-            <ProjectIcon />
-            <span>Ajouter un jeu</span>
-          </span>
-        </h1>
-        <p className="subtitle">
-          Le jeu sera ajoute dans la collection en conservant la presentation de votre fichier.
-        </p>
-      </section>
-
+    <PageLayout
+      shellClassName="container"
+      headerClassName="pageHeader addGameHeader"
+      eyebrow="Nouveau jeu"
+      title="Ajouter un jeu"
+      subtitle="Le jeu sera ajoute dans la collection en conservant la presentation de votre fichier."
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenAdminDashboard={onOpenAdminDashboard}
+      onLogout={onLogout}
+    >
       {addGameError ? <p className="error">{addGameError}</p> : null}
       {addGameMessage ? <p className="success">{addGameMessage}</p> : null}
 
@@ -176,7 +186,7 @@ function AddGameView({
         </div>
         {isAddingGame ? <ProgressBar label="Ajout du jeu en cours" /> : null}
       </form>
-    </main>
+    </PageLayout>
   );
 }
 

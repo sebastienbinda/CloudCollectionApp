@@ -13,7 +13,7 @@
  * Description : page objet de tableau de bord des actions d'administration.
  */
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
+import PageLayout from "./PageLayout";
 
 /**
  * Page dediee aux actions protegees de l'application.
@@ -24,6 +24,7 @@ import ProjectIcon from "./ProjectIcon";
 function AdminDashboardView({
   username,
   authenticatedProfile,
+  isAuthenticated,
   platforms,
   canAddGame,
   canDownloadOds,
@@ -31,34 +32,36 @@ function AdminDashboardView({
   canUseCollectionViews,
   downloadError,
   isDownloadingOds,
-  onBack,
-  onBackToLibrary,
+  onOpenAbout,
+  onOpenAuth,
+  onOpenHome,
+  onOpenLibrary,
   onAddGame,
   onOpenUsers,
+  onOpenAdminDashboard,
   onDownloadOds,
+  onLogout,
 }) {
   const isAdmin = authenticatedProfile === "ADMIN";
-  const backLabel = canUseCollectionViews ? "Ma collection" : "Bibliotheque";
-  const handleBack = canUseCollectionViews ? onBack : onBackToLibrary;
 
   return (
-    <main className="container adminDashboard">
-      <button className="backButton" type="button" onClick={handleBack}>
-        {backLabel}
-      </button>
-      <section className="addGameHeader">
-        <p className="eyebrow">Administration</p>
-        <h1>
-          <span className="pageTitleWithIcon">
-            <ProjectIcon />
-            <span>Dashboard admin</span>
-          </span>
-        </h1>
-        <p className="subtitle">
-          Session active : {username || "utilisateur connecte"}.
-        </p>
-      </section>
-
+    <PageLayout
+      shellClassName="container adminDashboard"
+      headerClassName="pageHeader addGameHeader"
+      eyebrow="Administration"
+      title="Dashboard admin"
+      subtitle={`Session active : ${username || "utilisateur connecte"}.`}
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={username}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenAdminDashboard={onOpenAdminDashboard}
+      onLogout={onLogout}
+    >
       {downloadError ? <p className="error">{downloadError}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
@@ -110,7 +113,7 @@ function AdminDashboardView({
           </article>
         ) : null}
       </section>
-    </main>
+    </PageLayout>
   );
 }
 

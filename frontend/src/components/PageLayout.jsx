@@ -30,6 +30,7 @@ import ProjectIcon from "./ProjectIcon";
  * @param {import("react").ReactNode} props.headerLeadingContent - Contenu affiche avant le menu.
  * @param {import("react").ReactNode} props.titleContent - Contenu personnalise du titre.
  * @param {import("react").ReactNode} props.headerExtraContent - Contenu additionnel du header.
+ * @param {import("react").ReactNode} props.headerAsideContent - Contenu lateral du header.
  * @param {boolean} props.isAuthenticated - Indique si une session locale est active.
  * @param {boolean} props.canUseCollectionViews - Indique si les vues collection sont accessibles.
  * @param {string} props.authenticatedUsername - Identifiant affiche pour l'utilisateur connecte.
@@ -53,6 +54,7 @@ function PageLayout({
   headerLeadingContent = null,
   titleContent = null,
   headerExtraContent = null,
+  headerAsideContent = null,
   isAuthenticated,
   canUseCollectionViews = true,
   authenticatedUsername,
@@ -94,6 +96,7 @@ function PageLayout({
             {headerExtraContent}
             {subtitle ? <p className="subtitle">{subtitle}</p> : null}
           </div>
+          {headerAsideContent}
         </header>
         {children}
       </main>

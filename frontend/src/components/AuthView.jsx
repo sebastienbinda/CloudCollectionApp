@@ -14,7 +14,7 @@
  */
 import { useState } from "react";
 import AuthApi from "../services/AuthApi";
-import ProjectIcon from "./ProjectIcon";
+import PageLayout from "./PageLayout";
 
 /**
  * Page d'authentification backend pour recuperer un token Bearer.
@@ -22,7 +22,19 @@ import ProjectIcon from "./ProjectIcon";
  * @param {Object} props - Callbacks de navigation et etat d'authentification.
  * @returns {import("react").JSX.Element} Formulaire de connexion.
  */
-function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
+function AuthView({
+  isAuthenticated,
+  canUseCollectionViews,
+  authenticatedUsername,
+  authenticatedProfile,
+  onOpenAbout,
+  onOpenAuth,
+  onOpenHome,
+  onOpenLibrary,
+  onOpenAdminDashboard,
+  onLogout,
+  onAuthenticated,
+}) {
   const [activeMode, setActiveMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -123,21 +135,23 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
   };
 
   return (
-    <main className="container authContainer">
-      <button className="backButton" type="button" onClick={onBack}>
-        A propos
-      </button>
-      <section className="authHeader">
-        <p className="eyebrow">Acces protege</p>
-        <h1>
-          <span className="pageTitleWithIcon">
-            <ProjectIcon />
-            <span>Authentification</span>
-          </span>
-        </h1>
-        <p className="subtitle">Connectez-vous pour afficher les actions de mise a jour.</p>
-      </section>
-
+    <PageLayout
+      shellClassName="container authContainer"
+      headerClassName="pageHeader authHeader"
+      eyebrow="Acces protege"
+      title="Authentification"
+      subtitle="Connectez-vous pour afficher les actions de mise a jour."
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenAdminDashboard={onOpenAdminDashboard}
+      onLogout={onLogout}
+    >
       {error ? <p className="error">{error}</p> : null}
       {message ? <p className="success">{message}</p> : null}
 
@@ -230,7 +244,7 @@ function AuthView({ isAuthenticated, onBack, onAuthenticated }) {
           </div>
         </form>
       )}
-    </main>
+    </PageLayout>
   );
 }
 
