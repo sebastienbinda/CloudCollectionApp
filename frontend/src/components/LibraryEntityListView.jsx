@@ -35,6 +35,7 @@ function LibraryEntityListView({
   platforms,
   selectedPlatform,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenPlatform,
@@ -52,6 +53,7 @@ function LibraryEntityListView({
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
+          onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
           onOpenPlatform={onOpenPlatform}

@@ -38,6 +38,7 @@ function LibraryHomeView({
   platforms,
   selectedPlatform,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenLibraryPlatforms,
@@ -64,6 +65,7 @@ function LibraryHomeView({
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
+          onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
           onOpenPlatform={onOpenPlatform}

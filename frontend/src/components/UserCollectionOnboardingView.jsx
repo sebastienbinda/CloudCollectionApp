@@ -41,6 +41,7 @@ function UserCollectionOnboardingView({
   isAuthenticated,
   canUseCollectionViews,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenPlatform,
@@ -94,6 +95,7 @@ function UserCollectionOnboardingView({
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
+          onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
           onOpenPlatform={onOpenPlatform}

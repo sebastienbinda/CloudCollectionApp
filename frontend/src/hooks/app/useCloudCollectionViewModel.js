@@ -162,6 +162,7 @@ function useCloudCollectionViewModel() {
       openLibraryGames: navigation.openLibraryGames,
       openUsersPage: navigation.openUsersPage,
       openAbout: navigation.openAbout,
+      openAuth: navigation.openAuth,
       openPlatform: navigation.openPlatform,
       setHomeSearchQuery: homePage.setHomeSearchQuery,
       logout: session.logout,

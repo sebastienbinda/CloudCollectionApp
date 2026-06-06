@@ -97,6 +97,7 @@ class AppViewSwitch {
         platforms={props.platforms}
         selectedPlatform={props.selectedPlatform}
         onOpenAbout={props.openAbout}
+        onOpenAuth={props.openAuth}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
         onOpenPlatform={props.openPlatform}
@@ -130,6 +131,7 @@ class AppViewSwitch {
         authenticatedUsername={props.authenticatedUsername}
         authenticatedProfile={props.authenticatedProfile}
         onOpenAbout={props.openAbout}
+        onOpenAuth={props.openAuth}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
         onOpenAdminDashboard={props.openAdminDashboard}
@@ -254,6 +256,7 @@ class AppViewSwitch {
         isAuthenticated={props.actionPermissions.isAuthenticated}
         canUseCollectionViews={props.canUseCollectionViews}
         onOpenAbout={props.openAbout}
+        onOpenAuth={props.openAuth}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
         onOpenPlatform={props.openPlatform}
@@ -295,6 +298,7 @@ class AppViewSwitch {
         platforms={props.platforms}
         selectedPlatform={props.selectedPlatform}
         onOpenAbout={props.openAbout}
+        onOpenAuth={props.openAuth}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
         onOpenLibraryPlatforms={props.openLibraryPlatforms}
@@ -329,6 +333,7 @@ class AppViewSwitch {
         platforms={props.platforms}
         selectedPlatform={props.selectedPlatform}
         onOpenAbout={props.openAbout}
+        onOpenAuth={props.openAuth}
         onOpenHome={props.goHome}
         onOpenLibrary={props.openLibrary}
         onOpenPlatform={props.openPlatform}

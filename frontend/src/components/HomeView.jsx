@@ -29,6 +29,7 @@ function HomeView({
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenAdminDashboard,
@@ -55,6 +56,7 @@ function HomeView({
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
+          onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
           onOpenPlatform={onOpenPlatform}

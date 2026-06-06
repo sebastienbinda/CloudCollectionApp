@@ -26,6 +26,7 @@ function MainMenu({
   username,
   profile,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenAdminDashboard,
@@ -101,10 +102,6 @@ function MainMenu({
     callback();
   };
 
-  const runLoginAction = () => {
-    closeMenu();
-  };
-
   const normalizedProfile = String(profile || "").trim().toUpperCase();
 
   return (
@@ -143,11 +140,6 @@ function MainMenu({
           >
             Bibliotheque
           </button>
-          {!isAuthenticated ? (
-            <a className="secondaryButton" href="/auth" onClick={runLoginAction}>
-              Connexion
-            </a>
-          ) : null}
           {isAuthenticated ? (
             <button
               className="secondaryButton"
@@ -155,6 +147,23 @@ function MainMenu({
               onClick={() => runMenuAction(onOpenAdminDashboard)}
             >
               Dashboard admin
+            </button>
+          ) : null}
+          <button
+            className="secondaryButton"
+            type="button"
+            onClick={() => runMenuAction(onOpenHome)}
+            disabled={!isAuthenticated || !canUseCollectionViews}
+          >
+            Ma collection
+          </button>
+          {!isAuthenticated ? (
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={() => runMenuAction(onOpenAuth)}
+            >
+              Connexion
             </button>
           ) : null}
           {isAuthenticated ? (
@@ -166,14 +175,6 @@ function MainMenu({
               Deconnexion
             </button>
           ) : null}
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(onOpenHome)}
-            disabled={!isAuthenticated || !canUseCollectionViews}
-          >
-            Ma collection
-          </button>
         </div>
       </div>
       {isAuthenticated ? (

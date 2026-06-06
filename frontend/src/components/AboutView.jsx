@@ -29,6 +29,7 @@ function AboutView({
   platforms,
   selectedPlatform,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenPlatform,
@@ -51,6 +52,7 @@ function AboutView({
           platforms={platforms}
           selectedPlatform={selectedPlatform}
           onOpenAbout={onOpenAbout}
+          onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
           onOpenLibrary={onOpenLibrary}
           onOpenPlatform={onOpenPlatform}
