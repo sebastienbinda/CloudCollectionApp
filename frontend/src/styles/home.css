@@ -326,6 +326,11 @@
   background: #374151;
 }
 
+.pageHeaderOptionsTrigger:focus-visible {
+  outline: 3px solid #cbd5e1;
+  outline-offset: 2px;
+}
+
 .pageHeaderActions[hidden] {
   display: none;
 }
@@ -339,7 +344,9 @@
 .pageHeaderActions .secondaryButton {
   align-items: center;
   appearance: none;
+  background: #111827;
   box-sizing: border-box;
+  color: #ffffff;
   display: inline-flex;
   font-family: inherit;
   font-size: 0.84rem;
@@ -349,6 +356,21 @@
   text-align: left;
   text-decoration: none;
   width: 100%;
+}
+
+.pageHeaderActions .secondaryButton:hover:not(:disabled) {
+  background: #0f766e;
+}
+
+.pageHeaderActions .secondaryButton:focus-visible {
+  outline: 3px solid #cbd5e1;
+  outline-offset: 2px;
+}
+
+.pageHeaderActions .secondaryButton:disabled {
+  background: #111827;
+  color: #ffffff;
+  opacity: 0.55;
 }
 
 .downloadOdsButton {
