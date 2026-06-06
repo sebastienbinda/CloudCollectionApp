@@ -9,19 +9,24 @@
  * Date de creation : 2026-05-03
  * Auteurs : Codex et Binda Sébastien
  */
+import { Children } from "react";
 import AppFooter from "./AppFooter";
+import PageLayout from "./PageLayout";
 
 /**
- * Encapsule une vue avec le footer global.
+ * Encapsule une vue en conservant le footer pour les pages non migrees.
  *
  * @param {{children: import("react").ReactNode}} props - Contenu de la vue courante.
- * @returns {import("react").JSX.Element} Vue complete avec footer.
+ * @returns {import("react").JSX.Element} Vue complete avec footer transitoire si necessaire.
  */
 function AppFrame({ children }) {
+  const childElements = Children.toArray(children);
+  const hasPageLayout = childElements.some((child) => child?.type === PageLayout);
+
   return (
     <>
       {children}
-      <AppFooter />
+      {hasPageLayout ? null : <AppFooter />}
     </>
   );
 }

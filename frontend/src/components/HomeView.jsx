@@ -3,9 +3,8 @@ import CardComponent from "./CardComponent";
 import CardCountComponent from "./CardCountComponent";
 import CardHeaderComponent from "./CardHeaderComponent";
 import GridComponent from "./GridComponent";
-import MainMenu from "./MainMenu";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
 
 /**
  * Page d'accueil avec statistiques, recherche globale et cartes plateformes.
@@ -15,8 +14,6 @@ import ProjectIcon from "./ProjectIcon";
  */
 function HomeView({
   homeStats,
-  platforms,
-  selectedPlatform,
   error,
   isLoadingHome,
   isSearchingGames,
@@ -46,46 +43,34 @@ function HomeView({
     return top;
   }, null);
   return (
-    <main className="appShell">
-      <header className="pageHeader">
-        <MainMenu
-          isAuthenticated={isAuthenticated}
-          canUseCollectionViews={canUseCollectionViews}
-          username={authenticatedUsername}
-          profile={authenticatedProfile}
-          platforms={platforms}
-          selectedPlatform={selectedPlatform}
-          onOpenAbout={onOpenAbout}
-          onOpenAuth={onOpenAuth}
-          onOpenHome={onOpenHome}
-          onOpenLibrary={onOpenLibrary}
-          onOpenPlatform={onOpenPlatform}
-          onOpenAdminDashboard={onOpenAdminDashboard}
-          onLogout={onLogout}
-        />
-        <div>
-          <p className="eyebrow">Collection personnelle</p>
-          <h1>
-            <span className="pageTitleWithIcon">
-              <ProjectIcon />
-              <span>{homeStats?.title || "Ma collection"}</span>
-            </span>
-          </h1>
-          <p className="pageHeaderDateSummary">
-            <span>
-              <span className="pageHeaderDateLabel">Premier jeu : </span>
-              {formatCellValue("Date", homeStats?.first_game_date)}
-            </span>
-            <span className="pageHeaderDateSeparator">-</span>
-            <span>
-              <span className="pageHeaderDateLabel">Dernier jeu : </span>
-              {formatCellValue("Date", homeStats?.last_game_date)}
-            </span>
-          </p>
-          <p className="subtitle">Jeux, plateformes et statistiques essentielles.</p>
-        </div>
-      </header>
-
+    <PageLayout
+      eyebrow="Collection personnelle"
+      title={homeStats?.title || "Ma collection"}
+      subtitle="Jeux, plateformes et statistiques essentielles."
+      headerExtraContent={(
+        <p className="pageHeaderDateSummary">
+          <span>
+            <span className="pageHeaderDateLabel">Premier jeu : </span>
+            {formatCellValue("Date", homeStats?.first_game_date)}
+          </span>
+          <span className="pageHeaderDateSeparator">-</span>
+          <span>
+            <span className="pageHeaderDateLabel">Dernier jeu : </span>
+            {formatCellValue("Date", homeStats?.last_game_date)}
+          </span>
+        </p>
+      )}
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenAdminDashboard={onOpenAdminDashboard}
+      onLogout={onLogout}
+    >
       {error ? <p className="error">{error}</p> : null}
       {isLoadingHome ? <ProgressBar label="Chargement des statistiques" /> : null}
 
@@ -246,7 +231,7 @@ function HomeView({
           </section>
         </>
       ) : null}
-    </main>
+    </PageLayout>
   );
 }
 

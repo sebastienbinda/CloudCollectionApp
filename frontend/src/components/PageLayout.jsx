@@ -91,8 +91,8 @@ function PageLayout({
           <div className={headerContentClassName || undefined}>
             {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
             {title || titleContent ? <h1>{renderedTitleContent}</h1> : null}
-            {subtitle ? <p className="subtitle">{subtitle}</p> : null}
             {headerExtraContent}
+            {subtitle ? <p className="subtitle">{subtitle}</p> : null}
           </div>
         </header>
         {children}
