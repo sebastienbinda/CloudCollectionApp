@@ -18,6 +18,7 @@
 - Backend Flask code must respect the layered architecture described in `documentation/backend-arch.md`.
 - Frontend should mainly handle display and user interactions.
 - Frontend React/Vite code must respect the domain hook architecture described in `documentation/frontend-arch.md`.
+- New routed React pages must use `frontend/src/components/PageLayout.jsx` and must not recreate their own application header, main menu, or footer.
 - For database models, use one class and one file for each model in the backend ORM.
 
 ## Size Constraints

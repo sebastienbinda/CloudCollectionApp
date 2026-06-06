@@ -1,4 +1,4 @@
-L'objecftif de la tache est de mettre tout nouvel utilisateur dans un statut "WAITING_VALIDATION" qui empeche a l'utilisateur de se connecté tant que l'administrateur (l'utilisateur de profil ADMIN) n'a pas valider son enregistrement depuis l'écran de suivi des utilisateurs du dashboard admin.
+L'objecftif de la tache est de mettre tout nouvel utilisateur dans un statut "WAITING_VALIDATION" qui empeche a l'utilisateur de se connecté tant que l'administrateur (l'utilisateur de profil ADMIN) n'a pas valider son enregistrement depuis l'écran de suivi des utilisateurs du Configuration.
 
 Une fois validé par l'administrateur l'utilisateur recoit un mail lui indiquant que son compte a été activté par l'administrateur et lui donne un lien d'accès direct a la page de connexion.
 

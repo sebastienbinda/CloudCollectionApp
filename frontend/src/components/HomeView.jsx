@@ -29,7 +29,7 @@ function HomeView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
   onOpenPlatform,
   onSearchQueryChange,
@@ -68,7 +68,7 @@ function HomeView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       {error ? <p className="error">{error}</p> : null}

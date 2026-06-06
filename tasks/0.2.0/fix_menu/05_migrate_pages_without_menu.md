@@ -14,7 +14,7 @@ menu commun.
 ## Pages Cibles Probables
 
 - `AuthView`
-- `AdminDashboardView`
+- `ConfigurationView`
 - `UsersView`
 - `AddGameView`
 - `PlatformDetailView`

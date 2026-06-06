@@ -61,7 +61,7 @@ function UsersView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   const [users, setUsers] = useState([]);
@@ -226,7 +226,6 @@ function UsersView({
   return (
     <PageLayout
       shellClassName="container usersPage"
-      headerClassName="pageHeader addGameHeader"
       eyebrow="Administration"
       title="Utilisateurs"
       isAuthenticated={isAuthenticated}
@@ -237,7 +236,7 @@ function UsersView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       {!isAdmin ? <p className="error">Acces reserve aux administrateurs.</p> : null}

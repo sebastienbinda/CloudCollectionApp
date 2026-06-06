@@ -27,15 +27,15 @@
 }
 
 .aboutHeader {
-  background: #0f172a;
-  min-height: 24rem;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .aboutHeader::before {
   background: linear-gradient(90deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.52));
+  border-radius: inherit;
   content: "";
   inset: 0;
+  pointer-events: none;
   position: absolute;
   z-index: 1;
 }
@@ -43,7 +43,9 @@
 .aboutHeaderImage {
   height: 100%;
   inset: 0;
+  border-radius: inherit;
   object-fit: cover;
+  pointer-events: none;
   position: absolute;
   width: 100%;
   z-index: 0;
@@ -52,7 +54,6 @@
 .aboutHeaderContent {
   color: #ffffff;
   box-sizing: border-box;
-  max-width: min(680px, calc(100% - 4rem));
   position: relative;
   z-index: 2;
 }
@@ -67,23 +68,7 @@
   color: #ffffff;
 }
 
-.aboutHeader h1 {
-  font-size: clamp(1.1rem, 2.7vw, 2.05rem);
-  line-height: 1.08;
-  white-space: nowrap;
-}
-
-.aboutHeader .pageTitleWithIcon {
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
-
-.aboutTitleMobile {
-  display: none;
-}
-
 .aboutHeader .subtitle {
-  max-width: 58rem;
   text-shadow: 0 1px 2px rgba(15, 23, 42, 0.45);
 }
 
@@ -256,12 +241,6 @@
   margin-bottom: 0.45rem;
 }
 
-.pageHeader.aboutHeader h1 {
-  font-size: clamp(1.1rem, 2.7vw, 2.05rem);
-  line-height: 1.08;
-  white-space: nowrap;
-}
-
 .pageHeaderTopActions {
   align-items: flex-start;
   display: flex;
@@ -385,21 +364,24 @@
 }
 
 .pageHeaderConnectedUser {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #dbe4f0;
-  border-radius: 6px;
-  color: #0f172a;
-  font-size: 0.86rem;
+  align-items: center;
+  background: rgba(236, 253, 245, 0.94);
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  color: #0f766e;
+  display: inline-flex;
+  font-size: 0.78rem;
   font-weight: 800;
+  line-height: 1;
   margin: 0;
-  max-width: min(24rem, calc(100% - 4rem));
-  min-height: 2.45rem;
+  max-width: min(22rem, calc(100% - 4rem));
   overflow-wrap: anywhere;
-  padding: 0.62rem 0.9rem;
+  padding: 0.28rem 0.7rem 0.26rem;
 }
 
 .pageHeaderConnectedUserADMIN {
-  border-color: #fecaca;
+  background: rgba(254, 226, 226, 0.96);
+  border-color: #fca5a5;
   color: #7f1d1d;
 }
 
@@ -654,10 +636,6 @@
     grid-template-columns: 1fr;
   }
 
-  .aboutHeader {
-    min-height: 17rem;
-  }
-
   .aboutContent {
     gap: 0.75rem;
   }
@@ -725,18 +703,6 @@
     margin-bottom: 0.2rem;
   }
 
-  .aboutHeader h1 {
-    font-size: clamp(1.15rem, 6vw, 1.55rem);
-  }
-
-  .aboutTitleFull {
-    display: none;
-  }
-
-  .aboutTitleMobile {
-    display: inline;
-  }
-
   .pageHeaderTopActions {
     left: 0.75rem;
     right: 0.75rem;
@@ -759,11 +725,9 @@
   }
 
   .pageHeaderConnectedUser {
-    font-size: 0.72rem;
-    line-height: 1.2;
+    font-size: 0.68rem;
     max-width: calc(100% - 3rem);
-    min-height: 2rem;
-    padding: 0.45rem 0.55rem;
+    padding: 0.24rem 0.48rem 0.22rem;
   }
 
   .pageHeader .subtitle {

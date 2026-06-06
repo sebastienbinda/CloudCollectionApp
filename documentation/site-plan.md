@@ -14,7 +14,7 @@
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
 - `/`: redirects to `/about` without a token, to `/collection` with a
-  non-`ADMIN` token, and to the administration dashboard with an `ADMIN` token.
+  non-`ADMIN` token, and to `/configuration` with an `ADMIN` token.
 
 The Bibliotheque routes must stay public and read-only. They consult the global
 reference database and must not depend on connected-user collection status.
@@ -26,6 +26,8 @@ reference database and must not depend on connected-user collection status.
 - `/collection/import`: authenticated onboarding page shown when
   `GET /api/users/me/collection` returns `has_collection: false` for a
   non-`ADMIN` user.
+- `/configuration`: authenticated Configuration page for protected application
+  actions.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
 
@@ -45,8 +47,7 @@ a dedicated column. Backend validation and persistence remain authoritative.
 The `ADMIN` profile keeps backend access through the route catalog and Bearer
 token hierarchy, but the frontend must not offer collection ownership screens to
 that profile. `Ma collection`, platform detail, add-game and collection import
-routes must be disabled or redirected to the administration dashboard for
-`ADMIN`.
+routes must be disabled or redirected to `/configuration` for `ADMIN`.
 
 The `/users` administration page lets an `ADMIN` validate users with status
 `WAITING_VALIDATION`. Validation activates the account on the backend and sends

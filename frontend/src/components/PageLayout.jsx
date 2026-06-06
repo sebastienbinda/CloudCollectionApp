@@ -39,7 +39,7 @@ import ProjectIcon from "./ProjectIcon";
  * @param {Function} props.onOpenAuth - Callback ouvrant la page Connexion.
  * @param {Function} props.onOpenHome - Callback ouvrant Ma collection.
  * @param {Function} props.onOpenLibrary - Callback ouvrant la Bibliotheque.
- * @param {Function} props.onOpenAdminDashboard - Callback ouvrant le dashboard admin.
+ * @param {Function} props.onOpenConfiguration - Callback ouvrant la page Configuration.
  * @param {Function} props.onLogout - Callback de deconnexion.
  * @returns {import("react").JSX.Element} Page complete avec layout commun.
  */
@@ -63,7 +63,7 @@ function PageLayout({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   const renderedTitleContent = titleContent || (
@@ -87,7 +87,7 @@ function PageLayout({
             onOpenAuth={onOpenAuth}
             onOpenHome={onOpenHome}
             onOpenLibrary={onOpenLibrary}
-            onOpenAdminDashboard={onOpenAdminDashboard}
+            onOpenConfiguration={onOpenConfiguration}
             onLogout={onLogout}
           />
           <div className={headerContentClassName || undefined}>

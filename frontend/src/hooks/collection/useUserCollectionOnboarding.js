@@ -68,7 +68,7 @@ function useUserCollectionOnboarding(options) {
     currentView,
     goHome,
     hasAccessToken,
-    openAdminDashboard,
+    openConfiguration,
     openCollectionOnboarding,
     reloadGames,
     reloadOds,
@@ -135,7 +135,7 @@ function useUserCollectionOnboarding(options) {
 
   const handleAuthenticatedUser = useCallback(async () => {
     if (!canUseCollectionViews && !canCurrentTokenUseCollectionViews()) {
-      openAdminDashboard();
+      openConfiguration();
       return;
     }
     const nextHasCollection = await checkCurrentUserCollection();
@@ -148,7 +148,7 @@ function useUserCollectionOnboarding(options) {
     canUseCollectionViews,
     checkCurrentUserCollection,
     goHome,
-    openAdminDashboard,
+    openConfiguration,
     openCollectionOnboarding,
   ]);
 

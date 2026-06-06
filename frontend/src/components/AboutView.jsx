@@ -13,7 +13,6 @@
  * Description : page publique de presentation fonctionnelle de l'application.
  */
 import PageLayout from "./PageLayout";
-import ProjectIcon from "./ProjectIcon";
 
 /**
  * Presente les fonctionnalites de l'application aux visiteurs non connectes.
@@ -30,7 +29,7 @@ function AboutView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   return (
@@ -46,13 +45,7 @@ function AboutView({
         />
       )}
       eyebrow="CloudCollectionApp"
-      titleContent={(
-        <span className="pageTitleWithIcon">
-          <ProjectIcon />
-          <span className="aboutTitleFull">Qu'est-ce que CloudApplicationApp ?</span>
-          <span className="aboutTitleMobile">CloudApplicationApp</span>
-        </span>
-      )}
+      title="CloudApplicationApp"
       subtitle={
         "Transformez votre fichier de collection personnel en site en ligne, disponible a tout moment, avec un simple import. Votre collection reste privee, la base de jeux s'enrichit avec la communaute."
       }
@@ -64,7 +57,7 @@ function AboutView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       <section className="aboutContent" aria-label="Fonctionnalites de l'application">

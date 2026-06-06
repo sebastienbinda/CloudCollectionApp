@@ -52,7 +52,7 @@ function PlatformDetailView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
   onOpenPlatform,
   onToggleSort,
@@ -103,7 +103,7 @@ function PlatformDetailView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
       headerAsideContent={(
         <div

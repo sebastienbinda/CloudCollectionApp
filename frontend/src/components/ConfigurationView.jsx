@@ -7,10 +7,10 @@
  *                                                                            |_|   |_|
  * Projet : CloudCollectionApp
  * Date de creation : 2026-05-07
- * Auteurs : Codex et Binda Sébastien
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
  * Licence : Apache 2.0
  *
- * Description : page objet de tableau de bord des actions d'administration.
+ * Description : page objet de configuration des actions protegees.
  */
 import ProgressBar from "./ProgressBar";
 import PageLayout from "./PageLayout";
@@ -18,10 +18,11 @@ import PageLayout from "./PageLayout";
 /**
  * Page dediee aux actions protegees de l'application.
  *
- * @param {Object} props - Permissions, messages et callbacks d'administration.
- * @returns {import("react").JSX.Element} Tableau de bord administrateur.
+ * @param {Object} props - Permissions, messages et callbacks de configuration.
+ * @returns {import("react").JSX.Element} Vue de configuration.
+ * @throws {void} Ne leve pas d'exception pendant le rendu React.
  */
-function AdminDashboardView({
+function ConfigurationView({
   username,
   authenticatedProfile,
   isAuthenticated,
@@ -38,7 +39,7 @@ function AdminDashboardView({
   onOpenLibrary,
   onAddGame,
   onOpenUsers,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onDownloadOds,
   onLogout,
 }) {
@@ -46,11 +47,10 @@ function AdminDashboardView({
 
   return (
     <PageLayout
-      shellClassName="container adminDashboard"
-      headerClassName="pageHeader addGameHeader"
+      shellClassName="appShell configuration"
       eyebrow="Administration"
-      title="Dashboard admin"
-      subtitle={`Session active : ${username || "utilisateur connecte"}.`}
+      title="Configuration"
+      subtitle="Accedez aux actions d'administration disponibles pour votre profil."
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
       authenticatedUsername={username}
@@ -59,7 +59,7 @@ function AdminDashboardView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       {downloadError ? <p className="error">{downloadError}</p> : null}
@@ -117,4 +117,4 @@ function AdminDashboardView({
   );
 }
 
-export default AdminDashboardView;
+export default ConfigurationView;

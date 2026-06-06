@@ -1,5 +1,7 @@
 # 09 - Documentation menu et layout commun
 
+Statut : réalisée.
+
 ## Objectif
 
 Mettre à jour les documentations associées après la migration du menu et du

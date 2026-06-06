@@ -41,7 +41,7 @@ function LibraryHomeView({
   onOpenLibraryPlatforms,
   onOpenLibraryStudios,
   onOpenLibraryGames,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   const cards = [
@@ -53,7 +53,6 @@ function LibraryHomeView({
   return (
     <PageLayout
       shellClassName="appShell libraryShell"
-      headerClassName="pageHeader libraryHeader"
       eyebrow="Bibliotheque publique"
       title="Bibliotheque"
       subtitle="Consultez les plateformes, studios et jeux du referentiel commun."
@@ -65,7 +64,7 @@ function LibraryHomeView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       {isLoadingEntities ? <ProgressBar label="Chargement de la Bibliotheque" /> : null}

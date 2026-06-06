@@ -13,7 +13,7 @@
  * Description : routeur de vues React pour l'application jeux video.
  */
 import AddGameView from "./AddGameView";
-import AdminDashboardView from "./AdminDashboardView";
+import ConfigurationView from "./ConfigurationView";
 import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import HomeView from "./HomeView";
@@ -27,6 +27,27 @@ import UsersView from "./UsersView";
  * Selectionne la vue React a afficher selon l'etat applicatif courant.
  */
 class AppViewSwitch {
+  /**
+   * Construit les proprietes communes au layout de page.
+   *
+   * @param {Object} props - Etat et callbacks applicatifs.
+   * @returns {Object} Proprietes communes de session et navigation.
+   */
+  static buildPageLayoutProps(props) {
+    return {
+      isAuthenticated: props.actionPermissions.isAuthenticated,
+      canUseCollectionViews: props.canUseCollectionViews,
+      authenticatedUsername: props.authenticatedUsername,
+      authenticatedProfile: props.authenticatedProfile,
+      onOpenAbout: props.openAbout,
+      onOpenAuth: props.openAuth,
+      onOpenHome: props.goHome,
+      onOpenLibrary: props.openLibrary,
+      onOpenConfiguration: props.openConfiguration,
+      onLogout: props.logout,
+    };
+  }
+
   /**
    * Rend la vue active.
    *
@@ -50,8 +71,8 @@ class AppViewSwitch {
       return this.renderAuth(props);
     }
 
-    if (props.currentView === "adminDashboard") {
-      return this.renderAdminDashboard(props);
+    if (props.currentView === "configuration") {
+      return this.renderConfiguration(props);
     }
 
     if (props.currentView === "users") {
@@ -90,19 +111,7 @@ class AppViewSwitch {
   static renderAbout(props) {
     return (
       <AboutView
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        platforms={props.platforms}
-        selectedPlatform={props.selectedPlatform}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenPlatform={props.openPlatform}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
+        {...this.buildPageLayoutProps(props)}
       />
     );
   }
@@ -116,9 +125,8 @@ class AppViewSwitch {
   static renderHome(props) {
     return (
       <HomeView
+        {...this.buildPageLayoutProps(props)}
         homeStats={props.homeStats}
-        platforms={props.platforms}
-        selectedPlatform={props.selectedPlatform}
         error={props.error}
         isLoadingHome={props.isLoadingHome}
         isSearchingGames={props.isSearchingGames}
@@ -126,16 +134,6 @@ class AppViewSwitch {
         homeSearchQuery={props.homeSearchQuery}
         homeSearchResults={props.homeSearchResults}
         homeSearchError={props.homeSearchError}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
         onOpenPlatform={props.openPlatform}
         onSearchQueryChange={props.setHomeSearchQuery}
         onSearchSubmit={props.searchGamesByName}
@@ -145,33 +143,25 @@ class AppViewSwitch {
   }
 
   /**
-   * Rend le tableau de bord administrateur.
+   * Rend la page Configuration.
    *
-   * @param {Object} props - Etat et callbacks d'administration.
-   * @returns {import("react").JSX.Element} Vue d'administration.
+   * @param {Object} props - Etat et callbacks de configuration.
+   * @returns {import("react").JSX.Element} Vue Configuration.
    */
-  static renderAdminDashboard(props) {
+  static renderConfiguration(props) {
     return (
-      <AdminDashboardView
+      <ConfigurationView
+        {...this.buildPageLayoutProps(props)}
         username={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
         platforms={props.platforms}
         canAddGame={props.actionPermissions.canAddGame}
         canDownloadOds={props.actionPermissions.canDownloadOds}
         canSearchUsers={props.actionPermissions.canSearchUsers}
-        canUseCollectionViews={props.canUseCollectionViews}
         downloadError={props.downloadError}
         isDownloadingOds={props.isDownloadingOds}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
-        onOpenAdminDashboard={props.openAdminDashboard}
         onDownloadOds={props.downloadOdsFile}
-        onLogout={props.logout}
       />
     );
   }
@@ -185,21 +175,12 @@ class AppViewSwitch {
   static renderUsers(props) {
     return (
       <UsersView
-        authenticatedProfile={props.authenticatedProfile}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
+        {...this.buildPageLayoutProps(props)}
         canSearchUsers={props.actionPermissions.canSearchUsers}
         canDeleteUser={props.actionPermissions.canDeleteUser}
         canLockUser={props.actionPermissions.canLockUser}
         canUnlockUser={props.actionPermissions.canUnlockUser}
         canValidateUser={props.actionPermissions.canValidateUser}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
       />
     );
   }
@@ -213,6 +194,7 @@ class AppViewSwitch {
   static renderAddGame(props) {
     return (
       <AddGameView
+        {...this.buildPageLayoutProps(props)}
         platforms={props.platforms}
         gameForm={props.gameForm}
         addGameColumnValues={props.addGameColumnValues}
@@ -220,16 +202,6 @@ class AppViewSwitch {
         addGameMessage={props.addGameMessage}
         isAddingGame={props.isAddingGame}
         canAddGame={props.actionPermissions.canAddGame}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
         onBack={props.goHome}
         onSubmit={props.submitNewGame}
         onFieldChange={props.updateGameFormValue}
@@ -246,16 +218,7 @@ class AppViewSwitch {
   static renderAuth(props) {
     return (
       <AuthView
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
+        {...this.buildPageLayoutProps(props)}
         onAuthenticated={props.handleAuthenticatedUser}
       />
     );
@@ -270,10 +233,7 @@ class AppViewSwitch {
   static renderCollectionOnboarding(props) {
     return (
       <UserCollectionOnboardingView
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        platforms={props.platforms}
-        selectedPlatform={props.selectedPlatform}
+        {...this.buildPageLayoutProps(props)}
         selectedCollectionFileName={props.selectedCollectionFileName}
         availableImportSheets={props.availableImportSheets}
         hasAnalyzedImportFile={props.hasAnalyzedImportFile}
@@ -283,15 +243,6 @@ class AppViewSwitch {
         isCheckingCollection={props.isCheckingCollection}
         isAnalyzingCollection={props.isAnalyzingCollection}
         isImportingCollection={props.isImportingCollection}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenPlatform={props.openPlatform}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
         onFileChange={props.selectCollectionFile}
         onConfigurationChange={props.updateImportConfiguration}
         onLayoutChange={props.updateImportLayout}
@@ -318,25 +269,13 @@ class AppViewSwitch {
   static renderLibrary(props) {
     return (
       <LibraryHomeView
+        {...this.buildPageLayoutProps(props)}
         entities={props.libraryEntities.entities}
         entitiesError={props.libraryEntities.entitiesError}
         isLoadingEntities={props.libraryEntities.isLoadingEntities}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        platforms={props.platforms}
-        selectedPlatform={props.selectedPlatform}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
         onOpenLibraryPlatforms={props.openLibraryPlatforms}
         onOpenLibraryStudios={props.openLibraryStudios}
         onOpenLibraryGames={props.openLibraryGames}
-        onOpenPlatform={props.openPlatform}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
       />
     );
   }
@@ -353,22 +292,10 @@ class AppViewSwitch {
   static renderLibraryList(props, title, subtitle, listState) {
     return (
       <LibraryEntityListView
+        {...this.buildPageLayoutProps(props)}
         title={title}
         subtitle={subtitle}
         listState={listState}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
-        platforms={props.platforms}
-        selectedPlatform={props.selectedPlatform}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenPlatform={props.openPlatform}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
       />
     );
   }
@@ -382,6 +309,7 @@ class AppViewSwitch {
   static renderPlatform(props) {
     return (
       <PlatformDetailView
+        {...this.buildPageLayoutProps(props)}
         selectedPlatform={props.selectedPlatform}
         selectedPlatformStats={props.selectedPlatformStats}
         studioCount={props.studioCount}
@@ -399,19 +327,9 @@ class AppViewSwitch {
         isLoadingPlatforms={props.isLoadingPlatforms}
         isLoadingGames={props.isLoadingGames}
         isSavingGame={props.isSavingGame}
-        isAuthenticated={props.actionPermissions.isAuthenticated}
-        canUseCollectionViews={props.canUseCollectionViews}
-        authenticatedUsername={props.authenticatedUsername}
-        authenticatedProfile={props.authenticatedProfile}
         canEditGame={props.actionPermissions.canEditGame}
         canDeleteGame={props.actionPermissions.canDeleteGame}
         editingGame={props.editingGame}
-        onOpenAbout={props.openAbout}
-        onOpenAuth={props.openAuth}
-        onOpenHome={props.goHome}
-        onOpenLibrary={props.openLibrary}
-        onOpenAdminDashboard={props.openAdminDashboard}
-        onLogout={props.logout}
         onOpenPlatform={props.openPlatform}
         onToggleSort={props.toggleSort}
         onColumnFiltersChange={props.setColumnFilters}

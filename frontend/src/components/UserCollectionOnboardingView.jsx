@@ -41,7 +41,7 @@ function UserCollectionOnboardingView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
   onFileChange,
   onConfigurationChange,
@@ -83,7 +83,6 @@ function UserCollectionOnboardingView({
   return (
     <PageLayout
       shellClassName="appShell collectionOnboardingShell"
-      headerClassName="pageHeader collectionOnboardingHeader"
       eyebrow="Premiere collection"
       title="Importer votre collection"
       subtitle="Ajoutez votre collection pour initialiser vos plateformes, studios et jeux."
@@ -95,7 +94,7 @@ function UserCollectionOnboardingView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       <section className="collectionOnboardingContent" aria-label="Import de collection">

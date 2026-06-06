@@ -52,8 +52,8 @@ layout ne doit pas reprendre cette responsabilité.
 
 - `frontend/src/components/AuthView.jsx` : page publique `/auth`, header local
   `authHeader` et bouton retour local.
-- `frontend/src/components/AdminDashboardView.jsx` : page privée
-  `/admin-dashboard`, header local `addGameHeader` et bouton retour local.
+- `frontend/src/components/ConfigurationView.jsx` : page privée
+  `/configuration`, header local `addGameHeader` et bouton retour local.
 - `frontend/src/components/UsersView.jsx` : page admin `/users`, header local
   `addGameHeader` et bouton retour local.
 - `frontend/src/components/AddGameView.jsx` : page privée `/add-game`, header
@@ -82,7 +82,7 @@ Les props communes nécessaires au menu sont :
 - `onOpenAbout`
 - `onOpenHome`
 - `onOpenLibrary`
-- `onOpenAdminDashboard`
+- `onOpenConfiguration`
 - `onLogout`
 
 `MainMenu` reçoit actuellement parfois `platforms`, `selectedPlatform` et
@@ -101,19 +101,19 @@ nouveau ne les justifie.
 - `AuthView` reçoit seulement `isAuthenticated`, `canUseCollectionViews`,
   `onAuthenticated` et `onBack`. Il manque :
   `authenticatedUsername`, `authenticatedProfile`, `onOpenAbout`,
-  `onOpenHome`, `onOpenLibrary`, `onOpenAdminDashboard` et `onLogout`.
-- `AdminDashboardView` reçoit `username`, `authenticatedProfile`,
+  `onOpenHome`, `onOpenLibrary`, `onOpenConfiguration` et `onLogout`.
+- `ConfigurationView` reçoit `username`, `authenticatedProfile`,
   `canUseCollectionViews`, `onBack` et `onBackToLibrary`, mais il manque une
   forme homogène des props de menu :
   `isAuthenticated`, `authenticatedUsername`, `onOpenAbout`, `onOpenHome`,
-  `onOpenLibrary`, `onOpenAdminDashboard` et `onLogout`.
+  `onOpenLibrary`, `onOpenConfiguration` et `onLogout`.
 - `UsersView` reçoit `authenticatedProfile` et `onBack`, mais il manque toutes
   les props communes de menu.
 - `AddGameView` reçoit `onBack`, mais il manque toutes les props communes de
   menu.
 - `PlatformDetailView` reçoit `isAuthenticated` et `onBack`, mais il manque :
   `canUseCollectionViews`, `authenticatedUsername`, `authenticatedProfile`,
-  `onOpenAbout`, `onOpenHome`, `onOpenLibrary`, `onOpenAdminDashboard` et
+  `onOpenAbout`, `onOpenHome`, `onOpenLibrary`, `onOpenConfiguration` et
   `onLogout`.
 
 ## Composants À Créer Ou Modifier

@@ -35,13 +35,12 @@ function LibraryEntityListView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   return (
     <PageLayout
       shellClassName="appShell libraryShell"
-      headerClassName="pageHeader libraryHeader"
       eyebrow="Bibliotheque publique"
       title={title}
       subtitle={subtitle}
@@ -53,7 +52,7 @@ function LibraryEntityListView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       <section className="libraryListSection">

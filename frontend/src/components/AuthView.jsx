@@ -31,7 +31,7 @@ function AuthView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
   onAuthenticated,
 }) {
@@ -137,7 +137,6 @@ function AuthView({
   return (
     <PageLayout
       shellClassName="container authContainer"
-      headerClassName="pageHeader authHeader"
       eyebrow="Acces protege"
       title="Authentification"
       subtitle="Connectez-vous pour afficher les actions de mise a jour."
@@ -149,7 +148,7 @@ function AuthView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       {error ? <p className="error">{error}</p> : null}

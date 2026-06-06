@@ -44,7 +44,7 @@ function useAppNavigation(options) {
 
   const openAddGamePage = () => {
     if (!options.canUseCollectionViews) {
-      openView("adminDashboard", "/admin-dashboard");
+      openView("configuration", "/configuration");
       return;
     }
     options.clearDeleteGameFeedback();
@@ -55,7 +55,7 @@ function useAppNavigation(options) {
 
   const openPlatform = (platform) => {
     if (!options.canUseCollectionViews) {
-      openView("adminDashboard", "/admin-dashboard");
+      openView("configuration", "/configuration");
       return;
     }
     const platformId = typeof platform === "object" && platform !== null ? platform.id : platform;
@@ -78,7 +78,7 @@ function useAppNavigation(options) {
         "/bibliotheque/jeux": "libraryGames",
         "/collection": "home",
         "/add-game": "addGame",
-        "/admin-dashboard": "adminDashboard",
+        "/configuration": "configuration",
         "/users": "users",
         "/collection/import": "collectionOnboarding",
       }[pathname];
@@ -117,8 +117,8 @@ function useAppNavigation(options) {
   useEffect(() => {
     const collectionViews = ["home", "games", "addGame", "collectionOnboarding"];
     if (options.canUseCollectionViews || !collectionViews.includes(currentView)) return;
-    const fallbackView = options.authenticatedProfile === "ADMIN" ? "adminDashboard" : "about";
-    const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/admin-dashboard" : "/about";
+    const fallbackView = options.authenticatedProfile === "ADMIN" ? "configuration" : "about";
+    const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/configuration" : "/about";
     setSelectedPlatform("");
     setCurrentView(fallbackView);
     window.history.replaceState({}, "", fallbackPath);
@@ -141,7 +141,7 @@ function useAppNavigation(options) {
     setSelectedPlatform,
     goHome: () => {
       if (!options.canUseCollectionViews) {
-        openView("adminDashboard", "/admin-dashboard");
+        openView("configuration", "/configuration");
         return;
       }
       openView("home", "/collection");
@@ -153,11 +153,11 @@ function useAppNavigation(options) {
     openLibraryStudios: () => openView("libraryStudios", "/bibliotheque/studios"),
     openLibraryGames: () => openView("libraryGames", "/bibliotheque/jeux"),
     openAddGamePage,
-    openAdminDashboard: () => openView("adminDashboard", "/admin-dashboard"),
+    openConfiguration: () => openView("configuration", "/configuration"),
     openUsersPage: () => openView("users", "/users"),
     openCollectionOnboarding: () => {
       if (!options.canUseCollectionViews) {
-        openView("adminDashboard", "/admin-dashboard");
+        openView("configuration", "/configuration");
         return;
       }
       openView("collectionOnboarding", "/collection/import");

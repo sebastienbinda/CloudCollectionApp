@@ -34,7 +34,7 @@ function AddGameView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
   onBack,
   onSubmit,
@@ -47,7 +47,6 @@ function AddGameView({
   return (
     <PageLayout
       shellClassName="container"
-      headerClassName="pageHeader addGameHeader"
       eyebrow="Nouveau jeu"
       title="Ajouter un jeu"
       subtitle="Le jeu sera ajoute dans la collection en conservant la presentation de votre fichier."
@@ -59,7 +58,7 @@ function AddGameView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
-      onOpenAdminDashboard={onOpenAdminDashboard}
+      onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
       {addGameError ? <p className="error">{addGameError}</p> : null}

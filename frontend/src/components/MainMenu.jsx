@@ -29,7 +29,7 @@ function MainMenu({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -144,9 +144,9 @@ function MainMenu({
             <button
               className="secondaryButton"
               type="button"
-              onClick={() => runMenuAction(onOpenAdminDashboard)}
-            >
-              Dashboard admin
+              onClick={() => runMenuAction(onOpenConfiguration)}
+          >
+              Configuration
             </button>
           ) : null}
           <button
