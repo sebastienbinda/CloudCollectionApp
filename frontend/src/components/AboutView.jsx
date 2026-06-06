@@ -12,8 +12,7 @@
  *
  * Description : page publique de presentation fonctionnelle de l'application.
  */
-import MainMenu from "./MainMenu";
-import ProjectIcon from "./ProjectIcon";
+import PageLayout from "./PageLayout";
 
 /**
  * Presente les fonctionnalites de l'application aux visiteurs non connectes.
@@ -26,54 +25,41 @@ function AboutView({
   canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
-  platforms,
-  selectedPlatform,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenPlatform,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   return (
-    <main className="appShell aboutShell">
-      <header className="pageHeader aboutHeader">
+    <PageLayout
+      shellClassName="appShell aboutShell"
+      headerClassName="pageHeader aboutHeader"
+      headerContentClassName="aboutHeaderContent"
+      headerLeadingContent={(
         <img
           className="aboutHeaderImage"
           src="/about-home-image.jpg?v=ods-home-20260520"
           alt="Apercu visuel de la collection de jeux video"
         />
-        <MainMenu
-          isAuthenticated={isAuthenticated}
-          canUseCollectionViews={canUseCollectionViews}
-          username={authenticatedUsername}
-          profile={authenticatedProfile}
-          platforms={platforms}
-          selectedPlatform={selectedPlatform}
-          onOpenAbout={onOpenAbout}
-          onOpenHome={onOpenHome}
-          onOpenLibrary={onOpenLibrary}
-          onOpenPlatform={onOpenPlatform}
-          onOpenAdminDashboard={onOpenAdminDashboard}
-          onLogout={onLogout}
-        />
-        <div className="aboutHeaderContent">
-          <p className="eyebrow">CloudCollectionApp</p>
-          <h1>
-            <span className="pageTitleWithIcon">
-              <ProjectIcon />
-              <span className="aboutTitleFull">Qu'est-ce que CloudApplicationApp ?</span>
-              <span className="aboutTitleMobile">CloudApplicationApp</span>
-            </span>
-          </h1>
-          <p className="subtitle">
-            Transformez votre fichier de collection personnel en site en ligne, disponible a tout
-            moment, avec un simple import. Votre collection reste privee, la base de jeux
-            s'enrichit avec la communaute.
-          </p>
-        </div>
-      </header>
-
+      )}
+      eyebrow="CloudCollectionApp"
+      title="CloudApplicationApp"
+      subtitle={
+        "Transformez votre fichier de collection personnel en site en ligne, disponible a tout moment, avec un simple import. Votre collection reste privee, la base de jeux s'enrichit avec la communaute."
+      }
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenConfiguration={onOpenConfiguration}
+      onLogout={onLogout}
+    >
       <section className="aboutContent" aria-label="Fonctionnalites de l'application">
         <div className="aboutIntro">
           <h2>Ce que permet l'application</h2>
@@ -158,7 +144,7 @@ function AboutView({
           </article>
         </div>
       </section>
-    </main>
+    </PageLayout>
   );
 }
 

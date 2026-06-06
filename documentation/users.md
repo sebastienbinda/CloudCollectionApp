@@ -26,7 +26,7 @@ The application supports these user profiles:
   grant access to user administration features.
 - `ADMIN`: administration profile for the configured technical account. An
   `ADMIN` can supervise registered accounts, validate waiting users, lock or
-  unlock accounts, delete users and access the administration dashboard. This
+  unlock accounts, delete users and access the Configuration page. This
   role is intended for application governance, not for owning a personal
   frontend collection.
 
@@ -71,9 +71,9 @@ descriptions.
 
 ## Frontend Rules
 
-The administration dashboard may show a `Gerer les utilisateurs` section only
-when the local token profile is `ADMIN`. Users with the `USER` profile must not
-see this section.
+The Configuration page may show a `Gerer les utilisateurs` section only when
+the local token profile is `ADMIN`. Users with the `USER` profile must not see
+this section.
 
 The frontend `/users` page lists the properties returned by `GET /api/users` in a
 table. The page must not add or display password fields. If the backend route

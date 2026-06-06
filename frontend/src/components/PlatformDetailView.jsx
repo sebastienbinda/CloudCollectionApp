@@ -14,8 +14,8 @@ import {
   formatNumber,
 } from "../collectionUtils";
 import EditGameDialog from "./EditGameDialog";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
 import TableComponent from "./TableComponent";
 
 /**
@@ -43,9 +43,17 @@ function PlatformDetailView({
   isLoadingGames,
   isSavingGame,
   isAuthenticated,
+  canUseCollectionViews,
+  authenticatedUsername,
+  authenticatedProfile,
   canEditGame,
   canDeleteGame,
-  onBack,
+  onOpenAbout,
+  onOpenAuth,
+  onOpenHome,
+  onOpenLibrary,
+  onOpenConfiguration,
+  onLogout,
   onOpenPlatform,
   onToggleSort,
   onColumnFiltersChange,
@@ -82,23 +90,22 @@ function PlatformDetailView({
   };
 
   return (
-    <main className="container">
-      <button className="backButton" type="button" onClick={onBack}>
-        Ma collection
-      </button>
-      <section
-        className="platformDetailHero"
-      >
-        <div className="platformDetailContent">
-          <p className="eyebrow">Plateforme</p>
-          <h1>
-            <span className="pageTitleWithIcon">
-              <ProjectIcon />
-              <span>{selectedPlatformName}</span>
-            </span>
-          </h1>
-          <p className="subtitle">Filtrer la liste par plateforme</p>
-        </div>
+    <PageLayout
+      shellClassName="container"
+      eyebrow="Plateforme"
+      title={selectedPlatformName}
+      subtitle="Filtrer la liste par plateforme"
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenConfiguration={onOpenConfiguration}
+      onLogout={onLogout}
+      headerAsideContent={(
         <div
           className={`platformDetailStats ${
             isAuthenticated ? "platformDetailStatsAuthenticated" : "platformDetailStatsPublic"
@@ -126,7 +133,8 @@ function PlatformDetailView({
             <strong>{formatNumber(studioCount)}</strong>
           </article>
         </div>
-      </section>
+      )}
+    >
       {error ? <p className="error">{error}</p> : null}
       {deleteGameError ? <p className="error">{deleteGameError}</p> : null}
       {deleteGameMessage ? <p className="success">{deleteGameMessage}</p> : null}
@@ -216,7 +224,7 @@ function PlatformDetailView({
       {!isLoadingGames && games.length > 0 && filteredGames.length === 0 ? (
         <p>Aucun jeu ne correspond aux filtres de colonnes.</p>
       ) : null}
-    </main>
+    </PageLayout>
   );
 }
 

@@ -12,6 +12,12 @@ React, Vite, frontend hooks, frontend services, pages or shared UI components.
   filtering, sorting or form business workflows.
 - React components under `frontend/src/components/` must focus on rendering,
   layout, user interaction and local UI-only state.
+- Every routed React page must use `frontend/src/components/PageLayout.jsx` for
+  the shared shell, header, main menu and footer.
+- Routed pages must not recreate their own application header, main menu or
+  footer. Page-specific header content must be injected through `PageLayout`
+  props such as `headerLeadingContent`, `titleContent`, `headerExtraContent` or
+  `headerAsideContent`.
 - Frontend API calls must remain in `frontend/src/services/`.
 - Reusable calculations must remain in pure utility modules such as
   `frontend/src/collectionUtils.js`.
@@ -42,12 +48,14 @@ Use the following domain folders for new or modified hooks:
 
 ## Current Entry Points
 
-- `frontend/src/App.jsx` renders `AppFrame`, delegates active view rendering to
-  `AppViewSwitch`, and mounts `AuthSessionModal`.
+- `frontend/src/App.jsx` delegates active view rendering to `AppViewSwitch` and
+  mounts `AuthSessionModal`.
 - `frontend/src/hooks/app/useCloudCollectionViewModel.js` composes domain hooks
   into `viewProps` and `authModalProps`.
 - `frontend/src/components/AppViewSwitch.jsx` maps `currentView` to page
   components.
+- `frontend/src/components/PageLayout.jsx` owns the shared page shell, mounts
+  `MainMenu` in the page header and renders the common footer.
 
 ## Responsibilities
 
@@ -75,7 +83,7 @@ Use the following domain folders for new or modified hooks:
 - Call `GET /api/users/me/collection` after sign-in to decide whether the user
   can continue to `/collection` or must visit `/collection/import`.
 - Skip the collection-status check for the configured `ADMIN` account and route
-  it to administration instead, because `ADMIN` is not a frontend collection
+  it to `/configuration` instead, because `ADMIN` is not a frontend collection
   owner.
 - Call `POST /api/users/import/file/<file_type>` with `FormData`, then
   `POST /api/users/import/analyze/<file_type>` to prefill sheet choices, then
@@ -137,6 +145,17 @@ Use the following domain folders for new or modified hooks:
   automatic request loops.
 - Do not put React state in services.
 - Do not duplicate token logic outside existing auth/API services.
+
+### Page Components
+
+- New routed page components must be rendered by `AppViewSwitch` with the common
+  page-layout props produced by `buildPageLayoutProps`.
+- New routed page components must receive the shared navigation callbacks from
+  `PageLayout` props and forward them to `PageLayout`.
+- New routed page components must not import `MainMenu` directly. `MainMenu`
+  remains an implementation detail of `PageLayout`.
+- Dialogs, popovers and embedded widgets may use local headers when they are not
+  full routed pages.
 
 ## Architecture Decisions
 

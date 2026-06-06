@@ -13,9 +13,8 @@
  * Description : page publique generique des listes Bibliotheque.
  */
 import { formatCellValue } from "../collectionUtils";
-import MainMenu from "./MainMenu";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
 import TableComponent from "./TableComponent";
 
 /**
@@ -32,44 +31,30 @@ function LibraryEntityListView({
   canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
-  platforms,
-  selectedPlatform,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenPlatform,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   return (
-    <main className="appShell libraryShell">
-      <header className="pageHeader libraryHeader">
-        <MainMenu
-          isAuthenticated={isAuthenticated}
-          canUseCollectionViews={canUseCollectionViews}
-          username={authenticatedUsername}
-          profile={authenticatedProfile}
-          platforms={platforms}
-          selectedPlatform={selectedPlatform}
-          onOpenAbout={onOpenAbout}
-          onOpenHome={onOpenHome}
-          onOpenLibrary={onOpenLibrary}
-          onOpenPlatform={onOpenPlatform}
-          onOpenAdminDashboard={onOpenAdminDashboard}
-          onLogout={onLogout}
-        />
-        <div>
-          <p className="eyebrow">Bibliotheque publique</p>
-          <h1>
-            <span className="pageTitleWithIcon">
-              <ProjectIcon />
-              <span>{title}</span>
-            </span>
-          </h1>
-          <p className="subtitle">{subtitle}</p>
-        </div>
-      </header>
-
+    <PageLayout
+      shellClassName="appShell libraryShell"
+      eyebrow="Bibliotheque publique"
+      title={title}
+      subtitle={subtitle}
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenConfiguration={onOpenConfiguration}
+      onLogout={onLogout}
+    >
       <section className="libraryListSection">
         <form className="librarySearchForm" onSubmit={listState.submitSearch}>
           <label htmlFor="library-search">Recherche par nom</label>
@@ -112,7 +97,7 @@ function LibraryEntityListView({
           />
         ) : null}
       </section>
-    </main>
+    </PageLayout>
   );
 }
 

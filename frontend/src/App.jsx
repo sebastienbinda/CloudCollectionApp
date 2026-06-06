@@ -12,7 +12,6 @@
  *
  * Description : point d'entree React principal de CloudCollectionApp.
  */
-import AppFrame from "./components/AppFrame";
 import AuthSessionModal from "./components/AuthSessionModal";
 import AppViewSwitch from "./components/AppViewSwitch";
 import useCloudCollectionViewModel from "./hooks/app/useCloudCollectionViewModel";
@@ -26,10 +25,10 @@ function App() {
   const { viewProps, authModalProps } = useCloudCollectionViewModel();
 
   return (
-    <AppFrame>
+    <>
       {AppViewSwitch.render(viewProps)}
       <AuthSessionModal {...authModalProps} />
-    </AppFrame>
+    </>
   );
 }
 

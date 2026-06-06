@@ -2,7 +2,8 @@
 
 ## Key Points
 
-- The unified application menu is handled by
+- The unified application menu is rendered by
+  `frontend/src/components/PageLayout.jsx` through
   `frontend/src/components/MainMenu.jsx`.
 - It must remain usable with a mouse, keyboard, and touchscreen.
 - The menu closes on outside click, on the `Escape` key, after an action, and
@@ -13,18 +14,21 @@
 ## Objective
 
 The main menu gives access to cross-application views and session actions from
-the A propos and Ma collection pages. It must not contain business logic: it
-triggers callbacks provided by `App.jsx` and only reflects the session state
-received through props.
+all routed pages using `PageLayout`. It must not contain business logic: it
+triggers callbacks provided by the application view model and only reflects the
+session state received through props.
 
 ## Expected Behavior
 
 - The main button opens and closes the menu.
+- Menu entries must be rendered as `<button>` elements.
 - A click or pointer event outside the menu closes the menu.
 - The `Escape` key closes the menu when it is open.
 - Clicking an action closes the menu before triggering navigation.
 - Menu entries from navigation and session actions must be presented in
   alphabetical order.
+- The session action is always the last menu entry: `Connexion` for anonymous
+  visitors, `Deconnexion` for authenticated users.
 - On desktop, the menu closes when the mouse pointer leaves it.
 - A transition area between the button and the panel may remain active to avoid
   accidental closing while moving the mouse.
@@ -38,7 +42,7 @@ received through props.
 - `Bibliotheque` always remains accessible.
 - `Ma collection` requires an active local session and opens `/collection`.
 - Inaccessible entries must use `disabled`.
-- Session actions such as `Connexion`, `Dashboard admin` and `Deconnexion` are
+- Session actions such as `Connexion`, `Configuration` and `Deconnexion` are
   managed inside `MainMenu`; do not reintroduce a separate session dropdown.
 - Once a user is connected, the header displays
   `Utilisateur connecte : <email>` on the top right outside the menu.
@@ -61,6 +65,8 @@ received through props.
   remain precise.
 - Do not add an external dependency for this menu.
 - Keep menu logic in `MainMenu.jsx`; pages must not manage its open/closed state.
+- Pages must use `PageLayout` for the shared header and must not import
+  `MainMenu` directly.
 - Routes and navigation remain centralized in `App.jsx` and
   `AppRouting`.
 - After any menu change, run at least `npm run build`.

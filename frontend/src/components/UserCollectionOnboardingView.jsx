@@ -12,10 +12,9 @@
  *
  * Description : vue d'onboarding pour importer la collection utilisateur initiale.
  */
-import MainMenu from "./MainMenu";
 import ImportConfigurationFields from "./ImportConfigurationFields";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
 
 /**
  * Affiche le parcours initial d'import de collection ODS.
@@ -27,8 +26,6 @@ import ProjectIcon from "./ProjectIcon";
 function UserCollectionOnboardingView({
   authenticatedUsername,
   authenticatedProfile,
-  platforms,
-  selectedPlatform,
   selectedCollectionFileName,
   availableImportSheets,
   hasAnalyzedImportFile,
@@ -41,10 +38,10 @@ function UserCollectionOnboardingView({
   isAuthenticated,
   canUseCollectionViews,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
-  onOpenPlatform,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
   onFileChange,
   onConfigurationChange,
@@ -84,36 +81,22 @@ function UserCollectionOnboardingView({
   };
 
   return (
-    <main className="appShell collectionOnboardingShell">
-      <header className="pageHeader collectionOnboardingHeader">
-        <MainMenu
-          isAuthenticated={isAuthenticated}
-          canUseCollectionViews={canUseCollectionViews}
-          username={authenticatedUsername}
-          profile={authenticatedProfile}
-          platforms={platforms}
-          selectedPlatform={selectedPlatform}
-          onOpenAbout={onOpenAbout}
-          onOpenHome={onOpenHome}
-          onOpenLibrary={onOpenLibrary}
-          onOpenPlatform={onOpenPlatform}
-          onOpenAdminDashboard={onOpenAdminDashboard}
-          onLogout={onLogout}
-        />
-        <div>
-          <p className="eyebrow">Premiere collection</p>
-          <h1>
-            <span className="pageTitleWithIcon">
-              <ProjectIcon />
-              <span>Importer votre collection</span>
-            </span>
-          </h1>
-          <p className="subtitle">
-            Ajoutez votre collection pour initialiser vos plateformes, studios et jeux.
-          </p>
-        </div>
-      </header>
-
+    <PageLayout
+      shellClassName="appShell collectionOnboardingShell"
+      eyebrow="Premiere collection"
+      title="Importer votre collection"
+      subtitle="Ajoutez votre collection pour initialiser vos plateformes, studios et jeux."
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenConfiguration={onOpenConfiguration}
+      onLogout={onLogout}
+    >
       <section className="collectionOnboardingContent" aria-label="Import de collection">
         <div className="collectionOnboardingSteps" aria-label="Parcours d'import">
           <article>
@@ -180,7 +163,7 @@ function UserCollectionOnboardingView({
           </form>
         )}
       </section>
-    </main>
+    </PageLayout>
   );
 }
 

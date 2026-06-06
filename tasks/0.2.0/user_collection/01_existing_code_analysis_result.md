@@ -318,7 +318,7 @@ Fichiers :
 
 Constat :
 
-- les vues actuelles sont `about`, `auth`, `home`, `games`, `addGame`, `adminDashboard`, `users`, `wishlist`;
+- les vues actuelles sont `about`, `auth`, `home`, `games`, `addGame`, `configuration`, `users`, `wishlist`;
 - `/accueil` est la page home authentifiee;
 - les utilisateurs non authentifies sont rediriges vers `/about`.
 

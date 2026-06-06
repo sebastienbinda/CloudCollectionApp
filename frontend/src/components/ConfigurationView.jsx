@@ -7,23 +7,25 @@
  *                                                                            |_|   |_|
  * Projet : CloudCollectionApp
  * Date de creation : 2026-05-07
- * Auteurs : Codex et Binda Sébastien
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
  * Licence : Apache 2.0
  *
- * Description : page objet de tableau de bord des actions d'administration.
+ * Description : page objet de configuration des actions protegees.
  */
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
+import PageLayout from "./PageLayout";
 
 /**
  * Page dediee aux actions protegees de l'application.
  *
- * @param {Object} props - Permissions, messages et callbacks d'administration.
- * @returns {import("react").JSX.Element} Tableau de bord administrateur.
+ * @param {Object} props - Permissions, messages et callbacks de configuration.
+ * @returns {import("react").JSX.Element} Vue de configuration.
+ * @throws {void} Ne leve pas d'exception pendant le rendu React.
  */
-function AdminDashboardView({
+function ConfigurationView({
   username,
   authenticatedProfile,
+  isAuthenticated,
   platforms,
   canAddGame,
   canDownloadOds,
@@ -31,34 +33,35 @@ function AdminDashboardView({
   canUseCollectionViews,
   downloadError,
   isDownloadingOds,
-  onBack,
-  onBackToLibrary,
+  onOpenAbout,
+  onOpenAuth,
+  onOpenHome,
+  onOpenLibrary,
   onAddGame,
   onOpenUsers,
+  onOpenConfiguration,
   onDownloadOds,
+  onLogout,
 }) {
   const isAdmin = authenticatedProfile === "ADMIN";
-  const backLabel = canUseCollectionViews ? "Ma collection" : "Bibliotheque";
-  const handleBack = canUseCollectionViews ? onBack : onBackToLibrary;
 
   return (
-    <main className="container adminDashboard">
-      <button className="backButton" type="button" onClick={handleBack}>
-        {backLabel}
-      </button>
-      <section className="addGameHeader">
-        <p className="eyebrow">Administration</p>
-        <h1>
-          <span className="pageTitleWithIcon">
-            <ProjectIcon />
-            <span>Dashboard admin</span>
-          </span>
-        </h1>
-        <p className="subtitle">
-          Session active : {username || "utilisateur connecte"}.
-        </p>
-      </section>
-
+    <PageLayout
+      shellClassName="appShell configuration"
+      eyebrow="Administration"
+      title="Configuration"
+      subtitle="Accedez aux actions d'administration disponibles pour votre profil."
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={username}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenConfiguration={onOpenConfiguration}
+      onLogout={onLogout}
+    >
       {downloadError ? <p className="error">{downloadError}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
@@ -110,8 +113,8 @@ function AdminDashboardView({
           </article>
         ) : null}
       </section>
-    </main>
+    </PageLayout>
   );
 }
 
-export default AdminDashboardView;
+export default ConfigurationView;

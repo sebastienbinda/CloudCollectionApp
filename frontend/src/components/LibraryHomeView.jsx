@@ -17,9 +17,8 @@ import CardComponent from "./CardComponent";
 import CardCountComponent from "./CardCountComponent";
 import CardHeaderComponent from "./CardHeaderComponent";
 import GridComponent from "./GridComponent";
-import MainMenu from "./MainMenu";
+import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import ProjectIcon from "./ProjectIcon";
 
 /**
  * Affiche les compteurs publics et les acces aux entites Bibliotheque.
@@ -35,16 +34,14 @@ function LibraryHomeView({
   canUseCollectionViews,
   authenticatedUsername,
   authenticatedProfile,
-  platforms,
-  selectedPlatform,
   onOpenAbout,
+  onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenLibraryPlatforms,
   onOpenLibraryStudios,
   onOpenLibraryGames,
-  onOpenPlatform,
-  onOpenAdminDashboard,
+  onOpenConfiguration,
   onLogout,
 }) {
   const cards = [
@@ -54,36 +51,22 @@ function LibraryHomeView({
   ];
 
   return (
-    <main className="appShell libraryShell">
-      <header className="pageHeader libraryHeader">
-        <MainMenu
-          isAuthenticated={isAuthenticated}
-          canUseCollectionViews={canUseCollectionViews}
-          username={authenticatedUsername}
-          profile={authenticatedProfile}
-          platforms={platforms}
-          selectedPlatform={selectedPlatform}
-          onOpenAbout={onOpenAbout}
-          onOpenHome={onOpenHome}
-          onOpenLibrary={onOpenLibrary}
-          onOpenPlatform={onOpenPlatform}
-          onOpenAdminDashboard={onOpenAdminDashboard}
-          onLogout={onLogout}
-        />
-        <div>
-          <p className="eyebrow">Bibliotheque publique</p>
-          <h1>
-            <span className="pageTitleWithIcon">
-              <ProjectIcon />
-              <span>Bibliotheque</span>
-            </span>
-          </h1>
-          <p className="subtitle">
-            Consultez les plateformes, studios et jeux du referentiel commun.
-          </p>
-        </div>
-      </header>
-
+    <PageLayout
+      shellClassName="appShell libraryShell"
+      eyebrow="Bibliotheque publique"
+      title="Bibliotheque"
+      subtitle="Consultez les plateformes, studios et jeux du referentiel commun."
+      isAuthenticated={isAuthenticated}
+      canUseCollectionViews={canUseCollectionViews}
+      authenticatedUsername={authenticatedUsername}
+      authenticatedProfile={authenticatedProfile}
+      onOpenAbout={onOpenAbout}
+      onOpenAuth={onOpenAuth}
+      onOpenHome={onOpenHome}
+      onOpenLibrary={onOpenLibrary}
+      onOpenConfiguration={onOpenConfiguration}
+      onLogout={onLogout}
+    >
       {isLoadingEntities ? <ProgressBar label="Chargement de la Bibliotheque" /> : null}
       {entitiesError ? <p className="error">{entitiesError}</p> : null}
 
@@ -105,7 +88,7 @@ function LibraryHomeView({
           ))}
         </GridComponent>
       </section>
-    </main>
+    </PageLayout>
   );
 }
 

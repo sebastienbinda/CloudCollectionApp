@@ -1,5 +1,5 @@
 En tant qu'utilisateur connecté avec le role USER je veux pouvoir avoir une action depuis
- la page "dashboard admin" qui propose "Reinitialiser la collection".
+ la page "Configuration" qui propose "Reinitialiser la collection".
 
  Cette action fait appel au backend sur POST /api/users/collection/reinit.
 
@@ -15,7 +15,7 @@ NOTE :  Si le fichier sur disque n'existe pas, cela ne fait pas échouer la fonc
  Une fois l'action réalisée, le frontend redirige sur la page onboarding car l'utilisateur n'a plus de collection, 
  avec le meme test qui existe deja pour les autres pages.
 
- La section coté frontend sur le dashboard admin :
+ La section coté frontend sur le Configuration :
   - Explique le but de cette fonctionnalité qui est de supprimer la collection actuelle pour pouvoir en importer une nouvelle.
   - Demande confirmation de reinitialisation avant soumission au backend.
 
