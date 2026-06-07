@@ -56,6 +56,12 @@ Administrator notification emails may link directly to
 `/users?status=WAITING_VALIDATION`, which must open the users page filtered to
 all accounts waiting for validation.
 
+The Configuration page exposes collection-level protected actions for
+authenticated non-`ADMIN` users. `Reinitialiser la collection` must only be
+shown to collection users when route discovery confirms access to
+`POST /api/users/collection/reinit`; after success it opens
+`/collection/import`.
+
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the
 backend.

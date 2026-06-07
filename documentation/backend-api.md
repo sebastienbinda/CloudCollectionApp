@@ -483,6 +483,7 @@ modify another user's collection.
 | `POST` | `/api/users/import/file/<file_type>` | Stores the connected user's temporary collection file. |
 | `POST` | `/api/users/import/analyze/<file_type>` | Analyzes the temporary file and returns sheet names. |
 | `POST` | `/api/users/import` | Imports the connected user's collection from the temporary file and JSON configuration. |
+| `POST` | `/api/users/collection/reinit` | Reinitializes the connected user's imported collection. |
 
 ### Current User Collection Status Response
 
@@ -620,6 +621,36 @@ Import errors use:
 - `409` when the connected user already has a collection;
 - `422` for invalid JSON configuration;
 - `500` for an unexpected import failure.
+
+### Reinitialize User Collection
+
+```http
+POST /api/users/collection/reinit
+```
+
+The connected user is derived exclusively from the validated Bearer token. The
+route does not accept a user identifier in the URL, query string or request
+body.
+
+Successful response:
+
+```json
+{
+  "reinitialized": true
+}
+```
+
+On success, the backend removes the connected user's rows from
+`t_user_collection`, clears `t_user.collection_file_path` and clears
+`t_user.collection_file_description`. If a collection file path was stored and
+the file still exists on disk, the file is deleted. If the stored file is
+already missing from disk, the reinitialization still succeeds after logging a
+warning; the database cleanup remains authoritative.
+
+Reinitialization errors use:
+
+- `404` when the connected user has no collection to reinitialize;
+- `500` for an unexpected reinitialization failure.
 
 ## Email Configuration
 

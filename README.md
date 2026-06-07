@@ -137,6 +137,9 @@ Structure fonctionnelle attendue pour l'import :
   une colonne dediee ;
 - apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
   collection.
+- depuis Configuration, un utilisateur non `ADMIN` peut reinitialiser sa
+  collection pour supprimer les associations importees, effacer le fichier
+  serveur et revenir au parcours `/collection/import`.
 
 ## Lancement Local
 

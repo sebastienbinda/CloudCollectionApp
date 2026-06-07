@@ -76,8 +76,8 @@ Use one controller per functional area when possible, for example:
 - `AuthenticationController` for authentication, registration and email
   verification routes;
 - `UserController` for administrative user management;
-- `UserCollectionImportController` for connected-user collection status and
-  ODS import routes;
+- `UserCollectionImportController` for connected-user collection status,
+  collection import routes and collection reinitialization;
 - `CollectionController` for connected-user SQL collection consultation,
   future game actions and raw user ODS download;
 - `RouteController` for `/api/routes`;
@@ -136,11 +136,13 @@ collection consultation after import.
 
 Do not bypass these services from controllers.
 
-The user collection import workflow must use a dedicated ODS reader under
-`backend/services/ods/` and a domain service under `backend/services/users/`.
-Controllers may save the multipart upload to a temporary file, but parsing,
-copying to the user workspace, transaction orchestration and cleanup on failure
-belong to services and repositories.
+The user collection import and reinitialization workflows must use domain
+services under `backend/services/users/`. Format-specific parsing belongs to
+dedicated reader infrastructure, such as the ODS readers under
+`backend/services/ods/`. Controllers may save the multipart upload to a
+temporary file, but parsing, copying to the user workspace, transaction
+orchestration, reinitialization cleanup and cleanup on failure belong to
+services and repositories.
 
 ### Authentication And Authorization
 
