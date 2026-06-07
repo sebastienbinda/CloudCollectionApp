@@ -30,6 +30,7 @@ from services.database.user_collection_import_repository import (
     UserCollectionAlreadyImportedError,
     UserCollectionImportPersistenceResult,
     UserCollectionImportUserNotFoundError,
+    UserCollectionReinitializationNotFoundError,
 )
 
 from .user_collection_import_configuration import UserCollectionImportConfiguration
@@ -336,6 +337,8 @@ class UserCollectionImportService:
                 self.repository.reinitialize_collection(user_id)
             except UserCollectionImportNotFoundError:
                 raise
+            except UserCollectionReinitializationNotFoundError as exc:
+                raise UserCollectionImportNotFoundError("Collection introuvable.") from exc
             except Exception as exc:
                 raise UserCollectionImportUnexpectedError(
                     "Erreur pendant la reinitialisation collection."

@@ -86,6 +86,31 @@ class SqlAlchemyUserCollectionFileRepository:
         if row["collection_file_path"]:
             raise UserCollectionAlreadyImportedError("Collection deja importee.")
 
+    def lock_user_collection_state(self, connection: Connection, user_id: int) -> str:
+        """Verrouille l'utilisateur et retourne son chemin de collection.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            str: Chemin de collection ou chaine vide si absent.
+
+        Raises:
+            UserCollectionImportUserNotFoundError: Si l'utilisateur est absent.
+        """
+
+        row = connection.execute(
+            text(
+                f'SELECT collection_file_path FROM "{self.schema_name}".t_user '
+                "WHERE id = :user_id FOR UPDATE"
+            ),
+            {"user_id": user_id},
+        ).mappings().first()
+        if not row:
+            raise UserCollectionImportUserNotFoundError("Utilisateur introuvable.")
+        return str(row["collection_file_path"] or "")
+
     def update_collection_file(
         self,
         connection: Connection,
@@ -137,3 +162,24 @@ class SqlAlchemyUserCollectionFileRepository:
         """
 
         self.update_collection_file(connection, user_id, collection_file_path, {})
+
+    def clear_collection_file(self, connection: Connection, user_id: int) -> None:
+        """Supprime le chemin et la description de collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        connection.execute(
+            text(
+                f'UPDATE "{self.schema_name}".t_user '
+                "SET collection_file_path = NULL, "
+                "collection_file_description = NULL "
+                "WHERE id = :user_id"
+            ),
+            {"user_id": user_id},
+        )
