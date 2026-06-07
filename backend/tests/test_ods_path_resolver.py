@@ -18,7 +18,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.ods import OdsPathResolver
+from services.ods.ods_path_resolver import OdsPathResolver
 
 
 class OdsPathResolverTest(unittest.TestCase):

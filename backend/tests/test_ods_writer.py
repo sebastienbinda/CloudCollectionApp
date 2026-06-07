@@ -20,7 +20,8 @@ import os
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from zipfile import ZipFile
-from services.ods import OdsNamespaces, OdsWriter
+from services.ods import OdsNamespaces
+from services.ods.ods_writer import OdsWriter
 from services.ods.ods_xml_reader import OdsXmlReader
 class FakeArchiveReader:
     """Lecteur d'archive factice pour fournir un `content.xml` en memoire."""

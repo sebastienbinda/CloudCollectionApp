@@ -21,8 +21,9 @@ import xml.etree.ElementTree as ET
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
-from services.ods import OdsNamespaces, OdsWriter
+from services.ods import OdsNamespaces
 from services.ods.ods_integrity_validator import OdsIntegrityValidator
+from services.ods.ods_writer import OdsWriter
 from services.ods.ods_xml_reader import OdsXmlReader
 
 
