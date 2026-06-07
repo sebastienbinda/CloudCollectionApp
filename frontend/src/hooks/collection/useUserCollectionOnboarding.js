@@ -133,6 +133,17 @@ function useUserCollectionOnboarding(options) {
     return nextHasCollection;
   }, [checkCurrentUserCollection, openCollectionOnboarding]);
 
+  const markCollectionMissingAfterReinitialization = useCallback(() => {
+    setHasCollection(false);
+    setCheckedUsername(authenticatedUsername);
+    setSelectedCollectionFile(null);
+    setAvailableImportSheets([]);
+    setHasAnalyzedImportFile(false);
+    setImportResult(null);
+    setImportConfiguration(createDefaultImportConfiguration());
+    setOnboardingError("");
+  }, [authenticatedUsername]);
+
   const handleAuthenticatedUser = useCallback(async () => {
     if (!canUseCollectionViews && !canCurrentTokenUseCollectionViews()) {
       openConfiguration();
@@ -448,6 +459,7 @@ function useUserCollectionOnboarding(options) {
     isAnalyzingCollection,
     isImportingCollection,
     handleAuthenticatedUser,
+    markCollectionMissingAfterReinitialization,
     selectCollectionFile,
     updateImportConfiguration,
     updateImportLayout,

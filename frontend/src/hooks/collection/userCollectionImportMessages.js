@@ -27,6 +27,7 @@ function getUserCollectionErrorMessage(error) {
     invalid_configuration: formatInvalidConfigurationMessage(error),
     temporary_file_missing: "Envoyez votre fichier de collection avant de lancer l'import.",
     collection_already_imported: "Une collection est deja associee a ce compte.",
+    collection_not_found: "Aucune collection n'est disponible pour votre compte.",
     unauthorized: "Votre session ne permet pas d'importer cette collection.",
     unexpected_error: "L'import de la collection a echoue.",
   };

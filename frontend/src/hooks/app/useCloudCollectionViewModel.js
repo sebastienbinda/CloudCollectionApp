@@ -14,6 +14,7 @@
  */
 import { useRef, useState } from "react";
 import useCollectionRefresh from "../collection/useCollectionRefresh";
+import useUserCollectionReinitialization from "../collection/useUserCollectionReinitialization";
 import useUserCollectionOnboarding from "../collection/useUserCollectionOnboarding";
 import useAddGamePage from "../games/useAddGamePage";
 import useGameCollectionPage from "../games/useGameCollectionPage";
@@ -113,6 +114,12 @@ function useCloudCollectionViewModel() {
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
   });
+  const userCollectionReinitialization = useUserCollectionReinitialization({
+    reloadOds: refresh.reloadOds,
+    reloadGames: refresh.reloadGames,
+    onCollectionReinitialized: userCollectionOnboarding.markCollectionMissingAfterReinitialization,
+    openCollectionOnboarding: navigation.openCollectionOnboarding,
+  });
 
   clearDeleteGameFeedbackRef.current = gameCollection.clearDeleteGameFeedback;
 
@@ -145,6 +152,8 @@ function useCloudCollectionViewModel() {
       ),
       downloadError: odsDownload.downloadError,
       isDownloadingOds: odsDownload.isDownloadingOds,
+      reinitializationError: userCollectionReinitialization.reinitializationError,
+      isReinitializingCollection: userCollectionReinitialization.isReinitializingCollection,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
       availableImportSheets: userCollectionOnboarding.availableImportSheets,
       hasAnalyzedImportFile: userCollectionOnboarding.hasAnalyzedImportFile,
@@ -169,6 +178,7 @@ function useCloudCollectionViewModel() {
       searchGamesByName: homePage.searchGamesByName,
       closeHomeSearch: homePage.closeHomeSearch,
       downloadOdsFile: odsDownload.downloadOdsFile,
+      reinitializeCollection: userCollectionReinitialization.reinitializeCollection,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
       selectCollectionFile: userCollectionOnboarding.selectCollectionFile,
       updateImportConfiguration: userCollectionOnboarding.updateImportConfiguration,
