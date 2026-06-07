@@ -54,21 +54,27 @@ jobs:
               before="${{ github.event.before }}"
               after="${{ github.sha }}"
 
+              jq -r '.commits[]? | (.added[]?, .modified[]?, .removed[]?)' "${GITHUB_EVENT_PATH}" \
+                | awk 'NF && !seen[$0]++' > "${changed_files_file}"
+
               if [[ -z "${before}" || "${before}" == "0000000000000000000000000000000000000000" ]]; then
-                git diff-tree --no-commit-id --name-only -r "${after}" > "${changed_files_file}"
+                if [[ ! -s "${changed_files_file}" ]]; then
+                  git diff-tree --no-commit-id --name-only --root -r "${after}" > "${changed_files_file}"
+                fi
               else
-                git diff --name-only "${before}" "${after}" > "${changed_files_file}"
+                git diff --name-only "${before}" "${after}" >> "${changed_files_file}"
+                sort -u "${changed_files_file}" -o "${changed_files_file}"
               fi
             fi
 
             echo "Changed files:"
             cat "${changed_files_file}"
 
-            if grep -Eq '^(backend/|test_backend\.sh|docker/backend\.Dockerfile|docker/backend\.Dockerfile\.dockerignore|\.github/workflows/ci\.yml)$' "${changed_files_file}"; then
+            if grep -Eq '^(backend/|test_backend\.sh$|docker/backend\.Dockerfile$|docker/backend\.Dockerfile\.dockerignore$|\.github/workflows/ci\.yml$)' "${changed_files_file}"; then
               backend_changed=true
             fi
 
-            if grep -Eq '^(frontend/|docker/frontend\.Dockerfile|docker/frontend\.Dockerfile\.dockerignore|\.github/workflows/ci\.yml)$' "${changed_files_file}"; then
+            if grep -Eq '^(frontend/|docker/frontend\.Dockerfile$|docker/frontend\.Dockerfile\.dockerignore$|\.github/workflows/ci\.yml$)' "${changed_files_file}"; then
               frontend_changed=true
             fi
           fi
