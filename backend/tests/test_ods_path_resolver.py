@@ -15,6 +15,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -72,7 +73,10 @@ class OdsPathResolverTest(unittest.TestCase):
         previous_path = os.environ.pop("JEUXVIDEO_ODS_PATH", None)
         try:
             expected_path = str(Path(__file__).resolve().parents[2] / "collection.ods")
-            self.assertEqual(expected_path, OdsPathResolver().resolve())
+            with patch("services.ods.ods_path_resolver.os.path.exists") as path_exists:
+                path_exists.side_effect = lambda path: path == expected_path
+
+                self.assertEqual(expected_path, OdsPathResolver().resolve())
         finally:
             if previous_path is not None:
                 os.environ["JEUXVIDEO_ODS_PATH"] = previous_path
