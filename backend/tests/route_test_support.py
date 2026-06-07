@@ -479,6 +479,13 @@ class FakeUserCollectionImportService:
             raise self.next_error
         return UserCollectionImportResult(1, 2, 3, 4)
 
+    def reinitialize_collection(self, user_id):
+        """Reinitialise une collection utilisateur factice."""
+
+        self.__class__.last_call = (user_id,)
+        if self.next_error:
+            raise self.next_error
+
 
 class FakeCollectionFileReaderFactory:
     """Factory de lecteurs de collection factice."""

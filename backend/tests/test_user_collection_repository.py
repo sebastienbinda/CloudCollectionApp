@@ -20,17 +20,21 @@ from services.database import SqlAlchemyUserCollectionRepository, UserGameAssoci
 class FakeRepositoryResult:
     """Resultat SQL factice compatible avec `mappings`."""
 
-    def __init__(self, rows=None):
+    def __init__(self, rows=None, scalar_value=0, rowcount=0):
         """Initialise le resultat factice.
 
         Args:
             rows (list[dict] | None): Lignes retournees.
+            scalar_value (int): Valeur scalaire retournee.
+            rowcount (int): Nombre de lignes modifiees.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.rows = rows or []
+        self.scalar_value = scalar_value
+        self.rowcount = rowcount
 
     def mappings(self):
         """Retourne les lignes configurees.
@@ -44,21 +48,35 @@ class FakeRepositoryResult:
 
         return self.rows
 
+    def scalar_one(self):
+        """Retourne la valeur scalaire configuree.
+
+        Args:
+            Aucun.
+
+        Returns:
+            int: Valeur scalaire.
+        """
+
+        return self.scalar_value
+
 
 class FakeRepositoryConnection:
     """Connexion SQL factice capturant les requetes executees."""
 
-    def __init__(self, existing_wishlist_values=None):
+    def __init__(self, existing_wishlist_values=None, association_count=0):
         """Initialise la connexion factice.
 
         Args:
             existing_wishlist_values (dict[int, bool] | None): Valeurs wishlist existantes.
+            association_count (int): Nombre d'associations retourne par COUNT.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.existing_wishlist_values = existing_wishlist_values or {}
+        self.association_count = association_count
         self.executed_statements = []
 
     def execute(self, statement, parameters=None):
@@ -74,6 +92,10 @@ class FakeRepositoryConnection:
 
         sql = str(statement)
         self.executed_statements.append((sql, parameters or {}))
+        if "COUNT(*)" in sql:
+            return FakeRepositoryResult(scalar_value=self.association_count)
+        if sql.strip().startswith("DELETE"):
+            return FakeRepositoryResult(rowcount=self.association_count)
         if sql.strip().startswith("SELECT"):
             return FakeRepositoryResult(
                 [
@@ -152,6 +174,30 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         self.assertEqual(1, count)
         self.assertEqual(1, len(connection.executed_statements))
         self.assertIn("SELECT game_id, wishlist", connection.executed_statements[0][0])
+
+    def test_counts_user_game_associations(self):
+        """Verifie le comptage des associations utilisateur."""
+
+        connection = FakeRepositoryConnection(association_count=3)
+
+        count = self.repository.count_user_game_associations(connection, 7)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual(3, count)
+        self.assertIn("SELECT COUNT(*)", sql)
+        self.assertEqual({"user_id": 7}, parameters)
+
+    def test_deletes_user_game_associations(self):
+        """Verifie la suppression des associations utilisateur."""
+
+        connection = FakeRepositoryConnection(association_count=2)
+
+        deleted_count = self.repository.delete_user_game_associations(connection, 7)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual(2, deleted_count)
+        self.assertIn("DELETE FROM", sql)
+        self.assertEqual({"user_id": 7}, parameters)
 
 
 if __name__ == "__main__":

@@ -35,11 +35,18 @@ The `.github/workflows/ci.yml` workflow contains four jobs:
 - `docker-images`: for Git tags only, builds and pushes the backend and frontend
   Docker images after the validation jobs succeed.
 
-On pull requests and branch pushes, backend tests run for changes under
-`backend/`, for `test_backend.sh`, for `docker/backend.Dockerfile`, or for
-`.github/workflows/ci.yml`. The frontend build runs for changes under
-`frontend/`, for `docker/frontend.Dockerfile`, or for `.github/workflows/ci.yml`.
-On Git tags, both validations always run before Docker publication.
+On pull requests and branch pushes, backend tests run for every added, modified
+or removed path prefixed with `backend/`, for `test_backend.sh`, for
+`docker/backend.Dockerfile`, for `docker/backend.Dockerfile.dockerignore`, or
+for `.github/workflows/ci.yml`. The frontend build runs for every added,
+modified or removed path prefixed with `frontend/`, for
+`docker/frontend.Dockerfile`, for `docker/frontend.Dockerfile.dockerignore`, or
+for `.github/workflows/ci.yml`. On Git tags, both validations always run before
+Docker publication.
+
+For push events, the workflow reads GitHub's event payload first so that file
+deletions and multi-commit branch pushes are detected reliably. It falls back
+to Git diff commands when the payload does not contain changed paths.
 
 The `docker-images` job depends on both validation jobs. Docker images must not
 be pushed if tests or frontend build fail. Branch pushes never publish Docker

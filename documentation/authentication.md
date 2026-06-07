@@ -112,6 +112,7 @@ profile:
 - `POST /api/users/import/file/<file_type>`
 - `POST /api/users/import/analyze/<file_type>`
 - `POST /api/users/import`
+- `POST /api/users/collection/reinit`
 - `GET /collections/videogames`
 - `GET /collections/videogames/platforms/search`
 - `GET /collections/videogames/games/search`

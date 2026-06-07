@@ -16,14 +16,18 @@ database structure in `documentation/database.md`, and frontend navigation in
   to `/collection`.
 - The frontend must call `GET /api/users/me/collection` to decide between those
   two paths.
-- The import page only collects the ODS file and displays interaction state.
-  Validation, storage, deduplication and persistence belong to the backend.
+- The import page only collects the user collection file and displays
+  interaction state. Validation, storage, deduplication and persistence belong
+  to the backend.
 - Before file analysis, the import page displays only the upload control and
   file type. The detailed collection and wishlist configuration is displayed
   after `POST /api/users/import/analyze/<file_type>` succeeds.
 - After a successful import, the frontend displays an import summary using the
   backend counters and offers a link to `/collection`; it must not redirect
   automatically.
+- From the Configuration page, a connected `USER` with collection access can
+  reinitialize the current collection. After a successful reinitialization, the
+  frontend redirects to `/collection/import` so the user can import a new file.
 
 ## Backend API Contract
 
@@ -41,18 +45,22 @@ database structure in `documentation/database.md`, and frontend navigation in
   returns its sheet names.
 - `POST /api/users/import` must use `application/json` and receives only the
   import configuration, including a mandatory top-level `wishlist` section.
+- `POST /api/users/collection/reinit` reinitializes only the connected user's
+  collection and returns `{"reinitialized": true}` on success.
 - Both routes require a Bearer token with at least profile `USER`.
 - The connected user must always be derived from the Bearer token. Do not accept
   a user id from the request payload, URL or query string.
 - A second import for a user whose `collection_file_path` is already set must
   return `409`.
 - Missing temporary import files must return `404` from analyze and final import.
-- Invalid or unreadable ODS input must return `400`.
+- Invalid or unreadable input for the requested `file_type` must return `400`.
 - Temporary files that do not match the analyzed `file_type` must return `422`
   from analyze.
 - Oversized upload or multipart body must return `413`.
 - Unexpected failures must return `500` without leaking internal paths, SQL or
   stack traces.
+- Reinitialization must return `404` when the connected user has no collection
+  to reinitialize and `500` for unexpected failures.
 
 ## Persistence Rules
 
@@ -75,6 +83,12 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `game_additional_name` is not filled by the current import workflow.
 - `t_user_collection.wishlist` is persisted for every inserted association:
   `false` means an owned collection entry and `true` means a wishlist entry.
+- Reinitialization deletes only the connected user's `t_user_collection` rows,
+  clears `t_user.collection_file_path`, clears
+  `t_user.collection_file_description`, and deletes the stored collection file
+  when it exists.
+- A missing stored collection file on disk must not block reinitialization; the
+  database state is still cleaned.
 
 ## ODS Import Rules
 
@@ -148,6 +162,10 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Send the final import configuration as JSON to `POST /api/users/import`.
 - Display the successful import summary and let the user open `/collection`
   explicitly instead of redirecting immediately.
+- Keep the reinitialization action in the Configuration page for non-`ADMIN`
+  collection users. The action must confirm before calling the backend, use a
+  dedicated hook under `frontend/src/hooks/collection/`, and redirect to
+  `/collection/import` after success.
 - The import view must not duplicate backend validation rules beyond basic file
   selection UX.
 - Automatic backend calls must use the shared backend availability guard so a
@@ -169,6 +187,9 @@ When changing this feature, update or run tests covering:
 - `t_user.collection_file_path` is set only on success;
 - `t_user_collection` associations are created without duplicating existing
   rows.
+- successful reinitialization clears user associations and collection metadata;
+- missing collection reinitialization returns `404`;
+- missing stored collection file does not prevent reinitialization.
 
 Run:
 

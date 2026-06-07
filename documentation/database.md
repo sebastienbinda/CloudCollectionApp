@@ -124,6 +124,12 @@ a successful import. It stores the complete container path
 user already has an imported collection and a second import must be rejected
 instead of replacing existing data.
 
+Collection reinitialization clears `collection_file_path` and
+`collection_file_description` for the connected user after deleting that user's
+`t_user_collection` rows. The operation also removes the stored collection file
+when it exists. A missing file on disk is logged but does not prevent database
+cleanup.
+
 #### `t_user_collection`
 
 | Column | Type | Null | Description |
@@ -148,6 +154,10 @@ attached to the connected user. Existing `(user_id, game_id)` rows are reused an
 must not be treated as errors. `game_additional_name` remains nullable and is not
 filled by the current import workflow. `wishlist` defaults to `false`; existing
 rows are backfilled to `false` by the schema migration.
+
+Collection reinitialization deletes rows from `t_user_collection` only for the
+connected user being reinitialized. It must not delete global `t_platform`,
+`t_studio` or `t_game` records because they are shared reference data.
 
 ### Import Normalization Rules
 

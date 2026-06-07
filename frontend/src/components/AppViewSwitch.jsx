@@ -156,12 +156,16 @@ class AppViewSwitch {
         platforms={props.platforms}
         canAddGame={props.actionPermissions.canAddGame}
         canDownloadOds={props.actionPermissions.canDownloadOds}
+        canReinitializeCollection={props.actionPermissions.canReinitializeCollection}
         canSearchUsers={props.actionPermissions.canSearchUsers}
         downloadError={props.downloadError}
         isDownloadingOds={props.isDownloadingOds}
+        reinitializationError={props.reinitializationError}
+        isReinitializingCollection={props.isReinitializingCollection}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
         onDownloadOds={props.downloadOdsFile}
+        onReinitializeCollection={props.reinitializeCollection}
       />
     );
   }

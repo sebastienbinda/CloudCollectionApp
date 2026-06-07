@@ -29,10 +29,13 @@ function ConfigurationView({
   platforms,
   canAddGame,
   canDownloadOds,
+  canReinitializeCollection,
   canSearchUsers,
   canUseCollectionViews,
   downloadError,
   isDownloadingOds,
+  reinitializationError,
+  isReinitializingCollection,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
@@ -41,6 +44,7 @@ function ConfigurationView({
   onOpenUsers,
   onOpenConfiguration,
   onDownloadOds,
+  onReinitializeCollection,
   onLogout,
 }) {
   const isAdmin = authenticatedProfile === "ADMIN";
@@ -63,6 +67,7 @@ function ConfigurationView({
       onLogout={onLogout}
     >
       {downloadError ? <p className="error">{downloadError}</p> : null}
+      {reinitializationError ? <p className="error">{reinitializationError}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
         {canUseCollectionViews ? (
@@ -94,6 +99,27 @@ function ConfigurationView({
               Telecharger la collection
             </button>
             {isDownloadingOds ? <ProgressBar label="Telechargement de la collection en cours" /> : null}
+          </article>
+        ) : null}
+
+        {canUseCollectionViews && !isAdmin ? (
+          <article className="adminActionCard">
+            <span>Collection</span>
+            <h2>Reinitialiser la collection</h2>
+            <p>
+              Supprime la collection actuelle et son fichier serveur pour permettre un nouvel import.
+            </p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onReinitializeCollection}
+              disabled={!canReinitializeCollection || isReinitializingCollection}
+            >
+              Reinitialiser la collection
+            </button>
+            {isReinitializingCollection ? (
+              <ProgressBar label="Reinitialisation de la collection en cours" />
+            ) : null}
           </article>
         ) : null}
 

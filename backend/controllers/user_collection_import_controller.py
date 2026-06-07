@@ -33,6 +33,7 @@ from services.collection.imports import (
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
+    UserCollectionImportNotFoundError,
     UserCollectionImportService,
     UserCollectionImportTemporaryFileMissingError,
     UserCollectionImportTooLargeError,
@@ -118,6 +119,14 @@ class UserCollectionImportController:
             endpoint="import_current_user_collection",
             view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
                 self.import_current_user_collection
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/users/collection/reinit",
+            endpoint="reinitialize_current_user_collection",
+            view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
+                self.reinitialize_current_user_collection
             ),
             methods=["POST"],
         )
@@ -251,6 +260,35 @@ class UserCollectionImportController:
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant l'import collection.")
             return jsonify({"error": "Unable to import collection."}), 500
+
+    def reinitialize_current_user_collection(self):
+        """Reinitialise la collection de l'utilisateur connecte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Resultat JSON ou erreur.
+        """
+
+        try:
+            user_id = self._current_user_id()
+            self._create_import_service().reinitialize_collection(user_id)
+            return jsonify({"reinitialized": True}), 200
+        except UserCollectionImportNotFoundError:
+            return jsonify({"error": "Collection introuvable."}), 404
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except UserCollectionImportUnexpectedError:
+            current_app.logger.exception(
+                "Erreur metier inattendue pendant la reinitialisation collection."
+            )
+            return jsonify({"error": "Unable to reinitialize collection."}), 500
+        except Exception:
+            current_app.logger.exception(
+                "Erreur inattendue pendant la reinitialisation collection."
+            )
+            return jsonify({"error": "Unable to reinitialize collection."}), 500
 
     def _current_user_id(self) -> int:
         """Retourne l'identifiant base de l'utilisateur connecte.

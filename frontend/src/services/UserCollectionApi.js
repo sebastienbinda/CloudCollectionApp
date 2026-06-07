@@ -48,6 +48,7 @@ class UserCollectionApi {
     FILE_TOO_LARGE: "file_too_large",
     TEMPORARY_FILE_MISSING: "temporary_file_missing",
     COLLECTION_ALREADY_IMPORTED: "collection_already_imported",
+    COLLECTION_NOT_FOUND: "collection_not_found",
     UNAUTHORIZED: "unauthorized",
     UNEXPECTED: "unexpected_error",
   });
@@ -58,6 +59,7 @@ class UserCollectionApi {
     [UserCollectionApi.ERROR_CODES.FILE_TOO_LARGE]: "Le fichier de collection est trop volumineux.",
     [UserCollectionApi.ERROR_CODES.TEMPORARY_FILE_MISSING]: "Le fichier de collection doit etre envoye avant l'import.",
     [UserCollectionApi.ERROR_CODES.COLLECTION_ALREADY_IMPORTED]: "Une collection a deja ete importee.",
+    [UserCollectionApi.ERROR_CODES.COLLECTION_NOT_FOUND]: "Aucune collection n'est disponible pour votre compte.",
     [UserCollectionApi.ERROR_CODES.UNAUTHORIZED]: "Vous devez etre connecte pour acceder a votre collection.",
     [UserCollectionApi.ERROR_CODES.UNEXPECTED]: "Une erreur inattendue est survenue.",
   });
@@ -139,6 +141,24 @@ class UserCollectionApi {
   }
 
   /**
+   * Reinitialise la collection de l'utilisateur connecte.
+   *
+   * @param {void} Aucun - Le backend identifie l'utilisateur via le token Bearer.
+   * @returns {Promise<Object>} Confirmation de reinitialisation retournee par le backend.
+   * @throws {UserCollectionApiError} Si la collection est absente ou si l'appel echoue.
+   */
+  static async reinitializeCollection() {
+    return this.fetchJson(
+      "/api/users/collection/reinit",
+      "Impossible de reinitialiser votre collection.",
+      {
+        method: "POST",
+        headers: AuthApi.getAuthorizationHeaders(),
+      }
+    );
+  }
+
+  /**
    * Execute une requete JSON de collection utilisateur et type les erreurs.
    *
    * @param {string} url - URL backend appelee.
@@ -151,7 +171,7 @@ class UserCollectionApi {
     const response = await BackendAvailabilityGuard.fetch(url, options);
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
-      throw this.createErrorFromResponse(response, data, fallbackMessage, options);
+      throw this.createErrorFromResponse(response, data, fallbackMessage, options, url);
     }
     return data;
   }
@@ -186,19 +206,23 @@ class UserCollectionApi {
    * @param {Object} data - Corps JSON backend deja decode.
    * @param {string} fallbackMessage - Message utilise par defaut.
    * @param {RequestInit} options - Options de requete permettant de detecter une session expiree.
+   * @param {string} url - URL backend appelee.
    * @returns {UserCollectionApiError} Erreur typee pour l'interface.
    * @throws {void} Ne leve pas d'exception.
    */
-  static createErrorFromResponse(response, data = {}, fallbackMessage = "", options = {}) {
+  static createErrorFromResponse(response, data = {}, fallbackMessage = "", options = {}, url = "") {
     if (AuthApi.isExpiredAuthenticatedResponse(response, options)) {
       AuthApi.handleExpiredSession();
     }
 
-    const code = this.getErrorCodeForStatus(response.status);
+    const code = this.getErrorCodeForStatus(response.status, url);
     const defaultMessage = this.errorMessagesByCode[code] || fallbackMessage;
+    const message = code === this.ERROR_CODES.COLLECTION_NOT_FOUND
+      ? defaultMessage
+      : data.error || defaultMessage || this.errorMessagesByCode[this.ERROR_CODES.UNEXPECTED];
     return new UserCollectionApiError(
       code,
-      data.error || defaultMessage || this.errorMessagesByCode[this.ERROR_CODES.UNEXPECTED],
+      message,
       response.status,
       data
     );
@@ -208,10 +232,11 @@ class UserCollectionApi {
    * Convertit un statut HTTP backend en code d'erreur fonctionnel.
    *
    * @param {number} status - Statut HTTP retourne par le backend.
+   * @param {string} url - URL backend appelee.
    * @returns {string} Code d'erreur stable exploitable par l'interface.
    * @throws {void} Ne leve pas d'exception.
    */
-  static getErrorCodeForStatus(status) {
+  static getErrorCodeForStatus(status, url = "") {
     if ([401, 403].includes(status)) {
       return this.ERROR_CODES.UNAUTHORIZED;
     }
@@ -228,6 +253,9 @@ class UserCollectionApi {
       return this.ERROR_CODES.FILE_TOO_LARGE;
     }
     if (status === 404) {
+      if (url === "/api/users/collection/reinit") {
+        return this.ERROR_CODES.COLLECTION_NOT_FOUND;
+      }
       return this.ERROR_CODES.TEMPORARY_FILE_MISSING;
     }
     return this.ERROR_CODES.UNEXPECTED;

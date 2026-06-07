@@ -11,7 +11,9 @@
 #
 # Description : orchestration transactionnelle SQL de l'import de collection utilisateur.
 
+import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection
@@ -48,6 +50,47 @@ class UserCollectionImportPersistenceResult:
     associated_games: int
 
 
+class UserCollectionReinitializationNotFoundError(Exception):
+    """Signale qu'aucune collection utilisateur ne peut etre reinitialisee."""
+
+
+class _UserCollectionFileRemover:
+    """Supprime le fichier de collection stocke sur disque."""
+
+    def __init__(self, logger=None):
+        """Initialise le suppresseur de fichier.
+
+        Args:
+            logger (logging.Logger | None): Logger applicatif.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.logger = logger or logging.getLogger(__name__)
+
+    def delete_collection_file(self, collection_file_path: str) -> None:
+        """Supprime le fichier de collection si son chemin est renseigne.
+
+        Args:
+            collection_file_path (str): Chemin du fichier a supprimer.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            OSError: Si le fichier existe mais ne peut pas etre supprime.
+        """
+
+        if not collection_file_path:
+            return
+        resolved_path = Path(collection_file_path)
+        try:
+            resolved_path.unlink()
+        except FileNotFoundError:
+            self.logger.warning("Fichier de collection absent pendant la reinitialisation.")
+
+
 class SqlAlchemyUserCollectionImportRepository:
     """Coordonne les repositories d'entites dans une transaction d'import."""
 
@@ -55,12 +98,14 @@ class SqlAlchemyUserCollectionImportRepository:
         self,
         configuration: DatabaseConfiguration,
         name_normalizer: UserCollectionNameNormalizer | None = None,
+        collection_file_remover=None,
     ):
         """Initialise l'orchestrateur SQL d'import de collection.
 
         Args:
             configuration (DatabaseConfiguration): Configuration SQLAlchemy.
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur metier.
+            collection_file_remover (object | None): Suppresseur de fichier injecte.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -93,6 +138,7 @@ class SqlAlchemyUserCollectionImportRepository:
         self.user_collection_repository = SqlAlchemyUserCollectionRepository(
             configuration.schema_name
         )
+        self.collection_file_remover = collection_file_remover or _UserCollectionFileRemover()
 
     def user_has_collection(self, user_id: int) -> bool:
         """Indique si l'utilisateur possede deja un fichier de collection.
@@ -157,6 +203,43 @@ class SqlAlchemyUserCollectionImportRepository:
             created_games=created_games,
             associated_games=associated_games,
         )
+
+    def reinitialize_collection(self, user_id: int) -> None:
+        """Reinitialise la collection d'un utilisateur dans une transaction SQL.
+
+        Args:
+            user_id (int): Identifiant de l'utilisateur proprietaire.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            UserCollectionReinitializationNotFoundError: Si aucune collection n'existe.
+            UserCollectionImportUserNotFoundError: Si l'utilisateur est absent.
+            OSError: Si le fichier existant ne peut pas etre supprime.
+        """
+
+        with self.engine.begin() as connection:
+            collection_file_path = self.user_file_repository.lock_user_collection_state(
+                connection,
+                user_id,
+            )
+            association_count = (
+                self.user_collection_repository.count_user_game_associations(
+                    connection,
+                    user_id,
+                )
+            )
+            if not collection_file_path and association_count == 0:
+                raise UserCollectionReinitializationNotFoundError(
+                    "Collection introuvable."
+                )
+            self.user_collection_repository.delete_user_game_associations(
+                connection,
+                user_id,
+            )
+            self.user_file_repository.clear_collection_file(connection, user_id)
+            self.collection_file_remover.delete_collection_file(collection_file_path)
 
     def _ensure_platforms(
         self,

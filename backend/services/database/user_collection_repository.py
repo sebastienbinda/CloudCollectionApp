@@ -109,6 +109,47 @@ class SqlAlchemyUserCollectionRepository:
             existing_game_ids.add(association.game_id)
         return len(normalized_associations)
 
+    def count_user_game_associations(self, connection: Connection, user_id: int) -> int:
+        """Compte les associations de collection d'un utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            int: Nombre d'associations utilisateur-jeu.
+        """
+
+        return int(
+            connection.execute(
+                text(
+                    f'SELECT COUNT(*) FROM "{self.schema_name}".t_user_collection '
+                    "WHERE user_id = :user_id"
+                ),
+                {"user_id": user_id},
+            ).scalar_one()
+        )
+
+    def delete_user_game_associations(self, connection: Connection, user_id: int) -> int:
+        """Supprime les associations de collection d'un utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            int: Nombre de lignes supprimees.
+        """
+
+        result = connection.execute(
+            text(
+                f'DELETE FROM "{self.schema_name}".t_user_collection '
+                "WHERE user_id = :user_id"
+            ),
+            {"user_id": user_id},
+        )
+        return int(result.rowcount or 0)
+
     def _normalize_associations(
         self,
         game_associations: list[int | UserGameAssociation],
