@@ -17,6 +17,7 @@ from services.collection.imports import CollectionFileDescriptionValidationError
 from services.users.user_collection_import_service import (
     UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
+    UserCollectionImportNotFoundError,
     UserCollectionImportTemporaryFileMissingError,
     UserCollectionImportTooLargeError,
     UserCollectionImportUnexpectedError,
@@ -134,6 +135,86 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         )
         self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
         self.assertIsNotNone(FakeUserCollectionImportService.last_call[1])
+
+    def test_reinitialize_current_user_collection_requires_authentication(self):
+        """Verifie que la reinitialisation collection exige un token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident 403.
+        """
+
+        response = self.client.post("/api/users/collection/reinit")
+
+        self.assertEqual(403, response.status_code)
+
+    def test_reinitialize_current_user_collection_returns_success(self):
+        """Verifie la reinitialisation nominale de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut, le payload et l'utilisateur.
+        """
+
+        response = self.client.post(
+            "/api/users/collection/reinit",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"reinitialized": True}, response.get_json())
+        self.assertEqual((7,), FakeUserCollectionImportService.last_call)
+
+    def test_reinitialize_current_user_collection_maps_not_found(self):
+        """Verifie le mapping 404 quand aucune collection n'existe.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contrat d'erreur.
+        """
+
+        FakeUserCollectionImportService.next_error = UserCollectionImportNotFoundError(
+            "Collection introuvable."
+        )
+
+        response = self.client.post(
+            "/api/users/collection/reinit",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(404, response.status_code)
+        self.assertEqual({"error": "Collection introuvable."}, response.get_json())
+
+    def test_reinitialize_current_user_collection_maps_unexpected_error(self):
+        """Verifie le mapping 500 d'une erreur inattendue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contrat d'erreur.
+        """
+
+        FakeUserCollectionImportService.next_error = UserCollectionImportUnexpectedError(
+            "boom"
+        )
+
+        response = self.client.post(
+            "/api/users/collection/reinit",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(500, response.status_code)
+        self.assertEqual(
+            {"error": "Unable to reinitialize collection."},
+            response.get_json(),
+        )
 
     def test_import_current_user_collection_accepts_multiple_sheet_modes(self):
         """Verifie les modes multi-onglets valides.

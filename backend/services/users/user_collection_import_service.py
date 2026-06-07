@@ -69,6 +69,10 @@ class UserCollectionImportTemporaryFileMissingError(UserCollectionImportError):
     """Signale que le fichier temporaire d'import est absent."""
 
 
+class UserCollectionImportNotFoundError(UserCollectionImportError):
+    """Signale qu'aucune collection utilisateur ne peut etre reinitialisee."""
+
+
 class UserCollectionImportUnexpectedError(UserCollectionImportError):
     """Signale une erreur non fonctionnelle pendant l'import."""
 
@@ -103,6 +107,19 @@ class UserCollectionImportRepository(Protocol):
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de persistance.
+        """
+    def reinitialize_collection(self, user_id: int) -> None:
+        """Reinitialise la collection persistante d'un utilisateur.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            UserCollectionImportNotFoundError: Si aucune collection n'existe.
+            UserCollectionImportUnexpectedError: Si la reinitialisation echoue.
         """
 
 
@@ -302,6 +319,27 @@ class UserCollectionImportService:
                 original_filename,
                 file_description,
             )
+
+    def reinitialize_collection(self, user_id: int) -> None:
+        """Reinitialise la collection importee d'un utilisateur.
+
+        Args:
+            user_id (int): Identifiant utilisateur connecte.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        user_lock = self._lock_for_user(user_id)
+        with user_lock:
+            try:
+                self.repository.reinitialize_collection(user_id)
+            except UserCollectionImportNotFoundError:
+                raise
+            except Exception as exc:
+                raise UserCollectionImportUnexpectedError(
+                    "Erreur pendant la reinitialisation collection."
+                ) from exc
 
     def _import_collection_locked(
         self,

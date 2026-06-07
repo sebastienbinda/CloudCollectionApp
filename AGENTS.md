@@ -25,6 +25,7 @@
 
 - Never create source files longer than 500 lines unless strictly necessary.
 - Never create methods longer than 150 lines unless strictly necessary.
+- If a file or a method is longer than the limit, do not remove commentaries or blank lines, create a new file or a new method.
 
 ## Code Documentation
 
