@@ -1,6 +1,6 @@
 Les utilisateurs connectés peuvent désormais consulter les jeux de leur wishlist depuis une entrée du menu dédiée "Liste de souhaits". Cette nouvelle entrée du menu est cachée (disabled) si l'utilisateur n'est pas connecté. L'entrée du menu est placé dans le menu de facon cohérente avec menu.md.
 Cette nouvelle page wishlist présente la liste des jeux dont le flag wishlist=true.
-Le rendu est identique a la page collection par plateforme avec la différence qu'une colonne "plateforme" est ajoutée. Le page collection est spécifoque a une plateforme alors que la nouvelle page liste les jeux de toutes les plateformes. La nouvelle colonne  "plateforme" est uniquement une information, pas de lien vers la page listant les plateformes. La nouvelle page n'a pas de selecteur de plateforme et pas d'actions.
+Le rendu est identique a la page collection par plateforme avec la différence qu'une colonne "plateforme" est ajoutée. La page collection est spécifique a une plateforme alors que la nouvelle page liste les jeux de toutes les plateformes. La nouvelle colonne  "plateforme" est uniquement une information, pas de lien vers la page listant les plateformes. La nouvelle page n'a pas de selecteur de plateforme et pas d'actions.
 Les colonnes a afficher sont :
  - Nom du jeu
  - Plateforme
@@ -15,7 +15,7 @@ Cette page affiche également des filtres sur :
 Cette page permet le tri nom, plateforme, studio, date de sortie.
 Par défaut les entrées du tableau sont triés sur le nom par ordre alphabétique
 
-Il faut donc centraliser les composants react qui affiche la collection (plateformes et jeux) avec un paramètre de conf wishlist et utiliser ce composant commun dans les deux éccrans, collection et wishlist.
+Il faut donc centraliser les composants react qui affiche la collection (plateformes et jeux) avec un paramètre de conf wishlist et utiliser ce composant commun dans les deux écrans, collection et wishlist.
 
 Pas de nouveau endpoint backend. On réutilise l'existant.
 Seul le code frontend et la documentation sont touchées.

@@ -29,6 +29,8 @@ frontend fournit une interface web de consultation, recherche et import.
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
 - Navigation par plateforme et consultation de la collection personnelle.
+- Page Liste de souhaits pour consulter les jeux importes avec
+  `wishlist=true`.
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
 - Import de collection ODS personnelle pour les utilisateurs inscrits.
@@ -109,7 +111,7 @@ Regles detaillees :
 ## Import ODS Utilisateur
 
 Le backend ne consulte plus de collection globale depuis un fichier ODS. Les
-vues Ma collection lisent PostgreSQL via les endpoints
+vues Ma collection et Liste de souhaits lisent PostgreSQL via les endpoints
 `/collections/videogames/**`.
 
 Variables principales :

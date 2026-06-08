@@ -24,7 +24,8 @@ The current collection consultation uses:
 
 - `GET /collections/videogames` for collection and wishlist statistics;
 - `GET /collections/videogames/platforms/search` for collection platforms;
-- `GET /collections/videogames/games/search` for collection games;
+- `GET /collections/videogames/games/search` for collection and wishlist
+  games;
 - `GET /collections/videogames/download` for the raw imported ODS file.
 
 `POST`, `PUT` and `DELETE /collections/videogames/games` are reserved for
@@ -46,6 +47,11 @@ The frontend must accept `wishlist` in game rows returned by the backend, but it
 must not display that technical value in the collection table.
 
 Platforms that only contain wishlist games must not appear in Ma collection.
+
+The wishlist frontend page is centered on wished entries. It must request
+`wishlist=true` from `GET /collections/videogames/games/search`, display only
+the user-facing wishlist columns and must not expose the technical `wishlist`
+field.
 
 ## Statistics
 
@@ -71,6 +77,10 @@ JSON `error` message.
 The wishlist filter is optional at API level. Without it, backend search
 endpoints can return both owned and wished entries, which is useful for future
 features. The current collection page must always pass `wishlist=false`.
+
+Collection and wishlist list ordering must be requested through backend `sort`
+parameters. React pages may keep local display filters, but must not apply an
+additional local sort to backend collection results.
 
 ## Validation
 

@@ -40,6 +40,8 @@ session state received through props.
 
 - `A propos` always remains accessible and opens `/about`.
 - `Bibliotheque` always remains accessible.
+- `Liste de souhaits` requires an active local non-`ADMIN` collection session
+  and opens `/wishlist`.
 - `Ma collection` requires an active local session and opens `/collection`.
 - Inaccessible entries must use `disabled`.
 - Session actions such as `Connexion`, `Configuration` and `Deconnexion` are
@@ -48,6 +50,8 @@ session state received through props.
   `Utilisateur connecte : <email>` on the top right outside the menu.
 - The Library entry opens `/bibliotheque` and must remain available for
   unauthenticated visitors.
+- The wishlist entry opens `/wishlist` and must remain disabled for
+  unauthenticated visitors and `ADMIN` users.
 - The main menu must not expose a `Voir les jeux` entry; platform game pages
   remain reachable from collection cards and contextual navigation.
 
