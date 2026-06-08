@@ -12,6 +12,7 @@
  *
  * Description : page React de consultation de la liste de souhaits.
  */
+import CollectionGamesTable from "./CollectionGamesTable";
 import PageLayout from "./PageLayout";
 
 /**
@@ -32,6 +33,7 @@ function WishlistView({
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
+  wishlistPage,
 }) {
   return (
     <PageLayout
@@ -50,7 +52,25 @@ function WishlistView({
       onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
-    />
+    >
+      {wishlistPage?.wishlistError ? <p className="error">{wishlistPage.wishlistError}</p> : null}
+
+      <CollectionGamesTable
+        games={wishlistPage?.wishlistGames || []}
+        columns={wishlistPage?.wishlistColumns || []}
+        valuesByColumn={wishlistPage?.wishlistValuesByColumn || {}}
+        columnFilters={wishlistPage?.wishlistColumnFilters || {}}
+        sortConfig={wishlistPage?.wishlistSortConfig || { column: "Nom du jeu", direction: "asc" }}
+        sortedGames={wishlistPage?.wishlistSortedGames || []}
+        filteredGames={wishlistPage?.wishlistFilteredGames || []}
+        isLoadingGames={Boolean(wishlistPage?.isLoadingWishlistGames)}
+        emptyMessage="Aucun jeu dans la liste de souhaits."
+        filterableColumns={wishlistPage?.wishlistFilterableColumns || []}
+        sortableColumns={wishlistPage?.wishlistSortableColumns || []}
+        onToggleSort={wishlistPage?.toggleWishlistSort}
+        onColumnFiltersChange={wishlistPage?.setWishlistColumnFilters}
+      />
+    </PageLayout>
   );
 }
 

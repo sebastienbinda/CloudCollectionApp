@@ -116,16 +116,13 @@ class VideoGamesApi {
   }
 
   /**
-   * Charge les jeux d'une plateforme.
+   * Charge les jeux de collection selon les criteres fournis.
    *
-   * @param {string|number} platformId - Identifiant SQL de plateforme.
+   * @param {Object|string|number} criteria - Criteres de recherche ou identifiant de plateforme.
    * @returns {Promise<Array>} Liste des jeux normalisee pour le tableau.
    */
-  static async fetchGames(platformId) {
-    const query = this.buildCollectionGameSearchQuery({
-      platform_id: platformId,
-      wishlist: false,
-    });
+  static async fetchGames(criteria = {}) {
+    const query = this.buildCollectionGameSearchQuery(this.normalizeGameSearchCriteria(criteria));
     const data = await this.fetchJson(
       `/collections/videogames/games/search?${query}`,
       "Impossible de recuperer les jeux video.",
@@ -134,6 +131,23 @@ class VideoGamesApi {
       }
     );
     return this.normalizeCollectionGames(data.games || []);
+  }
+
+  /**
+   * Normalise les criteres de recherche de jeux.
+   *
+   * @param {Object|string|number} criteria - Criteres de recherche ou identifiant plateforme.
+   * @returns {Object} Criteres compatibles avec l'API backend.
+   */
+  static normalizeGameSearchCriteria(criteria) {
+    if (typeof criteria !== "object" || criteria === null || Array.isArray(criteria)) {
+      return {
+        platform_id: criteria,
+        wishlist: false,
+      };
+    }
+
+    return criteria;
   }
 
   /**

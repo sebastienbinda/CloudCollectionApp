@@ -280,6 +280,7 @@ class AppViewSwitch {
     return (
       <WishlistView
         {...this.buildPageLayoutProps(props)}
+        wishlistPage={props.wishlistPage}
       />
     );
   }
