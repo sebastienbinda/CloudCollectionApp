@@ -29,6 +29,7 @@ function MainMenu({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenWishlist,
   onOpenConfiguration,
   onLogout,
 }) {
@@ -149,6 +150,14 @@ function MainMenu({
               Configuration
             </button>
           ) : null}
+          <button
+            className="secondaryButton"
+            type="button"
+            onClick={() => runMenuAction(onOpenWishlist)}
+            disabled={!isAuthenticated || !canUseCollectionViews}
+          >
+            Liste de souhaits
+          </button>
           <button
             className="secondaryButton"
             type="button"
