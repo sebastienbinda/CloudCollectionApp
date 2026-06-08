@@ -278,7 +278,7 @@ class SqlAlchemyUserCollectionQueryRepository:
         rows = connection.execute(
             text(
                 "SELECT "
-                "game.id, game.name, game.release_date, "
+                "game.id, game.name, game.release_date::text AS release_date, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
                 "studio.id AS studio_id, studio.name AS studio_name, "
                 "user_collection.wishlist "

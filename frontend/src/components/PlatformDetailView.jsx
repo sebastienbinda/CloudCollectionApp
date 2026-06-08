@@ -36,6 +36,7 @@ function PlatformDetailView({
   sortConfig,
   sortedGames,
   filteredGames,
+  sortableColumns,
   deleteGameMessage,
   deleteGameError,
   error,
@@ -52,6 +53,7 @@ function PlatformDetailView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenWishlist,
   onOpenConfiguration,
   onLogout,
   onOpenPlatform,
@@ -103,6 +105,7 @@ function PlatformDetailView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
       headerAsideContent={(
@@ -150,6 +153,7 @@ function PlatformDetailView({
         filteredGames={filteredGames}
         isLoadingGames={isLoadingGames}
         emptyMessage="Aucun jeu a afficher pour cette plateforme."
+        sortableColumns={sortableColumns}
         controlsContent={(
           <div className="controls">
             <label htmlFor="platform">Plateforme :</label>

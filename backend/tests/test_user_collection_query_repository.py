@@ -277,6 +277,7 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertIn("t_game", sql)
         self.assertIn("t_platform", sql)
         self.assertIn("t_studio", sql)
+        self.assertIn("game.release_date::text AS release_date", sql)
         self.assertIn("user_collection.user_id = :user_id", sql)
         self.assertIn("TRANSLATE(LOWER(game.name)", sql)
         self.assertIn("TRANSLATE(LOWER(studio.name)", sql)

@@ -78,6 +78,60 @@ class CollectionRoutesTest(BaseAppRoutesTest):
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].direction,
         ))
 
+    def test_games_search_returns_clear_error_for_invalid_sort_column(self):
+        """Verifie le message HTTP pour une colonne de tri jeux inconnue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le message JSON.
+        """
+
+        response = self.client.get(
+            "/collections/videogames/games/search?sort=unknown,asc",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("Unsupported sort column 'unknown'", response.get_json()["error"])
+
+    def test_games_search_returns_clear_error_for_invalid_filter_parameter(self):
+        """Verifie le message HTTP pour un critere jeux inconnu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le message JSON.
+        """
+
+        response = self.client.get(
+            "/collections/videogames/games/search?unknown_filter=value",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("Unsupported query parameter 'unknown_filter'", response.get_json()["error"])
+
+    def test_games_search_returns_clear_error_for_invalid_criteria_format(self):
+        """Verifie le message HTTP pour un format de critere invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le message JSON.
+        """
+
+        response = self.client.get(
+            "/collections/videogames/games/search?platform_id=abc",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual("Invalid platform_id. Expected a positive integer.", response.get_json()["error"])
+
     def test_legacy_collection_type_search_route_is_not_registered(self):
         """Verifie que l'ancien chemin typé de collection n'est plus expose.
 

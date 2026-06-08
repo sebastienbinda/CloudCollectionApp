@@ -40,6 +40,7 @@ function ConfigurationView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenWishlist,
   onAddGame,
   onOpenUsers,
   onOpenConfiguration,
@@ -63,6 +64,7 @@ function ConfigurationView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

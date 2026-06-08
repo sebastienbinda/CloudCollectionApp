@@ -107,9 +107,6 @@ servir deux vues :
 
 - `frontend/src/collectionUtils.js`
   - Contient `filterGames(games, columns, columnFilters)`.
-  - Contient `sortGames(games, sortConfig)`.
-  - `sortGames` est actuellement utilisé par la page plateforme, mais cette
-    approche doit être remplacée pour les listes issues du backend.
   - `isSelectFilterColumn(column)` retourne `true` pour les colonnes studio ou
     développeur, et pour `Version`; il ne couvre pas `Plateforme`.
   - `getColumnClassName(column)` couvre `Nom du jeu`, les dates, `Note`,
@@ -257,7 +254,7 @@ Responsabilité :
   `defaultSortConfig`, `sortColumnMapping`, `errorMessage`, `onError` et
   `reloadKey` ;
 - demander un nouveau chargement backend quand la configuration de tri change,
-  au lieu de trier localement avec `sortGames`.
+  au lieu de trier localement.
 
 Modifier `frontend/src/hooks/games/useGameCollectionPage.js` :
 

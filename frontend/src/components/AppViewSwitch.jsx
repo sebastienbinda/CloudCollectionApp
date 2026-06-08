@@ -346,6 +346,7 @@ class AppViewSwitch {
         sortConfig={props.sortConfig}
         sortedGames={props.sortedGames}
         filteredGames={props.filteredGames}
+        sortableColumns={props.sortableColumns}
         deleteGameMessage={props.deleteGameMessage}
         deleteGameError={props.deleteGameError}
         error={props.error}

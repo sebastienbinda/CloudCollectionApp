@@ -62,7 +62,11 @@ when present.
 
 Collection game and platform search endpoints support `wishlist=true` and
 `wishlist=false`. Only those two textual boolean values are accepted from query
-parameters; any other value is ignored.
+parameters; any other value returns `400` with a clear JSON `error` message.
+
+Unsupported collection search parameters, unsupported sort columns, unsupported
+sort directions and invalid criterion formats also return `400` with a clear
+JSON `error` message.
 
 The wishlist filter is optional at API level. Without it, backend search
 endpoints can return both owned and wished entries, which is useful for future

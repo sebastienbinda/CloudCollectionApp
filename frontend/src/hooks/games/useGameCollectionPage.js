@@ -13,12 +13,20 @@
  * Description : hook React de la page collection de jeux par plateforme.
  */
 import { useEffect, useState } from "react";
-import { filterGames, getStudioCount, sortGames } from "../../collectionUtils";
+import { filterGames, getStudioCount } from "../../collectionUtils";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import usePlatformGameMutations from "../usePlatformGameMutations";
 
 const filterableColumns = ["Studio", "Version", "Date de sortie", "Date d'achat"];
 const hiddenGameColumns = new Set(["id", "platform_id"]);
+const sortableColumns = ["Nom du jeu", "Studio", "Date de sortie", "Date d'achat", "Note"];
+const backendSortColumns = {
+  "Nom du jeu": "name",
+  Studio: "studio_name",
+  "Date de sortie": "release_date",
+  "Date d'achat": "buy_date",
+  Note: "grade",
+};
 
 /**
  * Construit les valeurs distinctes de filtres depuis les jeux charges.
@@ -42,6 +50,18 @@ const buildValuesByColumn = (loadedGames) =>
     );
     return values;
   }, {});
+
+/**
+ * Construit le parametre de tri attendu par le backend.
+ *
+ * @param {Object} sortConfig - Tri courant du tableau.
+ * @returns {string} Parametre `sort` backend.
+ */
+const buildBackendSort = (sortConfig) => {
+  const backendColumn = backendSortColumns[sortConfig.column] || "name";
+  const direction = sortConfig.direction === "desc" ? "desc" : "asc";
+  return `${backendColumn},${direction}`;
+};
 
 /**
  * Gere les jeux, filtres, tris et mutations de la collection par plateforme.
@@ -73,11 +93,14 @@ function useGameCollectionPage(options) {
       try {
         setIsLoadingGames(true);
         options.setError("");
-        const data = await VideoGamesApi.fetchGames(options.selectedPlatform);
+        const data = await VideoGamesApi.fetchGames({
+          platform_id: options.selectedPlatform,
+          wishlist: false,
+          sort: buildBackendSort(sortConfig),
+        });
         const loadedGames = Array.isArray(data) ? data : [];
         setGames(loadedGames);
         setValuesByColumn(buildValuesByColumn(loadedGames));
-        setColumnFilters({});
       } catch (e) {
         options.setError("Impossible de charger les jeux video pour cette plateforme.");
         setGames([]);
@@ -88,6 +111,16 @@ function useGameCollectionPage(options) {
     };
 
     fetchGames();
+  }, [
+    options.selectedPlatform,
+    options.gamesReloadKey,
+    options.isAuthenticated,
+    options.hasAccessToken,
+    sortConfig,
+  ]);
+
+  useEffect(() => {
+    setColumnFilters({});
   }, [options.selectedPlatform, options.gamesReloadKey, options.isAuthenticated, options.hasAccessToken]);
 
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
@@ -100,8 +133,11 @@ function useGameCollectionPage(options) {
       ]
     : [];
   const filteredGames = filterGames(namedGames, columns, columnFilters);
-  const sortedGames = sortGames(filteredGames, sortConfig);
+  const sortedGames = filteredGames;
   const toggleSort = (column) => {
+    if (!sortableColumns.includes(column)) {
+      return;
+    }
     setSortConfig((previous) => ({
       column,
       direction: previous.column === column && previous.direction === "asc" ? "desc" : "asc",
@@ -118,6 +154,7 @@ function useGameCollectionPage(options) {
     sortedGames,
     filteredGames,
     isLoadingGames,
+    sortableColumns,
     studioCount: getStudioCount(namedGames),
     toggleSort,
     ...mutations,

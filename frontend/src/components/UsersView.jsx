@@ -61,6 +61,7 @@ function UsersView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenWishlist,
   onOpenConfiguration,
   onLogout,
 }) {
@@ -236,6 +237,7 @@ function UsersView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
