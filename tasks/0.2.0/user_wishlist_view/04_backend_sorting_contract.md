@@ -6,6 +6,12 @@ Supprimer le tri frontend des listes de jeux issues du backend et faire passer
 tous les tris de consultation collection/wishlist par les paramètres `sort` des
 endpoints existants.
 
+Le tri backend existe déjà pour `GET /collections/videogames/games/search` :
+le parseur accepte `sort`, le repository construit `ORDER BY`, et les colonnes
+nécessaires à la wishlist (`name`, `platform_name`, `studio_name`,
+`release_date`) sont déjà autorisées. Cette tâche consiste donc à réutiliser et
+vérifier ce contrat côté frontend, pas à créer un nouveau mécanisme backend.
+
 Cette tâche doit s'appuyer sur :
 
 - `tasks/0.2.0/user_wishlist_view/00_existing_code_analysis_result.md`
@@ -15,6 +21,8 @@ Cette tâche doit s'appuyer sur :
 
 ## Règles Attendues
 
+- Ne pas réimplémenter un mécanisme de tri backend si le contrat existant
+  couvre bien les colonnes nécessaires.
 - Le frontend ne doit pas trier localement les listes de jeux chargées depuis
   `GET /collections/videogames/games/search`.
 - Le tri demandé par l'utilisateur doit être converti en paramètre backend
@@ -32,6 +40,10 @@ Cette tâche doit s'appuyer sur :
   - `Date de sortie` -> `release_date`
 - Les colonnes non supportées par le backend ne doivent pas déclencher de tri
   backend.
+- Si la vérification révèle qu'une colonne nécessaire n'est pas réellement
+  supportée par le backend, alors la tâche doit être étendue pour ajouter cette
+  colonne côté parser, repository et tests backend avant l'intégration
+  frontend.
 
 ## Service Frontend
 
@@ -79,6 +91,8 @@ avant modification effective si la règle n'est pas encore documentée :
 
 - Aucune méthode `fetchWishlistGames` n'est créée dans `VideoGamesApi`.
 - `fetchGames` accepte les critères nécessaires aux deux vues.
+- Le tri backend existant est vérifié pour `name`, `platform_name`,
+  `studio_name` et `release_date`.
 - La page plateforme envoie un paramètre `sort` backend.
 - La page wishlist envoie un paramètre `sort` backend.
 - Le tri affiché dans le tableau reflète la configuration demandée au backend.

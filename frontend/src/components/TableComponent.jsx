@@ -99,7 +99,10 @@ class TableComponent extends Component {
     const { columnFilters = {}, valuesByColumn = {}, renderColumnFilter } = this.props;
 
     if (renderColumnFilter) {
-      return renderColumnFilter(column);
+      const customFilter = renderColumnFilter(column);
+      if (customFilter !== undefined) {
+        return customFilter;
+      }
     }
 
     if (!this.props.onColumnFiltersChange) {

@@ -1,0 +1,1 @@
+L'objectif de la tache est de modifier le compose docker de production pour le rendre cohérent avec les nouvelles fonctionnalités à savoir le déploiement de la base de données.

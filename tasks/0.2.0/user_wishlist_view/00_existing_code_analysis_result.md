@@ -149,6 +149,10 @@ Il n'y a pas besoin d'une nouvelle charte visuelle.
 
 - Le backend expose déjà `wishlist=true` et `wishlist=false` sur
   `GET /collections/videogames/games/search`.
+- Le backend expose déjà le tri `sort` pour les jeux via
+  `UserCollectionQueryParser` et `SqlAlchemyUserCollectionQueryRepository`.
+  Les colonnes nécessaires à la wishlist (`name`, `platform_name`,
+  `studio_name`, `release_date`) sont déjà autorisées.
 - Aucun nouveau endpoint backend n'est nécessaire.
 - La page `Ma collection`, la liste des plateformes et la recherche d'accueil
   doivent continuer à envoyer `wishlist=false`.
