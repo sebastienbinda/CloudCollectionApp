@@ -206,50 +206,6 @@ export const filterGames = (games, columns, columnFilters) =>
   );
 
 /**
- * Trie une liste de jeux selon la configuration de tri courante.
- *
- * @param {Record<string, unknown>[]} games - Jeux deja filtres.
- * @param {{column: string, direction: "asc"|"desc"}} sortConfig - Colonne et sens de tri.
- * @returns {Record<string, unknown>[]} Nouvelle liste triee.
- */
-export const sortGames = (games, sortConfig) =>
-  [...games].sort((firstGame, secondGame) => {
-    const directionMultiplier = sortConfig.direction === "asc" ? 1 : -1;
-    const firstValue = firstGame[sortConfig.column];
-    const secondValue = secondGame[sortConfig.column];
-
-    if (firstValue === null || firstValue === undefined || firstValue === "") {
-      return secondValue === null || secondValue === undefined || secondValue === ""
-        ? 0
-        : 1;
-    }
-    if (secondValue === null || secondValue === undefined || secondValue === "") {
-      return -1;
-    }
-
-    if (isDateColumn(sortConfig.column)) {
-      const firstDate = new Date(firstValue);
-      const secondDate = new Date(secondValue);
-      if (!Number.isNaN(firstDate.getTime()) && !Number.isNaN(secondDate.getTime())) {
-        return (firstDate.getTime() - secondDate.getTime()) * directionMultiplier;
-      }
-    }
-
-    const firstNumber = Number.parseFloat(String(firstValue).replace(",", "."));
-    const secondNumber = Number.parseFloat(String(secondValue).replace(",", "."));
-    if (!Number.isNaN(firstNumber) && !Number.isNaN(secondNumber)) {
-      return (firstNumber - secondNumber) * directionMultiplier;
-    }
-
-    return (
-      String(firstValue).localeCompare(String(secondValue), "fr", {
-        numeric: true,
-        sensitivity: "base",
-      }) * directionMultiplier
-    );
-  });
-
-/**
  * Formate un nombre selon la locale francaise.
  *
  * @param {number|string|null|undefined} value - Nombre ou valeur vide.

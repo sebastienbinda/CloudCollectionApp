@@ -85,7 +85,7 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"addGame"|"configuration"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"} Identifiant de vue.
    */
   static getViewFromUrl() {
     if (window.location.pathname === "/about") {
@@ -111,6 +111,9 @@ class AppRouting {
     }
     if (window.location.pathname === "/collection") {
       return "home";
+    }
+    if (window.location.pathname === "/wishlist") {
+      return "wishlist";
     }
     if (window.location.pathname === "/add-game") {
       return "addGame";

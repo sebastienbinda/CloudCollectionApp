@@ -83,6 +83,20 @@ class UserCollectionQueryParser:
 
     PLATFORM_ENTITY = "collection_platforms"
     GAME_ENTITY = "collection_games"
+    PLATFORM_QUERY_PARAMETERS = frozenset({"name", "wishlist", "page", "size", "sort"})
+    GAME_QUERY_PARAMETERS = frozenset(
+        {
+            "name",
+            "studio_name",
+            "platform_name",
+            "platform_id",
+            "release_date",
+            "wishlist",
+            "page",
+            "size",
+            "sort",
+        }
+    )
     PLATFORM_SORT_COLUMNS = frozenset({"name"})
     GAME_SORT_COLUMNS = frozenset(
         {"name", "platform_name", "release_date", "studio_name", "buy_date", "grade"}
@@ -117,9 +131,10 @@ class UserCollectionQueryParser:
             UserCollectionPlatformQueryCriteria: Criteres normalises.
 
         Raises:
-            Aucun.
+            ValueError: Si un parametre ou un tri n'est pas supporte.
         """
 
+        self._validate_query_parameters(query_parameters, self.PLATFORM_QUERY_PARAMETERS)
         page_request = LibraryPageRequest(
             page=self.base_parser._parse_page(self._get_first_value(query_parameters, "page")),
             size=self.base_parser._parse_size(self._get_first_value(query_parameters, "size")),
@@ -128,7 +143,7 @@ class UserCollectionQueryParser:
             page_request=page_request,
             name=self._parse_text(query_parameters, "name"),
             normalized_name=self._parse_normalized_text(query_parameters, "name"),
-            wishlist=self._parse_wishlist(self._get_first_value(query_parameters, "wishlist")),
+            wishlist=self._parse_wishlist_filter(query_parameters),
             sort_rules=self._parse_sort_rules(
                 self.PLATFORM_SORT_COLUMNS,
                 self._get_all_values(query_parameters, "sort"),
@@ -148,9 +163,10 @@ class UserCollectionQueryParser:
             UserCollectionGameQueryCriteria: Criteres normalises.
 
         Raises:
-            Aucun.
+            ValueError: Si un parametre ou un critere n'est pas supporte.
         """
 
+        self._validate_query_parameters(query_parameters, self.GAME_QUERY_PARAMETERS)
         platform_id, has_invalid_platform_id = self._parse_platform_id(
             self._get_first_value(query_parameters, "platform_id")
         )
@@ -172,7 +188,7 @@ class UserCollectionQueryParser:
             has_invalid_platform_id=has_invalid_platform_id,
             release_date_from=release_date_from,
             release_date_to=release_date_to,
-            wishlist=self._parse_wishlist(self._get_first_value(query_parameters, "wishlist")),
+            wishlist=self._parse_wishlist_filter(query_parameters),
             sort_rules=self._parse_sort_rules(
                 self.GAME_SORT_COLUMNS,
                 self._get_all_values(query_parameters, "sort"),
@@ -234,23 +250,31 @@ class UserCollectionQueryParser:
             tuple[LibrarySortRule, ...]: Tris normalises.
 
         Raises:
-            Aucun.
+            ValueError: Si une colonne ou direction de tri est invalide.
         """
 
         parsed_rules = []
+        allowed_columns_text = ", ".join(sorted(allowed_columns))
         for sort_value in sort_values:
             if not str(sort_value or "").strip():
                 continue
             parts = [part.strip() for part in str(sort_value).split(",", 1)]
             requested_column = parts[0] if parts else ""
             if requested_column not in allowed_columns:
-                parsed_rules.append(self.base_parser._default_sort_rule())
-                continue
+                raise ValueError(
+                    f"Unsupported sort column '{requested_column}'. "
+                    f"Allowed columns: {allowed_columns_text}."
+                )
             requested_direction = parts[1].lower() if len(parts) > 1 else ""
+            if requested_direction not in {"asc", "desc"}:
+                raise ValueError(
+                    f"Unsupported sort direction '{requested_direction}' for column "
+                    f"'{requested_column}'. Allowed directions: asc, desc."
+                )
             parsed_rules.append(
                 LibrarySortRule(
                     column=requested_column,
-                    direction=requested_direction if requested_direction in {"asc", "desc"} else "asc",
+                    direction=requested_direction,
                 )
             )
         return tuple(parsed_rules or [self.base_parser._default_sort_rule()])
@@ -265,14 +289,14 @@ class UserCollectionQueryParser:
             tuple[int | None, bool]: Identifiant normalise et indicateur d'invalidite.
 
         Raises:
-            Aucun.
+            ValueError: Si la valeur n'est pas un identifiant positif.
         """
 
         if value is None or str(value).strip() == "":
             return None, False
         parsed_value = self.base_parser._parse_positive_integer(value)
         if parsed_value is None or parsed_value == 0:
-            return None, True
+            raise ValueError("Invalid platform_id. Expected a positive integer.")
         return parsed_value, False
 
     def _parse_release_date_range(self, value: Any) -> tuple[date | None, date | None]:
@@ -285,12 +309,14 @@ class UserCollectionQueryParser:
             tuple[date | None, date | None]: Bornes valides ou valeurs vides.
 
         Raises:
-            Aucun.
+            ValueError: Si la plage n'utilise pas le format attendu.
         """
 
         raw_value = str(value or "").strip()
-        if not raw_value or ".." not in raw_value:
+        if not raw_value:
             return None, None
+        if ".." not in raw_value:
+            raise ValueError("Invalid release_date. Expected format: YYYY-MM-DD..YYYY-MM-DD.")
         start_value, end_value = raw_value.split("..", 1)
         return self._parse_date(start_value), self._parse_date(end_value)
 
@@ -304,13 +330,13 @@ class UserCollectionQueryParser:
             date | None: Date valide ou `None`.
 
         Raises:
-            Aucun.
+            ValueError: Si la date n'utilise pas le format ISO.
         """
 
         try:
             return date.fromisoformat(value.strip())
         except ValueError:
-            return None
+            raise ValueError("Invalid release_date. Expected format: YYYY-MM-DD..YYYY-MM-DD.")
 
     def _parse_wishlist(self, value: Any) -> bool | None:
         """Parse le filtre booleen `wishlist`.
@@ -335,6 +361,57 @@ class UserCollectionQueryParser:
         if normalized_value == "false":
             return False
         return None
+
+    def _parse_wishlist_filter(
+        self,
+        query_parameters: QueryParameterSource | Mapping[str, Any],
+    ) -> bool | None:
+        """Parse le filtre wishlist en refusant les valeurs inconnues.
+
+        Args:
+            query_parameters (QueryParameterSource | Mapping[str, Any]): Parametres bruts.
+
+        Returns:
+            bool | None: Filtre booleen ou aucun filtre si absent.
+
+        Raises:
+            ValueError: Si la valeur n'est ni `true` ni `false`.
+        """
+
+        value = self._get_first_value(query_parameters, "wishlist")
+        if value is None or str(value).strip() == "":
+            return None
+        parsed_value = self._parse_wishlist(value)
+        if parsed_value is None:
+            raise ValueError("Invalid wishlist. Expected 'true' or 'false'.")
+        return parsed_value
+
+    def _validate_query_parameters(
+        self,
+        query_parameters: QueryParameterSource | Mapping[str, Any],
+        allowed_parameters: frozenset[str],
+    ) -> None:
+        """Verifie que les parametres de recherche sont declares.
+
+        Args:
+            query_parameters (QueryParameterSource | Mapping[str, Any]): Parametres bruts.
+            allowed_parameters (frozenset[str]): Parametres supportes.
+
+        Returns:
+            None: La validation ne retourne aucune valeur.
+
+        Raises:
+            ValueError: Si un parametre n'est pas supporte.
+        """
+
+        parameter_names = getattr(query_parameters, "keys", lambda: [])()
+        for parameter_name in parameter_names:
+            if parameter_name not in allowed_parameters:
+                allowed_parameters_text = ", ".join(sorted(allowed_parameters))
+                raise ValueError(
+                    f"Unsupported query parameter '{parameter_name}'. "
+                    f"Allowed parameters: {allowed_parameters_text}."
+                )
 
     def _get_first_value(
         self,

@@ -22,6 +22,7 @@ import LibraryHomeView from "./LibraryHomeView";
 import PlatformDetailView from "./PlatformDetailView";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
+import WishlistView from "./WishlistView";
 
 /**
  * Selectionne la vue React a afficher selon l'etat applicatif courant.
@@ -43,6 +44,7 @@ class AppViewSwitch {
       onOpenAuth: props.openAuth,
       onOpenHome: props.goHome,
       onOpenLibrary: props.openLibrary,
+      onOpenWishlist: props.openWishlist,
       onOpenConfiguration: props.openConfiguration,
       onLogout: props.logout,
     };
@@ -81,6 +83,10 @@ class AppViewSwitch {
 
     if (props.currentView === "collectionOnboarding") {
       return this.renderCollectionOnboarding(props);
+    }
+
+    if (props.currentView === "wishlist") {
+      return this.renderWishlist(props);
     }
 
     if (props.currentView === "library") {
@@ -265,6 +271,21 @@ class AppViewSwitch {
   }
 
   /**
+   * Rend la page de liste de souhaits.
+   *
+   * @param {Object} props - Etat et callbacks de navigation.
+   * @returns {import("react").JSX.Element} Vue liste de souhaits.
+   */
+  static renderWishlist(props) {
+    return (
+      <WishlistView
+        {...this.buildPageLayoutProps(props)}
+        wishlistPage={props.wishlistPage}
+      />
+    );
+  }
+
+  /**
    * Rend la page d'accueil Bibliotheque publique.
    *
    * @param {Object} props - Etat et callbacks Bibliotheque.
@@ -325,6 +346,7 @@ class AppViewSwitch {
         sortConfig={props.sortConfig}
         sortedGames={props.sortedGames}
         filteredGames={props.filteredGames}
+        sortableColumns={props.sortableColumns}
         deleteGameMessage={props.deleteGameMessage}
         deleteGameError={props.deleteGameError}
         error={props.error}

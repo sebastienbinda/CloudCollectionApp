@@ -29,6 +29,7 @@ function MainMenu({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenWishlist,
   onOpenConfiguration,
   onLogout,
 }) {
@@ -99,10 +100,15 @@ function MainMenu({
 
   const runMenuAction = (callback) => {
     closeMenu();
-    callback();
+    if (typeof callback === "function") {
+      callback();
+    }
   };
 
   const normalizedProfile = String(profile || "").trim().toUpperCase();
+  const canOpenWishlist =
+    isAuthenticated && canUseCollectionViews && typeof onOpenWishlist === "function";
+  const canOpenHome = isAuthenticated && canUseCollectionViews && typeof onOpenHome === "function";
 
   return (
     <div className="pageHeaderTopActions">
@@ -145,15 +151,23 @@ function MainMenu({
               className="secondaryButton"
               type="button"
               onClick={() => runMenuAction(onOpenConfiguration)}
-          >
+            >
               Configuration
             </button>
           ) : null}
           <button
             className="secondaryButton"
             type="button"
+            onClick={() => runMenuAction(onOpenWishlist)}
+            disabled={!canOpenWishlist}
+          >
+            Liste de souhaits
+          </button>
+          <button
+            className="secondaryButton"
+            type="button"
             onClick={() => runMenuAction(onOpenHome)}
-            disabled={!isAuthenticated || !canUseCollectionViews}
+            disabled={!canOpenHome}
           >
             Ma collection
           </button>

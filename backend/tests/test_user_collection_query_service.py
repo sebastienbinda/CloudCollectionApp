@@ -472,23 +472,18 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
             payload["games"],
         )
 
-    def test_list_games_returns_empty_payload_for_invalid_platform_id(self):
-        """Verifie le retour vide pour un identifiant plateforme invalide.
+    def test_parser_rejects_invalid_platform_id(self):
+        """Verifie le refus explicite d'un identifiant plateforme invalide.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident le court-circuit.
+            None: Les assertions valident le message d'erreur.
         """
 
-        criteria = self.query_parser.parse_games({"platform_id": "abc"})
-
-        payload = self.service.list_games(7, criteria)
-
-        self.assertEqual({"totalElements": 0, "page": 0, "size": 500, "totalPages": 0}, payload["page"])
-        self.assertEqual([], payload["games"])
-        self.assertEqual(0, self.engine.connect_count)
+        with self.assertRaisesRegex(ValueError, "Invalid platform_id"):
+            self.query_parser.parse_games({"platform_id": "abc"})
 
     def test_get_collection_file_path_uses_repository(self):
         """Verifie la lecture du chemin de fichier utilisateur.
@@ -520,7 +515,7 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                 "platform_name": " NéS ",
                 "platform_id": "12",
                 "release_date": "1980-01-01..1990-12-31",
-                "sort": ["platform_name,desc", "unknown,asc"],
+                "sort": ["platform_name,desc", "name,asc"],
             }
         )
 
@@ -534,6 +529,61 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertEqual("1990-12-31", criteria.release_date_to.isoformat())
         self.assertEqual(("platform_name", "desc"), (criteria.sort_rules[0].column, criteria.sort_rules[0].direction))
         self.assertEqual(("name", "asc"), (criteria.sort_rules[1].column, criteria.sort_rules[1].direction))
+
+    def test_parser_rejects_unsupported_game_sort_column(self):
+        """Verifie le refus explicite d'une colonne de tri jeux inconnue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le message d'erreur.
+        """
+
+        with self.assertRaisesRegex(ValueError, "Unsupported sort column 'unknown'"):
+            self.query_parser.parse_games({"sort": ["unknown,asc"]})
+
+    def test_parser_rejects_unsupported_sort_direction(self):
+        """Verifie le refus explicite d'un sens de tri invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le message d'erreur.
+        """
+
+        with self.assertRaisesRegex(ValueError, "Unsupported sort direction 'up'"):
+            self.query_parser.parse_games({"sort": ["name,up"]})
+
+    def test_parser_rejects_invalid_release_date_range(self):
+        """Verifie le refus explicite d'une plage de dates invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le message d'erreur.
+        """
+
+        with self.assertRaisesRegex(ValueError, "Invalid release_date"):
+            self.query_parser.parse_games({"release_date": "1980-01-01"})
+
+        with self.assertRaisesRegex(ValueError, "Invalid release_date"):
+            self.query_parser.parse_games({"release_date": "not-a-date..1990-12-31"})
+
+    def test_parser_rejects_unsupported_game_query_parameter(self):
+        """Verifie le refus explicite d'un critere de recherche inconnu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le message d'erreur.
+        """
+
+        with self.assertRaisesRegex(ValueError, "Unsupported query parameter 'unknown_filter'"):
+            self.query_parser.parse_games({"unknown_filter": "x"})
 
     def test_parser_reads_only_boolean_wishlist_filter_values(self):
         """Verifie le parsing du filtre wishlist.
@@ -550,10 +600,9 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertFalse(self.query_parser.parse_games({"wishlist": False}).wishlist)
         self.assertTrue(self.query_parser.parse_games({"wishlist": True}).wishlist)
         self.assertIsNone(self.query_parser.parse_games({}).wishlist)
-        self.assertIsNone(self.query_parser.parse_games({"wishlist": "0"}).wishlist)
-        self.assertIsNone(self.query_parser.parse_games({"wishlist": "1"}).wishlist)
-        self.assertIsNone(self.query_parser.parse_games({"wishlist": "oui"}).wishlist)
-        self.assertIsNone(self.query_parser.parse_games({"wishlist": "maybe"}).wishlist)
+        for invalid_value in ["0", "1", "oui", "maybe"]:
+            with self.assertRaisesRegex(ValueError, "Invalid wishlist"):
+                self.query_parser.parse_games({"wishlist": invalid_value})
 
     def test_parser_reads_platform_wishlist_filter(self):
         """Verifie le parsing wishlist des plateformes.
@@ -568,7 +617,21 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertFalse(self.query_parser.parse_platforms({"wishlist": "false"}).wishlist)
         self.assertTrue(self.query_parser.parse_platforms({"wishlist": "true"}).wishlist)
         self.assertIsNone(self.query_parser.parse_platforms({}).wishlist)
-        self.assertIsNone(self.query_parser.parse_platforms({"wishlist": "1"}).wishlist)
+        with self.assertRaisesRegex(ValueError, "Invalid wishlist"):
+            self.query_parser.parse_platforms({"wishlist": "1"})
+
+    def test_parser_rejects_unsupported_platform_query_parameter(self):
+        """Verifie le refus explicite d'un critere plateforme inconnu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le message d'erreur.
+        """
+
+        with self.assertRaisesRegex(ValueError, "Unsupported query parameter 'platform_id'"):
+            self.query_parser.parse_platforms({"platform_id": "12"})
 
     def test_constructor_rejects_missing_database_url_without_injected_engine(self):
         """Verifie qu'un moteur est requis sans configuration SQL.

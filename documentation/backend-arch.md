@@ -109,6 +109,11 @@ Use domain folders under `backend/services/`:
 Services may compose other services, validators and repositories. Keep service
 constructors injectable when useful for tests.
 
+Endpoints that expose a `sort` query parameter must have their final ordering
+owned by the backend service/repository layer. Frontend clients may request a
+supported sort order, but must not be required to recalculate list ordering
+after receiving backend results.
+
 ### Database Infrastructure
 
 Database code must follow these boundaries:

@@ -77,6 +77,7 @@ function useAppNavigation(options) {
         "/bibliotheque/studios": "libraryStudios",
         "/bibliotheque/jeux": "libraryGames",
         "/collection": "home",
+        "/wishlist": "wishlist",
         "/add-game": "addGame",
         "/configuration": "configuration",
         "/users": "users",
@@ -115,7 +116,7 @@ function useAppNavigation(options) {
   }, [options.authenticatedProfile, currentView]);
 
   useEffect(() => {
-    const collectionViews = ["home", "games", "addGame", "collectionOnboarding"];
+    const collectionViews = ["home", "games", "wishlist", "addGame", "collectionOnboarding"];
     if (options.canUseCollectionViews || !collectionViews.includes(currentView)) return;
     const fallbackView = options.authenticatedProfile === "ADMIN" ? "configuration" : "about";
     const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/configuration" : "/about";
@@ -152,6 +153,13 @@ function useAppNavigation(options) {
     openLibraryPlatforms: () => openView("libraryPlatforms", "/bibliotheque/plateformes"),
     openLibraryStudios: () => openView("libraryStudios", "/bibliotheque/studios"),
     openLibraryGames: () => openView("libraryGames", "/bibliotheque/jeux"),
+    openWishlist: () => {
+      if (!options.canUseCollectionViews) {
+        openView("configuration", "/configuration");
+        return;
+      }
+      openView("wishlist", "/wishlist");
+    },
     openAddGamePage,
     openConfiguration: () => openView("configuration", "/configuration"),
     openUsersPage: () => openView("users", "/users"),

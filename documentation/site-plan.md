@@ -23,6 +23,9 @@ reference database and must not depend on connected-user collection status.
 
 - `/collection`: authenticated Ma collection page for non-`ADMIN` users who
   already have a collection.
+- `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
+  have a collection. It displays wished games from the connected user's SQL
+  collection data.
 - `/collection/import`: authenticated onboarding page shown when
   `GET /api/users/me/collection` returns `has_collection: false` for a
   non-`ADMIN` user.
@@ -46,8 +49,9 @@ a dedicated column. Backend validation and persistence remain authoritative.
 
 The `ADMIN` profile keeps backend access through the route catalog and Bearer
 token hierarchy, but the frontend must not offer collection ownership screens to
-that profile. `Ma collection`, platform detail, add-game and collection import
-routes must be disabled or redirected to `/configuration` for `ADMIN`.
+that profile. `Ma collection`, wishlist, platform detail, add-game and
+collection import routes must be disabled or redirected to `/configuration` for
+`ADMIN`.
 
 The `/users` administration page lets an `ADMIN` validate users with status
 `WAITING_VALIDATION`. Validation activates the account on the backend and sends

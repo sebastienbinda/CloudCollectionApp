@@ -1,0 +1,1 @@
+L'objectif de la tache est de centraliser les labels du frontend dans un fichier de configuration qui pourra être internationalité par la suite.

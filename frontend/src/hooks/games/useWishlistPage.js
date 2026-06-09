@@ -6,26 +6,24 @@
  *  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
  *                                                                            |_|   |_|
  * Projet : CloudCollectionApp
- * Date de creation : 2026-05-23
+ * Date de creation : 2026-06-08
  * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
  * Licence : Apache 2.0
  *
- * Description : hook React de la page collection de jeux par plateforme.
+ * Description : hook React de consultation de la liste de souhaits.
  */
 import { useEffect, useState } from "react";
-import { filterGames, getStudioCount } from "../../collectionUtils";
+import { filterGames } from "../../collectionUtils";
 import VideoGamesApi from "../../services/VideoGamesApi";
-import usePlatformGameMutations from "../usePlatformGameMutations";
 
-const filterableColumns = ["Studio", "Version", "Date de sortie", "Date d'achat"];
-const hiddenGameColumns = new Set(["id", "platform_id"]);
-const sortableColumns = ["Nom du jeu", "Studio", "Date de sortie", "Date d'achat", "Note"];
+const wishlistColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie", "Version"];
+const filterableColumns = ["Plateforme"];
+const sortableColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie"];
 const backendSortColumns = {
   "Nom du jeu": "name",
+  Plateforme: "platform_name",
   Studio: "studio_name",
   "Date de sortie": "release_date",
-  "Date d'achat": "buy_date",
-  Note: "grade",
 };
 
 /**
@@ -64,76 +62,53 @@ const buildBackendSort = (sortConfig) => {
 };
 
 /**
- * Gere les jeux, filtres, tris et mutations de la collection par plateforme.
+ * Gere les jeux, filtres et tris backend de la page wishlist.
  *
- * @param {Object} options - Dependances de chargement et mutations de collection.
- * @returns {Object} Etat de collection, donnees derivees et callbacks.
+ * @param {Object} options - Dependances de chargement wishlist.
+ * @returns {Object} Etat de wishlist, donnees derivees et callbacks.
  */
-function useGameCollectionPage(options) {
+function useWishlistPage(options) {
   const [games, setGames] = useState([]);
   const [valuesByColumn, setValuesByColumn] = useState({});
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ column: "Nom du jeu", direction: "asc" });
-  const [isLoadingGames, setIsLoadingGames] = useState(false);
-  const mutations = usePlatformGameMutations(
-    options.selectedPlatform,
-    options.reloadOds,
-    options.reloadGames
-  );
+  const [wishlistError, setWishlistError] = useState("");
+  const [isLoadingWishlistGames, setIsLoadingWishlistGames] = useState(false);
 
   useEffect(() => {
-    const fetchGames = async () => {
-      if (!options.hasAccessToken || !options.selectedPlatform) {
+    const loadWishlistGames = async () => {
+      if (!options.hasAccessToken || options.currentView !== "wishlist") {
         setGames([]);
         setValuesByColumn({});
-        setIsLoadingGames(false);
+        setColumnFilters({});
+        setWishlistError("");
+        setIsLoadingWishlistGames(false);
         return;
       }
 
       try {
-        setIsLoadingGames(true);
-        options.setError("");
-        const data = await VideoGamesApi.fetchGames({
-          platform_id: options.selectedPlatform,
-          wishlist: false,
+        setIsLoadingWishlistGames(true);
+        setWishlistError("");
+        const loadedGames = await VideoGamesApi.fetchGames({
+          wishlist: true,
           sort: buildBackendSort(sortConfig),
         });
-        const loadedGames = Array.isArray(data) ? data : [];
-        setGames(loadedGames);
-        setValuesByColumn(buildValuesByColumn(loadedGames));
+        setGames(Array.isArray(loadedGames) ? loadedGames : []);
+        setValuesByColumn(buildValuesByColumn(Array.isArray(loadedGames) ? loadedGames : []));
       } catch (e) {
-        options.setError("Impossible de charger les jeux video pour cette plateforme.");
+        setWishlistError("Impossible de charger la liste de souhaits.");
         setGames([]);
         setValuesByColumn({});
       } finally {
-        setIsLoadingGames(false);
+        setIsLoadingWishlistGames(false);
       }
     };
 
-    fetchGames();
-  }, [
-    options.selectedPlatform,
-    options.gamesReloadKey,
-    options.isAuthenticated,
-    options.hasAccessToken,
-    sortConfig,
-  ]);
-
-  useEffect(() => {
-    setColumnFilters({});
-  }, [options.selectedPlatform, options.gamesReloadKey, options.isAuthenticated, options.hasAccessToken]);
+    loadWishlistGames();
+  }, [options.currentView, options.hasAccessToken, options.gamesReloadKey, sortConfig]);
 
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
-  const columns = namedGames.length > 0
-    ? [
-        "Nom du jeu",
-        ...Object.keys(namedGames[0]).filter(
-          (column) => column !== "Nom du jeu" && !hiddenGameColumns.has(column)
-        ),
-      ]
-    : [];
-  const filteredGames = filterGames(namedGames, columns, columnFilters);
-  const sortedGames = filteredGames;
+  const filteredGames = filterGames(namedGames, filterableColumns, columnFilters);
   const toggleSort = (column) => {
     if (!sortableColumns.includes(column)) {
       return;
@@ -145,20 +120,20 @@ function useGameCollectionPage(options) {
   };
 
   return {
-    namedGames,
-    columns,
-    valuesByColumn,
-    columnFilters,
-    setColumnFilters,
-    sortConfig,
-    sortedGames,
-    filteredGames,
-    isLoadingGames,
-    sortableColumns,
-    studioCount: getStudioCount(namedGames),
-    toggleSort,
-    ...mutations,
+    wishlistGames: namedGames,
+    wishlistColumns,
+    wishlistValuesByColumn: valuesByColumn,
+    wishlistColumnFilters: columnFilters,
+    setWishlistColumnFilters: setColumnFilters,
+    wishlistSortConfig: sortConfig,
+    wishlistSortedGames: filteredGames,
+    wishlistFilteredGames: filteredGames,
+    isLoadingWishlistGames,
+    wishlistError,
+    wishlistFilterableColumns: filterableColumns,
+    wishlistSortableColumns: sortableColumns,
+    toggleWishlistSort: toggleSort,
   };
 }
 
-export default useGameCollectionPage;
+export default useWishlistPage;

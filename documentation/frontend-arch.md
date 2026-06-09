@@ -116,7 +116,11 @@ Use the following domain folders for new or modified hooks:
 
 - Own platform game loading.
 - Request `wishlist=false` for collection game lists.
+- Own wishlist game loading for `/wishlist` and request `wishlist=true`.
 - Own table filters, sorting and derived game collections.
+- Request supported collection and wishlist sort orders from the backend with
+  the `sort` query parameter. Do not recalculate backend list ordering in React
+  for collection consultation pages.
 - Own add-game form state and future submit workflow while backend actions
   remain reserved.
 - Use services for backend calls and utilities for pure transforms.

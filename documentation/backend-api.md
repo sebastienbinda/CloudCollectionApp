@@ -311,12 +311,15 @@ Supported query parameters:
 
 - `name`: optional platform name filter, matched without case or accent
   sensitivity;
-- `wishlist`: optional boolean filter. Only `true` and `false` are accepted;
-  invalid values are ignored. The current collection page sends
-  `wishlist=false`;
+- `wishlist`: optional boolean filter. Only `true` and `false` are accepted.
+  Invalid values return `400`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule. Allowed column: `name`.
+  Unsupported columns or directions return `400`.
+
+Unsupported query parameters return `400` with a JSON `error` message listing
+the accepted parameters.
 
 Response:
 
@@ -364,11 +367,10 @@ Supported query parameters:
   sensitivity;
 - `platform_name`: optional platform name filter, matched without case or
   accent sensitivity;
-- `platform_id`: optional exact platform id. Invalid values return an empty
-  list;
+- `platform_id`: optional exact platform id. Invalid values return `400`;
 - `release_date`: optional range formatted as `YYYY-MM-DD..YYYY-MM-DD`;
-- `wishlist`: optional boolean filter. Only `true` and `false` are accepted;
-  invalid values are ignored. The current collection page sends
+- `wishlist`: optional boolean filter. Only `true` and `false` are accepted.
+  Invalid values return `400`. The current collection page sends
   `wishlist=false`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
@@ -382,6 +384,10 @@ Allowed sort columns:
 - `studio_name`;
 - `buy_date`;
 - `grade`.
+
+Unsupported query parameters, unsupported sort columns, unsupported sort
+directions and invalid criterion formats return `400` with a JSON `error`
+message.
 
 Response:
 

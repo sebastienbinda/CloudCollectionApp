@@ -18,6 +18,7 @@ import useUserCollectionReinitialization from "../collection/useUserCollectionRe
 import useUserCollectionOnboarding from "../collection/useUserCollectionOnboarding";
 import useAddGamePage from "../games/useAddGamePage";
 import useGameCollectionPage from "../games/useGameCollectionPage";
+import useWishlistPage from "../games/useWishlistPage";
 import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
@@ -90,6 +91,11 @@ function useCloudCollectionViewModel() {
     reloadGames: refresh.reloadGames,
     setError,
   });
+  const wishlistPage = useWishlistPage({
+    currentView: navigation.currentView,
+    hasAccessToken: canUseCollectionViews,
+    gamesReloadKey: refresh.gamesReloadKey,
+  });
   const libraryEntities = useLibraryEntities({
     enabled: navigation.currentView === "library",
   });
@@ -142,6 +148,7 @@ function useCloudCollectionViewModel() {
       addGameMessage: addGamePage.addGameMessage,
       isAddingGame: addGamePage.isAddingGame,
       ...gameCollection,
+      wishlistPage,
       isLoadingPlatforms: platformsCatalog.isLoadingPlatforms,
       actionPermissions: session.actionPermissions,
       canUseCollectionViews,
@@ -169,6 +176,7 @@ function useCloudCollectionViewModel() {
       openLibraryPlatforms: navigation.openLibraryPlatforms,
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
+      openWishlist: navigation.openWishlist,
       openUsersPage: navigation.openUsersPage,
       openAbout: navigation.openAbout,
       openAuth: navigation.openAuth,

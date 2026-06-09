@@ -13,10 +13,10 @@ import {
   formatCurrency,
   formatNumber,
 } from "../collectionUtils";
+import CollectionGamesTable from "./CollectionGamesTable";
 import EditGameDialog from "./EditGameDialog";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
-import TableComponent from "./TableComponent";
 
 /**
  * Page de detail d'une plateforme avec statistiques, filtres et tableau de jeux.
@@ -36,6 +36,7 @@ function PlatformDetailView({
   sortConfig,
   sortedGames,
   filteredGames,
+  sortableColumns,
   deleteGameMessage,
   deleteGameError,
   error,
@@ -52,6 +53,7 @@ function PlatformDetailView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenWishlist,
   onOpenConfiguration,
   onLogout,
   onOpenPlatform,
@@ -103,6 +105,7 @@ function PlatformDetailView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
       headerAsideContent={(
@@ -139,80 +142,77 @@ function PlatformDetailView({
       {deleteGameError ? <p className="error">{deleteGameError}</p> : null}
       {deleteGameMessage ? <p className="success">{deleteGameMessage}</p> : null}
 
-      <div className="controls">
-        <label htmlFor="platform">Plateforme :</label>
-        <select
-          id="platform"
-          value={selectedPlatform}
-          onChange={(event) => onOpenPlatform(event.target.value)}
-          disabled={isLoadingPlatforms || platforms.length === 0}
-        >
-          {platforms.map((platform) => (
-            <option key={platform.id} value={platform.id}>
-              {platform.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {isLoadingPlatforms ? <ProgressBar label="Chargement des plateformes" /> : null}
-      {isLoadingGames ? <ProgressBar label="Chargement des jeux" /> : null}
-
-      {!isLoadingGames && games.length === 0 ? (
-        <p>Aucun jeu a afficher pour cette plateforme.</p>
-      ) : null}
-
-      {!isLoadingGames && games.length > 0 ? (
-        <TableComponent
-          rows={games}
-          columns={columns}
-          valuesByColumn={valuesByColumn}
-          columnFilters={columnFilters}
-          sortConfig={sortConfig}
-          sortedRows={sortedGames}
-          onToggleSort={onToggleSort}
-          onColumnFiltersChange={onColumnFiltersChange}
-          getRowClassName={(game) =>
-            isTopRatedGame(game.Note) ? "topRatedGameRow" : ""
-          }
-          renderRowActions={
-            canEditGame || canDeleteGame
-              ? (game) => (
-                  <div className="rowActionGroup">
-                    {canEditGame ? (
-                      <button
-                        className="rowIconButton"
-                        type="button"
-                        aria-label={`Modifier ${game["Nom du jeu"] || "ce jeu"}`}
-                        title="Modifier le jeu"
-                        onClick={() => onEditGame(game)}
-                      >
-                        <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
-                          <path d="M4 17.5V21h3.5L18.1 10.4l-3.5-3.5L4 17.5Z" />
-                          <path d="m16 5.5 1.6-1.6a1.2 1.2 0 0 1 1.7 0l.8.8a1.2 1.2 0 0 1 0 1.7L18.5 8 16 5.5Z" />
-                        </svg>
-                      </button>
-                    ) : null}
-                    {canDeleteGame ? (
-                      <button
-                        className="rowIconButton dangerIconButton"
-                        type="button"
-                        aria-label={`Supprimer ${game["Nom du jeu"] || "ce jeu"} de la plateforme`}
-                        title="Supprimer de la plateforme"
-                        onClick={() => onDeleteGame(game)}
-                      >
-                        <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
-                          <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z" />
-                          <path d="M6 9h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z" />
-                        </svg>
-                      </button>
-                    ) : null}
-                  </div>
-                )
-              : null
-          }
-        />
-      ) : null}
+      <CollectionGamesTable
+        games={games}
+        columns={columns}
+        valuesByColumn={valuesByColumn}
+        columnFilters={columnFilters}
+        sortConfig={sortConfig}
+        sortedGames={sortedGames}
+        filteredGames={filteredGames}
+        isLoadingGames={isLoadingGames}
+        emptyMessage="Aucun jeu a afficher pour cette plateforme."
+        sortableColumns={sortableColumns}
+        controlsContent={(
+          <div className="controls">
+            <label htmlFor="platform">Plateforme :</label>
+            <select
+              id="platform"
+              value={selectedPlatform}
+              onChange={(event) => onOpenPlatform(event.target.value)}
+              disabled={isLoadingPlatforms || platforms.length === 0}
+            >
+              {platforms.map((platform) => (
+                <option key={platform.id} value={platform.id}>
+                  {platform.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        onToggleSort={onToggleSort}
+        onColumnFiltersChange={onColumnFiltersChange}
+        getRowClassName={(game) =>
+          isTopRatedGame(game.Note) ? "topRatedGameRow" : ""
+        }
+        renderRowActions={
+          canEditGame || canDeleteGame
+            ? (game) => (
+                <div className="rowActionGroup">
+                  {canEditGame ? (
+                    <button
+                      className="rowIconButton"
+                      type="button"
+                      aria-label={`Modifier ${game["Nom du jeu"] || "ce jeu"}`}
+                      title="Modifier le jeu"
+                      onClick={() => onEditGame(game)}
+                    >
+                      <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
+                        <path d="M4 17.5V21h3.5L18.1 10.4l-3.5-3.5L4 17.5Z" />
+                        <path d="m16 5.5 1.6-1.6a1.2 1.2 0 0 1 1.7 0l.8.8a1.2 1.2 0 0 1 0 1.7L18.5 8 16 5.5Z" />
+                      </svg>
+                    </button>
+                  ) : null}
+                  {canDeleteGame ? (
+                    <button
+                      className="rowIconButton dangerIconButton"
+                      type="button"
+                      aria-label={`Supprimer ${game["Nom du jeu"] || "ce jeu"} de la plateforme`}
+                      title="Supprimer de la plateforme"
+                      onClick={() => onDeleteGame(game)}
+                    >
+                      <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
+                        <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z" />
+                        <path d="M6 9h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z" />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
+              )
+            : null
+        }
+      />
 
       <EditGameDialog
         game={editingGame}
@@ -221,9 +221,6 @@ function PlatformDetailView({
         onCancel={onCancelEditGame}
       />
 
-      {!isLoadingGames && games.length > 0 && filteredGames.length === 0 ? (
-        <p>Aucun jeu ne correspond aux filtres de colonnes.</p>
-      ) : null}
     </PageLayout>
   );
 }
