@@ -15,7 +15,6 @@ from io import BytesIO
 
 from services.collection.imports import CollectionFileDescriptionValidationError
 from services.users.user_collection_import_service import (
-    UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
     UserCollectionImportNotFoundError,
     UserCollectionImportTemporaryFileMissingError,
@@ -67,6 +66,57 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual({"has_collection": False}, self.client.get("/api/users/me/collection", headers=headers).get_json())
         FakeUserCollectionImportRepository.has_collection = True
         self.assertEqual({"has_collection": True}, self.client.get("/api/users/me/collection", headers=headers).get_json())
+
+    def test_current_user_import_configuration_requires_authentication(self):
+        """Verifie que la recuperation de configuration exige un token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident 403.
+        """
+
+        self.assertEqual(403, self.client.get("/api/users/import/").status_code)
+
+    def test_current_user_import_configuration_returns_saved_configuration(self):
+        """Verifie la recuperation nominale de la configuration sauvegardee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le payload.
+        """
+
+        saved_configuration = self._valid_description()
+        FakeUserCollectionImportRepository.import_configuration = saved_configuration
+
+        response = self.client.get(
+            "/api/users/import/",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(saved_configuration, response.get_json())
+
+    def test_current_user_import_configuration_returns_not_found_without_configuration(self):
+        """Verifie le 404 sans configuration sauvegardee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le message.
+        """
+
+        response = self.client.get(
+            "/api/users/import/",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(404, response.status_code)
+        self.assertEqual({"error": "Configuration d'import introuvable."}, response.get_json())
 
     def test_upload_current_user_collection_import_file_returns_created(self):
         """Verifie le depot temporaire nominal d'une collection.
@@ -323,7 +373,6 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         """
 
         cases = [
-            (UserCollectionImportConflictError("Collection deja importee."), 409),
             (UserCollectionImportInvalidFileError("Fichier invalide."), 400),
             (UserCollectionImportTemporaryFileMissingError("Fichier temporaire introuvable."), 404),
             (UserCollectionImportTooLargeError("Fichier trop volumineux."), 413),
@@ -344,7 +393,6 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         """Verifie le mapping des erreurs du depot temporaire."""
 
         cases = [
-            (UserCollectionImportConflictError("Collection deja importee."), 409),
             (UserCollectionImportInvalidFileError("Fichier invalide."), 400),
             (UserCollectionImportTooLargeError("Fichier trop volumineux."), 413),
         ]

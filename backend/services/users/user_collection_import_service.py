@@ -27,7 +27,6 @@ from services.collection.imports import (
     CollectionImportData,
 )
 from services.database.user_collection_import_repository import (
-    UserCollectionAlreadyImportedError,
     UserCollectionImportPersistenceResult,
     UserCollectionImportUserNotFoundError,
     UserCollectionReinitializationNotFoundError,
@@ -38,10 +37,6 @@ from .user_collection_import_configuration import UserCollectionImportConfigurat
 
 class UserCollectionImportError(Exception):
     """Classe de base des erreurs metier d'import de collection utilisateur."""
-
-
-class UserCollectionImportConflictError(UserCollectionImportError):
-    """Signale qu'une collection utilisateur est deja importee."""
 
 
 class UserCollectionImportInvalidFileError(UserCollectionImportError):
@@ -213,14 +208,12 @@ class UserCollectionImportService:
             None: La methode ne retourne aucune valeur.
 
         Raises:
-            UserCollectionImportConflictError: Si la collection existe deja.
             UserCollectionImportInvalidFileError: Si le fichier est invalide.
             UserCollectionImportTooLargeError: Si le fichier est trop volumineux.
         """
 
         user_lock = self._lock_for_user(user_id)
         with user_lock:
-            self._ensure_user_has_no_collection(user_id)
             reader = self.reader_factory.create(file_type)
             source_path = Path(source_file_path)
             self._validate_source_file(source_path, original_filename, reader)
@@ -306,7 +299,6 @@ class UserCollectionImportService:
             UserCollectionImportResult: Compteurs de l'import reussi.
 
         Raises:
-            UserCollectionImportConflictError: Si la collection existe deja.
             UserCollectionImportInvalidFileError: Si le fichier est invalide.
             UserCollectionImportTooLargeError: Si le fichier est trop volumineux.
             UserCollectionImportUnexpectedError: Si une erreur non fonctionnelle survient.
@@ -351,7 +343,6 @@ class UserCollectionImportService:
         original_filename: str | None,
         file_description: CollectionFileDescription | None,
     ) -> UserCollectionImportResult:
-        self._ensure_user_has_no_collection(user_id)
         if file_description is None:
             raise CollectionFileDescriptionValidationError(
                 ["collection_file_description est requis."]
@@ -382,19 +373,12 @@ class UserCollectionImportService:
                 "Fichier de collection invalide.",
                 self._import_invalid_file_details(exc),
             ) from exc
-        except UserCollectionAlreadyImportedError as exc:
-            self._delete_copied_file(copied_file_path)
-            raise UserCollectionImportConflictError("Collection deja importee.") from exc
         except UserCollectionImportUserNotFoundError as exc:
             self._delete_copied_file(copied_file_path)
             raise UserCollectionImportUnexpectedError("Utilisateur introuvable.") from exc
         except Exception as exc:
             self._delete_copied_file(copied_file_path)
             raise UserCollectionImportUnexpectedError("Erreur pendant l'import.") from exc
-
-    def _ensure_user_has_no_collection(self, user_id: int) -> None:
-        if self.repository.user_has_collection(user_id):
-            raise UserCollectionImportConflictError("Collection deja importee.")
 
     def _validate_source_file(
         self,

@@ -14,6 +14,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   `/collection/import` after sign-in.
 - A connected user with `t_user.collection_file_path` already set must continue
   to `/collection`.
+- From the Configuration page, a connected `USER` with collection access can
+  open `/collection/import` to add games from a new file without
+  reinitializing the current collection.
 - The frontend must call `GET /api/users/me/collection` to decide between those
   two paths.
 - The import page only collects the user collection file and displays
@@ -22,6 +25,10 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Before file analysis, the import page displays only the upload control and
   file type. The detailed collection and wishlist configuration is displayed
   after `POST /api/users/import/analyze/<file_type>` succeeds.
+- After file analysis, the frontend may call `GET /api/users/import/`. When a
+  saved configuration exists, it asks the user to confirm reuse before applying
+  it to the import form. If no saved configuration exists, the current automatic
+  prefill remains unchanged.
 - After a successful import, the frontend displays an import summary using the
   backend counters and offers a link to `/collection`; it must not redirect
   automatically.
@@ -43,6 +50,8 @@ database structure in `documentation/database.md`, and frontend navigation in
   field `collection_file` and stores `/users/workspace/<user_id>/current-import.<extension>`.
 - `POST /api/users/import/analyze/<file_type>` reads the temporary file and
   returns its sheet names.
+- `GET /api/users/import/` returns the last saved import configuration, or
+  `404` when none exists.
 - `POST /api/users/import` must use `application/json` and receives only the
   import configuration, including a mandatory top-level `wishlist` section.
 - `POST /api/users/collection/reinit` reinitializes only the connected user's
@@ -51,7 +60,9 @@ database structure in `documentation/database.md`, and frontend navigation in
 - The connected user must always be derived from the Bearer token. Do not accept
   a user id from the request payload, URL or query string.
 - A second import for a user whose `collection_file_path` is already set must
-  return `409`.
+  be accepted as an additive import. Existing rows must be reused and missing
+  user-game associations must be inserted without clearing the current
+  collection.
 - Missing temporary import files must return `404` from analyze and final import.
 - Invalid or unreadable input for the requested `file_type` must return `400`.
 - Temporary files that do not match the analyzed `file_type` must return `422`
@@ -66,7 +77,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 
 - Import must be atomic: all database changes succeed together or none are kept.
 - `t_user.collection_file_path` must be updated only after the import data has
-  been successfully persisted.
+  been successfully persisted. On additive import, the stored file path and
+  saved import configuration are replaced only after persistence succeeds.
 - The temporary staged file can be overwritten before final import.
 - The stored path format is:
 
@@ -84,9 +96,9 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `t_user_collection.wishlist` is persisted for every inserted association:
   `false` means an owned collection entry and `true` means a wishlist entry.
 - Reinitialization deletes only the connected user's `t_user_collection` rows,
-  clears `t_user.collection_file_path`, clears
-  `t_user.collection_file_description`, and deletes the stored collection file
-  when it exists.
+  clears `t_user.collection_file_path`, keeps
+  `t_user.collection_file_description` for future import prefill, and deletes
+  the stored collection file when it exists.
 - A missing stored collection file on disk must not block reinitialization; the
   database state is still cleaned.
 
@@ -157,6 +169,8 @@ database structure in `documentation/database.md`, and frontend navigation in
   `Content-Type` header on `POST /api/users/import/file/<file_type>`.
 - Analyze the uploaded temporary file before final import and use the returned
   sheet names to prefill single-sheet or multi-sheet configuration.
+- After analysis, fetch the saved import configuration and apply it only when
+  the user confirms reuse.
 - Prefill `header_row` from the first row of the selected data range and prefill
   mapping columns from the range columns in order.
 - Send the final import configuration as JSON to `POST /api/users/import`.
@@ -166,6 +180,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   collection users. The action must confirm before calling the backend, use a
   dedicated hook under `frontend/src/hooks/collection/`, and redirect to
   `/collection/import` after success.
+- Keep an import action in the Configuration page for non-`ADMIN` collection
+  users so they can open `/collection/import` and add games from a new file
+  without reinitialization.
 - The import view must not duplicate backend validation rules beyond basic file
   selection UX.
 - Automatic backend calls must use the shared backend availability guard so a
@@ -180,14 +197,16 @@ When changing this feature, update or run tests covering:
 - unauthenticated access is rejected;
 - successful import returns counters;
 - successful import returns `wishlisted_games` and `warnings`;
-- duplicate import returns `409`;
+- additive import with an existing collection succeeds and does not duplicate
+  existing user-game associations;
 - invalid file returns `400`;
 - oversized file returns `413`;
 - copied file cleanup happens on failure;
 - `t_user.collection_file_path` is set only on success;
 - `t_user_collection` associations are created without duplicating existing
   rows.
-- successful reinitialization clears user associations and collection metadata;
+- successful reinitialization clears user associations and collection path while
+  keeping the saved import configuration;
 - missing collection reinitialization returns `404`;
 - missing stored collection file does not prevent reinitialization.
 

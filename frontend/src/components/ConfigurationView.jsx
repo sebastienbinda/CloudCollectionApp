@@ -44,6 +44,7 @@ function ConfigurationView({
   onAddGame,
   onOpenUsers,
   onOpenConfiguration,
+  onOpenCollectionOnboarding,
   onDownloadOds,
   onReinitializeCollection,
   onLogout,
@@ -83,6 +84,21 @@ function ConfigurationView({
               disabled={!canAddGame || platforms.length === 0}
             >
               Ajouter un jeu
+            </button>
+          </article>
+        ) : null}
+
+        {canUseCollectionViews ? (
+          <article className="adminActionCard">
+            <span>Import</span>
+            <h2>Importer un fichier</h2>
+            <p>Ajoute les jeux d'un nouveau fichier a la collection actuelle.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onOpenCollectionOnboarding}
+            >
+              Importer un fichier
             </button>
           </article>
         ) : null}

@@ -26,9 +26,10 @@ reference database and must not depend on connected-user collection status.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data.
-- `/collection/import`: authenticated onboarding page shown when
+- `/collection/import`: authenticated onboarding/import page shown when
   `GET /api/users/me/collection` returns `has_collection: false` for a
-  non-`ADMIN` user.
+  non-`ADMIN` user, and reachable from Configuration when the same user already
+  has a collection and wants to add games from another file.
 - `/configuration`: authenticated Configuration page for protected application
   actions.
 - `/users`: user administration page, visible only when backend route discovery
@@ -61,10 +62,11 @@ Administrator notification emails may link directly to
 all accounts waiting for validation.
 
 The Configuration page exposes collection-level protected actions for
-authenticated non-`ADMIN` users. `Reinitialiser la collection` must only be
-shown to collection users when route discovery confirms access to
-`POST /api/users/collection/reinit`; after success it opens
-`/collection/import`.
+authenticated non-`ADMIN` users. It must expose an import action that opens
+`/collection/import` without reinitializing the current collection.
+`Reinitialiser la collection` must only be shown to collection users when route
+discovery confirms access to `POST /api/users/collection/reinit`; after success
+it opens `/collection/import`.
 
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the

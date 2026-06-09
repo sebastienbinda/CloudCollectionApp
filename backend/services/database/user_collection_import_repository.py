@@ -27,7 +27,6 @@ from .platform_repository import SqlAlchemyPlatformRepository
 from .studio_repository import SqlAlchemyStudioRepository
 from .user_collection_file_repository import (
     SqlAlchemyUserCollectionFileRepository,
-    UserCollectionAlreadyImportedError,
     UserCollectionImportUserNotFoundError,
 )
 from .user_collection_repository import SqlAlchemyUserCollectionRepository, UserGameAssociation
@@ -153,6 +152,19 @@ class SqlAlchemyUserCollectionImportRepository:
         with self.engine.connect() as connection:
             return self.user_file_repository.user_has_collection(connection, user_id)
 
+    def find_import_configuration(self, user_id: int) -> dict | None:
+        """Retourne la derniere configuration d'import sauvegardee.
+
+        Args:
+            user_id (int): Identifiant technique de l'utilisateur.
+
+        Returns:
+            dict | None: Configuration d'import sauvegardee ou absence.
+        """
+
+        with self.engine.connect() as connection:
+            return self.user_file_repository.find_collection_file_description(connection, user_id)
+
     def import_collection(
         self,
         user_id: int,
@@ -172,12 +184,11 @@ class SqlAlchemyUserCollectionImportRepository:
             UserCollectionImportPersistenceResult: Compteurs de l'import.
 
         Raises:
-            UserCollectionAlreadyImportedError: Si une collection existe deja.
             UserCollectionImportUserNotFoundError: Si l'utilisateur est absent.
         """
 
         with self.engine.begin() as connection:
-            self.user_file_repository.lock_user_without_collection(connection, user_id)
+            self.user_file_repository.lock_user_collection_state(connection, user_id)
             platform_ids, created_platforms = self._ensure_platforms(connection, import_data)
             studio_ids, created_studios = self._ensure_studios(connection, import_data)
             game_associations, created_games = self._ensure_games(

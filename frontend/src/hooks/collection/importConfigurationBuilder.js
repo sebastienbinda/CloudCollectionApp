@@ -69,6 +69,152 @@ function createDefaultImportConfiguration() {
 }
 
 /**
+ * Convertit une description backend sauvegardee en etat de formulaire.
+ *
+ * @param {Object} description - Description d'import retournee par le backend.
+ * @returns {Object} Etat frontend de configuration d'import.
+ */
+function createImportConfigurationFromDescription(description) {
+  const defaultConfiguration = createDefaultImportConfiguration();
+  if (!description || typeof description !== "object") {
+    return defaultConfiguration;
+  }
+
+  const wishlist = buildFrontendWishlistConfiguration(
+    description.wishlist,
+    defaultConfiguration.wishlist
+  );
+  if (description.single_sheet_conf) {
+    return {
+      ...defaultConfiguration,
+      fileType: description.file_type || defaultConfiguration.fileType,
+      multipleSheets: false,
+      wishlist,
+      singleSheetLayout: buildFrontendLayout(
+        description.single_sheet_conf,
+        defaultConfiguration.singleSheetLayout
+      ),
+    };
+  }
+
+  const multipleSheetsConfiguration = description.multiple_sheets_conf || {};
+  if (multipleSheetsConfiguration.shared_layout) {
+    return {
+      ...defaultConfiguration,
+      fileType: description.file_type || defaultConfiguration.fileType,
+      multipleSheets: true,
+      sharedLayout: true,
+      sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
+      wishlist,
+      sharedSheetLayout: buildFrontendSharedLayout(
+        multipleSheetsConfiguration.shared_layout,
+        defaultConfiguration.sharedSheetLayout
+      ),
+    };
+  }
+
+  const sheets = Array.isArray(multipleSheetsConfiguration.sheets)
+    ? multipleSheetsConfiguration.sheets
+    : [];
+  if (sheets.length) {
+    return {
+      ...defaultConfiguration,
+      fileType: description.file_type || defaultConfiguration.fileType,
+      multipleSheets: true,
+      sharedLayout: false,
+      sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
+      wishlist,
+      sheets: sheets.map((sheet) => ({
+        sheetName: sheet.sheet_name || "",
+        sheetInformation: sheet.sheet_information || SHEET_INFORMATION,
+        layout: buildFrontendLayout(sheet, defaultConfiguration.sheets[0].layout),
+      })),
+    };
+  }
+
+  return {
+    ...defaultConfiguration,
+    fileType: description.file_type || defaultConfiguration.fileType,
+    wishlist,
+  };
+}
+
+/**
+ * Convertit la configuration wishlist backend en etat de formulaire.
+ *
+ * @param {Object} wishlistDescription - Description wishlist backend.
+ * @param {Object} defaultWishlist - Valeurs frontend par defaut.
+ * @returns {Object} Configuration wishlist frontend.
+ */
+function buildFrontendWishlistConfiguration(wishlistDescription, defaultWishlist) {
+  const mode = wishlistDescription?.mode || "none";
+  if (mode !== "sheet") {
+    return {
+      ...defaultWishlist,
+      mode,
+    };
+  }
+  return {
+    ...defaultWishlist,
+    mode,
+    sheetName: wishlistDescription.sheet_name || "",
+    layout: buildFrontendLayout(wishlistDescription, defaultWishlist.layout),
+  };
+}
+
+/**
+ * Convertit un layout backend en layout de formulaire.
+ *
+ * @param {Object} layoutDescription - Layout backend.
+ * @param {Object} defaultLayout - Layout frontend de secours.
+ * @returns {Object} Layout frontend.
+ */
+function buildFrontendLayout(layoutDescription, defaultLayout) {
+  const columnInformation = layoutDescription?.column_information || {};
+  return {
+    ...defaultLayout,
+    dataRange: layoutDescription?.data_range || defaultLayout.dataRange,
+    headerRow: String(layoutDescription?.header_row || defaultLayout.headerRow),
+    columns: {
+      ...defaultLayout.columns,
+      ...Object.fromEntries(
+        Object.entries(columnInformation).map(([fieldName, columnName]) => [
+          fieldName,
+          String(columnName || "").toUpperCase(),
+        ])
+      ),
+    },
+  };
+}
+
+/**
+ * Convertit un layout partage backend en layout partage de formulaire.
+ *
+ * @param {Object} layoutDescription - Layout partage backend.
+ * @param {Object} defaultLayout - Layout partage frontend de secours.
+ * @returns {Object} Layout partage frontend.
+ */
+function buildFrontendSharedLayout(layoutDescription, defaultLayout) {
+  const baseLayout = buildFrontendLayout(layoutDescription, defaultLayout);
+  if (Array.isArray(layoutDescription.excluded_sheets)) {
+    return {
+      ...baseLayout,
+      sheetSelectionMode: "excluded",
+      excludedSheets: layoutDescription.excluded_sheets,
+      includedSheets: "",
+    };
+  }
+  return {
+    ...baseLayout,
+    sheetSelectionMode: "included",
+    includedSheets: Array.isArray(layoutDescription.included_sheets)
+      ? layoutDescription.included_sheets
+      : "",
+    excludedSheets: "",
+  };
+}
+
+/**
  * Construit la description JSON attendue par le backend.
  *
  * @param {Object} configuration - Etat frontend de configuration.
@@ -318,6 +464,7 @@ export {
   REQUIRED_FIELDS,
   applyDataRangeDefaults,
   collectionRequiredFields,
+  createImportConfigurationFromDescription,
   createDefaultImportConfiguration,
   buildImportConfigurationDescription,
 };

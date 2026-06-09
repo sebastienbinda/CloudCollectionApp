@@ -92,6 +92,20 @@ class FakeResult:
 
         return self.rows[0] if self.rows else None
 
+    def scalar_one_or_none(self):
+        """Retourne la premiere valeur scalaire.
+
+        Args:
+            Aucun.
+
+        Returns:
+            object | None: Premiere valeur ou absence.
+        """
+
+        if not self.rows:
+            return None
+        return next(iter(self.rows[0].values()))
+
 
 class UserCollectionFileRepositoryTest(unittest.TestCase):
     """Valide la persistance du fichier et de sa description."""
@@ -146,8 +160,46 @@ class UserCollectionFileRepositoryTest(unittest.TestCase):
         self.assertIn("FOR UPDATE", sql)
         self.assertEqual({"user_id": 7}, parameters)
 
-    def test_clear_collection_file_sets_path_and_description_to_null(self):
-        """Verifie le nettoyage des colonnes collection utilisateur.
+    def test_find_collection_file_description_returns_saved_configuration(self):
+        """Verifie la lecture de la configuration d'import sauvegardee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident SQL et resultat.
+        """
+
+        repository = SqlAlchemyUserCollectionFileRepository("collection")
+        description = {"file_type": "libreoffice_ods", "wishlist": {"mode": "none"}}
+        connection = FakeConnection([{"collection_file_description": description}])
+
+        saved_description = repository.find_collection_file_description(connection, 7)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual(description, saved_description)
+        self.assertIn("SELECT collection_file_description", sql)
+        self.assertEqual({"user_id": 7}, parameters)
+
+    def test_find_collection_file_description_returns_none_without_configuration(self):
+        """Verifie l'absence de configuration d'import sauvegardee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de resultat.
+        """
+
+        repository = SqlAlchemyUserCollectionFileRepository("collection")
+        self.assertIsNone(repository.find_collection_file_description(FakeConnection(), 7))
+        self.assertIsNone(repository.find_collection_file_description(
+            FakeConnection([{"collection_file_description": {}}]),
+            7,
+        ))
+
+    def test_clear_collection_file_sets_only_path_to_null(self):
+        """Verifie le nettoyage du chemin en conservant la description.
 
         Args:
             Aucun.
@@ -163,7 +215,7 @@ class UserCollectionFileRepositoryTest(unittest.TestCase):
 
         sql, parameters = connection.executed_statements[0]
         self.assertIn("collection_file_path = NULL", sql)
-        self.assertIn("collection_file_description = NULL", sql)
+        self.assertNotIn("collection_file_description = NULL", sql)
         self.assertEqual({"user_id": 7}, parameters)
 
 

@@ -177,6 +177,7 @@ function useCloudCollectionViewModel() {
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
       openWishlist: navigation.openWishlist,
+      openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,
       openAbout: navigation.openAbout,
       openAuth: navigation.openAuth,

@@ -170,6 +170,7 @@ class AppViewSwitch {
         isReinitializingCollection={props.isReinitializingCollection}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
+        onOpenCollectionOnboarding={props.openCollectionOnboarding}
         onDownloadOds={props.downloadOdsFile}
         onReinitializeCollection={props.reinitializeCollection}
       />

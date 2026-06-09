@@ -47,7 +47,6 @@ class UserCollectionApi {
     INVALID_CONFIGURATION: "invalid_configuration",
     FILE_TOO_LARGE: "file_too_large",
     TEMPORARY_FILE_MISSING: "temporary_file_missing",
-    COLLECTION_ALREADY_IMPORTED: "collection_already_imported",
     COLLECTION_NOT_FOUND: "collection_not_found",
     UNAUTHORIZED: "unauthorized",
     UNEXPECTED: "unexpected_error",
@@ -58,7 +57,6 @@ class UserCollectionApi {
     [UserCollectionApi.ERROR_CODES.INVALID_CONFIGURATION]: "La configuration d'import est invalide.",
     [UserCollectionApi.ERROR_CODES.FILE_TOO_LARGE]: "Le fichier de collection est trop volumineux.",
     [UserCollectionApi.ERROR_CODES.TEMPORARY_FILE_MISSING]: "Le fichier de collection doit etre envoye avant l'import.",
-    [UserCollectionApi.ERROR_CODES.COLLECTION_ALREADY_IMPORTED]: "Une collection a deja ete importee.",
     [UserCollectionApi.ERROR_CODES.COLLECTION_NOT_FOUND]: "Aucune collection n'est disponible pour votre compte.",
     [UserCollectionApi.ERROR_CODES.UNAUTHORIZED]: "Vous devez etre connecte pour acceder a votre collection.",
     [UserCollectionApi.ERROR_CODES.UNEXPECTED]: "Une erreur inattendue est survenue.",
@@ -120,6 +118,30 @@ class UserCollectionApi {
         headers: AuthApi.getAuthorizationHeaders(),
       }
     );
+  }
+
+  /**
+   * Charge la derniere configuration d'import sauvegardee pour l'utilisateur.
+   *
+   * @param {void} Aucun - Le backend identifie l'utilisateur via le token Bearer.
+   * @returns {Promise<Object|null>} Configuration sauvegardee ou `null` si absente.
+   * @throws {UserCollectionApiError} Si l'appel echoue autrement qu'en 404.
+   */
+  static async fetchSavedImportConfiguration() {
+    try {
+      return await this.fetchJson(
+        "/api/users/import/",
+        "Impossible de recuperer la configuration d'import sauvegardee.",
+        {
+          headers: AuthApi.getAuthorizationHeaders(),
+        }
+      );
+    } catch (error) {
+      if (error instanceof UserCollectionApiError && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -245,9 +267,6 @@ class UserCollectionApi {
     }
     if (status === 422) {
       return this.ERROR_CODES.INVALID_CONFIGURATION;
-    }
-    if (status === 409) {
-      return this.ERROR_CODES.COLLECTION_ALREADY_IMPORTED;
     }
     if (status === 413) {
       return this.ERROR_CODES.FILE_TOO_LARGE;

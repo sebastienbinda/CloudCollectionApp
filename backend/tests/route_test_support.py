@@ -357,6 +357,7 @@ class FakeUserCollectionImportRepository:
     """Repository de collection utilisateur factice."""
 
     has_collection = False
+    import_configuration = None
 
     def __init__(self, configuration):
         """Initialise le repository.
@@ -379,6 +380,18 @@ class FakeUserCollectionImportRepository:
         """
 
         return self.has_collection
+
+    def find_import_configuration(self, user_id):
+        """Retourne la configuration d'import factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            dict | None: Configuration configuree pour le test.
+        """
+
+        return self.import_configuration
 
     def import_collection(
         self,
@@ -541,6 +554,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.studio_controller.library_service_factory = FakeLibraryService
         app_module.game_controller.library_service_factory = FakeLibraryService
         FakeUserCollectionImportRepository.has_collection = False
+        FakeUserCollectionImportRepository.import_configuration = None
         FakeUserCollectionImportService.next_error = None
         FakeUserCollectionImportService.last_call = None
         FakeUserCollectionImportService.uploaded_files = []

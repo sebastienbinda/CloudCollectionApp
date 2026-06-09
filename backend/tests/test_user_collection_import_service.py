@@ -18,10 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.database.user_collection_import_repository import (
-    UserCollectionAlreadyImportedError,
-    UserCollectionImportPersistenceResult,
-)
+from services.database.user_collection_import_repository import UserCollectionImportPersistenceResult
 from services.collection.imports import (
     CollectionFileDescription,
     CollectionFileType,
@@ -39,7 +36,6 @@ from services.users.user_collection_import_configuration import (
     UserCollectionImportConfiguration,
 )
 from services.users.user_collection_import_service import (
-    UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
     UserCollectionImportService,
     UserCollectionImportTooLargeError,
@@ -258,14 +254,14 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 repository.import_calls[0][3],
             )
 
-    def test_import_collection_rejects_existing_collection(self):
-        """Verifie le refus d'une collection deja importee.
+    def test_import_collection_accepts_existing_collection(self):
+        """Verifie l'ajout depuis un nouveau fichier sur une collection existante.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident l'erreur de conflit.
+            None: Les assertions valident l'import additionnel.
         """
 
         with tempfile.TemporaryDirectory() as directory:
@@ -274,14 +270,42 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 repository=FakeUserCollectionImportRepository(has_collection=True),
             )
 
-            with self.assertRaises(UserCollectionImportConflictError):
-                service.import_collection(
-                    7,
-                    str(source_file),
-                    "collection.ods",
-                    self._valid_description(),
-                )
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
 
+            self.assertEqual(1, result.associated_games)
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+
+    def test_upload_import_file_accepts_existing_collection(self):
+        """Verifie le depot temporaire pour ajouter a une collection existante.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la copie temporaire.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(has_collection=True),
+            )
+
+            service.upload_import_file(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description().file_type,
+            )
+
+            temporary_file = Path(directory) / "workspace" / "7" / "current-import.ods"
+            self.assertTrue(temporary_file.exists())
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
 
@@ -385,36 +409,6 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             with self.assertRaises(UserCollectionImportUnexpectedError):
-                service.import_collection(
-                    7,
-                    str(source_file),
-                    "collection.ods",
-                    self._valid_description(),
-                )
-
-            self.assertFalse((Path(directory) / "workspace" / "7" / "7-collection.ods").exists())
-            self.assertEqual(1, len(repository.import_calls))
-            self.assertEqual(1, len(reader.read_paths))
-
-    def test_import_collection_deletes_copied_file_when_repository_detects_conflict(self):
-        """Verifie le conflit detecte dans la transaction SQL.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident le nettoyage apres conflit.
-        """
-
-        with tempfile.TemporaryDirectory() as directory:
-            service, repository, reader, source_file = self._build_service(
-                directory,
-                repository=FakeUserCollectionImportRepository(
-                    import_error=UserCollectionAlreadyImportedError("conflict")
-                ),
-            )
-
-            with self.assertRaises(UserCollectionImportConflictError):
                 service.import_collection(
                     7,
                     str(source_file),
