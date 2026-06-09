@@ -247,6 +247,19 @@ ghcr.io/sebastienbinda/cloudcollectionapp/backend:<version>
 ghcr.io/sebastienbinda/cloudcollectionapp/frontend:<version>
 ```
 
+Déploiement production :
+
+```bash
+docker compose --env-file docker/.env -f docker/docker-compose.online.yml pull
+docker compose --env-file docker/.env -f docker/docker-compose.online.yml up -d
+```
+
+Le compose de production utilise les images GitHub Container Registry sans les
+builder localement. La variable `APP_VERSION` du fichier `.env` choisit le tag
+des images `backend` et `frontend`; si elle est absente, le tag `latest` est
+utilisé. Le stack de production démarre aussi PostgreSQL et construit
+`DATABASE_URL` depuis `POSTGRES_DB`, `POSTGRES_USER` et `POSTGRES_PASSWORD`.
+
 Documentation CI : `documentation/ci.md`.
 
 ## Documentation

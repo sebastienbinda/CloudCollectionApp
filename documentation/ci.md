@@ -132,6 +132,22 @@ The images are published to GitHub Container Registry:
 
 The `<version>` tag is the Git tag that triggered the workflow.
 
+## Production Compose
+
+The production compose file `docker/docker-compose.online.yml` must consume the
+published GitHub Container Registry images instead of building local images:
+
+- `ghcr.io/sebastienbinda/cloudcollectionapp/backend:${APP_VERSION:-latest}`
+- `ghcr.io/sebastienbinda/cloudcollectionapp/frontend:${APP_VERSION:-latest}`
+
+`APP_VERSION` is read from the deployment `.env` file. When it is not defined,
+Docker Compose resolves the image tag to `latest`.
+
+The production stack also runs PostgreSQL as a `database` service on an
+internal Docker network. The backend `DATABASE_URL` is built from
+`POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD`, and the backend must wait
+for the database healthcheck before starting.
+
 ## Required GitHub Permissions
 
 The workflow requires:

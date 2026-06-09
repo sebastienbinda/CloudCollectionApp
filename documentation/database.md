@@ -189,6 +189,9 @@ During import:
 ## Migration Rules
 
 - Use Alembic migrations for every database structure change.
+- The production Docker stack must provide PostgreSQL through the
+  `database` service in `docker/docker-compose.online.yml` and must keep it on
+  an internal Docker network.
 - Never rely on manual SQL execution as the normal deployment path.
 - New migrations must be forward-only fixes for production data: they must not
   require emptying, recreating or resetting a production database.
