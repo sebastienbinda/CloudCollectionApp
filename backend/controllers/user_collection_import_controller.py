@@ -99,6 +99,15 @@ class UserCollectionImportController:
             methods=["GET"],
         )
         flask_app.add_url_rule(
+            "/api/users/import/",
+            endpoint="get_current_user_import_configuration",
+            view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
+                self.get_current_user_import_configuration
+            ),
+            methods=["GET"],
+            strict_slashes=False,
+        )
+        flask_app.add_url_rule(
             "/api/users/import/file/<file_type>",
             endpoint="upload_current_user_collection_import_file",
             view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
@@ -220,6 +229,29 @@ class UserCollectionImportController:
         except Exception:
             current_app.logger.exception("Erreur pendant la lecture du statut collection.")
             return jsonify({"error": "Unable to read collection status."}), 500
+
+    def get_current_user_import_configuration(self):
+        """Retourne la derniere configuration d'import sauvegardee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int] | flask.Response: Configuration JSON ou erreur.
+        """
+
+        try:
+            configuration = self._create_import_repository().find_import_configuration(
+                self._current_user_id()
+            )
+            if configuration is None:
+                return jsonify({"error": "Configuration d'import introuvable."}), 404
+            return jsonify(configuration), 200
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant la lecture de la configuration d'import.")
+            return jsonify({"error": "Unable to read import configuration."}), 500
 
     def import_current_user_collection(self):
         """Importe le fichier de collection de l'utilisateur connecte.

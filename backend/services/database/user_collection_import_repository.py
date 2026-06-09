@@ -153,6 +153,19 @@ class SqlAlchemyUserCollectionImportRepository:
         with self.engine.connect() as connection:
             return self.user_file_repository.user_has_collection(connection, user_id)
 
+    def find_import_configuration(self, user_id: int) -> dict | None:
+        """Retourne la derniere configuration d'import sauvegardee.
+
+        Args:
+            user_id (int): Identifiant technique de l'utilisateur.
+
+        Returns:
+            dict | None: Configuration d'import sauvegardee ou absence.
+        """
+
+        with self.engine.connect() as connection:
+            return self.user_file_repository.find_collection_file_description(connection, user_id)
+
     def import_collection(
         self,
         user_id: int,

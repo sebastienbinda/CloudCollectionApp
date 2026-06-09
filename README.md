@@ -132,6 +132,8 @@ Structure fonctionnelle attendue pour l'import :
 
 - le fichier est d'abord depose dans le workspace utilisateur, puis analyse
   pour proposer les onglets disponibles ;
+- apres analyse, l'application peut proposer de reutiliser la derniere
+  configuration d'import sauvegardee ;
 - un onglet par plateforme ou une configuration explicite des onglets ;
 - en mode multi-onglets avec layout partage, l'utilisateur peut lister les
   onglets a importer ou les onglets a exclure ;

@@ -22,6 +22,10 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Before file analysis, the import page displays only the upload control and
   file type. The detailed collection and wishlist configuration is displayed
   after `POST /api/users/import/analyze/<file_type>` succeeds.
+- After file analysis, the frontend may call `GET /api/users/import/`. When a
+  saved configuration exists, it asks the user to confirm reuse before applying
+  it to the import form. If no saved configuration exists, the current automatic
+  prefill remains unchanged.
 - After a successful import, the frontend displays an import summary using the
   backend counters and offers a link to `/collection`; it must not redirect
   automatically.
@@ -43,6 +47,8 @@ database structure in `documentation/database.md`, and frontend navigation in
   field `collection_file` and stores `/users/workspace/<user_id>/current-import.<extension>`.
 - `POST /api/users/import/analyze/<file_type>` reads the temporary file and
   returns its sheet names.
+- `GET /api/users/import/` returns the last saved import configuration, or
+  `404` when none exists.
 - `POST /api/users/import` must use `application/json` and receives only the
   import configuration, including a mandatory top-level `wishlist` section.
 - `POST /api/users/collection/reinit` reinitializes only the connected user's
@@ -84,9 +90,9 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `t_user_collection.wishlist` is persisted for every inserted association:
   `false` means an owned collection entry and `true` means a wishlist entry.
 - Reinitialization deletes only the connected user's `t_user_collection` rows,
-  clears `t_user.collection_file_path`, clears
-  `t_user.collection_file_description`, and deletes the stored collection file
-  when it exists.
+  clears `t_user.collection_file_path`, keeps
+  `t_user.collection_file_description` for future import prefill, and deletes
+  the stored collection file when it exists.
 - A missing stored collection file on disk must not block reinitialization; the
   database state is still cleaned.
 
@@ -157,6 +163,8 @@ database structure in `documentation/database.md`, and frontend navigation in
   `Content-Type` header on `POST /api/users/import/file/<file_type>`.
 - Analyze the uploaded temporary file before final import and use the returned
   sheet names to prefill single-sheet or multi-sheet configuration.
+- After analysis, fetch the saved import configuration and apply it only when
+  the user confirms reuse.
 - Prefill `header_row` from the first row of the selected data range and prefill
   mapping columns from the range columns in order.
 - Send the final import configuration as JSON to `POST /api/users/import`.
@@ -187,7 +195,8 @@ When changing this feature, update or run tests covering:
 - `t_user.collection_file_path` is set only on success;
 - `t_user_collection` associations are created without duplicating existing
   rows.
-- successful reinitialization clears user associations and collection metadata;
+- successful reinitialization clears user associations and collection path while
+  keeping the saved import configuration;
 - missing collection reinitialization returns `404`;
 - missing stored collection file does not prevent reinitialization.
 

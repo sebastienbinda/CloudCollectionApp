@@ -20,6 +20,7 @@ import {
   applyDataRangeDefaults,
   buildImportConfigurationDescription,
   collectionRequiredFields,
+  createImportConfigurationFromDescription,
   createDefaultImportConfiguration,
 } from "./importConfigurationBuilder";
 
@@ -192,6 +193,26 @@ function useUserCollectionOnboarding(options) {
     });
   }, []);
 
+  const applySavedImportConfigurationIfConfirmed = useCallback(async () => {
+    try {
+      const savedImportConfiguration = await UserCollectionApi.fetchSavedImportConfiguration();
+      if (!savedImportConfiguration) {
+        return;
+      }
+      const confirmed = window.confirm(
+        "Une configuration d'import sauvegardee existe. Voulez-vous la reutiliser ?"
+      );
+      if (!confirmed) {
+        return;
+      }
+      setImportConfiguration(
+        createImportConfigurationFromDescription(savedImportConfiguration)
+      );
+    } catch (error) {
+      setOnboardingError(getUserCollectionErrorMessage(error));
+    }
+  }, []);
+
   const selectCollectionFile = useCallback(async (collectionFile) => {
     setSelectedCollectionFile(collectionFile || null);
     setAvailableImportSheets([]);
@@ -207,13 +228,14 @@ function useUserCollectionOnboarding(options) {
       await UserCollectionApi.uploadImportFile(collectionFile, fileType);
       const analysis = await UserCollectionApi.analyzeImportFile(fileType);
       applyAnalyzedSheets(Array.isArray(analysis.sheets) ? analysis.sheets : []);
+      await applySavedImportConfigurationIfConfirmed();
     } catch (error) {
       setSelectedCollectionFile(null);
       setOnboardingError(getUserCollectionErrorMessage(error));
     } finally {
       setIsAnalyzingCollection(false);
     }
-  }, [applyAnalyzedSheets, importConfiguration.fileType]);
+  }, [applyAnalyzedSheets, applySavedImportConfigurationIfConfirmed, importConfiguration.fileType]);
 
   const updateImportConfiguration = useCallback((fieldName, value) => {
     setImportConfiguration((currentConfiguration) => ({

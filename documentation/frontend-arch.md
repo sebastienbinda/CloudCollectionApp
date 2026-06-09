@@ -89,6 +89,9 @@ Use the following domain folders for new or modified hooks:
   `POST /api/users/import/analyze/<file_type>` to prefill sheet choices, then
   `POST /api/users/import` with JSON configuration. The backend owns validation
   and persistence decisions.
+- After file analysis, call `GET /api/users/import/` to retrieve the last saved
+  import configuration. Apply it to the form only after explicit user
+  confirmation.
 - Display the import summary after a successful import and expose a user action
   to open `/collection`. Redirect to `/collection` only when the status route
   confirms `has_collection: true` outside the just-finished import workflow.

@@ -123,6 +123,30 @@ class UserCollectionApi {
   }
 
   /**
+   * Charge la derniere configuration d'import sauvegardee pour l'utilisateur.
+   *
+   * @param {void} Aucun - Le backend identifie l'utilisateur via le token Bearer.
+   * @returns {Promise<Object|null>} Configuration sauvegardee ou `null` si absente.
+   * @throws {UserCollectionApiError} Si l'appel echoue autrement qu'en 404.
+   */
+  static async fetchSavedImportConfiguration() {
+    try {
+      return await this.fetchJson(
+        "/api/users/import/",
+        "Impossible de recuperer la configuration d'import sauvegardee.",
+        {
+          headers: AuthApi.getAuthorizationHeaders(),
+        }
+      );
+    } catch (error) {
+      if (error instanceof UserCollectionApiError && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Importe le fichier temporaire de collection de l'utilisateur connecte.
    *
    * @param {Object} collectionFileDescription - Configuration validee cote frontend.

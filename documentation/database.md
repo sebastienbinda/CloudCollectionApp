@@ -124,9 +124,10 @@ a successful import. It stores the complete container path
 user already has an imported collection and a second import must be rejected
 instead of replacing existing data.
 
-Collection reinitialization clears `collection_file_path` and
-`collection_file_description` for the connected user after deleting that user's
-`t_user_collection` rows. The operation also removes the stored collection file
+Collection reinitialization clears `collection_file_path` for the connected
+user after deleting that user's `t_user_collection` rows. It keeps
+`collection_file_description` so the next import can offer to reuse the last
+validated configuration. The operation also removes the stored collection file
 when it exists. A missing file on disk is logged but does not prevent database
 cleanup.
 

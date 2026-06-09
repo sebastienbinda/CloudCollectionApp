@@ -486,6 +486,7 @@ modify another user's collection.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/users/me/collection` | Returns whether the connected user already has an imported collection. |
+| `GET` | `/api/users/import/` | Returns the connected user's last saved import configuration. |
 | `POST` | `/api/users/import/file/<file_type>` | Stores the connected user's temporary collection file. |
 | `POST` | `/api/users/import/analyze/<file_type>` | Analyzes the temporary file and returns sheet names. |
 | `POST` | `/api/users/import` | Imports the connected user's collection from the temporary file and JSON configuration. |
@@ -501,6 +502,25 @@ return the stored filesystem path.
   "has_collection": false
 }
 ```
+
+### Get Saved Import Configuration
+
+```http
+GET /api/users/import/
+```
+
+Successful response is the last JSON import configuration stored in
+`t_user.collection_file_description`.
+
+When no saved configuration exists, the backend returns:
+
+```json
+{
+  "error": "Configuration d'import introuvable."
+}
+```
+
+with status `404`.
 
 ### Upload User Collection File
 
@@ -647,9 +667,10 @@ Successful response:
 ```
 
 On success, the backend removes the connected user's rows from
-`t_user_collection`, clears `t_user.collection_file_path` and clears
-`t_user.collection_file_description`. If a collection file path was stored and
-the file still exists on disk, the file is deleted. If the stored file is
+`t_user_collection` and clears `t_user.collection_file_path`. The saved
+`t_user.collection_file_description` is kept so the next import can offer to
+reuse the last validated configuration. If a collection file path was stored
+and the file still exists on disk, the file is deleted. If the stored file is
 already missing from disk, the reinitialization still succeeds after logging a
 warning; the database cleanup remains authoritative.
 

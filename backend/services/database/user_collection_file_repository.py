@@ -59,6 +59,28 @@ class SqlAlchemyUserCollectionFileRepository:
         ).scalar_one_or_none()
         return bool(collection_file_path)
 
+    def find_collection_file_description(self, connection: Connection, user_id: int) -> dict | None:
+        """Retourne la derniere description d'import sauvegardee.
+
+        Args:
+            connection (Connection): Connexion SQL.
+            user_id (int): Identifiant technique de l'utilisateur.
+
+        Returns:
+            dict | None: Description JSON sauvegardee ou absence de configuration.
+        """
+
+        collection_file_description = connection.execute(
+            text(
+                f'SELECT collection_file_description FROM "{self.schema_name}".t_user '
+                "WHERE id = :user_id"
+            ),
+            {"user_id": user_id},
+        ).scalar_one_or_none()
+        if not isinstance(collection_file_description, dict) or not collection_file_description:
+            return None
+        return collection_file_description
+
     def lock_user_without_collection(self, connection: Connection, user_id: int) -> None:
         """Verrouille l'utilisateur et verifie l'absence de collection.
 
@@ -164,7 +186,7 @@ class SqlAlchemyUserCollectionFileRepository:
         self.update_collection_file(connection, user_id, collection_file_path, {})
 
     def clear_collection_file(self, connection: Connection, user_id: int) -> None:
-        """Supprime le chemin et la description de collection utilisateur.
+        """Supprime le chemin de collection utilisateur en conservant la description.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
@@ -177,8 +199,7 @@ class SqlAlchemyUserCollectionFileRepository:
         connection.execute(
             text(
                 f'UPDATE "{self.schema_name}".t_user '
-                "SET collection_file_path = NULL, "
-                "collection_file_description = NULL "
+                "SET collection_file_path = NULL "
                 "WHERE id = :user_id"
             ),
             {"user_id": user_id},
