@@ -15,7 +15,6 @@ from io import BytesIO
 
 from services.collection.imports import CollectionFileDescriptionValidationError
 from services.users.user_collection_import_service import (
-    UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
     UserCollectionImportNotFoundError,
     UserCollectionImportTemporaryFileMissingError,
@@ -374,7 +373,6 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         """
 
         cases = [
-            (UserCollectionImportConflictError("Collection deja importee."), 409),
             (UserCollectionImportInvalidFileError("Fichier invalide."), 400),
             (UserCollectionImportTemporaryFileMissingError("Fichier temporaire introuvable."), 404),
             (UserCollectionImportTooLargeError("Fichier trop volumineux."), 413),
@@ -395,7 +393,6 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         """Verifie le mapping des erreurs du depot temporaire."""
 
         cases = [
-            (UserCollectionImportConflictError("Collection deja importee."), 409),
             (UserCollectionImportInvalidFileError("Fichier invalide."), 400),
             (UserCollectionImportTooLargeError("Fichier trop volumineux."), 413),
         ]

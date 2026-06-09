@@ -31,7 +31,6 @@ from services.collection.imports import (
     CollectionFileReaderFactory,
 )
 from services.users.user_collection_import_service import (
-    UserCollectionImportConflictError,
     UserCollectionImportInvalidFileError,
     UserCollectionImportNotFoundError,
     UserCollectionImportService,
@@ -171,8 +170,6 @@ class UserCollectionImportController:
             return jsonify({"error": str(exc), "details": exc.details}), 400
         except UserCollectionImportTooLargeError as exc:
             return jsonify({"error": str(exc)}), 413
-        except UserCollectionImportConflictError as exc:
-            return jsonify({"error": str(exc)}), 409
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
@@ -282,8 +279,6 @@ class UserCollectionImportController:
             return jsonify({"error": str(exc), "details": exc.details}), 400
         except UserCollectionImportTooLargeError as exc:
             return jsonify({"error": str(exc)}), 413
-        except UserCollectionImportConflictError as exc:
-            return jsonify({"error": str(exc)}), 409
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except UserCollectionImportUnexpectedError:

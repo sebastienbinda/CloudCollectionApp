@@ -18,11 +18,13 @@ Calc `.ods` en site en ligne accessible a tout moment. Chaque utilisateur garde
 sa collection privee rattachee a son compte, tout en contribuant a enrichir une
 base commune de jeux, plateformes et studios.
 
-Le fichier ODS importe initialise la collection personnelle. La consultation de
-collection s'appuie ensuite sur PostgreSQL, tandis que le fichier ODS utilisateur
-reste telechargeable en brut. Le backend expose une API securisee pour proteger
-les donnees utilisateur et alimenter le referentiel commun, tandis que le
-frontend fournit une interface web de consultation, recherche et import.
+Le premier fichier ODS importe initialise la collection personnelle, et les
+imports suivants peuvent ajouter des jeux sans reinitialiser la collection. La
+consultation de collection s'appuie ensuite sur PostgreSQL, tandis que le
+dernier fichier ODS utilisateur reste telechargeable en brut. Le backend expose
+une API securisee pour proteger les donnees utilisateur et alimenter le
+referentiel commun, tandis que le frontend fournit une interface web de
+consultation, recherche et import.
 
 ## Fonctionnalites
 
@@ -33,7 +35,7 @@ frontend fournit une interface web de consultation, recherche et import.
   `wishlist=true`.
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
-- Import de collection ODS personnelle pour les utilisateurs inscrits.
+- Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
@@ -141,6 +143,9 @@ Structure fonctionnelle attendue pour l'import :
   une colonne dediee ;
 - apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
   collection.
+- depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
+  le parcours `/collection/import` pour ajouter les jeux d'un nouveau fichier
+  sans supprimer sa collection actuelle ;
 - depuis Configuration, un utilisateur non `ADMIN` peut reinitialiser sa
   collection pour supprimer les associations importees, effacer le fichier
   serveur et revenir au parcours `/collection/import`.

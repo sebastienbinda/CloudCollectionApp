@@ -121,8 +121,10 @@ Constraints:
 `collection_file_path` is set by the user collection import workflow only after
 a successful import. It stores the complete container path
 `/users/workspace/<user_id>/<user_id>-collection.ods`. A non-null value means the
-user already has an imported collection and a second import must be rejected
-instead of replacing existing data.
+user already has an imported collection. A later import is additive: existing
+user collection associations are kept, missing associations are inserted, and
+the stored file path plus `collection_file_description` are replaced only after
+the additive import succeeds.
 
 Collection reinitialization clears `collection_file_path` for the connected
 user after deleting that user's `t_user_collection` rows. It keeps

@@ -540,7 +540,6 @@ temporary import file for the same user. The copied file is chmod `0440`.
 Upload errors use:
 
 - `400` for a missing or invalid file;
-- `409` when the connected user already has a final collection;
 - `413` when the uploaded file exceeds `USER_COLLECTION_MAX_UPLOAD_BYTES`;
 - `500` for unexpected failures.
 
@@ -602,14 +601,16 @@ Accepted wishlist column values are `Oui/Non`, `O/N`, `True/False`,
 `wishlist=false`. Invalid non-empty values make the row ignored and are
 reported in import warnings.
 
-The upload is accepted only once per user. If `t_user.collection_file_path` is
-already set, the backend returns `409` and does not replace the existing
-collection data.
+The upload can be repeated for a user who already has a collection. The
+temporary file is overwritten and the final import adds missing games to the
+existing collection without clearing current associations.
 
 The backend copies the staged temporary file to
 `/users/workspace/<user_id>/<user_id>-collection.ods`, stores this complete path
 in `t_user.collection_file_path` only after a successful import, and removes the
-final copied file if the import fails. The copied file is chmod `0440`.
+final copied file if the import fails. On additive import, the stored collection
+file and saved import configuration are replaced only after persistence
+succeeds. The copied file is chmod `0440`.
 
 Only configured ODS sheets are imported. With a shared layout, the user may
 either provide the sheets to import or the sheets to exclude; without either
@@ -644,7 +645,6 @@ Import errors use:
 
 - `400` for an invalid or unreadable ODS file;
 - `404` when the temporary file does not exist;
-- `409` when the connected user already has a collection;
 - `422` for invalid JSON configuration;
 - `500` for an unexpected import failure.
 

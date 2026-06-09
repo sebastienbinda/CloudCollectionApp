@@ -16,10 +16,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine import Connection
 
 
-class UserCollectionAlreadyImportedError(Exception):
-    """Signale qu'un utilisateur possede deja un fichier de collection."""
-
-
 class UserCollectionImportUserNotFoundError(Exception):
     """Signale que l'utilisateur cible de l'import n'existe pas."""
 
@@ -80,33 +76,6 @@ class SqlAlchemyUserCollectionFileRepository:
         if not isinstance(collection_file_description, dict) or not collection_file_description:
             return None
         return collection_file_description
-
-    def lock_user_without_collection(self, connection: Connection, user_id: int) -> None:
-        """Verrouille l'utilisateur et verifie l'absence de collection.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            user_id (int): Identifiant utilisateur.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-
-        Raises:
-            UserCollectionAlreadyImportedError: Si une collection existe deja.
-            UserCollectionImportUserNotFoundError: Si l'utilisateur est absent.
-        """
-
-        row = connection.execute(
-            text(
-                f'SELECT collection_file_path FROM "{self.schema_name}".t_user '
-                "WHERE id = :user_id FOR UPDATE"
-            ),
-            {"user_id": user_id},
-        ).mappings().first()
-        if not row:
-            raise UserCollectionImportUserNotFoundError("Utilisateur introuvable.")
-        if row["collection_file_path"]:
-            raise UserCollectionAlreadyImportedError("Collection deja importee.")
 
     def lock_user_collection_state(self, connection: Connection, user_id: int) -> str:
         """Verrouille l'utilisateur et retourne son chemin de collection.

@@ -14,6 +14,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   `/collection/import` after sign-in.
 - A connected user with `t_user.collection_file_path` already set must continue
   to `/collection`.
+- From the Configuration page, a connected `USER` with collection access can
+  open `/collection/import` to add games from a new file without
+  reinitializing the current collection.
 - The frontend must call `GET /api/users/me/collection` to decide between those
   two paths.
 - The import page only collects the user collection file and displays
@@ -57,7 +60,9 @@ database structure in `documentation/database.md`, and frontend navigation in
 - The connected user must always be derived from the Bearer token. Do not accept
   a user id from the request payload, URL or query string.
 - A second import for a user whose `collection_file_path` is already set must
-  return `409`.
+  be accepted as an additive import. Existing rows must be reused and missing
+  user-game associations must be inserted without clearing the current
+  collection.
 - Missing temporary import files must return `404` from analyze and final import.
 - Invalid or unreadable input for the requested `file_type` must return `400`.
 - Temporary files that do not match the analyzed `file_type` must return `422`
@@ -72,7 +77,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 
 - Import must be atomic: all database changes succeed together or none are kept.
 - `t_user.collection_file_path` must be updated only after the import data has
-  been successfully persisted.
+  been successfully persisted. On additive import, the stored file path and
+  saved import configuration are replaced only after persistence succeeds.
 - The temporary staged file can be overwritten before final import.
 - The stored path format is:
 
@@ -174,6 +180,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   collection users. The action must confirm before calling the backend, use a
   dedicated hook under `frontend/src/hooks/collection/`, and redirect to
   `/collection/import` after success.
+- Keep an import action in the Configuration page for non-`ADMIN` collection
+  users so they can open `/collection/import` and add games from a new file
+  without reinitialization.
 - The import view must not duplicate backend validation rules beyond basic file
   selection UX.
 - Automatic backend calls must use the shared backend availability guard so a
@@ -188,7 +197,8 @@ When changing this feature, update or run tests covering:
 - unauthenticated access is rejected;
 - successful import returns counters;
 - successful import returns `wishlisted_games` and `warnings`;
-- duplicate import returns `409`;
+- additive import with an existing collection succeeds and does not duplicate
+  existing user-game associations;
 - invalid file returns `400`;
 - oversized file returns `413`;
 - copied file cleanup happens on failure;

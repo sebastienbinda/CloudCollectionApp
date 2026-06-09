@@ -95,6 +95,9 @@ Use the following domain folders for new or modified hooks:
 - Display the import summary after a successful import and expose a user action
   to open `/collection`. Redirect to `/collection` only when the status route
   confirms `has_collection: true` outside the just-finished import workflow.
+- Reuse the same onboarding hook and route for additive imports opened from
+  Configuration. The Configuration page only triggers navigation; it must not
+  own file upload, analysis, validation or persistence state.
 - Own the connected-user collection reinitialization workflow in a dedicated
   hook separate from onboarding. The hook calls
   `POST /api/users/collection/reinit`, refreshes collection signals and opens

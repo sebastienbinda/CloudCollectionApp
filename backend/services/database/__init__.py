@@ -26,7 +26,6 @@ from .user_collection import UserCollection
 from .user_collection_file_repository import SqlAlchemyUserCollectionFileRepository
 from .user_collection_import_repository import (
     SqlAlchemyUserCollectionImportRepository,
-    UserCollectionAlreadyImportedError,
     UserCollectionImportPersistenceResult,
     UserCollectionImportUserNotFoundError,
 )
@@ -51,7 +50,6 @@ __all__ = [
     "SqlAlchemyUserCollectionRepository",
     "SqlAlchemyUserRepository",
     "User",
-    "UserCollectionAlreadyImportedError",
     "UserCollection",
     "UserCollectionImportPersistenceResult",
     "UserCollectionImportUserNotFoundError",
