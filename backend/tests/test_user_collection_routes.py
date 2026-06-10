@@ -180,7 +180,11 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(4, payload["associated_games"])
         self.assertEqual(0, payload["wishlisted_games"])
         self.assertEqual(
-            {"invalid_wishlist": 0, "invalid_wishlist_values_found": []},
+            {
+                "invalid_wishlist": 0,
+                "invalid_wishlist_values_found": [],
+                "invalid_games": [],
+            },
             payload["warnings"],
         )
         self.assertEqual(7, FakeUserCollectionImportService.last_call[0])

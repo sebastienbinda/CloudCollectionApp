@@ -57,6 +57,7 @@
 - Before changing authentication, backend route protection, frontend session handling, or access control, read and respect `documentation/authentication.md`.
 - Before changing backend API routes, payloads, response contracts, or HTTP status behavior, read and respect `documentation/backend-api.md`.
 - Before changing backend Flask startup, controllers, services, ODS infrastructure, backend tests, or shared backend orchestration, read and respect `documentation/backend-arch.md`.
+- Before creating or changing a collection file reader, reader factory registration, reader import mapping, or reader warnings, read and respect `documentation/reader.md`.
 - Before changing user registration, password hashing, email verification, or registration route exposure, read and respect `documentation/register.md`.
 - Before changing backend user administration, user search, user deletion, user locking, or user status, read and respect `documentation/users.md`.
 - Before changing the main navigation menu, responsive menu behavior, or shared menu actions, read and respect `documentation/menu.md`.

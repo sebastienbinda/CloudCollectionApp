@@ -32,6 +32,7 @@ from services.database.user_collection_import_repository import (
     UserCollectionReinitializationNotFoundError,
 )
 
+from .collection_import_date_validator import CollectionImportDateValidator
 from .user_collection_import_configuration import UserCollectionImportConfiguration
 
 
@@ -158,6 +159,7 @@ class UserCollectionImportResult:
             "warnings": self.warnings or {
                 "invalid_wishlist": 0,
                 "invalid_wishlist_values_found": [],
+                "invalid_games": [],
             },
         }
 
@@ -173,6 +175,7 @@ class UserCollectionImportService:
         configuration: UserCollectionImportConfiguration,
         repository: UserCollectionImportRepository,
         reader_factory: CollectionFileReaderFactory,
+        date_validator: CollectionImportDateValidator | None = None,
     ):
         """Initialise le service d'import de collection.
 
@@ -180,6 +183,7 @@ class UserCollectionImportService:
             configuration (UserCollectionImportConfiguration): Configuration d'import.
             repository (UserCollectionImportRepository): Persistance transactionnelle.
             reader_factory (CollectionFileReaderFactory): Factory de lecteurs.
+            date_validator (CollectionImportDateValidator | None): Validateur des dates lues.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -188,6 +192,7 @@ class UserCollectionImportService:
         self.configuration = configuration
         self.repository = repository
         self.reader_factory = reader_factory
+        self.date_validator = date_validator or CollectionImportDateValidator()
 
     def upload_import_file(
         self,
@@ -356,7 +361,9 @@ class UserCollectionImportService:
         )
         copied_file_path = self._copy_file(source_file_path, target_file_path)
         try:
-            import_data = reader.read(str(copied_file_path), file_description)
+            import_data = self.date_validator.validate(
+                reader.read(str(copied_file_path), file_description)
+            )
             persistence_result = self.repository.import_collection(
                 user_id,
                 str(copied_file_path),

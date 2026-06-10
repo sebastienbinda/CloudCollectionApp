@@ -12,6 +12,7 @@
 # Description : tests unitaires du repository SQL des jeux.
 
 import unittest
+from datetime import date
 
 from services.database import DatabaseModelBase, SqlAlchemyGameRepository
 from services.ods import OdsCollectionImportGame
@@ -121,6 +122,60 @@ class GameRepositoryTest(unittest.TestCase):
         self.assertEqual(42, game_id)
         self.assertIn("developer", sql)
         self.assertEqual(11, parameters["developer"])
+
+    def test_insert_ignores_unpersistable_release_date(self):
+        """Verifie qu'une date hors plage n'est jamais envoyee a PostgreSQL.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le parametre SQL `release_date`.
+        """
+
+        connection = FakeConnection()
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+        game = OdsCollectionImportGame(
+            name="Chrono Trigger",
+            platform_name="Super Nintendo",
+            studio_name="Square",
+            release_date="48113-11-21 00:00:01",
+        )
+
+        repository.insert(connection, game, platform_id=7, studio_id=11)
+
+        _sql, parameters = connection.executed_statements[0]
+        self.assertIsNone(parameters["release_date"])
+
+    def test_insert_ignores_too_old_release_date(self):
+        """Verifie qu'une date trop ancienne n'est jamais envoyee a PostgreSQL.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le parametre SQL `release_date`.
+        """
+
+        connection = FakeConnection()
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+        game = OdsCollectionImportGame(
+            name="Penny Blood",
+            platform_name="Super Nintendo",
+            studio_name="Square",
+            release_date=date(200, 11, 24),
+        )
+
+        repository.insert(connection, game, platform_id=7, studio_id=11)
+
+        _sql, parameters = connection.executed_statements[0]
+        self.assertIsNone(parameters["release_date"])
 
 
 if __name__ == "__main__":

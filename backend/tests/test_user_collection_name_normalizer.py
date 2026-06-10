@@ -15,6 +15,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import pandas as pd
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from services.users import UserCollectionNameNormalizer
@@ -82,6 +84,9 @@ class UserCollectionNameNormalizerTest(unittest.TestCase):
         """
 
         self.assertIsNone(self.normalizer.stored_value("  "))
+        self.assertIsNone(self.normalizer.stored_value(pd.NaT))
+        self.assertIsNone(self.normalizer.stored_value("NaT"))
+        self.assertIsNone(self.normalizer.stored_value(float("nan")))
         self.assertIsNone(self.normalizer.comparison_key(None))
 
 

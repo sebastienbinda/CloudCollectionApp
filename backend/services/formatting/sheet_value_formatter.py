@@ -26,7 +26,13 @@ class SheetValueFormatter:
 
         if value is None:
             return None
+        if isinstance(value, float) and value != value:
+            return None
         text = str(value).strip()
+        if text.lower() in {"nan", "nat", "none", "null"}:
+            return None
+        if text.lower().startswith("err:"):
+            return None
         return text or None
 
     @staticmethod
@@ -40,13 +46,7 @@ class SheetValueFormatter:
             Any: Valeur compatible JSON, avec dates ISO et `NaN` converti en `None`.
         """
 
-        if value is None:
-            return None
-        if isinstance(value, float) and value != value:
-            return None
-        if str(value) == "NaT":
-            return None
-        if isinstance(value, str) and value.strip().lower().startswith("err:"):
+        if SheetValueFormatter.clean_text(value) is None:
             return None
         if isinstance(value, (datetime, date)):
             return value.isoformat()
