@@ -14,6 +14,8 @@
 import unicodedata
 from typing import Any, Optional
 
+from services.formatting import SheetValueFormatter
+
 
 class UserCollectionNameNormalizer:
     """Normalise les noms metier de collection utilisateur.
@@ -34,8 +36,7 @@ class UserCollectionNameNormalizer:
 
         if value is None:
             return None
-        normalized_value = str(value).strip()
-        return normalized_value or None
+        return SheetValueFormatter.clean_text(value)
 
     def comparison_key(self, value: Any) -> Optional[str]:
         """Construit la cle de comparaison sans accents.

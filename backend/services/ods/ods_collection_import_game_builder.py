@@ -31,6 +31,7 @@ from services.collection.imports.spreadsheet_cell_reference import (
     SpreadsheetCellReferenceParser,
 )
 from services.formatting import SheetValueFormatter
+from services.users.collection_import_date_validator import CollectionImportDateValidator
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
 from .ods_import_error_context import OdsImportErrorContext
@@ -68,6 +69,7 @@ class OdsCollectionImportGameBuilder:
         self.logger = logger
         self.wishlist_value_parser = wishlist_value_parser
         self.wishlist_duplicate_policy = wishlist_duplicate_policy
+        self.date_validator = CollectionImportDateValidator()
 
     def build_games(
         self,
@@ -215,6 +217,7 @@ class OdsCollectionImportGameBuilder:
                 game_name,
                 self._field_value(row, column_positions, CollectionImportField.RELEASE_DATE),
                 row_number,
+                warnings,
             ),
             wishlist=wishlist,
         )
@@ -296,26 +299,95 @@ class OdsCollectionImportGameBuilder:
         game_name: str,
         value: Any,
         row_number: int,
+        warnings: dict[str, Any],
     ) -> Optional[date]:
         if value is None or SheetValueFormatter.clean_text(value) is None:
             return None
         if isinstance(value, datetime):
-            return value.date()
+            return self._validated_parsed_release_date(
+                platform_name,
+                game_name,
+                row_number,
+                value,
+                value,
+                warnings,
+            )
         if isinstance(value, date):
-            return value
+            return self._validated_parsed_release_date(
+                platform_name,
+                game_name,
+                row_number,
+                value,
+                value,
+                warnings,
+            )
         try:
             parsed_value = pd.to_datetime(value, errors="coerce")
         except (OverflowError, ValueError, TypeError):
             self._warn_invalid_release_date(platform_name, game_name, row_number, value)
+            self._record_invalid_game_information(game_name, "release_date", value, warnings)
             return None
         if pd.isna(parsed_value):
             self._warn_invalid_release_date(platform_name, game_name, row_number, value)
+            self._record_invalid_game_information(game_name, "release_date", value, warnings)
             return None
         try:
-            return parsed_value.date()
+            return self._validated_parsed_release_date(
+                platform_name,
+                game_name,
+                row_number,
+                parsed_value.date(),
+                value,
+                warnings,
+            )
         except (OverflowError, ValueError, AttributeError):
             self._warn_invalid_release_date(platform_name, game_name, row_number, value)
+            self._record_invalid_game_information(game_name, "release_date", value, warnings)
             return None
+
+    def _validated_parsed_release_date(
+        self,
+        platform_name: str,
+        game_name: str,
+        row_number: int,
+        parsed_value: date,
+        original_value: Any,
+        warnings: dict[str, Any],
+    ) -> Optional[date]:
+        valid_date = self.date_validator.validate_release_date(parsed_value)
+        if valid_date is not None:
+            return valid_date
+        self._warn_invalid_release_date(platform_name, game_name, row_number, original_value)
+        self._record_invalid_game_information(
+            game_name,
+            "release_date",
+            original_value,
+            warnings,
+        )
+        return None
+
+    def _record_invalid_game_information(
+        self,
+        game_name: str,
+        field_name: str,
+        value: Any,
+        warnings: dict[str, Any],
+    ) -> None:
+        invalid_games = warnings.setdefault("invalid_games", [])
+        invalid_field = {
+            "field": field_name,
+            "value": str(value).strip(),
+        }
+        for invalid_game in invalid_games:
+            if invalid_game.get("name") == game_name:
+                invalid_game.setdefault("invalid_fields", []).append(invalid_field)
+                return
+        invalid_games.append(
+            {
+                "name": game_name,
+                "invalid_fields": [invalid_field],
+            }
+        )
 
     def _warn_invalid_release_date(
         self,

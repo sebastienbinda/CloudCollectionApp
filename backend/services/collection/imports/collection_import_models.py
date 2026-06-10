@@ -64,10 +64,12 @@ class CollectionImportWarnings:
     Attributes:
         invalid_wishlist (int): Nombre de lignes ignorees pour valeur wishlist invalide.
         invalid_wishlist_values_found (list[str]): Valeurs wishlist invalides distinctes.
+        invalid_games (list[dict]): Jeux importes avec une information invalide ignoree.
     """
 
     invalid_wishlist: int = 0
     invalid_wishlist_values_found: Optional[list[str]] = None
+    invalid_games: Optional[list[dict]] = None
 
     def __post_init__(self):
         """Initialise les listes optionnelles de warnings.
@@ -81,6 +83,8 @@ class CollectionImportWarnings:
 
         if self.invalid_wishlist_values_found is None:
             object.__setattr__(self, "invalid_wishlist_values_found", [])
+        if self.invalid_games is None:
+            object.__setattr__(self, "invalid_games", [])
 
     def to_dict(self) -> dict[str, int | list[str]]:
         """Convertit les warnings en dictionnaire serialisable.
@@ -95,6 +99,7 @@ class CollectionImportWarnings:
         return {
             "invalid_wishlist": self.invalid_wishlist,
             "invalid_wishlist_values_found": list(self.invalid_wishlist_values_found),
+            "invalid_games": list(self.invalid_games),
         }
 
 

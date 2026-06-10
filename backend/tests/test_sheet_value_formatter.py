@@ -11,6 +11,8 @@
 from datetime import date, datetime
 import unittest
 
+import pandas as pd
+
 from services.formatting import SheetValueFormatter
 
 
@@ -27,6 +29,10 @@ class SheetValueFormatterTest(unittest.TestCase):
 
         self.assertIsNone(SheetValueFormatter.clean_text(None))
         self.assertIsNone(SheetValueFormatter.clean_text("   "))
+        self.assertIsNone(SheetValueFormatter.clean_text(float("nan")))
+        self.assertIsNone(SheetValueFormatter.clean_text(pd.NaT))
+        self.assertIsNone(SheetValueFormatter.clean_text("NaT"))
+        self.assertIsNone(SheetValueFormatter.clean_text("Err:510"))
         self.assertEqual("Mario", SheetValueFormatter.clean_text(" Mario "))
 
     def test_serialize_converts_dates_and_nan(self):

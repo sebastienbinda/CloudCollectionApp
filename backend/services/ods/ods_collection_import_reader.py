@@ -182,7 +182,7 @@ class OdsCollectionImportReader:
             raise OdsCollectionImportValidationError("Le fichier ODS ne contient aucun onglet.")
         games: list[CollectionImportGame] = []
         game_indexes_by_key: dict[tuple[str, str], int] = {}
-        warnings = {"invalid_wishlist": 0, "invalid_values": []}
+        warnings = {"invalid_wishlist": 0, "invalid_values": [], "invalid_games": []}
         if description.single_sheet_conf is not None:
             self.game_builder.merge_games(
                 games,
@@ -229,6 +229,7 @@ class OdsCollectionImportReader:
         return games, CollectionImportWarnings(
             invalid_wishlist=warnings["invalid_wishlist"],
             invalid_wishlist_values_found=warnings["invalid_values"],
+            invalid_games=warnings["invalid_games"],
         )
 
     def _read_multiple_sheets_games(

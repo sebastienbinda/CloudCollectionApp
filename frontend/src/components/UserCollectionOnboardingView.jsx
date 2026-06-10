@@ -185,6 +185,9 @@ function ImportSummary({ result, onOpenHome }) {
     ["Souhaits importes", result.wishlisted_games],
   ];
   const invalidWishlist = result.warnings?.invalid_wishlist || 0;
+  const invalidGames = Array.isArray(result.warnings?.invalid_games)
+    ? result.warnings.invalid_games
+    : [];
   return (
     <section className="importSummary" aria-label="Resume de l'import">
       <h2>Import termine</h2>
@@ -201,11 +204,53 @@ function ImportSummary({ result, onOpenHome }) {
           {invalidWishlist} ligne(s) wishlist ignoree(s).
         </p>
       ) : null}
+      {invalidGames.length > 0 ? (
+        <InvalidImportedGamesList invalidGames={invalidGames} />
+      ) : null}
       <button type="button" onClick={onOpenHome}>
         Ouvrir Ma collection
       </button>
     </section>
   );
+}
+
+/**
+ * Affiche les jeux importes avec des informations invalides ignorees.
+ *
+ * @param {Object} props - Warnings de jeux invalides.
+ * @returns {import("react").JSX.Element} Liste des informations invalides.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function InvalidImportedGamesList({ invalidGames }) {
+  return (
+    <section className="invalidImportedGames" aria-label="Informations invalides importees">
+      <h3>Informations ignorees</h3>
+      <ul>
+        {invalidGames.map((gameWarning) => (
+          <li key={`${gameWarning.name}-${JSON.stringify(gameWarning.invalid_fields || [])}`}>
+            <strong>{gameWarning.name}</strong>
+            <span>{formatInvalidFields(gameWarning.invalid_fields || [])}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Formate les champs invalides d'un jeu pour affichage.
+ *
+ * @param {Array<Object>} invalidFields - Champs invalides retournes par l'API.
+ * @returns {string} Description courte des champs invalides.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatInvalidFields(invalidFields) {
+  return invalidFields
+    .map((field) => {
+      const label = field.field === "release_date" ? "Date de sortie" : field.field;
+      return field.value ? `${label}: ${field.value}` : label;
+    })
+    .join(", ");
 }
 
 export default UserCollectionOnboardingView;

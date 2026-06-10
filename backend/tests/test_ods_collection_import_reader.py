@@ -333,6 +333,17 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
 
         self.assertIsNone(import_data.games[0].release_date)
         self.assertIn("Date de sortie invalide", logs.output[0])
+        self.assertEqual(
+            [
+                {
+                    "name": "Zelda",
+                    "invalid_fields": [
+                        {"field": "release_date", "value": "pas-une-date"},
+                    ],
+                }
+            ],
+            import_data.warnings.invalid_games,
+        )
 
     def test_read_warns_and_keeps_out_of_range_release_date_as_none(self):
         """Verifie qu'une date hors plage PostgreSQL/Python devient `None`.
@@ -368,6 +379,17 @@ class OdsCollectionImportReaderTest(unittest.TestCase):
 
         self.assertIsNone(import_data.games[0].release_date)
         self.assertIn("Date de sortie invalide", logs.output[0])
+        self.assertEqual(
+            [
+                {
+                    "name": "Zelda",
+                    "invalid_fields": [
+                        {"field": "release_date", "value": "48113-11-21 00:00:01"},
+                    ],
+                }
+            ],
+            import_data.warnings.invalid_games,
+        )
 
     def test_read_ignores_duplicate_studios_with_warning(self):
         """Verifie la deduplication des studios du fichier.
