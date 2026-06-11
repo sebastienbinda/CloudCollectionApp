@@ -23,6 +23,7 @@ import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
+import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
@@ -108,6 +109,7 @@ function useCloudCollectionViewModel() {
   const libraryGames = useLibraryGames({
     enabled: navigation.currentView === "libraryGames",
   });
+  const libraryResetAction = useLibraryResetAction();
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
     hasAccessToken: canUseCollectionViews,
@@ -159,6 +161,9 @@ function useCloudCollectionViewModel() {
       ),
       downloadError: odsDownload.downloadError,
       isDownloadingOds: odsDownload.isDownloadingOds,
+      libraryResetError: libraryResetAction.libraryResetError,
+      libraryResetMessage: libraryResetAction.libraryResetMessage,
+      isResettingLibrary: libraryResetAction.isResettingLibrary,
       reinitializationError: userCollectionReinitialization.reinitializationError,
       isReinitializingCollection: userCollectionReinitialization.isReinitializingCollection,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
@@ -187,6 +192,7 @@ function useCloudCollectionViewModel() {
       searchGamesByName: homePage.searchGamesByName,
       closeHomeSearch: homePage.closeHomeSearch,
       downloadOdsFile: odsDownload.downloadOdsFile,
+      resetLibrary: libraryResetAction.resetLibrary,
       reinitializeCollection: userCollectionReinitialization.reinitializeCollection,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
       selectCollectionFile: userCollectionOnboarding.selectCollectionFile,

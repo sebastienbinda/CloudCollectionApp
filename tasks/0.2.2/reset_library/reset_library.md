@@ -48,8 +48,9 @@ Les tâches doivent être réalisées dans l'ordre suivant :
 3. `02_backend_reset_persistence_and_import_orchestration.md`
 4. `03_backend_import_locking.md`
 5. `04_frontend_admin_configuration_action.md`
-6. `05_documentation_updates.md`
-7. `06_validation_and_docker.md`
+6. `05_backend_import_core_factorization.md`
+7. `06_documentation_updates.md`
+8. `07_validation_and_docker.md`
 
 Chaque sous-tâche est limitée à un périmètre livrable et vérifiable. La tâche
 `00` doit être réalisée en premier et produire un court rapport d'analyse dans

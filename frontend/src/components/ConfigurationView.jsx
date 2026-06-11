@@ -29,11 +29,15 @@ function ConfigurationView({
   platforms,
   canAddGame,
   canDownloadOds,
+  canResetLibrary,
   canReinitializeCollection,
   canSearchUsers,
   canUseCollectionViews,
   downloadError,
   isDownloadingOds,
+  libraryResetError,
+  libraryResetMessage,
+  isResettingLibrary,
   reinitializationError,
   isReinitializingCollection,
   onOpenAbout,
@@ -46,6 +50,7 @@ function ConfigurationView({
   onOpenConfiguration,
   onOpenCollectionOnboarding,
   onDownloadOds,
+  onResetLibrary,
   onReinitializeCollection,
   onLogout,
 }) {
@@ -70,6 +75,8 @@ function ConfigurationView({
       onLogout={onLogout}
     >
       {downloadError ? <p className="error">{downloadError}</p> : null}
+      {libraryResetError ? <p className="error">{libraryResetError}</p> : null}
+      {libraryResetMessage ? <p className="success">{libraryResetMessage}</p> : null}
       {reinitializationError ? <p className="error">{reinitializationError}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
@@ -137,6 +144,27 @@ function ConfigurationView({
             </button>
             {isReinitializingCollection ? (
               <ProgressBar label="Reinitialisation de la collection en cours" />
+            ) : null}
+          </article>
+        ) : null}
+
+        {isAdmin ? (
+          <article className="adminActionCard dangerActionCard">
+            <span>Bibliotheque</span>
+            <h2>Reset Bibliotheque</h2>
+            <p>
+              Supprime et reconstruit toute la Bibliotheque globale depuis les imports utilisateur.
+            </p>
+            <button
+              className="dangerButton"
+              type="button"
+              onClick={onResetLibrary}
+              disabled={!canResetLibrary || isResettingLibrary}
+            >
+              Lancer le reset
+            </button>
+            {isResettingLibrary ? (
+              <ProgressBar label="Reset Bibliotheque en cours de lancement" />
             ) : null}
           </article>
         ) : null}

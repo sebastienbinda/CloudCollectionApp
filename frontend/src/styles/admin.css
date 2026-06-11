@@ -39,6 +39,26 @@
   margin-bottom: 0;
 }
 
+.dangerActionCard {
+  background: #fff7ed;
+  border-color: #f97316;
+}
+
+.dangerActionCard span {
+  color: #b91c1c;
+}
+
+.dangerButton {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #ffffff;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
 .usersTableSection {
   margin-top: 1.5rem;
 }
