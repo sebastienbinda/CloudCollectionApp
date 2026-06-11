@@ -20,6 +20,7 @@ from controllers import (
     AuthenticationController,
     CollectionController,
     GameController,
+    LibraryController,
     PlatformController,
     RouteController,
     StudioController,
@@ -31,6 +32,7 @@ from services import (
     AuthTokenService,
     BackendLoggingService,
     DatabaseSchemaService,
+    LibraryResetJobCoordinator,
     LibraryServiceProvider,
     UserCollectionImportConfiguration,
 )
@@ -58,6 +60,8 @@ route_controller = RouteController()
 user_controller = UserController(auth_guard)
 user_collection_import_controller = UserCollectionImportController(auth_guard)
 collection_controller = CollectionController(auth_guard)
+library_reset_job_coordinator = LibraryResetJobCoordinator()
+library_controller = LibraryController(auth_guard, library_reset_job_coordinator)
 library_service_provider = LibraryServiceProvider()
 platform_controller = PlatformController(library_service_factory=library_service_provider)
 studio_controller = StudioController(library_service_factory=library_service_provider)
@@ -69,6 +73,7 @@ route_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
 collection_controller.register_routes(app)
+library_controller.register_routes(app)
 platform_controller.register_routes(app)
 studio_controller.register_routes(app)
 game_controller.register_routes(app)

@@ -14,6 +14,7 @@
 from .authentication_controller import AuthenticationController
 from .collection_controller import CollectionController
 from .game_controller import GameController
+from .library_controller import LibraryController
 from .platform_controller import PlatformController
 from .route_controller import RouteController
 from .studio_controller import StudioController
@@ -24,6 +25,7 @@ __all__ = [
     "AuthenticationController",
     "CollectionController",
     "GameController",
+    "LibraryController",
     "PlatformController",
     "RouteController",
     "StudioController",
