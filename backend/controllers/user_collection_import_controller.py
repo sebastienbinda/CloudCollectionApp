@@ -19,6 +19,7 @@ from flask import Flask, current_app, jsonify, request
 from services import (
     AuthGuard,
     DatabaseConfiguration,
+    LibraryResetJobCoordinator,
     SqlAlchemyUserRepository,
     UserCollectionImportConfiguration,
     UserProfile,
@@ -43,6 +44,10 @@ from services.users.user_collection_import_service import (
 class UserCollectionImportController:
     """Enregistre les routes HTTP self-service de collection utilisateur."""
 
+    RESET_IN_PROGRESS_ERROR = (
+        "Un reset de la Bibliotheque est en cours. Veuillez réessayer plus tard."
+    )
+
     def __init__(
         self,
         auth_guard: AuthGuard,
@@ -53,6 +58,7 @@ class UserCollectionImportController:
         file_description_validator_class=CollectionFileDescriptionValidator,
         import_configuration_class=UserCollectionImportConfiguration,
         database_configuration_class=DatabaseConfiguration,
+        reset_job_coordinator: LibraryResetJobCoordinator | None = None,
     ):
         """Initialise le controleur d'import de collection.
 
@@ -65,6 +71,7 @@ class UserCollectionImportController:
             file_description_validator_class (type): Classe de validation de description.
             import_configuration_class (type): Classe de configuration d'import.
             database_configuration_class (type): Classe de configuration base.
+            reset_job_coordinator (LibraryResetJobCoordinator | None): Coordinateur de reset.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -78,6 +85,7 @@ class UserCollectionImportController:
         self.file_description_validator_class = file_description_validator_class
         self.import_configuration_class = import_configuration_class
         self.database_configuration_class = database_configuration_class
+        self.reset_job_coordinator = reset_job_coordinator
 
     def register_routes(self, flask_app: Flask) -> None:
         """Enregistre les routes de collection utilisateur dans Flask.
@@ -149,6 +157,9 @@ class UserCollectionImportController:
             tuple[flask.Response, int]: Resultat JSON ou erreur.
         """
 
+        reset_response = self._reject_when_library_reset_running()
+        if reset_response is not None:
+            return reset_response
         temporary_file_path = None
         try:
             user_id = self._current_user_id()
@@ -189,6 +200,9 @@ class UserCollectionImportController:
             tuple[flask.Response, int]: Liste des onglets ou erreur.
         """
 
+        reset_response = self._reject_when_library_reset_running()
+        if reset_response is not None:
+            return reset_response
         try:
             sheets = self._create_import_service().analyze_import_file(
                 self._current_user_id(),
@@ -237,6 +251,9 @@ class UserCollectionImportController:
             tuple[flask.Response, int] | flask.Response: Configuration JSON ou erreur.
         """
 
+        reset_response = self._reject_when_library_reset_running()
+        if reset_response is not None:
+            return reset_response
         try:
             configuration = self._create_import_repository().find_import_configuration(
                 self._current_user_id()
@@ -260,6 +277,9 @@ class UserCollectionImportController:
             tuple[flask.Response, int]: Resultat JSON ou erreur.
         """
 
+        reset_response = self._reject_when_library_reset_running()
+        if reset_response is not None:
+            return reset_response
         try:
             user_id = self._current_user_id()
             file_description = self._parse_collection_file_description_json()
@@ -298,6 +318,9 @@ class UserCollectionImportController:
             tuple[flask.Response, int]: Resultat JSON ou erreur.
         """
 
+        reset_response = self._reject_when_library_reset_running()
+        if reset_response is not None:
+            return reset_response
         try:
             user_id = self._current_user_id()
             self._create_import_service().reinitialize_collection(user_id)
@@ -316,6 +339,23 @@ class UserCollectionImportController:
                 "Erreur inattendue pendant la reinitialisation collection."
             )
             return jsonify({"error": "Unable to reinitialize collection."}), 500
+
+    def _reject_when_library_reset_running(self):
+        """Retourne une erreur HTTP si un reset Bibliotheque est actif.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int] | None: Reponse 403 ou absence de blocage.
+        """
+
+        if (
+            self.reset_job_coordinator is not None
+            and self.reset_job_coordinator.is_reset_running()
+        ):
+            return jsonify({"error": self.RESET_IN_PROGRESS_ERROR}), 403
+        return None
 
     def _current_user_id(self) -> int:
         """Retourne l'identifiant base de l'utilisateur connecte.

@@ -58,9 +58,12 @@ auth_guard = AuthGuard(auth_token_service)
 authentication_controller = AuthenticationController(auth_token_service)
 route_controller = RouteController()
 user_controller = UserController(auth_guard)
-user_collection_import_controller = UserCollectionImportController(auth_guard)
 collection_controller = CollectionController(auth_guard)
 library_reset_job_coordinator = LibraryResetJobCoordinator()
+user_collection_import_controller = UserCollectionImportController(
+    auth_guard,
+    reset_job_coordinator=library_reset_job_coordinator,
+)
 library_controller = LibraryController(auth_guard, library_reset_job_coordinator)
 library_service_provider = LibraryServiceProvider()
 platform_controller = PlatformController(library_service_factory=library_service_provider)
