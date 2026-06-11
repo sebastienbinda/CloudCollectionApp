@@ -72,6 +72,12 @@ database structure in `documentation/database.md`, and frontend navigation in
   stack traces.
 - Reinitialization must return `404` when the connected user has no collection
   to reinitialize and `500` for unexpected failures.
+- While an administrator Library reset is running, the backend must reject
+  `GET /api/users/import/`, `POST /api/users/import/file/<file_type>`,
+  `POST /api/users/import/analyze/<file_type>`, `POST /api/users/import` and
+  `POST /api/users/collection/reinit` with `403` and a clear message telling
+  the user to retry later. Authentication and profile checks still run before
+  this reset lock.
 
 ## Persistence Rules
 
@@ -101,6 +107,10 @@ database structure in `documentation/database.md`, and frontend navigation in
   the stored collection file when it exists.
 - A missing stored collection file on disk must not block reinitialization; the
   database state is still cleaned.
+- The Library reset workflow imports stored user collection files through the
+  same backend import core as the connected-user import workflow. It must differ
+  only in source-file preparation: reset imports the already stored file without
+  copying it again, while user import copies the staged file into the workspace.
 
 ## ODS Import Rules
 

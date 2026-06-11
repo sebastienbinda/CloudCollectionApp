@@ -38,6 +38,7 @@ consultation, recherche et import.
 - Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
+- Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
 
 ## Architecture Globale
@@ -122,7 +123,7 @@ Variables principales :
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
-  attente de validation administrateur.
+  attente de validation administrateur et des rapports de reset Bibliotheque.
 
 Un fichier exemple versionnable est fourni :
 
@@ -149,6 +150,10 @@ Structure fonctionnelle attendue pour l'import :
 - depuis Configuration, un utilisateur non `ADMIN` peut reinitialiser sa
   collection pour supprimer les associations importees, effacer le fichier
   serveur et revenir au parcours `/collection/import`.
+- depuis Configuration, un utilisateur `ADMIN` peut lancer un reset asynchrone
+  de la Bibliotheque globale. Le reset reconstruit le referentiel depuis les
+  fichiers utilisateurs stockes, refuse temporairement les imports utilisateur,
+  puis envoie le rapport final a `ADMIN_NOTIFICATION_EMAIL`.
 
 ## Lancement Local
 
@@ -270,7 +275,7 @@ Documents fonctionnels et techniques principaux :
 - `documentation/backend-arch.md` : architecture Flask/backend.
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.
-- `documentation/bibliotheque.md` : consultation publique du referentiel commun.
+- `documentation/bibliotheque.md` : consultation publique du referentiel commun et reset administrateur.
 - `documentation/collection.md` : consultation SQL de la collection utilisateur.
 - `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
 - `documentation/register.md` : inscription utilisateur et validation email.

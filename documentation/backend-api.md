@@ -237,6 +237,60 @@ Library errors use:
 - `503` when database configuration is missing or invalid;
 - `500` when a read fails unexpectedly.
 
+## Protected Library Administration Routes
+
+The routes in this section require a Bearer token with profile `ADMIN`. They
+are separate from the public read-only Library consultation endpoints.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
+
+### Reset Library
+
+```http
+POST /api/library/reset
+Authorization: Bearer <admin-token>
+```
+
+The route starts an asynchronous job and returns immediately. It deletes and
+rebuilds the global `t_platform`, `t_studio`, `t_game` and `t_user_collection`
+data from stored user collection files and their saved import configurations.
+Users are processed in registration order. Each user import reuses the backend
+collection import service core.
+
+Successful response:
+
+```json
+{
+  "job_id": 25
+}
+```
+
+with status `202`.
+
+If a reset is already running, the backend returns status `409`:
+
+```json
+{
+  "error": "Un reset de la Bibliotheque est deja en cours."
+}
+```
+
+Access and error status:
+
+- `403` when the Bearer token is missing or does not carry profile `ADMIN`;
+- `409` when another reset job is already running;
+- `500` only for unexpected launch failures before the asynchronous job starts.
+
+The reset job has no status endpoint. Its final result is sent by email to
+`ADMIN_NOTIFICATION_EMAIL` when configured. If one user file is missing,
+unreadable, has no saved import configuration or fails during import, the job
+logs the user error, records it in the in-memory reset context and continues
+with the next user. In that case, the Library can be rebuilt partially from the
+successful user imports. If the initial database clean fails, the reset stops
+and the clean transaction is rolled back.
+
 ## Game Collection Routes
 
 All routes in this section require a Bearer token with at least profile `USER`.
@@ -492,6 +546,26 @@ modify another user's collection.
 | `POST` | `/api/users/import` | Imports the connected user's collection from the temporary file and JSON configuration. |
 | `POST` | `/api/users/collection/reinit` | Reinitializes the connected user's imported collection. |
 
+When a Library reset job is running, the backend rejects the import workflow
+routes that can read, write or reinitialize user import state:
+
+- `GET /api/users/import/`;
+- `POST /api/users/import/file/<file_type>`;
+- `POST /api/users/import/analyze/<file_type>`;
+- `POST /api/users/import`;
+- `POST /api/users/collection/reinit`.
+
+The response uses status `403`:
+
+```json
+{
+  "error": "Un reset de la Bibliotheque est en cours. Veuillez réessayer plus tard."
+}
+```
+
+Authentication and profile checks still run first. A missing or invalid Bearer
+token keeps the existing authentication response.
+
 ### Current User Collection Status Response
 
 The status is derived from `t_user.collection_file_path`. The response must not
@@ -702,6 +776,10 @@ registration. The message links to `/users?status=WAITING_VALIDATION` on
 `FRONTEND_PUBLIC_URL` so an administrator can validate the waiting accounts. The
 message includes the new user's email and the total number of users currently
 waiting for administrator validation.
+
+The same address receives the final report of each asynchronous Library reset
+job, including the global status, successfully imported users and per-user
+errors when the rebuild is partial.
 
 In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
 the Docker local stack can use Mailpit.

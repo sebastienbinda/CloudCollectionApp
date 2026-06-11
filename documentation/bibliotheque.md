@@ -19,6 +19,9 @@ endpoints that expose the global reference database.
 - The global reference database can be enriched by backend import workflows, but
   Bibliotheque pages and endpoints remain consultation-only.
 - Public Bibliotheque API calls must not require or send authentication headers.
+- The only write-capable Bibliotheque route is the protected administrator
+  reset endpoint documented below. It is not part of the public consultation
+  API and must require profile `ADMIN`.
 
 ## Frontend Routes
 
@@ -92,9 +95,36 @@ List endpoints return a collection key and a shared `page` object:
 The collection key is `platforms`, `studios` or `games` according to the
 endpoint.
 
+## Protected Administration Endpoint
+
+`POST /api/library/reset` is an authenticated `ADMIN` endpoint exposed for the
+Configuration page. It starts an asynchronous reset job that rebuilds the global
+Library from stored user collection files and saved import configurations.
+
+This endpoint is the explicit exception to the public read-only rule. It must
+not be called by public Library pages, and public `GET /api/library/*`
+consultation routes must remain unauthenticated and read-only.
+
+The reset job:
+
+- deletes global Library data and user-game associations in a transactionally
+  controlled backend workflow;
+- processes users with a stored collection file in registration order;
+- reuses the same backend import core as the connected-user import workflow;
+- continues with the next user when a user file is missing, unreadable, has no
+  saved configuration or fails during import;
+- can therefore rebuild the Library partially when one or more user imports
+  fail;
+- sends the final status report to `ADMIN_NOTIFICATION_EMAIL` when configured.
+
+Only one reset can run at a time. A second launch attempt returns `409`.
+
 ## Architecture Rules
 
 - Frontend HTTP details stay in `frontend/src/services/LibraryApi.js`.
+- Protected admin reset HTTP details stay outside the public `LibraryApi`
+  client so public read-only calls and destructive admin actions remain
+  separated.
 - Library state orchestration stays under `frontend/src/hooks/library/`.
 - Page components only render state and user interactions.
 - Backend routing stays in controllers under `backend/controllers/`.
@@ -107,7 +137,9 @@ endpoint.
 When changing the Bibliotheque feature:
 
 - verify unauthenticated access to all public frontend routes;
-- verify unauthenticated access to all `/api/library/*` endpoints;
+- verify unauthenticated access to public `GET /api/library/*` consultation
+  endpoints;
+- verify that `POST /api/library/reset` remains protected by profile `ADMIN`;
 - verify that list endpoints remain read-only and paginated;
 - verify that no private user table is exposed by repository queries;
 - run backend tests when backend API, services or repositories change;
