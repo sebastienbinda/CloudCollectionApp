@@ -352,21 +352,25 @@ class UserCollectionImportService:
             raise CollectionFileDescriptionValidationError(
                 ["collection_file_description est requis."]
             )
+        return self._import_collection_file(user_id, source_file_path, original_filename, file_description, True)
+
+    def _import_collection_file(
+        self, user_id: int, source_file_path: Path, original_filename: str | None,
+        file_description: CollectionFileDescription, copy_to_workspace: bool,
+    ) -> UserCollectionImportResult:
         reader = self.reader_factory.create(file_description.file_type)
         self._validate_source_file(source_file_path, original_filename, reader)
-        target_file_path = self._target_file_path(
-            user_id,
-            original_filename or source_file_path.name,
-            reader,
-        )
-        copied_file_path = self._copy_file(source_file_path, target_file_path)
+        import_file_path = source_file_path
+        copied_file_path = None
+        if copy_to_workspace:
+            target_file_path = self._target_file_path(user_id, original_filename or source_file_path.name, reader)
+            copied_file_path = self._copy_file(source_file_path, target_file_path)
+            import_file_path = copied_file_path
         try:
-            import_data = self.date_validator.validate(
-                reader.read(str(copied_file_path), file_description)
-            )
+            import_data = self.date_validator.validate(reader.read(str(import_file_path), file_description))
             persistence_result = self.repository.import_collection(
                 user_id,
-                str(copied_file_path),
+                str(import_file_path),
                 import_data,
                 file_description.to_dict(),
             )
@@ -454,7 +458,9 @@ class UserCollectionImportService:
                 return extension
         return None
 
-    def _delete_copied_file(self, copied_file_path: Path) -> None:
+    def _delete_copied_file(self, copied_file_path: Path | None) -> None:
+        if copied_file_path is None:
+            return
         try:
             copied_file_path.unlink(missing_ok=True)
         except OSError:

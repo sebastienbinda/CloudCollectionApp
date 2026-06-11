@@ -15,18 +15,11 @@ from pathlib import Path
 from services.collection.imports import (
     CollectionFileDescription,
     CollectionFileDescriptionValidationError,
-    CollectionFileReadError,
-    CollectionFileValidationError,
-)
-from services.database.user_collection_import_repository import (
-    UserCollectionImportUserNotFoundError,
 )
 
 from .user_collection_import_service import (
-    UserCollectionImportInvalidFileError,
     UserCollectionImportResult,
     UserCollectionImportService,
-    UserCollectionImportUnexpectedError,
 )
 
 
@@ -72,27 +65,10 @@ class StoredUserCollectionImportService(UserCollectionImportService):
             raise CollectionFileDescriptionValidationError(
                 ["collection_file_description est requis."]
             )
-        reader = self.reader_factory.create(file_description.file_type)
-        self._validate_source_file(stored_file_path, stored_file_path.name, reader)
-        try:
-            import_data = self.date_validator.validate(
-                reader.read(str(stored_file_path), file_description)
-            )
-            persistence_result = self.repository.import_collection(
-                user_id,
-                str(stored_file_path),
-                import_data,
-                file_description.to_dict(),
-            )
-            return self._map_result(persistence_result, import_data)
-        except CollectionFileDescriptionValidationError:
-            raise
-        except (CollectionFileReadError, CollectionFileValidationError) as exc:
-            raise UserCollectionImportInvalidFileError(
-                "Fichier de collection invalide.",
-                self._import_invalid_file_details(exc),
-            ) from exc
-        except UserCollectionImportUserNotFoundError as exc:
-            raise UserCollectionImportUnexpectedError("Utilisateur introuvable.") from exc
-        except Exception as exc:
-            raise UserCollectionImportUnexpectedError("Erreur pendant l'import.") from exc
+        return self._import_collection_file(
+            user_id,
+            stored_file_path,
+            stored_file_path.name,
+            file_description,
+            copy_to_workspace=False,
+        )
