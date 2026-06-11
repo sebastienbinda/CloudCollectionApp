@@ -16,6 +16,7 @@ from .database_model_base import DatabaseModelBase
 from .database_schema_service import DatabaseSchemaService
 from .game import Game
 from .game_repository import SqlAlchemyGameRepository
+from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
 from .platform import Platform
 from .platform_repository import SqlAlchemyPlatformRepository
 from .schema_version import SchemaVersion
@@ -38,7 +39,9 @@ __all__ = [
     "DatabaseModelBase",
     "DatabaseSchemaService",
     "Game",
+    "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
+    "SqlAlchemyLibraryResetRepository",
     "Platform",
     "SqlAlchemyPlatformRepository",
     "SchemaVersion",

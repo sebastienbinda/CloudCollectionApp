@@ -162,16 +162,21 @@ class AppViewSwitch {
         platforms={props.platforms}
         canAddGame={props.actionPermissions.canAddGame}
         canDownloadOds={props.actionPermissions.canDownloadOds}
+        canResetLibrary={props.actionPermissions.canResetLibrary}
         canReinitializeCollection={props.actionPermissions.canReinitializeCollection}
         canSearchUsers={props.actionPermissions.canSearchUsers}
         downloadError={props.downloadError}
         isDownloadingOds={props.isDownloadingOds}
+        libraryResetError={props.libraryResetError}
+        libraryResetMessage={props.libraryResetMessage}
+        isResettingLibrary={props.isResettingLibrary}
         reinitializationError={props.reinitializationError}
         isReinitializingCollection={props.isReinitializingCollection}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
         onOpenCollectionOnboarding={props.openCollectionOnboarding}
         onDownloadOds={props.downloadOdsFile}
+        onResetLibrary={props.resetLibrary}
         onReinitializeCollection={props.reinitializeCollection}
       />
     );

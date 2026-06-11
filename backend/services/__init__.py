@@ -28,6 +28,11 @@ from .library.library_query_contract import (
     LibraryQueryParser,
     LibrarySortRule,
 )
+from .library.library_reset_job_coordinator import (
+    LibraryResetAlreadyRunningError,
+    LibraryResetJob,
+    LibraryResetJobCoordinator,
+)
 from .library.library_service import (
     LibraryService,
 )
@@ -58,6 +63,9 @@ __all__ = [
     "LibraryPageRequest",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
+    "LibraryResetAlreadyRunningError",
+    "LibraryResetJob",
+    "LibraryResetJobCoordinator",
     "LibraryService",
     "LibraryServiceProvider",
     "LibrarySortRule",

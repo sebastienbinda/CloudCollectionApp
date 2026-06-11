@@ -68,6 +68,14 @@ authenticated non-`ADMIN` users. It must expose an import action that opens
 discovery confirms access to `POST /api/users/collection/reinit`; after success
 it opens `/collection/import`.
 
+For `ADMIN`, the Configuration page may expose a protected `Reset Bibliotheque`
+action only when backend route discovery confirms access to
+`POST /api/library/reset`. The action must ask for explicit confirmation before
+launching the reset, display a success message after `202`, display an
+already-running message after `409`, and must not add polling or a job status
+page. This does not make public Bibliotheque pages writable; they remain public
+read-only consultation routes.
+
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the
 backend.
