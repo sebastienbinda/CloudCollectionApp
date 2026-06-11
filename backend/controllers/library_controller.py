@@ -15,6 +15,7 @@ from flask import Flask, current_app, jsonify
 
 from services import AuthGuard, UserProfile
 from services.library import LibraryResetAlreadyRunningError, LibraryResetJobCoordinator
+from services.library.library_reset_service import LibraryResetService
 
 
 class LibraryController:
@@ -24,12 +25,14 @@ class LibraryController:
         self,
         auth_guard: AuthGuard,
         reset_job_coordinator: LibraryResetJobCoordinator | None = None,
+        reset_service_factory=None,
     ):
         """Initialise le controleur admin Bibliotheque.
 
         Args:
             auth_guard (AuthGuard): Garde d'authentification et de profil.
             reset_job_coordinator (LibraryResetJobCoordinator | None): Coordinateur de reset.
+            reset_service_factory (Callable | None): Fabrique du service de reset.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -37,6 +40,7 @@ class LibraryController:
 
         self.auth_guard = auth_guard
         self.reset_job_coordinator = reset_job_coordinator or LibraryResetJobCoordinator()
+        self.reset_service_factory = reset_service_factory or LibraryResetService.from_environment
 
     def register_routes(self, flask_app: Flask) -> None:
         """Enregistre les routes admin Bibliotheque dans Flask.
@@ -66,10 +70,22 @@ class LibraryController:
         """
 
         try:
-            job = self.reset_job_coordinator.start_reset()
+            job = self.reset_job_coordinator.start_reset(self._run_reset_job)
             return jsonify({"job_id": job.job_id}), 202
         except LibraryResetAlreadyRunningError:
             return jsonify({"error": "Un reset de la Bibliotheque est deja en cours."}), 409
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant le lancement du reset Bibliotheque.")
             return jsonify({"error": "Unable to start library reset."}), 500
+
+    def _run_reset_job(self, job):
+        """Execute le service de reset dans le thread de job.
+
+        Args:
+            job (LibraryResetJob): Job lance par le coordinateur.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.reset_service_factory().run_reset(job)
