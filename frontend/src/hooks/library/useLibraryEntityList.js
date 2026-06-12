@@ -32,6 +32,7 @@ function useLibraryEntityList(configuration) {
     enabled: configuredEnabled,
     errorMessage,
     fetchList,
+    mobileVisibleColumns = [],
     rowsKey,
     sortableColumns = [],
   } = configuration;
@@ -120,6 +121,7 @@ function useLibraryEntityList(configuration) {
     rows,
     columns,
     columnLabels,
+    mobileVisibleColumns,
     sortableColumns,
     searchQuery,
     appliedSearchQuery,

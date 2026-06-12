@@ -26,6 +26,7 @@ const GAME_CONFIGURATION = {
     platform: "Plateforme",
     status: "Statut",
   },
+  mobileVisibleColumns: ["name", "release_date"],
   sortableColumns: ["name", "release_date", "developer", "platform"],
   defaultSortColumn: "name",
   errorMessage: "Impossible de charger les jeux Bibliotheque.",
