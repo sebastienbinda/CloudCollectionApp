@@ -232,12 +232,12 @@ class SqlAlchemyGameRepository:
             filters.append(name_clause.removeprefix("WHERE "))
 
         if criteria.normalized_platform:
-            parameters["platform_pattern"] = f"%{criteria.normalized_platform}%"
+            parameters["platform_key"] = criteria.normalized_platform.replace(" ", "")
             parameters["accented_characters"] = LibraryQuerySqlBuilder.ACCENTED_CHARACTERS
             parameters["plain_characters"] = LibraryQuerySqlBuilder.PLAIN_CHARACTERS
             filters.append(
-                "TRANSLATE(LOWER(platform.name), :accented_characters, "
-                ":plain_characters) LIKE :platform_pattern"
+                "REPLACE(TRANSLATE(LOWER(platform.name), :accented_characters, "
+                ":plain_characters), ' ', '') = :platform_key"
             )
 
         return f"WHERE {' AND '.join(filters)}" if filters else ""

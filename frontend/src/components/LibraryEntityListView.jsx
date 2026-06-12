@@ -123,6 +123,7 @@ function LibraryEntityListView({
             sortConfig={listState.sortConfig}
             sortableColumns={listState.sortableColumns}
             sortedRows={listState.rows}
+            tableClassName={listState.tableClassName}
             onToggleSort={listState.toggleSort}
             pagination={listState.pagination}
             getRowKey={(row) => row.id || row.name}

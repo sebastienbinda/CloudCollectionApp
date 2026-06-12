@@ -42,6 +42,7 @@ function useLibraryEntityList(configuration) {
     searchDebounceMs = DEFAULT_SEARCH_DEBOUNCE_MS,
     rowsKey,
     sortableColumns = [],
+    tableClassName = "",
   } = configuration;
   const [rows, setRows] = useState([]);
   const [pageMetadata, setPageMetadata] = useState({
@@ -168,6 +169,7 @@ function useLibraryEntityList(configuration) {
     mobileVisibleColumns,
     autoSearchEnabled,
     sortableColumns,
+    tableClassName,
     searchQuery,
     appliedSearchQuery,
     setSearchQuery,

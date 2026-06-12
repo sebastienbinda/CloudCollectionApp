@@ -29,6 +29,7 @@ const GAME_CONFIGURATION = {
   },
   mobileVisibleColumns: ["name", "release_date"],
   sortableColumns: ["name", "release_date", "developer", "platform"],
+  tableClassName: "libraryGamesTable",
   defaultSortColumn: "name",
   errorMessage: "Impossible de charger les jeux Bibliotheque.",
   fetchList: (criteria) => LibraryApi.fetchGames(criteria),

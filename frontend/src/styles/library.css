@@ -137,3 +137,15 @@
     max-width: none;
   }
 }
+
+@media (min-width: 900px) {
+  .libraryGamesTable th[data-column="name"],
+  .libraryGamesTable td[data-column="name"] {
+    width: 32%;
+  }
+
+  .libraryGamesTable th[data-column="release_date"],
+  .libraryGamesTable td[data-column="release_date"] {
+    width: 10%;
+  }
+}

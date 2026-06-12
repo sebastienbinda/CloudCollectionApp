@@ -133,6 +133,8 @@ user data, imported collection file paths or `t_user_collection` associations.
 List endpoints support these query parameters:
 
 - `name`: optional name filter, matched without case or accent sensitivity;
+- `platform`: optional filter for `/api/library/games`, matched exactly after
+  removing case, accents and spaces;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule, where direction is `asc` or
