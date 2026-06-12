@@ -12,7 +12,6 @@
  *
  * Description : page publique generique des listes Bibliotheque.
  */
-import { formatCellValue } from "../collectionUtils";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
 import TableComponent from "./TableComponent";
@@ -88,13 +87,12 @@ function LibraryEntityListView({
             rows={listState.rows}
             columns={listState.columns}
             columnLabels={listState.columnLabels}
-            mobileVisibleColumns={["name"]}
+            mobileVisibleColumns={listState.mobileVisibleColumns}
             sortConfig={listState.sortConfig}
             sortableColumns={listState.sortableColumns}
             sortedRows={listState.rows}
             onToggleSort={listState.toggleSort}
             pagination={listState.pagination}
-            formatCellValue={(column, value) => formatCellValue(column, value)}
             getRowKey={(row) => row.id || row.name}
           />
         ) : null}
