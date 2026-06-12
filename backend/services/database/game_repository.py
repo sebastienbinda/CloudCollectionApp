@@ -156,10 +156,11 @@ class SqlAlchemyGameRepository:
         """
 
         parameters: dict[str, object] = {}
-        where_clause = LibraryQuerySqlBuilder.build_name_filter(criteria, "game.name", parameters)
+        where_clause = self._build_library_games_where_clause(criteria, parameters)
         return int(connection.execute(
             text(
                 f'SELECT COUNT(*) FROM "{self.schema_name}".t_game game '
+                f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
                 f"{where_clause}"
             ),
             parameters,
@@ -184,7 +185,7 @@ class SqlAlchemyGameRepository:
         """
 
         parameters: dict[str, object] = LibraryQuerySqlBuilder.build_pagination_parameters(criteria)
-        where_clause = LibraryQuerySqlBuilder.build_name_filter(criteria, "game.name", parameters)
+        where_clause = self._build_library_games_where_clause(criteria, parameters)
         order_by_clause = LibraryQuerySqlBuilder.build_order_by(criteria, self.LIBRARY_SORT_COLUMNS)
         rows = connection.execute(
             text(
@@ -205,3 +206,38 @@ class SqlAlchemyGameRepository:
             parameters,
         ).mappings()
         return [dict(row) for row in rows]
+
+    def _build_library_games_where_clause(
+        self,
+        criteria: LibraryQueryCriteria,
+        parameters: dict[str, object],
+    ) -> str:
+        """Construit les filtres publics applicables aux jeux Bibliotheque.
+
+        Args:
+            criteria (LibraryQueryCriteria): Criteres de recherche Bibliotheque.
+            parameters (dict[str, object]): Parametres SQL a enrichir.
+
+        Returns:
+            str: Clause SQL `WHERE`, ou chaine vide sans filtre.
+        """
+
+        filters = []
+        name_clause = LibraryQuerySqlBuilder.build_name_filter(
+            criteria,
+            "game.name",
+            parameters,
+        )
+        if name_clause:
+            filters.append(name_clause.removeprefix("WHERE "))
+
+        if criteria.normalized_platform:
+            parameters["platform_pattern"] = f"%{criteria.normalized_platform}%"
+            parameters["accented_characters"] = LibraryQuerySqlBuilder.ACCENTED_CHARACTERS
+            parameters["plain_characters"] = LibraryQuerySqlBuilder.PLAIN_CHARACTERS
+            filters.append(
+                "TRANSLATE(LOWER(platform.name), :accented_characters, "
+                ":plain_characters) LIKE :platform_pattern"
+            )
+
+        return f"WHERE {' AND '.join(filters)}" if filters else ""

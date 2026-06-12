@@ -211,7 +211,7 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
 
         criteria = self.query_parser.parse(
             "games",
-            {"name": "Final", "sort": "developer,desc"},
+            {"name": "Final", "platform": "NÉS", "sort": "developer,desc"},
         )
         connection = FakeRepositoryConnection(rows=[{"id": 3, "name": "Final Fantasy"}])
 
@@ -224,8 +224,11 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertIn("developer_studio.id = game.developer", sql)
         self.assertIn("editor_studio.id = game.editor", sql)
         self.assertIn("platform.id = game.platform", sql)
+        self.assertIn("TRANSLATE(LOWER(game.name)", sql)
+        self.assertIn("TRANSLATE(LOWER(platform.name)", sql)
         self.assertIn("ORDER BY developer_studio.name DESC, game.name ASC", sql)
         self.assertEqual("%final%", parameters["name_pattern"])
+        self.assertEqual("%nes%", parameters["platform_pattern"])
         self.assertNotIn("t_user", sql)
 
     def test_count_public_library_entities_by_criteria_uses_bound_name_filter(self):
@@ -238,7 +241,7 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
             None: Les assertions valident les parametres bindes.
         """
 
-        criteria = self.query_parser.parse("games", {"name": " Zelda "})
+        criteria = self.query_parser.parse("games", {"name": " Zelda ", "platform": "Switch"})
         connection = FakeRepositoryConnection(scalar_value=4)
 
         count = self.game_repository.count_public_library_games_by_criteria(
@@ -249,9 +252,13 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         sql, parameters = connection.executed_statements[0]
         self.assertEqual(4, count)
         self.assertIn("TRANSLATE(LOWER(game.name)", sql)
+        self.assertIn("TRANSLATE(LOWER(platform.name)", sql)
         self.assertIn(":name_pattern", sql)
+        self.assertIn(":platform_pattern", sql)
         self.assertNotIn("Zelda", sql)
+        self.assertNotIn("Switch", sql)
         self.assertEqual("%zelda%", parameters["name_pattern"])
+        self.assertEqual("%switch%", parameters["platform_pattern"])
 
 
 if __name__ == "__main__":

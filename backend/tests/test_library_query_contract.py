@@ -141,6 +141,21 @@ class LibraryQueryParserTest(unittest.TestCase):
         self.assertEqual("École du Jeu", criteria.name)
         self.assertEqual("ecole du jeu", criteria.normalized_name)
 
+    def test_parse_normalizes_platform_filter_without_case_or_accents(self):
+        """Verifie la normalisation du filtre `platform`.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la plateforme brute et normalisee.
+        """
+
+        criteria = self.parser.parse("games", {"platform": "  Méga Drive  "})
+
+        self.assertEqual("Méga Drive", criteria.platform)
+        self.assertEqual("mega drive", criteria.normalized_platform)
+
     def test_parse_accepts_multiple_sort_parameters(self):
         """Verifie le parsing de plusieurs tris autorises.
 

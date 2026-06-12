@@ -130,13 +130,14 @@ class LibraryRoutesTest(BaseAppRoutesTest):
             None: Les assertions valident le payload public.
         """
 
-        response = self.client.get("/api/library/games?sort=developer,desc")
+        response = self.client.get("/api/library/games?platform=NÉS&sort=developer,desc")
         game = response.get_json()["games"][0]
         criteria = FakeLibraryService.last_games_criteria
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("Final Fantasy", game["name"])
         self.assertNotIn("collection_file_path", game)
+        self.assertEqual("nes", criteria.normalized_platform)
         self.assertEqual("developer", criteria.sort_rules[0].column)
 
     def test_routes_route_requires_authentication(self):

@@ -79,6 +79,10 @@ class LibraryApi {
     if (name) {
       query.set("name", name);
     }
+    const platform = String(criteria.platform || "").trim();
+    if (platform) {
+      query.set("platform", platform);
+    }
     if (Number.isFinite(criteria.page)) {
       query.set("page", String(criteria.page));
     }
