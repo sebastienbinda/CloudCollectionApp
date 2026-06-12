@@ -98,12 +98,16 @@ class LibraryQueryCriteria:
         page_request (LibraryPageRequest): Pagination normalisee.
         name (str): Filtre `name` brut nettoye.
         normalized_name (str): Filtre `name` sans casse ni accents.
+        platform (str): Filtre `platform` brut nettoye.
+        normalized_platform (str): Filtre `platform` sans casse ni accents.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises et normalises.
     """
 
     page_request: LibraryPageRequest
     name: str
     normalized_name: str
+    platform: str
+    normalized_platform: str
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -162,6 +166,10 @@ class LibraryQueryParser:
             name=self._parse_name(self._get_first_value(query_parameters, "name")),
             normalized_name=self._parse_normalized_name(
                 self._get_first_value(query_parameters, "name")
+            ),
+            platform=self._parse_name(self._get_first_value(query_parameters, "platform")),
+            normalized_platform=self._parse_normalized_name(
+                self._get_first_value(query_parameters, "platform")
             ),
             sort_rules=tuple(
                 self._parse_sort_rules(

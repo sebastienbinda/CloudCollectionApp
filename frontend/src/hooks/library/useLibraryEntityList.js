@@ -17,6 +17,9 @@ import { useCallback, useEffect, useState } from "react";
 const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 500;
 const SIZE_OPTIONS = [25, 50, 100, 500];
+const DEFAULT_SEARCH_DEBOUNCE_MS = 450;
+const DEFAULT_MINIMUM_SEARCH_LENGTH = 2;
+const EMPTY_EXTRA_CRITERIA = {};
 
 /**
  * Gere recherche, tri, chargement et pagination d'une entite Bibliotheque.
@@ -28,11 +31,15 @@ function useLibraryEntityList(configuration) {
   const {
     columnLabels = {},
     columns,
+    extraCriteria = EMPTY_EXTRA_CRITERIA,
     defaultSortColumn = "name",
     enabled: configuredEnabled,
     errorMessage,
     fetchList,
     mobileVisibleColumns = [],
+    autoSearchEnabled = false,
+    minimumSearchLength = DEFAULT_MINIMUM_SEARCH_LENGTH,
+    searchDebounceMs = DEFAULT_SEARCH_DEBOUNCE_MS,
     rowsKey,
     sortableColumns = [],
   } = configuration;
@@ -53,6 +60,7 @@ function useLibraryEntityList(configuration) {
   const [size, setSize] = useState(DEFAULT_SIZE);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [appliedExtraCriteria, setAppliedExtraCriteria] = useState(extraCriteria);
   const enabled = configuredEnabled !== false;
 
   const reload = useCallback(async () => {
@@ -66,6 +74,7 @@ function useLibraryEntityList(configuration) {
       setError("");
       const data = await fetchList({
         name: appliedSearchQuery,
+        ...appliedExtraCriteria,
         page,
         size,
         sort: [sortConfig],
@@ -83,17 +92,52 @@ function useLibraryEntityList(configuration) {
     } finally {
       setIsLoading(false);
     }
-  }, [appliedSearchQuery, enabled, errorMessage, fetchList, page, rowsKey, size, sortConfig]);
+  }, [
+    appliedExtraCriteria,
+    appliedSearchQuery,
+    enabled,
+    errorMessage,
+    fetchList,
+    page,
+    rowsKey,
+    size,
+    sortConfig,
+  ]);
+
+  useEffect(() => {
+    setPage(DEFAULT_PAGE);
+    setAppliedExtraCriteria(extraCriteria);
+  }, [extraCriteria]);
 
   useEffect(() => {
     reload();
   }, [reload]);
 
+  useEffect(() => {
+    if (!autoSearchEnabled) {
+      return undefined;
+    }
+
+    const normalizedSearchQuery = searchQuery.trim();
+    const nextSearchQuery = normalizedSearchQuery.length >= minimumSearchLength
+      ? normalizedSearchQuery
+      : "";
+    const timeoutId = window.setTimeout(() => {
+      setPage(DEFAULT_PAGE);
+      setAppliedSearchQuery(nextSearchQuery);
+    }, searchDebounceMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [autoSearchEnabled, minimumSearchLength, searchDebounceMs, searchQuery]);
+
   const submitSearch = useCallback((event) => {
     event?.preventDefault?.();
+    if (autoSearchEnabled) {
+      return;
+    }
     setPage(DEFAULT_PAGE);
     setAppliedSearchQuery(searchQuery);
-  }, [searchQuery]);
+  }, [autoSearchEnabled, searchQuery]);
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
@@ -122,6 +166,7 @@ function useLibraryEntityList(configuration) {
     columns,
     columnLabels,
     mobileVisibleColumns,
+    autoSearchEnabled,
     sortableColumns,
     searchQuery,
     appliedSearchQuery,

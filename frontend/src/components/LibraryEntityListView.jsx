@@ -60,20 +60,52 @@ function LibraryEntityListView({
         <form className="librarySearchForm" onSubmit={listState.submitSearch}>
           <label htmlFor="library-search">Recherche par nom</label>
           <div>
-            <input
-              id="library-search"
-              type="search"
-              value={listState.searchQuery}
-              onChange={(event) => listState.setSearchQuery(event.target.value)}
-              placeholder="Rechercher"
-            />
-            <button type="submit" disabled={listState.isLoading}>
-              Rechercher
-            </button>
-            <button type="button" onClick={listState.clearSearch} disabled={listState.isLoading}>
-              Effacer
-            </button>
+            <div className="librarySearchInputControl">
+              <input
+                id="library-search"
+                type="search"
+                value={listState.searchQuery}
+                onChange={(event) => listState.setSearchQuery(event.target.value)}
+                placeholder="Rechercher"
+              />
+              <button
+                type="button"
+                className="librarySearchClearButton"
+                onClick={listState.clearSearch}
+                disabled={listState.isLoading || !listState.searchQuery}
+                aria-label="Effacer la recherche"
+                title="Effacer la recherche"
+              >
+                ×
+              </button>
+            </div>
+            {!listState.autoSearchEnabled ? (
+              <button type="submit" disabled={listState.isLoading}>
+                Rechercher
+              </button>
+            ) : null}
           </div>
+          {listState.platformFilter ? (
+            <div className="libraryPlatformFilter">
+              <select
+                id="library-platform-filter"
+                value={listState.platformFilter.selectedValue}
+                onChange={(event) => listState.platformFilter.onChange(event.target.value)}
+                disabled={listState.platformFilter.isLoading}
+                aria-label="Filtrer par plateforme"
+              >
+                <option value="">Toutes les plateformes</option>
+                {listState.platformFilter.options.map((platform) => (
+                  <option key={platform.id || platform.name} value={platform.name}>
+                    {platform.name}
+                  </option>
+                ))}
+              </select>
+              {listState.platformFilter.error ? (
+                <span className="error">{listState.platformFilter.error}</span>
+              ) : null}
+            </div>
+          ) : null}
         </form>
 
         {listState.isLoading ? <ProgressBar label="Chargement de la liste" /> : null}

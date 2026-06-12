@@ -45,7 +45,48 @@
 .librarySearchForm > div {
   display: grid;
   gap: 0.55rem;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.librarySearchInputControl {
+  position: relative;
+}
+
+.librarySearchInputControl input {
+  padding-right: 2.25rem;
+}
+
+.librarySearchClearButton {
+  align-items: center;
+  background: transparent;
+  border-radius: 50%;
+  color: #64748b;
+  display: inline-flex;
+  font-size: 1.15rem;
+  height: 1.65rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.65rem;
+}
+
+.librarySearchClearButton:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #1f2937;
+}
+
+.librarySearchClearButton:disabled {
+  opacity: 0.35;
+}
+
+.libraryPlatformFilter {
+  display: block;
+  max-width: 42rem;
+  width: 100%;
 }
 
 .librarySearchForm label {
@@ -53,7 +94,31 @@
   font-weight: 650;
 }
 
-.librarySearchForm button {
+.libraryPlatformFilter select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #2563eb 50%) calc(100% - 1.05rem) 50% / 0.42rem 0.42rem no-repeat,
+    linear-gradient(135deg, #2563eb 50%, transparent 50%) calc(100% - 0.78rem) 50% / 0.42rem 0.42rem no-repeat,
+    #ffffff;
+  border: 1px solid #94a3b8;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  font-weight: 650;
+  max-width: none;
+  padding: 0.55rem 2.35rem 0.55rem 0.75rem;
+  width: 100%;
+}
+
+.libraryPlatformFilter select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  outline: none;
+}
+
+.libraryPlatformFilter .error {
+  grid-column: 1 / -1;
+}
+
+.librarySearchForm > div > button {
   border-radius: 6px;
   padding: 0.4rem 0.7rem;
 }
@@ -61,5 +126,14 @@
 @media (max-width: 640px) {
   .librarySearchForm > div {
     grid-template-columns: 1fr;
+  }
+
+  .libraryPlatformFilter {
+    max-width: none;
+    width: 100%;
+  }
+
+  .libraryPlatformFilter select {
+    max-width: none;
   }
 }

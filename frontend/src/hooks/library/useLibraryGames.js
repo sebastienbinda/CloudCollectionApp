@@ -12,6 +12,7 @@
  *
  * Description : hook React de la liste publique des jeux Bibliotheque.
  */
+import { useCallback, useEffect, useMemo, useState } from "react";
 import LibraryApi from "../../services/LibraryApi";
 import useLibraryEntityList from "./useLibraryEntityList";
 
@@ -32,6 +33,7 @@ const GAME_CONFIGURATION = {
   errorMessage: "Impossible de charger les jeux Bibliotheque.",
   fetchList: (criteria) => LibraryApi.fetchGames(criteria),
 };
+const PLATFORM_PAGE_SIZE = 500;
 
 /**
  * Charge et pilote la table publique des jeux Bibliotheque.
@@ -40,10 +42,74 @@ const GAME_CONFIGURATION = {
  * @returns {Object} Etat et callbacks de la table jeux.
  */
 function useLibraryGames(options = {}) {
-  return useLibraryEntityList({
+  const enabled = options.enabled !== false;
+  const [platformOptions, setPlatformOptions] = useState([]);
+  const [selectedPlatform, setSelectedPlatform] = useState("");
+  const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
+  const [platformError, setPlatformError] = useState("");
+  const extraCriteria = useMemo(
+    () => ({ platform: selectedPlatform }),
+    [selectedPlatform]
+  );
+
+  useEffect(() => {
+    if (!enabled) {
+      setPlatformOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+    const loadPlatforms = async () => {
+      try {
+        setIsLoadingPlatforms(true);
+        setPlatformError("");
+        const data = await LibraryApi.fetchPlatforms({
+          page: 0,
+          size: PLATFORM_PAGE_SIZE,
+          sort: [{ column: "name", direction: "asc" }],
+        });
+        if (isMounted) {
+          setPlatformOptions(Array.isArray(data.platforms) ? data.platforms : []);
+        }
+      } catch (caughtError) {
+        if (isMounted) {
+          setPlatformOptions([]);
+          setPlatformError(caughtError.message || "Impossible de charger les plateformes.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingPlatforms(false);
+        }
+      }
+    };
+
+    loadPlatforms();
+    return () => {
+      isMounted = false;
+    };
+  }, [enabled]);
+
+  const handlePlatformChange = useCallback((platformName) => {
+    setSelectedPlatform(platformName);
+  }, []);
+
+  const listState = useLibraryEntityList({
     ...GAME_CONFIGURATION,
-    enabled: options.enabled,
+    autoSearchEnabled: true,
+    enabled,
+    extraCriteria,
   });
+
+  return {
+    ...listState,
+    platformFilter: {
+      error: platformError,
+      isLoading: isLoadingPlatforms,
+      options: platformOptions,
+      selectedValue: selectedPlatform,
+      onChange: handlePlatformChange,
+    },
+  };
 }
 
 export default useLibraryGames;

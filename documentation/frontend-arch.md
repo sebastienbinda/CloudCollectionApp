@@ -23,6 +23,7 @@ React, Vite, frontend hooks, frontend services, pages or shared UI components.
   `frontend/src/collectionUtils.js`.
 - Application state orchestration must live in domain hooks under
   `frontend/src/hooks/`.
+- Each page must be reactive to be well displayed on modern mobile resolutions.
 - Keep frontend files under 500 lines. Split by domain before a file reaches
   that limit.
 
