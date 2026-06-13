@@ -12,7 +12,7 @@
  *
  * Description : page publique d'accueil de la Bibliotheque.
  */
-import { formatNumber } from "../collectionUtils";
+import { formatCellValue, formatNumber } from "../collectionUtils";
 import CardComponent from "./CardComponent";
 import CardCountComponent from "./CardCountComponent";
 import CardHeaderComponent from "./CardHeaderComponent";
@@ -30,6 +30,7 @@ function LibraryHomeView({
   entities,
   entitiesError,
   isLoadingEntities,
+  librarySearch,
   isAuthenticated,
   canUseCollectionViews,
   authenticatedUsername,
@@ -50,6 +51,24 @@ function LibraryHomeView({
     ["Studios", entities.studios, onOpenLibraryStudios],
     ["Jeux", entities.games, onOpenLibraryGames],
   ];
+  const resolvedLibrarySearch = librarySearch || {
+    librarySearchQuery: "",
+    librarySearchResults: [],
+    librarySearchError: "",
+    hasSearchedLibraryGames: false,
+    isSearchingLibraryGames: false,
+    closeLibrarySearch: () => {},
+    searchLibraryGamesByName: (event) => event.preventDefault(),
+    setLibrarySearchQuery: () => {},
+  };
+  const searchResults = resolvedLibrarySearch.librarySearchResults || [];
+  const canCloseSearchResults = (
+    resolvedLibrarySearch.hasSearchedLibraryGames || searchResults.length > 0
+  ) && !resolvedLibrarySearch.isSearchingLibraryGames;
+  const shouldDisplaySearchResultCount = canCloseSearchResults;
+  const searchResultCountClassName = searchResults.length === 0
+    ? "homeSearchResultCount homeSearchResultCountEmpty"
+    : "homeSearchResultCount";
 
   return (
     <PageLayout
@@ -71,6 +90,95 @@ function LibraryHomeView({
     >
       {isLoadingEntities ? <ProgressBar label="Chargement de la Bibliotheque" /> : null}
       {entitiesError ? <p className="error">{entitiesError}</p> : null}
+
+      <section
+        className={`homeSearchSection ${canCloseSearchResults ? "homeSearchSectionClosable" : ""}`}
+        aria-label="Recherche de jeux Bibliotheque"
+      >
+        {canCloseSearchResults ? (
+          <button
+            className="closeSearchButton"
+            type="button"
+            aria-label="Fermer les resultats de recherche"
+            onClick={resolvedLibrarySearch.closeLibrarySearch}
+          >
+            x
+          </button>
+        ) : null}
+        <form
+          className={`homeSearchForm ${shouldDisplaySearchResultCount ? "homeSearchFormWithCount" : ""}`}
+          onSubmit={resolvedLibrarySearch.searchLibraryGamesByName}
+        >
+          <div>
+            <input
+              id="library-home-search"
+              type="search"
+              value={resolvedLibrarySearch.librarySearchQuery}
+              onChange={(event) => resolvedLibrarySearch.setLibrarySearchQuery(event.target.value)}
+              placeholder="Rechercher un jeu"
+              aria-label="Rechercher un jeu dans la Bibliotheque"
+            />
+            {shouldDisplaySearchResultCount ? (
+              <span className={searchResultCountClassName}>
+                {searchResults.length} resultats
+              </span>
+            ) : null}
+            <button
+              className="homeSearchSubmitButton"
+              type="submit"
+              disabled={resolvedLibrarySearch.isSearchingLibraryGames}
+              aria-label="Lancer la recherche"
+              title="Rechercher"
+            >
+              <svg aria-hidden="true" className="homeSearchSubmitIcon" viewBox="0 0 24 24">
+                <path d="M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Zm0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm5.2 9.3 4 4-1.4 1.4-4-4 1.4-1.4Z" />
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        {resolvedLibrarySearch.isSearchingLibraryGames ? <ProgressBar label="Recherche en cours" /> : null}
+        {resolvedLibrarySearch.librarySearchError ? (
+          <p className="error">{resolvedLibrarySearch.librarySearchError}</p>
+        ) : null}
+
+        {searchResults.length > 0 ? (
+          <div className="searchResults">
+            {searchResults.map((game, index) => (
+              <article
+                className="searchResultCard"
+                key={`${game.id || game.name}-${game.platform}-${index}`}
+              >
+                <div>
+                  <span>{game.platform || "Plateforme inconnue"}</span>
+                  <h3>{game.name}</h3>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Developpeur</dt>
+                    <dd>{formatCellValue("Studio", game.developer)}</dd>
+                  </div>
+                  <div>
+                    <dt>Sortie</dt>
+                    <dd>{formatCellValue("Date", game.release_date)}</dd>
+                  </div>
+                  <div>
+                    <dt>Editeur</dt>
+                    <dd>{formatCellValue("Studio", game.editor)}</dd>
+                  </div>
+                  <div>
+                    <dt>Statut</dt>
+                    <dd>{formatCellValue("Statut", game.status)}</dd>
+                  </div>
+                </dl>
+                <button type="button" onClick={onOpenLibraryGames}>
+                  Voir les jeux
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       <section className="platformSection libraryEntitySection">
         <GridComponent className="libraryEntityGrid">

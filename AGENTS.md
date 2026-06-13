@@ -48,6 +48,11 @@
 - Run and validate tests after each code modification.
 - Rebuild Docker images when changes impact runtime behavior.
 
+## Local Tooling Constraints
+
+- The integrated browser `iab` is not available in this workspace. Do not try to use it for visual validation unless the user explicitly says it has been restored.
+- When visual validation would normally require the integrated browser, report the limitation and rely on available build, Docker, and local command validations.
+
 ## Frontend Assets
 
 - When changing a public frontend asset without changing its filename or path, update every application reference with a new cache-busting version parameter.

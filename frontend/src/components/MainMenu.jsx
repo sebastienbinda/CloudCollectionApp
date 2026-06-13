@@ -14,6 +14,69 @@
  */
 import { useEffect, useRef, useState } from "react";
 
+const MENU_ICON_PATHS = {
+  about: (
+    <>
+      <path d="M12 17h.01" />
+      <path d="M12 13a3 3 0 1 0-3-3" />
+      <path d="M4 19.5a8 8 0 1 1 16 0" />
+    </>
+  ),
+  library: (
+    <>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5Z" />
+      <path d="M4 5.5v15" />
+      <path d="M8 7h8" />
+      <path d="M8 10h6" />
+    </>
+  ),
+  configuration: (
+    <>
+      <path d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" />
+      <path d="M19.4 15a8 8 0 0 0 .1-2l2-1.2-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15.2 6h-4l-.3 2.3a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4 2 1.2a8 8 0 0 0 .1 2l-2 1.2 2 3.4 2.3-.9a7.6 7.6 0 0 0 1.7 1l.3 2.3h4l.3-2.3a7.6 7.6 0 0 0 1.7-1l2.3.9 2-3.4-2.2-1.2Z" />
+    </>
+  ),
+  wishlist: (
+    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+  ),
+  collection: (
+    <>
+      <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M8 11h3" />
+      <path d="M13 11h3" />
+      <path d="M8 15h8" />
+    </>
+  ),
+  login: (
+    <>
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+      <path d="M21 4v16" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M14 17l5-5-5-5" />
+      <path d="M19 12H7" />
+      <path d="M5 4v16" />
+    </>
+  ),
+  more: (
+    <>
+      <path d="M5 12h.01" />
+      <path d="M12 12h.01" />
+      <path d="M19 12h.01" />
+    </>
+  ),
+};
+
+const renderMenuIcon = (iconName) => (
+  <svg className="mainNavigationIconGraphic" aria-hidden="true" viewBox="0 0 24 24">
+    {MENU_ICON_PATHS[iconName] || MENU_ICON_PATHS.more}
+  </svg>
+);
+
 /**
  * Affiche le menu principal de navigation applicative.
  *
@@ -106,96 +169,132 @@ function MainMenu({
   };
 
   const normalizedProfile = String(profile || "").trim().toUpperCase();
+  const canOpenConfiguration = isAuthenticated && typeof onOpenConfiguration === "function";
   const canOpenWishlist =
     isAuthenticated && canUseCollectionViews && typeof onOpenWishlist === "function";
   const canOpenHome = isAuthenticated && canUseCollectionViews && typeof onOpenHome === "function";
+  const navigationItems = [
+    {
+      key: "about",
+      label: "A propos",
+      shortLabel: "A propos",
+      icon: "about",
+      disabled: false,
+      action: onOpenAbout,
+    },
+    {
+      key: "library",
+      label: "Bibliotheque",
+      shortLabel: "Biblio",
+      icon: "library",
+      disabled: typeof onOpenLibrary !== "function",
+      action: onOpenLibrary,
+    },
+    {
+      key: "configuration",
+      label: "Configuration",
+      shortLabel: "Config",
+      icon: "configuration",
+      disabled: !canOpenConfiguration,
+      action: onOpenConfiguration,
+    },
+    {
+      key: "wishlist",
+      label: "Liste de souhaits",
+      shortLabel: "Souhaits",
+      icon: "wishlist",
+      disabled: !canOpenWishlist,
+      action: onOpenWishlist,
+    },
+    {
+      key: "collection",
+      label: "Ma collection",
+      shortLabel: "Collection",
+      icon: "collection",
+      disabled: !canOpenHome,
+      action: onOpenHome,
+    },
+  ];
+  const sessionItem = isAuthenticated
+    ? {
+        key: "logout",
+        label: "Deconnexion",
+        shortLabel: "Deconnexion",
+        icon: "logout",
+        disabled: typeof onLogout !== "function",
+        action: onLogout,
+      }
+    : {
+        key: "login",
+        label: "Connexion",
+        shortLabel: "Connexion",
+        icon: "login",
+        disabled: typeof onOpenAuth !== "function",
+        action: onOpenAuth,
+      };
+  const mobilePrimaryItems = [
+    navigationItems.find((item) => item.key === "library"),
+    isAuthenticated ? navigationItems.find((item) => item.key === "collection") : sessionItem,
+    navigationItems.find((item) => item.key === "wishlist"),
+  ].filter(Boolean);
+  const mobileSecondaryItems = [
+    navigationItems.find((item) => item.key === "about"),
+    navigationItems.find((item) => item.key === "configuration"),
+    isAuthenticated ? sessionItem : null,
+  ].filter(Boolean);
+
+  const renderNavigationButton = (item, className = "mainNavigationItem") => (
+    <button
+      className={className}
+      type="button"
+      onClick={() => runMenuAction(item.action)}
+      disabled={item.disabled}
+      key={item.key}
+    >
+      <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon(item.icon)}</span>
+      <span className="mainNavigationLabel">{item.label}</span>
+      <span className="mainNavigationShortLabel">{item.shortLabel}</span>
+    </button>
+  );
 
   return (
-    <div className="pageHeaderTopActions">
-      <div
-        className={`pageHeaderOptionsMenu ${isOpen ? "isOpen" : ""}`}
-        ref={menuRef}
-        onPointerEnter={keepMenuOpen}
-        onPointerLeave={closeMenuOnMouseLeave}
-      >
-        <button
-          aria-expanded={isOpen}
-          aria-haspopup="true"
-          aria-label="Ouvrir le menu des options"
-          className="pageHeaderOptionsTrigger"
-          type="button"
-          onClick={toggleMenu}
+    <div className="appNavigationBar">
+      <nav className="desktopNavigation" aria-label="Navigation principale">
+        {navigationItems.map((item) => renderNavigationButton(item))}
+      </nav>
+      <nav className="mobileDockNavigation" aria-label="Navigation mobile principale">
+        {mobilePrimaryItems.map((item) => renderNavigationButton(item, "mobileDockItem"))}
+        <div
+          className={`pageHeaderOptionsMenu mobileDockMore ${isOpen ? "isOpen" : ""}`}
+          ref={menuRef}
+          onPointerEnter={keepMenuOpen}
+          onPointerLeave={closeMenuOnMouseLeave}
         >
-          <svg aria-hidden="true" className="pageHeaderOptionsIcon" viewBox="0 0 24 24">
-            <path d="M4 7h16v2H4V7Zm0 4h16v2H4v-2Zm0 4h16v2H4v-2Z" />
-          </svg>
-          <span>Menu</span>
-        </button>
-        <div className="pageHeaderActions" hidden={!isOpen}>
           <button
-            className="secondaryButton"
+            aria-expanded={isOpen}
+            aria-haspopup="true"
+            aria-label="Ouvrir les autres actions"
+            className="mobileDockItem mobileDockMoreTrigger"
             type="button"
-            onClick={() => runMenuAction(onOpenAbout)}
+            onClick={toggleMenu}
           >
-            A propos
+            <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon("more")}</span>
+            <span className="mainNavigationLabel">Plus</span>
+            <span className="mainNavigationShortLabel">Plus</span>
           </button>
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(onOpenLibrary)}
-          >
-            Bibliotheque
-          </button>
-          {isAuthenticated ? (
-            <button
-              className="secondaryButton"
-              type="button"
-              onClick={() => runMenuAction(onOpenConfiguration)}
-            >
-              Configuration
-            </button>
-          ) : null}
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(onOpenWishlist)}
-            disabled={!canOpenWishlist}
-          >
-            Liste de souhaits
-          </button>
-          <button
-            className="secondaryButton"
-            type="button"
-            onClick={() => runMenuAction(onOpenHome)}
-            disabled={!canOpenHome}
-          >
-            Ma collection
-          </button>
-          {!isAuthenticated ? (
-            <button
-              className="secondaryButton"
-              type="button"
-              onClick={() => runMenuAction(onOpenAuth)}
-            >
-              Connexion
-            </button>
-          ) : null}
-          {isAuthenticated ? (
-            <button
-              className="secondaryButton"
-              type="button"
-              onClick={() => runMenuAction(onLogout)}
-            >
-              Deconnexion
-            </button>
-          ) : null}
+          <div className="pageHeaderActions" hidden={!isOpen}>
+            {mobileSecondaryItems.map((item) => renderNavigationButton(item, "mobileNavigationItem"))}
+          </div>
         </div>
+      </nav>
+      <div className="desktopSessionActions">
+        {isAuthenticated ? (
+          <p className={`pageHeaderConnectedUser pageHeaderConnectedUser${normalizedProfile}`}>
+            Utilisateur connecte : {username || "utilisateur"}
+          </p>
+        ) : null}
+        {renderNavigationButton(sessionItem, "mainNavigationItem sessionNavigationItem")}
       </div>
-      {isAuthenticated ? (
-        <p className={`pageHeaderConnectedUser pageHeaderConnectedUser${normalizedProfile}`}>
-          Utilisateur connecte : {username || "utilisateur"}
-        </p>
-      ) : null}
     </div>
   );
 }

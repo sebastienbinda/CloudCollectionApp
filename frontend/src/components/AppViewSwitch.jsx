@@ -304,6 +304,7 @@ class AppViewSwitch {
         entities={props.libraryEntities.entities}
         entitiesError={props.libraryEntities.entitiesError}
         isLoadingEntities={props.libraryEntities.isLoadingEntities}
+        librarySearch={props.libraryHomeSearch}
         onOpenLibraryPlatforms={props.openLibraryPlatforms}
         onOpenLibraryStudios={props.openLibraryStudios}
         onOpenLibraryGames={props.openLibraryGames}

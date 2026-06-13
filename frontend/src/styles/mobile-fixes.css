@@ -19,10 +19,13 @@
 }
 
 @media (max-width: 620px) {
+  body {
+    padding-bottom: 6.35rem;
+  }
+
   .pageHeader {
     min-height: 0;
     padding: 0.55rem 0.75rem;
-    padding-top: 2.75rem;
   }
 
   .projectIcon {
@@ -33,6 +36,29 @@
   .pageHeader .eyebrow,
   .pageHeaderDateSummary {
     display: none;
+  }
+
+  .aboutContent {
+    gap: 0.55rem;
+  }
+
+  .aboutIntro,
+  .aboutFeatureGrid article {
+    min-height: 0;
+    padding: 0.65rem;
+  }
+
+  .aboutIntro h2,
+  .aboutFeatureGrid h3 {
+    font-size: 0.94rem;
+    line-height: 1.1;
+    margin-bottom: 0.32rem;
+  }
+
+  .aboutIntro p,
+  .aboutFeatureGrid p {
+    font-size: 0.78rem;
+    line-height: 1.35;
   }
 
   .homeSearchForm {

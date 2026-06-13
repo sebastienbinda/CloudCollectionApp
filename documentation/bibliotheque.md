@@ -29,13 +29,25 @@ The public frontend routes are:
 
 | Route | View | Purpose |
 | --- | --- | --- |
-| `/bibliotheque` | `LibraryHomeView` | Shows global counters for platforms, studios and games. |
+| `/bibliotheque` | `LibraryHomeView` | Shows global counters and a public global game search. |
 | `/bibliotheque/plateformes` | `LibraryEntityListView` | Lists reference platforms. |
 | `/bibliotheque/studios` | `LibraryEntityListView` | Lists reference studios. |
 | `/bibliotheque/jeux` | `LibraryEntityListView` | Lists reference games. |
 
 These routes must remain accessible to unauthenticated visitors. They are also
 available from the main menu through the `Bibliotheque` entry.
+
+The `/bibliotheque` page includes a game search field using the same interaction
+pattern as the collection search UI: a search input, result count, close action
+when results are visible, loading state and compact result cards. This search
+must query the global game reference through `GET /api/library/games` with the
+`name` filter. It must not call connected-user collection endpoints and must not
+send authentication headers.
+
+Search result cards may display only public reference fields returned by the
+Library API, such as game name, platform, release date, developer, editor and
+status. They must not display purchase price, purchase date, user note,
+wishlist state, uploaded file metadata or any user-private collection value.
 
 ## Backend Endpoints
 

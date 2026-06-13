@@ -22,6 +22,7 @@ import useWishlistPage from "../games/useWishlistPage";
 import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
+import useLibraryHomeSearch from "../library/useLibraryHomeSearch";
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
@@ -98,6 +99,9 @@ function useCloudCollectionViewModel() {
     gamesReloadKey: refresh.gamesReloadKey,
   });
   const libraryEntities = useLibraryEntities({
+    enabled: navigation.currentView === "library",
+  });
+  const libraryHomeSearch = useLibraryHomeSearch({
     enabled: navigation.currentView === "library",
   });
   const libraryPlatforms = useLibraryPlatforms({
@@ -212,6 +216,7 @@ function useCloudCollectionViewModel() {
       submitNewGame: addGamePage.submitNewGame,
       updateGameFormValue: addGamePage.updateGameFormValue,
       libraryEntities,
+      libraryHomeSearch,
       libraryPlatforms,
       libraryStudios,
       libraryGames,

@@ -55,8 +55,9 @@ Use the following domain folders for new or modified hooks:
   into `viewProps` and `authModalProps`.
 - `frontend/src/components/AppViewSwitch.jsx` maps `currentView` to page
   components.
-- `frontend/src/components/PageLayout.jsx` owns the shared page shell, mounts
-  `MainMenu` in the page header and renders the common footer.
+- `frontend/src/components/PageLayout.jsx` owns the shared page shell, renders
+  the page header, mounts `MainMenu` as a shared navigation element outside the
+  header, and renders the common footer.
 
 ## Responsibilities
 
@@ -134,10 +135,14 @@ Use the following domain folders for new or modified hooks:
 
 ### `hooks/library`
 
-- Own public Library counters and entity list loading.
+- Own public Library counters, Library home game search and entity list
+  loading.
 - Own Library search input state, applied search criteria, pagination state and
   backend sort state.
 - Keep `/api/library/*` calls in `frontend/src/services/LibraryApi.js`.
+- Keep public Library home game search in a dedicated library hook; it must
+  query global reference games through `LibraryApi`, not connected-user
+  collection endpoints.
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
