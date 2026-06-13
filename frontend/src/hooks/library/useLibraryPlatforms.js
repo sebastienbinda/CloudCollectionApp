@@ -25,6 +25,7 @@ const PLATFORM_CONFIGURATION = {
     status: "Statut",
     total_games: "Jeux",
   },
+  mobileVisibleColumns: ["name", "total_games"],
   sortableColumns: ["name", "release_date", "manufacturer"],
   defaultSortColumn: "name",
   errorMessage: "Impossible de charger les plateformes Bibliotheque.",
@@ -40,6 +41,7 @@ const PLATFORM_CONFIGURATION = {
 function useLibraryPlatforms(options = {}) {
   return useLibraryEntityList({
     ...PLATFORM_CONFIGURATION,
+    autoSearchEnabled: true,
     enabled: options.enabled,
   });
 }

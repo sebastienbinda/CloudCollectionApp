@@ -134,6 +134,10 @@
 }
 
 .homeSearchForm {
+  padding-right: 0;
+}
+
+.homeSearchSectionClosable .homeSearchForm {
   padding-right: 2.4rem;
 }
 
@@ -146,6 +150,34 @@
 .homeSearchForm input {
   min-height: 2.25rem;
   padding-right: 2.35rem;
+}
+
+.homeSearchFormWithCount input {
+  padding-right: 7.8rem;
+}
+
+.homeSearchResultCount {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  color: #64748b;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 1.55rem;
+  padding: 0 0.45rem;
+  position: absolute;
+  right: 2.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.homeSearchResultCountEmpty {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
 }
 
 .homeSearchSubmitButton {
@@ -230,15 +262,15 @@
   display: flex;
   gap: 1.5rem;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding: 4.25rem 2rem 2rem;
+  margin-bottom: 1rem;
+  padding: 3.1rem 1.5rem 1.35rem;
   position: relative;
 }
 
 .pageHeader h1 {
-  font-size: clamp(2rem, 5vw, 3.8rem);
+  font-size: clamp(1.55rem, 3.6vw, 2.75rem);
   line-height: 1;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.3rem;
 }
 
 .pageHeaderTopActions {
@@ -389,10 +421,10 @@
   color: #334155;
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 700;
   gap: 0.35rem 0.85rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.35rem;
 }
 
 .pageHeaderDateSeparator {
@@ -401,10 +433,10 @@
 
 .eyebrow {
   color: #0f766e;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.4rem;
   text-transform: uppercase;
 }
 
@@ -416,7 +448,7 @@
 
 .statsGrid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .statCard,
@@ -428,22 +460,33 @@
 }
 
 .statCard {
-  min-height: 7rem;
-  padding: 1.1rem;
+  align-items: center;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 4.6rem;
+  padding: 0.7rem;
+  text-align: center;
 }
 
 .statCard span,
 .sectionHeader span,
 .platformCard dt {
   color: #64748b;
-  font-size: 0.85rem;
+  font-size: 0.76rem;
 }
 
 .statCard strong {
   display: block;
-  font-size: 2rem;
-  line-height: 1.15;
-  margin-top: 0.7rem;
+  font-size: 1.35rem;
+  line-height: 1.05;
+  margin-top: 0.35rem;
+}
+
+.statCard strong {
+  color: #2563eb;
 }
 
 .platformSection {

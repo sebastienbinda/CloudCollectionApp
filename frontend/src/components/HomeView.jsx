@@ -43,6 +43,13 @@ function HomeView({
     }
     return top;
   }, null);
+  const canCloseSearchResults = (hasSearchedGames || homeSearchResults.length > 0)
+    && !isSearchingGames;
+  const shouldDisplaySearchResultCount = canCloseSearchResults;
+  const searchResultCountClassName = homeSearchResults.length === 0
+    ? "homeSearchResultCount homeSearchResultCountEmpty"
+    : "homeSearchResultCount";
+
   return (
     <PageLayout
       eyebrow="Collection personnelle"
@@ -78,8 +85,11 @@ function HomeView({
 
       {!isLoadingHome && homeStats ? (
         <>
-          <section className="homeSearchSection" aria-label="Recherche de jeux">
-            {(hasSearchedGames || homeSearchResults.length > 0) && !isSearchingGames ? (
+          <section
+            className={`homeSearchSection ${canCloseSearchResults ? "homeSearchSectionClosable" : ""}`}
+            aria-label="Recherche de jeux"
+          >
+            {canCloseSearchResults ? (
               <button
                 className="closeSearchButton"
                 type="button"
@@ -89,7 +99,10 @@ function HomeView({
                 x
               </button>
             ) : null}
-            <form className="homeSearchForm" onSubmit={onSearchSubmit}>
+            <form
+              className={`homeSearchForm ${shouldDisplaySearchResultCount ? "homeSearchFormWithCount" : ""}`}
+              onSubmit={onSearchSubmit}
+            >
               <div>
                 <input
                   id="home-search"
@@ -99,6 +112,11 @@ function HomeView({
                   placeholder="Rechercher un jeu"
                   aria-label="Rechercher un jeu"
                 />
+                {shouldDisplaySearchResultCount ? (
+                  <span className={searchResultCountClassName}>
+                    {homeSearchResults.length} resultats
+                  </span>
+                ) : null}
                 <button
                   className="homeSearchSubmitButton"
                   type="submit"
@@ -115,9 +133,6 @@ function HomeView({
 
             {isSearchingGames ? <ProgressBar label="Recherche en cours" /> : null}
             {homeSearchError ? <p className="error">{homeSearchError}</p> : null}
-            {hasSearchedGames && !isSearchingGames && homeSearchResults.length === 0 ? (
-              <p>Aucun jeu trouve pour cette recherche.</p>
-            ) : null}
 
             {homeSearchResults.length > 0 ? (
               <div className="searchResults">
