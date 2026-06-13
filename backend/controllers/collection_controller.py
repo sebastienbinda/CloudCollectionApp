@@ -82,6 +82,12 @@ class CollectionController:
             methods=["GET"],
         )
         flask_app.add_url_rule(
+            "/collections/videogames/games/<int:game_id>",
+            endpoint="get_collection_video_game",
+            view_func=protected_view(self.get_video_game),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
             "/collections/videogames/download",
             endpoint="download_collection_video_games_ods",
             view_func=protected_view(self.download_video_games_ods),
@@ -169,6 +175,30 @@ class CollectionController:
         except Exception:
             current_app.logger.exception("Erreur pendant la lecture des jeux collection.")
             return jsonify({"error": "Unable to read collection games."}), 500
+
+    def get_video_game(self, game_id: int):
+        """Retourne le detail d'un jeu de la collection utilisateur.
+
+        Args:
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            flask.Response | tuple[flask.Response, int]: Jeu JSON ou erreur JSON.
+        """
+
+        try:
+            game = self._create_collection_query_service().get_game(
+                self._current_user_id(),
+                game_id,
+            )
+            if game is None:
+                return jsonify({"error": "Collection game not found."}), 404
+            return jsonify({"game": game})
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant la lecture du jeu collection.")
+            return jsonify({"error": "Unable to read collection game."}), 500
 
     def download_video_games_ods(self):
         """Telecharge le fichier ODS brut de l'utilisateur connecte.

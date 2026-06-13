@@ -19,6 +19,7 @@ import "./styles/library.css";
 import "./styles/admin.css";
 import "./styles/editorial-views.css";
 import "./styles/collection-onboarding.css";
+import "./styles/game-detail.css";
 import "./styles/mobile-fixes.css";
 
 /**

@@ -207,6 +207,42 @@ class SqlAlchemyGameRepository:
         ).mappings()
         return [dict(row) for row in rows]
 
+    def find_public_library_game(
+        self,
+        connection: Connection,
+        game_id: int,
+    ) -> dict[str, object] | None:
+        """Recherche un jeu global par identifiant.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, object] | None: Jeu public trouve ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        row = connection.execute(
+            text(
+                "SELECT "
+                "game.id, game.name, game.release_date, game.description, "
+                "developer_studio.name AS developer, editor_studio.name AS editor, "
+                "platform.name AS platform "
+                f'FROM "{self.schema_name}".t_game game '
+                f'LEFT JOIN "{self.schema_name}".t_studio developer_studio '
+                "ON developer_studio.id = game.developer "
+                f'LEFT JOIN "{self.schema_name}".t_studio editor_studio '
+                "ON editor_studio.id = game.editor "
+                f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
+                "WHERE game.id = :game_id"
+            ),
+            {"game_id": game_id},
+        ).mappings().first()
+        return None if row is None else dict(row)
+
     def _build_library_games_where_clause(
         self,
         criteria: LibraryQueryCriteria,

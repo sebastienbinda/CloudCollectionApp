@@ -21,7 +21,7 @@ from services import DatabaseConfiguration, LibraryQueryParser, LibraryService
 class GameController:
     """Enregistre les routes HTTP liees aux jeux globaux."""
 
-    PUBLIC_ENDPOINTS = frozenset({"list_library_games"})
+    PUBLIC_ENDPOINTS = frozenset({"get_library_game", "list_library_games"})
 
     def __init__(self, library_service_factory=None, library_query_parser=None):
         """Initialise le controleur des jeux.
@@ -55,6 +55,12 @@ class GameController:
             view_func=self._as_view(self.list_library_games),
             methods=["GET"],
         )
+        flask_app.add_url_rule(
+            "/api/library/games/<int:game_id>",
+            endpoint="get_library_game",
+            view_func=self._as_view(self.get_library_game),
+            methods=["GET"],
+        )
 
     def get_public_endpoint_names(self) -> set[str]:
         """Retourne les endpoints publics portes par le controleur.
@@ -85,6 +91,26 @@ class GameController:
             return jsonify({"error": str(exc)}), 503
         except Exception as exc:
             return jsonify({"error": f"Unable to read library games: {exc}"}), 500
+
+    def get_library_game(self, game_id: int):
+        """Retourne le detail public d'un jeu de la Bibliotheque.
+
+        Args:
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            flask.Response | tuple[flask.Response, int]: Jeu JSON ou erreur JSON.
+        """
+
+        try:
+            game = self._get_library_service().get_game(game_id)
+            if game is None:
+                return jsonify({"error": "Game not found."}), 404
+            return jsonify({"game": game})
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 503
+        except Exception as exc:
+            return jsonify({"error": f"Unable to read library game: {exc}"}), 500
 
     @property
     def library_service_factory(self):

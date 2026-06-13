@@ -33,6 +33,7 @@ The public frontend routes are:
 | `/bibliotheque/plateformes` | `LibraryEntityListView` | Lists reference platforms. |
 | `/bibliotheque/studios` | `LibraryEntityListView` | Lists reference studios. |
 | `/bibliotheque/jeux` | `LibraryEntityListView` | Lists reference games. |
+| `/bibliotheque/jeux/<game_id>` | `GameDetailView` | Shows one public reference game. |
 
 These routes must remain accessible to unauthenticated visitors. They are also
 available from the main menu through the `Bibliotheque` entry.
@@ -59,6 +60,7 @@ The public backend endpoints are:
 | `GET` | `/api/library/platforms` | Lists global platforms. |
 | `GET` | `/api/library/studios` | Lists global studios. |
 | `GET` | `/api/library/games` | Lists global games. |
+| `GET` | `/api/library/games/<game_id>` | Returns one global game. |
 
 List endpoints accept:
 

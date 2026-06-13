@@ -330,6 +330,23 @@ class LibraryService:
             "games": [self._game_payload(row) for row in rows],
         }
 
+    def get_game(self, game_id: int) -> dict[str, Any] | None:
+        """Retourne le detail public d'un jeu global.
+
+        Args:
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, Any] | None: Jeu serialisable ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une requete.
+        """
+
+        with self.engine.connect() as connection:
+            row = self.game_repository.find_public_library_game(connection, game_id)
+        return None if row is None else self._game_payload(row)
+
     def _page_payload(
         self,
         criteria: LibraryQueryCriteria,

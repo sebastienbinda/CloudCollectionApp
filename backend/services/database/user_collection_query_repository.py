@@ -294,6 +294,43 @@ class SqlAlchemyUserCollectionQueryRepository:
         ).mappings()
         return [dict(row) for row in rows]
 
+    def find_game(
+        self,
+        connection: Connection,
+        user_id: int,
+        game_id: int,
+    ) -> dict[str, Any] | None:
+        """Recherche un jeu rattache a la collection de l'utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant de l'utilisateur connecte.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, Any] | None: Jeu trouve ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        row = connection.execute(
+            text(
+                "SELECT "
+                "game.id, game.name, game.release_date::text AS release_date, "
+                "platform.id AS platform_id, platform.name AS platform_name, "
+                "studio.id AS studio_id, studio.name AS studio_name, "
+                "user_collection.wishlist "
+                f'FROM "{self.schema_name}".t_user_collection user_collection '
+                f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
+                f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
+                f'LEFT JOIN "{self.schema_name}".t_studio studio ON studio.id = game.developer '
+                "WHERE user_collection.user_id = :user_id AND game.id = :game_id"
+            ),
+            {"user_id": user_id, "game_id": game_id},
+        ).mappings().first()
+        return None if row is None else dict(row)
+
     def _build_user_collection_where_clause(
         self,
         parameters: dict[str, Any],

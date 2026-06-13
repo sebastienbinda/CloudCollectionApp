@@ -134,6 +134,26 @@ class VideoGamesApi {
   }
 
   /**
+   * Charge le detail d'un jeu de la collection connectee.
+   *
+   * @param {string|number} gameId - Identifiant du jeu recherche.
+   * @returns {Promise<Object>} Objet contenant `game`.
+   */
+  static async fetchGame(gameId) {
+    const data = await this.fetchJson(
+      `/collections/videogames/games/${encodeURIComponent(gameId)}`,
+      "Impossible de recuperer le jeu video.",
+      {
+        headers: AuthApi.getAuthorizationHeaders(),
+      }
+    );
+    return {
+      ...data,
+      game: this.normalizeCollectionGames(data.game ? [data.game] : [])[0] || null,
+    };
+  }
+
+  /**
    * Normalise les criteres de recherche de jeux.
    *
    * @param {Object|string|number} criteria - Criteres de recherche ou identifiant plateforme.

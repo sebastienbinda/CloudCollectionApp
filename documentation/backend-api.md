@@ -129,6 +129,7 @@ user data, imported collection file paths or `t_user_collection` associations.
 | `GET` | `/api/library/platforms` | Lists global reference platforms. |
 | `GET` | `/api/library/studios` | Lists global reference studios. |
 | `GET` | `/api/library/games` | Lists global reference games. |
+| `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
 
 List endpoints support these query parameters:
 
@@ -234,6 +235,22 @@ Invalid page, size or sort values fall back to the default page, default size or
 }
 ```
 
+### Library Game Detail Response
+
+```json
+{
+  "game": {
+    "id": 1,
+    "name": "The Legend of Zelda",
+    "release_date": "1986-02-21",
+    "developer": "Nintendo",
+    "editor": "Nintendo",
+    "status": "",
+    "platform": "NES"
+  }
+}
+```
+
 Library errors use:
 
 - `503` when database configuration is missing or invalid;
@@ -302,6 +319,7 @@ All routes in this section require a Bearer token with at least profile `USER`.
 | `GET` | `/collections/videogames` | Returns connected-user collection statistics from SQL. |
 | `GET` | `/collections/videogames/platforms/search` | Lists platforms owned by the connected user from SQL. |
 | `GET` | `/collections/videogames/games/search` | Lists connected-user games from SQL. |
+| `GET` | `/collections/videogames/games/<game_id>` | Returns one game only when attached to the connected user. |
 | `GET` | `/collections/videogames/download` | Downloads the connected user's imported ODS file as raw bytes. |
 | `POST` | `/collections/videogames/games` | Reserved for a future add action and returns `501`. |
 | `PUT` | `/collections/videogames/games` | Reserved for a future update action and returns `501`. |
@@ -485,6 +503,30 @@ Empty response:
     "totalPages": 0
   },
   "games": []
+}
+```
+
+### Collection Game Detail Response
+
+`GET /collections/videogames/games/<game_id>` returns `404` when the game is not
+attached to the connected user's `t_user_collection` rows.
+
+```json
+{
+  "game": {
+    "id": 1,
+    "name": "The Legend of Zelda",
+    "platform_name": "NES",
+    "platform_id": 1,
+    "release_date": "1986-02-21",
+    "studio_name": "Nintendo",
+    "studio_id": 10,
+    "version": "",
+    "buy_date": "",
+    "buy_location": "",
+    "grade": "",
+    "wishlist": false
+  }
 }
 ```
 

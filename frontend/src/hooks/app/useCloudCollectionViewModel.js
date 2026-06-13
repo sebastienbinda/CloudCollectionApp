@@ -18,6 +18,7 @@ import useUserCollectionReinitialization from "../collection/useUserCollectionRe
 import useUserCollectionOnboarding from "../collection/useUserCollectionOnboarding";
 import useAddGamePage from "../games/useAddGamePage";
 import useGameCollectionPage from "../games/useGameCollectionPage";
+import useGameDetailPage from "../games/useGameDetailPage";
 import useWishlistPage from "../games/useWishlistPage";
 import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
@@ -98,6 +99,12 @@ function useCloudCollectionViewModel() {
     hasAccessToken: canUseCollectionViews,
     gamesReloadKey: refresh.gamesReloadKey,
   });
+  const gameDetailPage = useGameDetailPage({
+    currentView: navigation.currentView,
+    gameId: navigation.selectedGameId,
+    source: navigation.selectedGameSource,
+    hasAccessToken: canUseCollectionViews,
+  });
   const libraryEntities = useLibraryEntities({
     enabled: navigation.currentView === "library",
   });
@@ -138,6 +145,9 @@ function useCloudCollectionViewModel() {
   return {
     viewProps: {
       currentView: navigation.currentView,
+      selectedGameId: navigation.selectedGameId,
+      selectedGameSource: navigation.selectedGameSource,
+      gameDetailPage,
       homeStats: homePage.homeStats,
       platforms: platformsCatalog.platforms,
       selectedPlatform: navigation.selectedPlatform,
@@ -185,6 +195,7 @@ function useCloudCollectionViewModel() {
       openLibraryPlatforms: navigation.openLibraryPlatforms,
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
+      openGameDetail: navigation.openGameDetail,
       openWishlist: navigation.openWishlist,
       openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,

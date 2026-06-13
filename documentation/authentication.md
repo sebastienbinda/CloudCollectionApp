@@ -36,7 +36,8 @@ avoid unnecessary calls, but all real protection must remain on the backend side
   - `GET /api/library/entities`, used to expose public reference entity counts.
   - `GET /api/library/platforms`, used to expose public reference platforms.
   - `GET /api/library/studios`, used to expose public reference studios.
-  - `GET /api/library/games`, used to expose public reference games.
+  - `GET /api/library/games` and `GET /api/library/games/<game_id>`, used to
+    expose public reference games.
 - CORS `OPTIONS` requests remain exempt to allow preflights.
 - Routes must be protected globally with `AuthGuard.protect_all_routes`.
 - Do not add a new public route without an explicit decision and without
@@ -116,6 +117,7 @@ profile:
 - `GET /collections/videogames`
 - `GET /collections/videogames/platforms/search`
 - `GET /collections/videogames/games/search`
+- `GET /collections/videogames/games/<game_id>`
 - `GET /collections/videogames/download`
 - `POST /collections/videogames/games`
 - `PUT /collections/videogames/games`
@@ -203,8 +205,11 @@ tests, documentation, or scripts.
   headers and must not be used for protected resources.
 - The frontend must avoid calling protected endpoints when no token is stored.
 - Public unauthenticated frontend pages are `AboutView` on `/about` and the
-  Library consultation pages under `/bibliotheque`.
+  Library consultation pages under `/bibliotheque`, including public game
+  detail pages.
 - The authenticated Ma collection page is `HomeView` on `/collection`.
+- Authenticated game detail pages under `/collection/jeux/<game_id>` must remain
+  unavailable without a non-`ADMIN` collection session.
 - The `/` route functionally redirects to `/about` without a token and to
   `/collection` with a non-`ADMIN` token.
 - With an `ADMIN` token, collection pages remain unavailable in the frontend:

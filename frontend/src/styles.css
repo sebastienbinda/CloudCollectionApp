@@ -420,9 +420,12 @@ td.gameNameColumn {
 
   th[data-column]:not([data-column="Nom du jeu"]):not([data-column="Date de sortie"]):not(.mobileVisibleColumn),
   td[data-column]:not([data-column="Nom du jeu"]):not([data-column="Date de sortie"]):not(.mobileVisibleColumn),
-  .filterCell,
-  .actionColumn {
+  .filterCell {
     display: none;
+  }
+
+  .actionColumn {
+    width: 2.9rem;
   }
 
   .gameNameColumn {

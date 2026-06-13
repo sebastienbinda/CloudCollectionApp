@@ -63,6 +63,7 @@ function PlatformDetailView({
   onSaveGame,
   onCancelEditGame,
   onDeleteGame,
+  onOpenGameDetail = () => {},
   editingGame,
 }) {
   const selectedPlatformName = selectedPlatformStats?.name
@@ -177,9 +178,20 @@ function PlatformDetailView({
           isTopRatedGame(game.Note) ? "topRatedGameRow" : ""
         }
         renderRowActions={
-          canEditGame || canDeleteGame
-            ? (game) => (
+          (game) => (
                 <div className="rowActionGroup">
+                  <button
+                    className="rowIconButton"
+                    type="button"
+                    aria-label={`Voir le detail de ${game["Nom du jeu"] || "ce jeu"}`}
+                    title="Voir le detail"
+                    onClick={() => onOpenGameDetail(game)}
+                  >
+                    <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
+                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                      <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
+                    </svg>
+                  </button>
                   {canEditGame ? (
                     <button
                       className="rowIconButton"
@@ -210,7 +222,6 @@ function PlatformDetailView({
                   ) : null}
                 </div>
               )
-            : null
         }
       />
 

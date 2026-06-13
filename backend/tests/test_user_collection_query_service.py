@@ -221,6 +221,32 @@ class FakeUserCollectionQueryRepository:
             }
         ]
 
+    def find_game(self, connection, user_id, game_id):
+        """Recherche un jeu de collection factice.
+
+        Args:
+            connection (object): Connexion recue.
+            user_id (int): Identifiant utilisateur.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict | None: Jeu factice ou absence.
+        """
+
+        self.calls.append(("find_game", connection, user_id, game_id))
+        if game_id != 11:
+            return None
+        return {
+            "id": 11,
+            "name": "Final Fantasy",
+            "platform_name": "NES",
+            "platform_id": 3,
+            "release_date": datetime(1987, 12, 18),
+            "studio_name": None,
+            "studio_id": None,
+            "wishlist": True,
+        }
+
 
 class EmptyUserCollectionQueryRepository(FakeUserCollectionQueryRepository):
     """Repository factice pour un utilisateur sans collection."""
@@ -471,6 +497,34 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
             ],
             payload["games"],
         )
+
+    def test_get_game_returns_collection_detail_payload(self):
+        """Verifie le payload detail d'un jeu de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le jeu serialise.
+        """
+
+        game = self.service.get_game(7, 11)
+
+        self.assertEqual("Final Fantasy", game["name"])
+        self.assertEqual("NES", game["platform_name"])
+        self.assertTrue(game["wishlist"])
+
+    def test_get_game_returns_none_for_unknown_collection_game(self):
+        """Verifie l'absence de jeu dans la collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence.
+        """
+
+        self.assertIsNone(self.service.get_game(7, 999))
 
     def test_parser_rejects_invalid_platform_id(self):
         """Verifie le refus explicite d'un identifiant plateforme invalide.

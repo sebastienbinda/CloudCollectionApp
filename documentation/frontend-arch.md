@@ -42,7 +42,7 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/platforms/`: platform catalog loading and platform
   selection initialization.
 - `frontend/src/hooks/games/`: platform game collection, game filtering,
-  sorting, editing and add-game form workflows.
+  sorting, editing, game detail and add-game form workflows.
 - `frontend/src/hooks/library/`: public Library counters, public entity search,
   server-side pagination and backend-driven sorting for platforms, studios and
   games.
@@ -126,6 +126,8 @@ Use the following domain folders for new or modified hooks:
 - Request `wishlist=false` for collection game lists.
 - Own wishlist game loading for `/wishlist` and request `wishlist=true`.
 - Own table filters, sorting and derived game collections.
+- Own game detail loading for `/collection/jeux/<game_id>` through protected
+  collection endpoints.
 - Request supported collection and wishlist sort orders from the backend with
   the `sort` query parameter. Do not recalculate backend list ordering in React
   for collection consultation pages.
@@ -143,6 +145,8 @@ Use the following domain folders for new or modified hooks:
 - Keep public Library home game search in a dedicated library hook; it must
   query global reference games through `LibraryApi`, not connected-user
   collection endpoints.
+- Public game detail opened from Library pages must query
+  `/api/library/games/<game_id>` through `LibraryApi`.
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.

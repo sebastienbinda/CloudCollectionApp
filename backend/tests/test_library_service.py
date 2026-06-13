@@ -262,6 +262,28 @@ class FakeGameRepository:
             }
         ]
 
+    def find_public_library_game(self, connection, game_id):
+        """Recherche un jeu factice.
+
+        Args:
+            connection (object): Connexion recue.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict | None: Jeu factice ou absence.
+        """
+
+        if game_id != 11:
+            return None
+        return {
+            "id": 11,
+            "name": "Final Fantasy",
+            "release_date": datetime(1987, 12, 18),
+            "developer": "Square",
+            "editor": None,
+            "platform": "NES",
+        }
+
 
 class LibraryServiceTest(unittest.TestCase):
     """Valide le service de consultation publique Bibliotheque."""
@@ -432,6 +454,34 @@ class LibraryServiceTest(unittest.TestCase):
             ],
             payload["games"],
         )
+
+    def test_get_game_returns_detail_payload(self):
+        """Verifie le payload detail d'un jeu public.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le jeu serialise.
+        """
+
+        game = self.service.get_game(11)
+
+        self.assertEqual("Final Fantasy", game["name"])
+        self.assertEqual("1987-12-18", game["release_date"])
+        self.assertEqual("NES", game["platform"])
+
+    def test_get_game_returns_none_for_unknown_game(self):
+        """Verifie l'absence de jeu public.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence.
+        """
+
+        self.assertIsNone(self.service.get_game(999))
 
     def test_constructor_rejects_missing_database_url_without_injected_engine(self):
         """Verifie qu'un moteur est requis sans configuration SQL.

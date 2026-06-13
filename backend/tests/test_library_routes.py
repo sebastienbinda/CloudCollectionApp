@@ -140,6 +140,38 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual("nes", criteria.normalized_platform)
         self.assertEqual("developer", criteria.sort_rules[0].column)
 
+    def test_library_game_detail_route_is_public(self):
+        """Verifie la route publique de detail d'un jeu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload public.
+        """
+
+        response = self.client.get("/api/library/games/3")
+        game = response.get_json()["game"]
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("Final Fantasy", game["name"])
+        self.assertEqual("NES", game["platform"])
+        self.assertNotIn("collection_file_path", game)
+
+    def test_library_game_detail_route_returns_404_for_unknown_game(self):
+        """Verifie l'absence de jeu public.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut 404.
+        """
+
+        response = self.client.get("/api/library/games/999")
+
+        self.assertEqual(404, response.status_code)
+
     def test_routes_route_requires_authentication(self):
         """Verifie que le catalogue reste protege.
 
@@ -169,6 +201,8 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertFalse(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/library/games", ("GET",))]["requires_auth"])
+        self.assertFalse(routes_by_key[("/api/library/games/<int:game_id>", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])
+        self.assertTrue(routes_by_key[("/collections/videogames/games/<int:game_id>", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/collections/videogames/games", ("POST",))]["requires_auth"])
         self.assertEqual(["Bearer"], routes_by_key[("/collections/videogames/games", ("POST",))]["auth_schemes"])
