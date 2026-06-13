@@ -33,6 +33,7 @@ function HomeView({
   onOpenConfiguration,
   onLogout,
   onOpenPlatform,
+  onOpenGameDetail = () => {},
   onSearchQueryChange,
   onSearchSubmit,
   onCloseSearch,
@@ -140,6 +141,15 @@ function HomeView({
                   <article
                     className="searchResultCard"
                     key={`${game.platform_id}-${game["Nom du jeu"]}-${index}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenGameDetail(game)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onOpenGameDetail(game);
+                      }
+                    }}
                   >
                     <div>
                       <span>{game.Plateforme}</span>
@@ -173,8 +183,14 @@ function HomeView({
                         <dd>{formatCellValue("Version", game.Version)}</dd>
                       </div>
                     </dl>
-                    <button type="button" onClick={() => onOpenPlatform(game.platform_id)}>
-                      Voir la plateforme
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenGameDetail(game);
+                      }}
+                    >
+                      Voir le detail
                     </button>
                   </article>
                 ))}

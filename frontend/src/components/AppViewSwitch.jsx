@@ -16,6 +16,7 @@ import AddGameView from "./AddGameView";
 import ConfigurationView from "./ConfigurationView";
 import AboutView from "./AboutView";
 import AuthView from "./AuthView";
+import GameDetailView from "./GameDetailView";
 import HomeView from "./HomeView";
 import LibraryEntityListView from "./LibraryEntityListView";
 import LibraryHomeView from "./LibraryHomeView";
@@ -105,6 +106,10 @@ class AppViewSwitch {
       return this.renderLibraryList(props, "Jeux", "Jeux du referentiel commun.", props.libraryGames);
     }
 
+    if (props.currentView === "gameDetail") {
+      return this.renderGameDetail(props);
+    }
+
     return this.renderPlatform(props);
   }
 
@@ -144,6 +149,7 @@ class AppViewSwitch {
         onSearchQueryChange={props.setHomeSearchQuery}
         onSearchSubmit={props.searchGamesByName}
         onCloseSearch={props.closeHomeSearch}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
       />
     );
   }
@@ -287,6 +293,7 @@ class AppViewSwitch {
       <WishlistView
         {...this.buildPageLayoutProps(props)}
         wishlistPage={props.wishlistPage}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
       />
     );
   }
@@ -308,6 +315,7 @@ class AppViewSwitch {
         onOpenLibraryPlatforms={props.openLibraryPlatforms}
         onOpenLibraryStudios={props.openLibraryStudios}
         onOpenLibraryGames={props.openLibraryGames}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "library")}
       />
     );
   }
@@ -328,7 +336,56 @@ class AppViewSwitch {
         title={title}
         subtitle={subtitle}
         listState={listState}
+        renderRowActions={
+          listState === props.libraryGames
+            ? (game) => this.renderGameDetailAction(
+                game,
+                () => props.openGameDetail(game, "library")
+              )
+            : null
+        }
       />
+    );
+  }
+
+  /**
+   * Rend la page de detail d'un jeu.
+   *
+   * @param {Object} props - Etat et callbacks de navigation.
+   * @returns {import("react").JSX.Element} Vue detail jeu.
+   */
+  static renderGameDetail(props) {
+    return (
+      <GameDetailView
+        {...this.buildPageLayoutProps(props)}
+        gameDetailPage={props.gameDetailPage}
+        selectedGameSource={props.selectedGameSource}
+        onBack={() => window.history.back()}
+      />
+    );
+  }
+
+  /**
+   * Rend le bouton d'acces au detail d'un jeu.
+   *
+   * @param {Object} game - Jeu cible.
+   * @param {Function} onClick - Callback d'ouverture.
+   * @returns {import("react").JSX.Element} Bouton d'action.
+   */
+  static renderGameDetailAction(game, onClick) {
+    return (
+      <button
+        className="rowIconButton"
+        type="button"
+        aria-label={`Voir le detail de ${game["Nom du jeu"] || game.name || "ce jeu"}`}
+        title="Voir le detail"
+        onClick={onClick}
+      >
+        <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
+          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+          <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
+        </svg>
+      </button>
     );
   }
 
@@ -370,6 +427,7 @@ class AppViewSwitch {
         onSaveGame={props.saveEditedGame}
         onCancelEditGame={props.cancelEditGame}
         onDeleteGame={props.deletePlatformGame}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
       />
     );
   }

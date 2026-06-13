@@ -30,7 +30,7 @@ consultation, recherche et import.
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
-- Navigation par plateforme et consultation de la collection personnelle.
+- Navigation par plateforme, detail de jeu et consultation de la collection personnelle.
 - Page Liste de souhaits pour consulter les jeux importes avec
   `wishlist=true`.
 - Recherche globale par nom de jeu.
@@ -102,7 +102,7 @@ Domaines de hooks :
 - `hooks/home/` : statistiques Ma collection et recherche globale.
 - `hooks/library/` : Bibliotheque publique, recherche, tri et pagination serveur.
 - `hooks/platforms/` : plateformes de la collection utilisateur lues depuis SQL.
-- `hooks/games/` : jeux de la collection utilisateur, tri, filtres et actions futures.
+- `hooks/games/` : jeux de la collection utilisateur, detail de jeu, tri, filtres et actions futures.
 
 Regles detaillees :
 

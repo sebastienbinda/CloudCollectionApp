@@ -36,6 +36,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
             "/collections/videogames",
             "/collections/videogames/platforms/search",
             "/collections/videogames/games/search?q=mario",
+            "/collections/videogames/games/3",
             "/collections/videogames/download",
         ]:
             self.assertEqual(403, self.client.get(path).status_code)
@@ -77,6 +78,44 @@ class CollectionRoutesTest(BaseAppRoutesTest):
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].column,
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].direction,
         ))
+
+    def test_collection_game_detail_returns_current_user_game(self):
+        """Verifie la route de detail d'un jeu de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload protege.
+        """
+
+        response = self.client.get(
+            "/collections/videogames/games/3",
+            headers=self.get_user_auth_headers(),
+        )
+        game = response.get_json()["game"]
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("Mario Kart", game["name"])
+        self.assertEqual("Switch", game["platform_name"])
+        self.assertFalse(game["wishlist"])
+
+    def test_collection_game_detail_returns_404_for_unknown_game(self):
+        """Verifie l'absence d'un jeu dans la collection de l'utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut 404.
+        """
+
+        response = self.client.get(
+            "/collections/videogames/games/999",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(404, response.status_code)
 
     def test_games_search_returns_clear_error_for_invalid_sort_column(self):
         """Verifie le message HTTP pour une colonne de tri jeux inconnue.

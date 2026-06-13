@@ -26,6 +26,10 @@ function useAppNavigation(options) {
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
     AppRouting.getPlatformIdFromUrl()
   );
+  const [selectedGameId, setSelectedGameId] = useState(() => AppRouting.getGameIdFromUrl());
+  const [selectedGameSource, setSelectedGameSource] = useState(() =>
+    AppRouting.getGameDetailSourceFromUrl()
+  );
 
   const updatePlatformUrl = (platformId) => {
     const url = new URL(window.location.href);
@@ -38,6 +42,9 @@ function useAppNavigation(options) {
 
   const openView = (view, path) => {
     options.clearDeleteGameFeedback();
+    if (view !== "gameDetail") {
+      setSelectedGameId("");
+    }
     setCurrentView(view);
     window.history.pushState({}, "", path);
   };
@@ -65,10 +72,42 @@ function useAppNavigation(options) {
     updatePlatformUrl(platformId);
   };
 
+  const openGameDetail = (game, source = "library") => {
+    const gameId = typeof game === "object" && game !== null ? game.id : game;
+    if (!gameId) {
+      return;
+    }
+    const resolvedSource = source === "collection" ? "collection" : "library";
+    if (resolvedSource === "collection" && !options.canUseCollectionViews) {
+      openView("configuration", "/configuration");
+      return;
+    }
+    options.clearDeleteGameFeedback();
+    setSelectedGameId(String(gameId));
+    setSelectedGameSource(resolvedSource);
+    setCurrentView("gameDetail");
+    const path = resolvedSource === "collection"
+      ? `/collection/jeux/${encodeURIComponent(gameId)}`
+      : `/bibliotheque/jeux/${encodeURIComponent(gameId)}`;
+    window.history.pushState({}, "", path);
+  };
+
   useEffect(() => {
     const handlePopState = () => {
       options.clearDeleteGameFeedback();
       const pathname = window.location.pathname;
+      if (/^\/bibliotheque\/jeux\/\d+$/.test(pathname)) {
+        setSelectedGameId(AppRouting.getGameIdFromUrl());
+        setSelectedGameSource("library");
+        setCurrentView("gameDetail");
+        return;
+      }
+      if (/^\/collection\/jeux\/\d+$/.test(pathname)) {
+        setSelectedGameId(AppRouting.getGameIdFromUrl());
+        setSelectedGameSource("collection");
+        setCurrentView("gameDetail");
+        return;
+      }
       const mappedView = {
         "/about": "about",
         "/auth": "auth",
@@ -85,6 +124,7 @@ function useAppNavigation(options) {
       }[pathname];
 
       if (mappedView) {
+        setSelectedGameId("");
         setCurrentView(mappedView);
         return;
       }
@@ -117,13 +157,22 @@ function useAppNavigation(options) {
 
   useEffect(() => {
     const collectionViews = ["home", "games", "wishlist", "addGame", "collectionOnboarding"];
+    if (currentView === "gameDetail" && selectedGameSource === "collection" && !options.canUseCollectionViews) {
+      const fallbackView = options.authenticatedProfile === "ADMIN" ? "configuration" : "about";
+      const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/configuration" : "/about";
+      setSelectedGameId("");
+      setSelectedGameSource("library");
+      setCurrentView(fallbackView);
+      window.history.replaceState({}, "", fallbackPath);
+      return;
+    }
     if (options.canUseCollectionViews || !collectionViews.includes(currentView)) return;
     const fallbackView = options.authenticatedProfile === "ADMIN" ? "configuration" : "about";
     const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/configuration" : "/about";
     setSelectedPlatform("");
     setCurrentView(fallbackView);
     window.history.replaceState({}, "", fallbackPath);
-  }, [currentView, options.authenticatedProfile, options.canUseCollectionViews]);
+  }, [currentView, options.authenticatedProfile, options.canUseCollectionViews, selectedGameSource]);
 
   useEffect(() => {
     if (!options.hasAccessToken || currentView !== "home" || window.location.pathname !== "/") return;
@@ -140,6 +189,8 @@ function useAppNavigation(options) {
     setCurrentView,
     selectedPlatform,
     setSelectedPlatform,
+    selectedGameId,
+    selectedGameSource,
     goHome: () => {
       if (!options.canUseCollectionViews) {
         openView("configuration", "/configuration");
@@ -171,6 +222,7 @@ function useAppNavigation(options) {
       openView("collectionOnboarding", "/collection/import");
     },
     openPlatform,
+    openGameDetail,
   };
 }
 

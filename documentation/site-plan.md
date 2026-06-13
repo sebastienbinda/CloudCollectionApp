@@ -14,6 +14,8 @@
 - `/bibliotheque/plateformes`: public paginated platform reference list.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
+- `/bibliotheque/jeux/<game_id>`: public game detail from the global
+  reference Library.
 - `/`: redirects to `/about` without a token, to `/collection` with a
   non-`ADMIN` token, and to `/configuration` with an `ADMIN` token.
 
@@ -24,6 +26,8 @@ reference database and must not depend on connected-user collection status.
 
 - `/collection`: authenticated Ma collection page for non-`ADMIN` users who
   already have a collection.
+- `/collection/jeux/<game_id>`: authenticated game detail, only for games
+  attached to the connected user's collection.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data.

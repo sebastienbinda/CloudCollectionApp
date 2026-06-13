@@ -42,6 +42,29 @@ class AppRouting {
   }
 
   /**
+   * Lit l'identifiant de jeu present dans l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.pathname`.
+   * @returns {string} Identifiant de jeu ou chaine vide.
+   */
+  static getGameIdFromUrl() {
+    const match = window.location.pathname.match(/^\/(?:bibliotheque|collection)\/jeux\/(\d+)$/);
+    return match ? match[1] : "";
+  }
+
+  /**
+   * Deduit la source de detail jeu depuis l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.pathname`.
+   * @returns {"library"|"collection"} Source de consultation.
+   */
+  static getGameDetailSourceFromUrl() {
+    return window.location.pathname.startsWith("/collection/jeux/")
+      ? "collection"
+      : "library";
+  }
+
+  /**
    * Lit la plateforme presente dans l'URL courante.
    *
    * @param {void} Aucun - Utilise `window.location.search`.
@@ -71,6 +94,9 @@ class AppRouting {
    * @returns {boolean} `true` si le chemin est public.
    */
   static isPublicPath(pathname) {
+    if (/^\/bibliotheque\/jeux\/\d+$/.test(pathname)) {
+      return true;
+    }
     return [
       "/about",
       "/auth",
@@ -85,9 +111,12 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
    */
   static getViewFromUrl() {
+    if (/^\/bibliotheque\/jeux\/\d+$/.test(window.location.pathname)) {
+      return "gameDetail";
+    }
     if (window.location.pathname === "/about") {
       return "about";
     }
@@ -126,6 +155,9 @@ class AppRouting {
     }
     if (window.location.pathname === "/collection/import") {
       return "collectionOnboarding";
+    }
+    if (/^\/collection\/jeux\/\d+$/.test(window.location.pathname)) {
+      return "gameDetail";
     }
     if (AppRouting.getPlatformIdFromUrl()) {
       return "games";

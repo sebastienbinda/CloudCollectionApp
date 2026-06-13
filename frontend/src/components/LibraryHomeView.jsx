@@ -43,6 +43,7 @@ function LibraryHomeView({
   onOpenLibraryPlatforms,
   onOpenLibraryStudios,
   onOpenLibraryGames,
+  onOpenGameDetail = () => {},
   onOpenConfiguration,
   onLogout,
 }) {
@@ -148,6 +149,15 @@ function LibraryHomeView({
               <article
                 className="searchResultCard"
                 key={`${game.id || game.name}-${game.platform}-${index}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenGameDetail(game)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpenGameDetail(game);
+                  }
+                }}
               >
                 <div>
                   <span>{game.platform || "Plateforme inconnue"}</span>
@@ -171,8 +181,14 @@ function LibraryHomeView({
                     <dd>{formatCellValue("Statut", game.status)}</dd>
                   </div>
                 </dl>
-                <button type="button" onClick={onOpenLibraryGames}>
-                  Voir les jeux
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenGameDetail(game);
+                  }}
+                >
+                  Voir le detail
                 </button>
               </article>
             ))}

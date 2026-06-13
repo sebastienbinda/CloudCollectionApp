@@ -168,6 +168,26 @@ class UserCollectionQueryRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def find_game(
+        self,
+        connection: Connection,
+        user_id: int,
+        game_id: int,
+    ) -> dict[str, Any] | None:
+        """Recherche un jeu rattache a l'utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, Any] | None: Jeu trouve ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
 
 class UserCollectionQueryService:
     """Orchestre la consultation SQL de la collection utilisateur."""
@@ -308,6 +328,24 @@ class UserCollectionQueryService:
             "page": self._page_payload(criteria, total_elements),
             "games": [self._game_payload(row) for row in rows],
         }
+
+    def get_game(self, user_id: int, game_id: int) -> dict[str, Any] | None:
+        """Retourne le detail d'un jeu de la collection utilisateur.
+
+        Args:
+            user_id (int): Identifiant de l'utilisateur connecte.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, Any] | None: Jeu serialisable ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une requete.
+        """
+
+        with self.engine.connect() as connection:
+            row = self.repository.find_game(connection, user_id, game_id)
+        return None if row is None else self._game_payload(row)
 
     def get_collection_file_path(self, user_id: int) -> str:
         """Retourne le chemin du fichier de collection utilisateur.

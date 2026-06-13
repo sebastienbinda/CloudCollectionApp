@@ -72,6 +72,20 @@ class FakeLibraryService:
         self.__class__.last_games_criteria = criteria
         return {"page": self._page(criteria), "games": [{"id": 3, "name": "Final Fantasy", "release_date": "1987-12-18", "developer": "Square", "editor": "", "status": "", "platform": "NES"}]}
 
+    def get_game(self, game_id):
+        """Retourne un jeu public factice.
+
+        Args:
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, object] | None: Jeu factice ou absence.
+        """
+
+        if game_id != 3:
+            return None
+        return {"id": 3, "name": "Final Fantasy", "release_date": "1987-12-18", "developer": "Square", "editor": "", "status": "", "platform": "NES"}
+
     def _page(self, criteria):
         """Construit une page factice.
 
@@ -189,6 +203,34 @@ class FakeUserCollectionQueryService:
         """
 
         return self.__class__.collection_file_path
+
+    def get_game(self, user_id, game_id):
+        """Retourne un jeu de collection factice.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            game_id (int): Identifiant du jeu recherche.
+
+        Returns:
+            dict[str, object] | None: Jeu factice ou absence.
+        """
+
+        if game_id != 3:
+            return None
+        return {
+            "id": 3,
+            "name": "Mario Kart",
+            "platform_name": "Switch",
+            "platform_id": 1,
+            "release_date": "1992-08-27",
+            "studio_name": "Nintendo",
+            "studio_id": 2,
+            "version": "",
+            "buy_date": "",
+            "buy_location": "",
+            "grade": "",
+            "wishlist": False,
+        }
 
     def _page(self, criteria):
         """Construit une page factice.

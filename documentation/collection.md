@@ -26,6 +26,8 @@ The current collection consultation uses:
 - `GET /collections/videogames/platforms/search` for collection platforms;
 - `GET /collections/videogames/games/search` for collection and wishlist
   games;
+- `GET /collections/videogames/games/<game_id>` for one connected-user game
+  detail;
 - `GET /collections/videogames/download` for the raw imported ODS file.
 
 `POST`, `PUT` and `DELETE /collections/videogames/games` are reserved for
@@ -42,6 +44,12 @@ collection entries. It must request `wishlist=false` for:
 - platform lists;
 - platform game lists;
 - home page game search.
+
+The collection game detail page is reachable from collection search results,
+platform game tables and wishlist tables. It must call
+`GET /collections/videogames/games/<game_id>` and the backend must return a
+game only when the connected user owns the corresponding `t_user_collection`
+association.
 
 The frontend must accept `wishlist` in game rows returned by the backend, but it
 must not display that technical value in the collection table.

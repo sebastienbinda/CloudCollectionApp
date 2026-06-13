@@ -67,6 +67,19 @@ class LibraryApi {
   }
 
   /**
+   * Charge le detail public d'un jeu.
+   *
+   * @param {string|number} gameId - Identifiant du jeu recherche.
+   * @returns {Promise<Object>} Objet contenant `game`.
+   */
+  static async fetchGame(gameId) {
+    return this.fetchJson(
+      `/api/library/games/${encodeURIComponent(gameId)}`,
+      "Impossible de charger le jeu Bibliotheque."
+    );
+  }
+
+  /**
    * Construit une URL de liste Bibliotheque a partir des criteres UI.
    *
    * @param {string} path - Chemin backend appele.
