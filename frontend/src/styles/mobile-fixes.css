@@ -18,9 +18,48 @@
   white-space: nowrap;
 }
 
+.scrollTopButton {
+  align-items: center;
+  background: #047857;
+  border: 1px solid #065f46;
+  border-radius: 999px;
+  bottom: 4.85rem;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  display: inline-flex;
+  font-size: 1.15rem;
+  height: 2.55rem;
+  justify-content: center;
+  padding: 0;
+  position: fixed;
+  right: 1.15rem;
+  width: 2.55rem;
+  z-index: 35;
+}
+
+.scrollTopButton:hover,
+.scrollTopButton:focus-visible {
+  background: #065f46;
+}
+
+.scrollTopButton:focus-visible {
+  outline: 3px solid #a7f3d0;
+  outline-offset: 2px;
+}
+
 @media (max-width: 620px) {
   body {
     padding-bottom: 6.35rem;
+  }
+
+  .mobileDockNavigationCompact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .scrollTopButton {
+    bottom: 6.9rem;
+    height: 2.35rem;
+    right: 0.85rem;
+    width: 2.35rem;
   }
 
   .pageHeader {

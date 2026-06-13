@@ -129,7 +129,7 @@ function useCloudCollectionViewModel() {
     canUseCollectionViews,
     openCollectionOnboarding: navigation.openCollectionOnboarding,
     openConfiguration: navigation.openConfiguration,
-    goHome: navigation.goHome,
+    openVerifiedCollection: navigation.openVerifiedCollection,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
   });

@@ -13,11 +13,10 @@
  * Description : hook React de la page collection de jeux par plateforme.
  */
 import { useEffect, useState } from "react";
-import { filterGames, getStudioCount } from "../../collectionUtils";
+import { getStudioCount } from "../../collectionUtils";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import usePlatformGameMutations from "../usePlatformGameMutations";
 
-const filterableColumns = ["Studio", "Version", "Date de sortie", "Date d'achat"];
 const hiddenGameColumns = new Set(["id", "platform_id"]);
 const sortableColumns = ["Nom du jeu", "Studio", "Date de sortie", "Date d'achat", "Note"];
 const backendSortColumns = {
@@ -27,29 +26,6 @@ const backendSortColumns = {
   "Date d'achat": "buy_date",
   Note: "grade",
 };
-
-/**
- * Construit les valeurs distinctes de filtres depuis les jeux charges.
- *
- * @param {Array<Object>} loadedGames - Jeux normalises pour le tableau.
- * @returns {Object} Valeurs distinctes par colonne.
- */
-const buildValuesByColumn = (loadedGames) =>
-  filterableColumns.reduce((values, column) => {
-    values[column] = Array.from(
-      new Set(
-        loadedGames
-          .map((game) => game[column])
-          .filter((value) => value !== null && value !== undefined && String(value).trim() !== "")
-      )
-    ).sort((firstValue, secondValue) =>
-      String(firstValue).localeCompare(String(secondValue), "fr", {
-        numeric: true,
-        sensitivity: "base",
-      })
-    );
-    return values;
-  }, {});
 
 /**
  * Construit le parametre de tri attendu par le backend.
@@ -71,8 +47,7 @@ const buildBackendSort = (sortConfig) => {
  */
 function useGameCollectionPage(options) {
   const [games, setGames] = useState([]);
-  const [valuesByColumn, setValuesByColumn] = useState({});
-  const [columnFilters, setColumnFilters] = useState({});
+  const [gameNameFilter, setGameNameFilter] = useState("");
   const [sortConfig, setSortConfig] = useState({ column: "Nom du jeu", direction: "asc" });
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const mutations = usePlatformGameMutations(
@@ -85,7 +60,6 @@ function useGameCollectionPage(options) {
     const fetchGames = async () => {
       if (!options.hasAccessToken || !options.selectedPlatform) {
         setGames([]);
-        setValuesByColumn({});
         setIsLoadingGames(false);
         return;
       }
@@ -100,11 +74,9 @@ function useGameCollectionPage(options) {
         });
         const loadedGames = Array.isArray(data) ? data : [];
         setGames(loadedGames);
-        setValuesByColumn(buildValuesByColumn(loadedGames));
       } catch (e) {
         options.setError("Impossible de charger les jeux video pour cette plateforme.");
         setGames([]);
-        setValuesByColumn({});
       } finally {
         setIsLoadingGames(false);
       }
@@ -119,11 +91,13 @@ function useGameCollectionPage(options) {
     sortConfig,
   ]);
 
-  useEffect(() => {
-    setColumnFilters({});
-  }, [options.selectedPlatform, options.gamesReloadKey, options.isAuthenticated, options.hasAccessToken]);
-
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
+  const normalizedGameNameFilter = gameNameFilter.trim().toLowerCase();
+  const nameFilteredGames = normalizedGameNameFilter
+    ? namedGames.filter((game) =>
+        String(game["Nom du jeu"] || "").toLowerCase().includes(normalizedGameNameFilter)
+      )
+    : namedGames;
   const columns = namedGames.length > 0
     ? [
         "Nom du jeu",
@@ -132,7 +106,7 @@ function useGameCollectionPage(options) {
         ),
       ]
     : [];
-  const filteredGames = filterGames(namedGames, columns, columnFilters);
+  const filteredGames = nameFilteredGames;
   const sortedGames = filteredGames;
   const toggleSort = (column) => {
     if (!sortableColumns.includes(column)) {
@@ -147,9 +121,8 @@ function useGameCollectionPage(options) {
   return {
     namedGames,
     columns,
-    valuesByColumn,
-    columnFilters,
-    setColumnFilters,
+    gameNameFilter,
+    setGameNameFilter,
     sortConfig,
     sortedGames,
     filteredGames,

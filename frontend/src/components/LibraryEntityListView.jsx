@@ -27,6 +27,7 @@ function LibraryEntityListView({
   subtitle,
   listState,
   renderRowActions = null,
+  onRowClick = null,
   isAuthenticated,
   canUseCollectionViews,
   authenticatedUsername,
@@ -128,6 +129,7 @@ function LibraryEntityListView({
             onToggleSort={listState.toggleSort}
             pagination={listState.pagination}
             renderRowActions={renderRowActions}
+            onRowClick={onRowClick}
             getRowKey={(row) => row.id || row.name}
           />
         ) : null}

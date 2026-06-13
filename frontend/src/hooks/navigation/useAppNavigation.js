@@ -198,6 +198,7 @@ function useAppNavigation(options) {
       }
       openView("home", "/collection");
     },
+    openVerifiedCollection: () => openView("home", "/collection"),
     openAbout: () => openView("about", "/about"),
     openAuth: () => openView("auth", "/auth"),
     openLibrary: () => openView("library", "/bibliotheque"),

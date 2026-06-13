@@ -67,10 +67,10 @@ function useUserCollectionOnboarding(options) {
     authenticatedUsername,
     canUseCollectionViews,
     currentView,
-    goHome,
     hasAccessToken,
     openConfiguration,
     openCollectionOnboarding,
+    openVerifiedCollection,
     reloadGames,
     reloadOds,
   } = options;
@@ -152,16 +152,16 @@ function useUserCollectionOnboarding(options) {
     }
     const nextHasCollection = await checkCurrentUserCollection();
     if (nextHasCollection) {
-      goHome();
+      openVerifiedCollection();
       return;
     }
     openCollectionOnboarding();
   }, [
     canUseCollectionViews,
     checkCurrentUserCollection,
-    goHome,
     openConfiguration,
     openCollectionOnboarding,
+    openVerifiedCollection,
   ]);
 
   const applyAnalyzedSheets = useCallback((sheetNames) => {

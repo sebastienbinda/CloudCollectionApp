@@ -57,7 +57,8 @@ Use the following domain folders for new or modified hooks:
   components.
 - `frontend/src/components/PageLayout.jsx` owns the shared page shell, renders
   the page header, mounts `MainMenu` as a shared navigation element outside the
-  header, and renders the common footer.
+  header, renders the common scroll-to-top control, and renders the common
+  footer.
 
 ## Responsibilities
 

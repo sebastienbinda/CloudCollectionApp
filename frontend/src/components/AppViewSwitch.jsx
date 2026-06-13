@@ -336,12 +336,9 @@ class AppViewSwitch {
         title={title}
         subtitle={subtitle}
         listState={listState}
-        renderRowActions={
+        onRowClick={
           listState === props.libraryGames
-            ? (game) => this.renderGameDetailAction(
-                game,
-                () => props.openGameDetail(game, "library")
-              )
+            ? (game) => props.openGameDetail(game, "library")
             : null
         }
       />
@@ -366,30 +363,6 @@ class AppViewSwitch {
   }
 
   /**
-   * Rend le bouton d'acces au detail d'un jeu.
-   *
-   * @param {Object} game - Jeu cible.
-   * @param {Function} onClick - Callback d'ouverture.
-   * @returns {import("react").JSX.Element} Bouton d'action.
-   */
-  static renderGameDetailAction(game, onClick) {
-    return (
-      <button
-        className="rowIconButton"
-        type="button"
-        aria-label={`Voir le detail de ${game["Nom du jeu"] || game.name || "ce jeu"}`}
-        title="Voir le detail"
-        onClick={onClick}
-      >
-        <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
-          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-          <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
-        </svg>
-      </button>
-    );
-  }
-
-  /**
    * Rend le detail d'une plateforme.
    *
    * @param {Object} props - Etat et callbacks de plateforme.
@@ -405,11 +378,10 @@ class AppViewSwitch {
         platforms={props.platforms}
         games={props.namedGames}
         columns={props.columns}
-        valuesByColumn={props.valuesByColumn}
-        columnFilters={props.columnFilters}
         sortConfig={props.sortConfig}
         sortedGames={props.sortedGames}
         filteredGames={props.filteredGames}
+        gameNameFilter={props.gameNameFilter}
         sortableColumns={props.sortableColumns}
         deleteGameMessage={props.deleteGameMessage}
         deleteGameError={props.deleteGameError}
@@ -421,8 +393,8 @@ class AppViewSwitch {
         canDeleteGame={props.actionPermissions.canDeleteGame}
         editingGame={props.editingGame}
         onOpenPlatform={props.openPlatform}
+        onGameNameFilterChange={props.setGameNameFilter}
         onToggleSort={props.toggleSort}
-        onColumnFiltersChange={props.setColumnFilters}
         onEditGame={props.openEditGame}
         onSaveGame={props.saveEditedGame}
         onCancelEditGame={props.cancelEditGame}
