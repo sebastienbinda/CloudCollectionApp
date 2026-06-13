@@ -27,7 +27,7 @@ import ProjectIcon from "./ProjectIcon";
  * @param {string} props.shellClassName - Classes CSS appliquees au conteneur principal.
  * @param {string} props.headerClassName - Classes CSS appliquees au header.
  * @param {string} props.headerContentClassName - Classes CSS appliquees au bloc de titre.
- * @param {import("react").ReactNode} props.headerLeadingContent - Contenu affiche avant le menu.
+ * @param {import("react").ReactNode} props.headerLeadingContent - Contenu affiche au debut du header.
  * @param {import("react").ReactNode} props.titleContent - Contenu personnalise du titre.
  * @param {import("react").ReactNode} props.headerExtraContent - Contenu additionnel du header.
  * @param {import("react").ReactNode} props.headerAsideContent - Contenu lateral du header.
@@ -80,19 +80,6 @@ function PageLayout({
       <main className={shellClassName}>
         <header className={headerClassName}>
           {headerLeadingContent}
-          <MainMenu
-            isAuthenticated={isAuthenticated}
-            canUseCollectionViews={canUseCollectionViews}
-            username={authenticatedUsername}
-            profile={authenticatedProfile}
-            onOpenAbout={onOpenAbout}
-            onOpenAuth={onOpenAuth}
-            onOpenHome={onOpenHome}
-            onOpenLibrary={onOpenLibrary}
-            onOpenWishlist={onOpenWishlist}
-            onOpenConfiguration={onOpenConfiguration}
-            onLogout={onLogout}
-          />
           <div className={headerContentClassName || undefined}>
             {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
             {title || titleContent ? <h1>{renderedTitleContent}</h1> : null}
@@ -101,6 +88,19 @@ function PageLayout({
           </div>
           {headerAsideContent}
         </header>
+        <MainMenu
+          isAuthenticated={isAuthenticated}
+          canUseCollectionViews={canUseCollectionViews}
+          username={authenticatedUsername}
+          profile={authenticatedProfile}
+          onOpenAbout={onOpenAbout}
+          onOpenAuth={onOpenAuth}
+          onOpenHome={onOpenHome}
+          onOpenLibrary={onOpenLibrary}
+          onOpenWishlist={onOpenWishlist}
+          onOpenConfiguration={onOpenConfiguration}
+          onLogout={onLogout}
+        />
         {children}
       </main>
       <AppFooter />

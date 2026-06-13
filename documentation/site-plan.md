@@ -9,7 +9,8 @@
 
 - `/about`: public About page for unauthenticated visitors.
 - `/auth`: sign-in page.
-- `/bibliotheque`: public Library landing page with global entity counters.
+- `/bibliotheque`: public Library landing page with global entity counters and
+  public global game search.
 - `/bibliotheque/plateformes`: public paginated platform reference list.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.

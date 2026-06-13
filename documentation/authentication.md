@@ -211,10 +211,10 @@ tests, documentation, or scripts.
   `/collection`, `/collection/import`, platform detail and add-game views must
   redirect to `/configuration` or expose disabled navigation entries. This
   frontend restriction does not remove backend endpoint access.
-- The connected-user indicator in the page header must stay consistent with the
-  locally stored token, even if route discovery temporarily fails after a local
-  restart. Action buttons must remain disabled until the backend route catalog
-  confirms their availability.
+- The connected-user indicator in the desktop navigation area must stay
+  consistent with the locally stored token, even if route discovery temporarily
+  fails after a local restart. Action buttons must remain disabled until the
+  backend route catalog confirms their availability.
 - If a sent token is rejected (`401` or `403`), the frontend must clear the local
   session and open the sign-in flow again.
 

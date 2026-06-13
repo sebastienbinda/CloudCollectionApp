@@ -83,7 +83,7 @@ function ConfigurationView({
         {canUseCollectionViews ? (
           <article className="adminActionCard">
             <span>Collection</span>
-            <h2>Ajouter un jeu</h2>
+            <h2>Ajouter</h2>
             <p>Ouvre le formulaire d'ajout dans la collection.</p>
             <button
               type="button"
@@ -98,7 +98,7 @@ function ConfigurationView({
         {canUseCollectionViews ? (
           <article className="adminActionCard">
             <span>Import</span>
-            <h2>Importer un fichier</h2>
+            <h2>Importer</h2>
             <p>Ajoute les jeux d'un nouveau fichier a la collection actuelle.</p>
             <button
               className="secondaryButton"
@@ -113,7 +113,7 @@ function ConfigurationView({
         {canUseCollectionViews ? (
           <article className="adminActionCard">
             <span>Export</span>
-            <h2>Telecharger la collection</h2>
+            <h2>Exporter</h2>
             <p>Recupere le fichier source de la collection.</p>
             <button
               className="downloadOdsButton"
@@ -130,7 +130,7 @@ function ConfigurationView({
         {canUseCollectionViews && !isAdmin ? (
           <article className="adminActionCard">
             <span>Collection</span>
-            <h2>Reinitialiser la collection</h2>
+            <h2>Reinitialiser</h2>
             <p>
               Supprime la collection actuelle et son fichier serveur pour permettre un nouvel import.
             </p>
@@ -151,7 +151,7 @@ function ConfigurationView({
         {isAdmin ? (
           <article className="adminActionCard dangerActionCard">
             <span>Bibliotheque</span>
-            <h2>Reset Bibliotheque</h2>
+            <h2>Reset</h2>
             <p>
               Supprime et reconstruit toute la Bibliotheque globale depuis les imports utilisateur.
             </p>
@@ -172,7 +172,7 @@ function ConfigurationView({
         {isAdmin ? (
           <article className="adminActionCard">
             <span>Utilisateurs</span>
-            <h2>Gerer les utilisateurs</h2>
+            <h2>Utilisateurs</h2>
             <p>Consulte les comptes applicatifs et leurs statuts.</p>
             <button
               className="secondaryButton"
