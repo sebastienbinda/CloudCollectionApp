@@ -17,7 +17,8 @@ import { filterGames } from "../../collectionUtils";
 import VideoGamesApi from "../../services/VideoGamesApi";
 
 const wishlistColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie", "Version"];
-const filterableColumns = ["Plateforme"];
+const wishlistFilterColumns = ["Nom du jeu", "Plateforme"];
+const platformValueColumns = ["Plateforme"];
 const sortableColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie"];
 const backendSortColumns = {
   "Nom du jeu": "name",
@@ -33,7 +34,7 @@ const backendSortColumns = {
  * @returns {Object} Valeurs distinctes par colonne.
  */
 const buildValuesByColumn = (loadedGames) =>
-  filterableColumns.reduce((values, column) => {
+  platformValueColumns.reduce((values, column) => {
     values[column] = Array.from(
       new Set(
         loadedGames
@@ -108,7 +109,7 @@ function useWishlistPage(options) {
   }, [options.currentView, options.hasAccessToken, options.gamesReloadKey, sortConfig]);
 
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
-  const filteredGames = filterGames(namedGames, filterableColumns, columnFilters);
+  const filteredGames = filterGames(namedGames, wishlistFilterColumns, columnFilters);
   const toggleSort = (column) => {
     if (!sortableColumns.includes(column)) {
       return;
@@ -130,7 +131,6 @@ function useWishlistPage(options) {
     wishlistFilteredGames: filteredGames,
     isLoadingWishlistGames,
     wishlistError,
-    wishlistFilterableColumns: filterableColumns,
     wishlistSortableColumns: sortableColumns,
     toggleWishlistSort: toggleSort,
   };

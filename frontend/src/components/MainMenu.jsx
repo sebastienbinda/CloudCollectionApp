@@ -173,48 +173,74 @@ function MainMenu({
   const canOpenWishlist =
     isAuthenticated && canUseCollectionViews && typeof onOpenWishlist === "function";
   const canOpenHome = isAuthenticated && canUseCollectionViews && typeof onOpenHome === "function";
-  const navigationItems = [
-    {
-      key: "about",
-      label: "A propos",
-      shortLabel: "A propos",
-      icon: "about",
-      disabled: false,
-      action: onOpenAbout,
-    },
-    {
-      key: "library",
-      label: "Bibliotheque",
-      shortLabel: "Biblio",
-      icon: "library",
-      disabled: typeof onOpenLibrary !== "function",
-      action: onOpenLibrary,
-    },
-    {
-      key: "configuration",
-      label: "Configuration",
-      shortLabel: "Config",
-      icon: "configuration",
-      disabled: !canOpenConfiguration,
-      action: onOpenConfiguration,
-    },
-    {
-      key: "wishlist",
-      label: "Liste de souhaits",
-      shortLabel: "Souhaits",
-      icon: "wishlist",
-      disabled: !canOpenWishlist,
-      action: onOpenWishlist,
-    },
-    {
-      key: "collection",
-      label: "Ma collection",
-      shortLabel: "Collection",
-      icon: "collection",
-      disabled: !canOpenHome,
-      action: onOpenHome,
-    },
+  const aboutItem = {
+    key: "about",
+    label: "A propos",
+    shortLabel: "A propos",
+    icon: "about",
+    disabled: false,
+    action: onOpenAbout,
+  };
+  const libraryItem = {
+    key: "library",
+    label: "Bibliotheque",
+    shortLabel: "Biblio",
+    icon: "library",
+    disabled: typeof onOpenLibrary !== "function",
+    action: onOpenLibrary,
+  };
+  const configurationItem = {
+    key: "configuration",
+    label: "Configuration",
+    shortLabel: "Config",
+    icon: "configuration",
+    disabled: !canOpenConfiguration,
+    action: onOpenConfiguration,
+  };
+  const wishlistItem = {
+    key: "wishlist",
+    label: "Liste de souhaits",
+    shortLabel: "Souhaits",
+    icon: "wishlist",
+    disabled: !canOpenWishlist,
+    action: onOpenWishlist,
+  };
+  const collectionItem = {
+    key: "collection",
+    label: "Ma collection",
+    shortLabel: "Collection",
+    icon: "collection",
+    disabled: !canOpenHome,
+    action: onOpenHome,
+  };
+  const anonymousNavigationItems = [
+    aboutItem,
+    libraryItem,
   ];
+  const authenticatedNavigationItems = [
+    collectionItem,
+    wishlistItem,
+    libraryItem,
+    configurationItem,
+    aboutItem,
+  ];
+  const navigationItems = isAuthenticated ? authenticatedNavigationItems : anonymousNavigationItems;
+  const mobileAuthenticatedPrimaryItems = [
+    collectionItem,
+    wishlistItem,
+    libraryItem,
+  ];
+  const mobileAnonymousPrimaryItems = [
+    libraryItem,
+    null,
+    aboutItem,
+  ];
+  const mobileAuthenticatedSecondaryItems = [
+    configurationItem,
+    aboutItem,
+    null,
+  ];
+  const mobileAnonymousSecondaryItems = [];
   const sessionItem = isAuthenticated
     ? {
         key: "logout",
@@ -232,16 +258,14 @@ function MainMenu({
         disabled: typeof onOpenAuth !== "function",
         action: onOpenAuth,
       };
-  const mobilePrimaryItems = [
-    navigationItems.find((item) => item.key === "library"),
-    isAuthenticated ? navigationItems.find((item) => item.key === "collection") : sessionItem,
-    navigationItems.find((item) => item.key === "wishlist"),
-  ].filter(Boolean);
-  const mobileSecondaryItems = [
-    navigationItems.find((item) => item.key === "about"),
-    navigationItems.find((item) => item.key === "configuration"),
-    isAuthenticated ? sessionItem : null,
-  ].filter(Boolean);
+  mobileAnonymousPrimaryItems[1] = sessionItem;
+  mobileAuthenticatedSecondaryItems[2] = sessionItem;
+  const mobilePrimaryItems = (
+    isAuthenticated ? mobileAuthenticatedPrimaryItems : mobileAnonymousPrimaryItems
+  ).filter(Boolean);
+  const mobileSecondaryItems = (
+    isAuthenticated ? mobileAuthenticatedSecondaryItems : mobileAnonymousSecondaryItems
+  ).filter(Boolean);
 
   const renderNavigationButton = (item, className = "mainNavigationItem") => (
     <button
@@ -262,30 +286,37 @@ function MainMenu({
       <nav className="desktopNavigation" aria-label="Navigation principale">
         {navigationItems.map((item) => renderNavigationButton(item))}
       </nav>
-      <nav className="mobileDockNavigation" aria-label="Navigation mobile principale">
+      <nav
+        className={`mobileDockNavigation ${
+          mobileSecondaryItems.length > 0 ? "" : "mobileDockNavigationCompact"
+        }`}
+        aria-label="Navigation mobile principale"
+      >
         {mobilePrimaryItems.map((item) => renderNavigationButton(item, "mobileDockItem"))}
-        <div
-          className={`pageHeaderOptionsMenu mobileDockMore ${isOpen ? "isOpen" : ""}`}
-          ref={menuRef}
-          onPointerEnter={keepMenuOpen}
-          onPointerLeave={closeMenuOnMouseLeave}
-        >
-          <button
-            aria-expanded={isOpen}
-            aria-haspopup="true"
-            aria-label="Ouvrir les autres actions"
-            className="mobileDockItem mobileDockMoreTrigger"
-            type="button"
-            onClick={toggleMenu}
+        {mobileSecondaryItems.length > 0 ? (
+          <div
+            className={`pageHeaderOptionsMenu mobileDockMore ${isOpen ? "isOpen" : ""}`}
+            ref={menuRef}
+            onPointerEnter={keepMenuOpen}
+            onPointerLeave={closeMenuOnMouseLeave}
           >
-            <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon("more")}</span>
-            <span className="mainNavigationLabel">Plus</span>
-            <span className="mainNavigationShortLabel">Plus</span>
-          </button>
-          <div className="pageHeaderActions" hidden={!isOpen}>
-            {mobileSecondaryItems.map((item) => renderNavigationButton(item, "mobileNavigationItem"))}
+            <button
+              aria-expanded={isOpen}
+              aria-haspopup="true"
+              aria-label="Ouvrir les autres actions"
+              className="mobileDockItem mobileDockMoreTrigger"
+              type="button"
+              onClick={toggleMenu}
+            >
+              <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon("more")}</span>
+              <span className="mainNavigationLabel">Plus</span>
+              <span className="mainNavigationShortLabel">Plus</span>
+            </button>
+            <div className="pageHeaderActions" hidden={!isOpen}>
+              {mobileSecondaryItems.map((item) => renderNavigationButton(item, "mobileNavigationItem"))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </nav>
       <div className="desktopSessionActions">
         {isAuthenticated ? (

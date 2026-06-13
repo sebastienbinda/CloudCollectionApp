@@ -35,12 +35,18 @@ session state received through props.
 - On desktop, the session action remains on the right side of the navigation
   bar: `Connexion` for anonymous visitors, `Deconnexion` for authenticated
   users.
-- On mobile, `Bibliotheque`, the collection/session shortcut, `Liste de
-  souhaits` and `Plus` are the primary dock entries.
-- On mobile, anonymous visitors see `Connexion` in the primary dock slot that
-  authenticated collection users use for `Ma collection`.
-- On mobile, `A propos`, `Configuration` and authenticated `Deconnexion` are
-  secondary actions opened from `Plus`.
+- For authenticated users on desktop, the main navigation order is
+  `Ma collection`, `Liste de souhaits`, `Bibliotheque`, `Configuration`, then
+  `A propos`; `Deconnexion` remains the last action on the right side of the
+  navigation bar.
+- For authenticated users on mobile, `Collection`, `Souhaits`, `Biblio` and
+  `Plus` are the primary dock entries, in that order.
+- Anonymous visitors see only public/session entries: `Bibliotheque`,
+  `Connexion` and `A propos` directly in the mobile dock; the `Plus` entry is
+  not rendered when no secondary action is available.
+- On mobile, authenticated users see `Configuration`, `A propos` and
+  `Deconnexion` as secondary actions opened from `Plus`, with `Deconnexion`
+  last.
 - The secondary mobile panel closes when the mouse pointer leaves it.
 - On mobile and touch devices, pointer leave must not cause accidental closing;
   filter events by `pointerType`.
@@ -56,15 +62,19 @@ session state received through props.
   and opens `/wishlist`.
 - `Ma collection` requires an active local non-`ADMIN` collection session and
   opens `/collection`.
-- Inaccessible entries must use `disabled`.
+- Authenticated entries whose access is still being discovered must use
+  `disabled`; entries reserved for authenticated users must not be rendered for
+  anonymous visitors.
 - Session actions such as `Connexion`, `Configuration` and `Deconnexion` are
   managed inside `MainMenu`; do not reintroduce a separate session dropdown.
 - Once a user is connected, the desktop navigation area displays
   `Utilisateur connecte : <email>` next to the session action.
 - The Library entry opens `/bibliotheque` and must remain available for
   unauthenticated visitors.
-- The wishlist entry opens `/wishlist` and must remain disabled for
-  unauthenticated visitors and `ADMIN` users.
+- The wishlist entry opens `/wishlist`, must be hidden from unauthenticated
+  visitors, and must remain disabled for authenticated `ADMIN` users.
+- For authenticated users, `Deconnexion` must stay visually and structurally
+  last in both desktop and mobile navigation.
 - The main menu must not expose a `Voir les jeux` entry; platform game pages
   remain reachable from collection cards and contextual navigation.
 

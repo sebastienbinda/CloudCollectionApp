@@ -31,11 +31,10 @@ function PlatformDetailView({
   platforms,
   games,
   columns,
-  valuesByColumn,
-  columnFilters,
   sortConfig,
   sortedGames,
   filteredGames,
+  gameNameFilter = "",
   sortableColumns,
   deleteGameMessage,
   deleteGameError,
@@ -57,8 +56,8 @@ function PlatformDetailView({
   onOpenConfiguration,
   onLogout,
   onOpenPlatform,
+  onGameNameFilterChange = () => {},
   onToggleSort,
-  onColumnFiltersChange,
   onEditGame,
   onSaveGame,
   onCancelEditGame,
@@ -147,8 +146,6 @@ function PlatformDetailView({
       <CollectionGamesTable
         games={games}
         columns={columns}
-        valuesByColumn={valuesByColumn}
-        columnFilters={columnFilters}
         sortConfig={sortConfig}
         sortedGames={sortedGames}
         filteredGames={filteredGames}
@@ -156,42 +153,55 @@ function PlatformDetailView({
         emptyMessage="Aucun jeu a afficher pour cette plateforme."
         sortableColumns={sortableColumns}
         controlsContent={(
-          <div className="controls">
-            <label htmlFor="platform">Plateforme :</label>
-            <select
-              id="platform"
-              value={selectedPlatform}
-              onChange={(event) => onOpenPlatform(event.target.value)}
-              disabled={isLoadingPlatforms || platforms.length === 0}
-            >
-              {platforms.map((platform) => (
-                <option key={platform.id} value={platform.id}>
-                  {platform.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <form className="librarySearchForm" onSubmit={(event) => event.preventDefault()}>
+            <label htmlFor="collection-game-name-filter">Recherche par nom</label>
+            <div>
+              <div className="librarySearchInputControl">
+                <input
+                  id="collection-game-name-filter"
+                  type="search"
+                  value={gameNameFilter}
+                  onChange={(event) => onGameNameFilterChange(event.target.value)}
+                  placeholder="Rechercher"
+                />
+                <button
+                  type="button"
+                  className="librarySearchClearButton"
+                  onClick={() => onGameNameFilterChange("")}
+                  disabled={!gameNameFilter}
+                  aria-label="Effacer la recherche"
+                  title="Effacer la recherche"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="libraryPlatformFilter">
+              <select
+                id="platform"
+                value={selectedPlatform}
+                onChange={(event) => onOpenPlatform(event.target.value)}
+                disabled={isLoadingPlatforms || platforms.length === 0}
+                aria-label="Filtrer par plateforme"
+              >
+                {platforms.map((platform) => (
+                  <option key={platform.id} value={platform.id}>
+                    {platform.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </form>
         )}
         onToggleSort={onToggleSort}
-        onColumnFiltersChange={onColumnFiltersChange}
         getRowClassName={(game) =>
           isTopRatedGame(game.Note) ? "topRatedGameRow" : ""
         }
+        onRowClick={onOpenGameDetail}
         renderRowActions={
-          (game) => (
+          canEditGame || canDeleteGame
+            ? (game) => (
                 <div className="rowActionGroup">
-                  <button
-                    className="rowIconButton"
-                    type="button"
-                    aria-label={`Voir le detail de ${game["Nom du jeu"] || "ce jeu"}`}
-                    title="Voir le detail"
-                    onClick={() => onOpenGameDetail(game)}
-                  >
-                    <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
-                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-                      <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
-                    </svg>
-                  </button>
                   {canEditGame ? (
                     <button
                       className="rowIconButton"
@@ -222,6 +232,7 @@ function PlatformDetailView({
                   ) : null}
                 </div>
               )
+            : null
         }
       />
 

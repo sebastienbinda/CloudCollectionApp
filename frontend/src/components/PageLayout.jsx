@@ -12,9 +12,12 @@
  *
  * Description : layout React commun pour les pages applicatives.
  */
+import { useEffect, useState } from "react";
 import AppFooter from "./AppFooter";
 import MainMenu from "./MainMenu";
 import ProjectIcon from "./ProjectIcon";
+
+const SCROLL_TOP_VISIBILITY_THRESHOLD = 520;
 
 /**
  * Structure une page avec header, menu principal, contenu et footer.
@@ -68,12 +71,42 @@ function PageLayout({
   onOpenConfiguration,
   onLogout,
 }) {
+  const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const renderedTitleContent = titleContent || (
     <span className="pageTitleWithIcon">
       <ProjectIcon />
       <span>{title}</span>
     </span>
   );
+
+  useEffect(() => {
+    /**
+     * Met a jour la visibilite du bouton de retour en haut.
+     *
+     * @returns {void} Met a jour l'etat local selon la position de defilement.
+     */
+    const updateScrollTopVisibility = () => {
+      setIsScrollTopVisible(window.scrollY > SCROLL_TOP_VISIBILITY_THRESHOLD);
+    };
+
+    updateScrollTopVisibility();
+    window.addEventListener("scroll", updateScrollTopVisibility, { passive: true });
+    window.addEventListener("resize", updateScrollTopVisibility);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollTopVisibility);
+      window.removeEventListener("resize", updateScrollTopVisibility);
+    };
+  }, []);
+
+  /**
+   * Ramene l'utilisateur en haut de la page.
+   *
+   * @returns {void} Lance un defilement fluide vers le debut du document.
+   */
+  const scrollToPageTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <>
@@ -103,6 +136,17 @@ function PageLayout({
         />
         {children}
       </main>
+      {isScrollTopVisible ? (
+        <button
+          className="scrollTopButton"
+          type="button"
+          aria-label="Revenir en haut de la page"
+          title="Revenir en haut"
+          onClick={scrollToPageTop}
+        >
+          ↑
+        </button>
+      ) : null}
       <AppFooter />
     </>
   );

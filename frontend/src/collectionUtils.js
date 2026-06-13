@@ -50,7 +50,7 @@ export const isSelectFilterColumn = (column) =>
  * @returns {string} Classe CSS a appliquer, ou chaine vide.
  */
 export const getColumnClassName = (column) => {
-  if (column === "Nom du jeu") {
+  if (column === "Nom du jeu" || column === "name") {
     return "gameNameColumn";
   }
   if (isDateColumn(column)) {

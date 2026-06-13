@@ -36,6 +36,15 @@ function WishlistView({
   wishlistPage,
   onOpenGameDetail = () => {},
 }) {
+  const wishlistFilters = wishlistPage?.wishlistColumnFilters || {};
+  const platformOptions = wishlistPage?.wishlistValuesByColumn?.Plateforme || [];
+  const updateWishlistFilter = (column, value) => {
+    wishlistPage?.setWishlistColumnFilters?.((previous) => ({
+      ...previous,
+      [column]: value,
+    }));
+  };
+
   return (
     <PageLayout
       shellClassName="container"
@@ -59,31 +68,55 @@ function WishlistView({
       <CollectionGamesTable
         games={wishlistPage?.wishlistGames || []}
         columns={wishlistPage?.wishlistColumns || []}
-        valuesByColumn={wishlistPage?.wishlistValuesByColumn || {}}
-        columnFilters={wishlistPage?.wishlistColumnFilters || {}}
         sortConfig={wishlistPage?.wishlistSortConfig || { column: "Nom du jeu", direction: "asc" }}
         sortedGames={wishlistPage?.wishlistSortedGames || []}
         filteredGames={wishlistPage?.wishlistFilteredGames || []}
         isLoadingGames={Boolean(wishlistPage?.isLoadingWishlistGames)}
         emptyMessage="Aucun jeu dans la liste de souhaits."
-        filterableColumns={wishlistPage?.wishlistFilterableColumns || []}
+        controlsContent={(
+          <form className="librarySearchForm" onSubmit={(event) => event.preventDefault()}>
+            <label htmlFor="wishlist-game-name-filter">Recherche par nom</label>
+            <div>
+              <div className="librarySearchInputControl">
+                <input
+                  id="wishlist-game-name-filter"
+                  type="search"
+                  value={wishlistFilters["Nom du jeu"] || ""}
+                  onChange={(event) => updateWishlistFilter("Nom du jeu", event.target.value)}
+                  placeholder="Rechercher"
+                />
+                <button
+                  type="button"
+                  className="librarySearchClearButton"
+                  onClick={() => updateWishlistFilter("Nom du jeu", "")}
+                  disabled={!wishlistFilters["Nom du jeu"]}
+                  aria-label="Effacer la recherche"
+                  title="Effacer la recherche"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="libraryPlatformFilter">
+              <select
+                id="wishlist-platform-filter"
+                value={wishlistFilters.Plateforme || ""}
+                onChange={(event) => updateWishlistFilter("Plateforme", event.target.value)}
+                aria-label="Filtrer par plateforme"
+              >
+                <option value="">Toutes les plateformes</option>
+                {platformOptions.map((platform) => (
+                  <option key={platform} value={platform}>
+                    {platform}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </form>
+        )}
         sortableColumns={wishlistPage?.wishlistSortableColumns || []}
         onToggleSort={wishlistPage?.toggleWishlistSort}
-        onColumnFiltersChange={wishlistPage?.setWishlistColumnFilters}
-        renderRowActions={(game) => (
-          <button
-            className="rowIconButton"
-            type="button"
-            aria-label={`Voir le detail de ${game["Nom du jeu"] || "ce jeu"}`}
-            title="Voir le detail"
-            onClick={() => onOpenGameDetail(game)}
-          >
-            <svg aria-hidden="true" className="rowActionIcon" viewBox="0 0 24 24">
-              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-              <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
-            </svg>
-          </button>
-        )}
+        onRowClick={onOpenGameDetail}
       />
     </PageLayout>
   );

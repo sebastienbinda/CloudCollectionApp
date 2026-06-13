@@ -254,6 +254,54 @@ class TableComponent extends Component {
   }
 
   /**
+   * Indique si une cible d'evenement est deja interactive.
+   *
+   * @param {EventTarget|null} target - Cible native de l'evenement.
+   * @param {EventTarget|null} rowTarget - Ligne courante qui porte l'action.
+   * @returns {boolean} `true` si le clic doit rester gere par le controle cible.
+   */
+  isInteractiveEventTarget(target, rowTarget) {
+    const interactiveTarget = target?.closest?.(
+      "button, a, input, select, textarea, [role='button']"
+    );
+    return Boolean(interactiveTarget && interactiveTarget !== rowTarget);
+  }
+
+  /**
+   * Declenche l'action optionnelle d'une ligne.
+   *
+   * @param {Object} row - Ligne activee par l'utilisateur.
+   * @param {import("react").MouseEvent} event - Evenement de clic React.
+   * @returns {void} Appelle le callback de ligne lorsque disponible.
+   */
+  handleRowClick(row, event) {
+    if (
+      !this.props.onRowClick ||
+      this.isInteractiveEventTarget(event.target, event.currentTarget)
+    ) {
+      return;
+    }
+
+    this.props.onRowClick(row);
+  }
+
+  /**
+   * Declenche l'action de ligne depuis le clavier.
+   *
+   * @param {Object} row - Ligne activee par l'utilisateur.
+   * @param {import("react").KeyboardEvent} event - Evenement clavier React.
+   * @returns {void} Appelle le callback de ligne pour Entree ou Espace.
+   */
+  handleRowKeyDown(row, event) {
+    if (!this.props.onRowClick || (event.key !== "Enter" && event.key !== " ")) {
+      return;
+    }
+
+    event.preventDefault();
+    this.props.onRowClick(row);
+  }
+
+  /**
    * Rend les controles de pagination du tableau.
    *
    * @returns {import("react").JSX.Element|null} Controles de pagination ou absence.
@@ -329,6 +377,7 @@ class TableComponent extends Component {
       getRowClassName,
       renderRowActions,
       tableClassName,
+      onRowClick,
     } = this.props;
     const rows = this.getRows();
     const hasFilters = Boolean(this.props.onColumnFiltersChange || this.props.renderColumnFilter);
@@ -384,8 +433,15 @@ class TableComponent extends Component {
             <tbody>
               {rows.map((row, index) => (
                 <tr
-                  className={getRowClassName ? getRowClassName(row) : undefined}
+                  className={[
+                    getRowClassName ? getRowClassName(row) : "",
+                    onRowClick ? "clickableTableRow" : "",
+                  ].filter(Boolean).join(" ") || undefined}
                   key={this.getRowKey(row, index)}
+                  onClick={onRowClick ? (event) => this.handleRowClick(row, event) : undefined}
+                  onKeyDown={onRowClick ? (event) => this.handleRowKeyDown(row, event) : undefined}
+                  role={onRowClick ? "button" : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
                 >
                   {columns.map((column) => (
                     <td

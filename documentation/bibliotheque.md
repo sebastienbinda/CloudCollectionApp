@@ -50,6 +50,18 @@ Library API, such as game name, platform, release date, developer, editor and
 status. They must not display purchase price, purchase date, user note,
 wishlist state, uploaded file metadata or any user-private collection value.
 
+The `/bibliotheque/jeux` list page exposes game-name search and platform
+filter controls above the games table. Game list filters must remain outside
+the table; the table itself must not render a dedicated filter row. Opening a
+game detail is done by clicking or keyboard-activating the whole game row, not
+through a dedicated detail icon column.
+
+On mobile, the public games list uses the same compact game-entry presentation
+as collection and wishlist game lists: the first line displays the game name
+and the second line displays release date plus platform when available. This
+mobile presentation must preserve the public read-only behavior and must not
+introduce authentication requirements.
+
 ## Backend Endpoints
 
 The public backend endpoints are:

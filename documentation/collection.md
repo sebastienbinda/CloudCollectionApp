@@ -51,6 +51,17 @@ platform game tables and wishlist tables. It must call
 game only when the connected user owns the corresponding `t_user_collection`
 association.
 
+Platform game tables and wishlist tables must open game detail by clicking or
+keyboard-activating the whole game row. They must not reserve a dedicated
+detail icon column for this action. Row-level edit or delete actions, when
+available, remain separate controls and must not trigger detail navigation.
+
+On mobile, collection and wishlist game tables are rendered as compact game
+entries instead of dense tabular rows. The first line displays the game name.
+The second line displays the release date and platform when those values are
+available. This mobile presentation must keep the same row-click detail
+navigation as desktop.
+
 The frontend must accept `wishlist` in game rows returned by the backend, but it
 must not display that technical value in the collection table.
 
@@ -89,6 +100,13 @@ features. The current collection page must always pass `wishlist=false`.
 Collection and wishlist list ordering must be requested through backend `sort`
 parameters. React pages may keep local display filters, but must not apply an
 additional local sort to backend collection results.
+
+Game list filters must be displayed above the table/list, not as a filter row
+inside the table. The collection platform page exposes a game-name search and
+the current platform selector above the table. The wishlist page exposes a
+game-name search and a platform selector above the table. Desktop and mobile
+layouts must use the same filter state, while mobile keeps the compact game
+entry rendering.
 
 ## Validation
 

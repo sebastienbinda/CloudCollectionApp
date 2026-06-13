@@ -21,8 +21,6 @@ import TableComponent from "./TableComponent";
  * @param {Object} props - Configuration de rendu du tableau de jeux.
  * @param {Array<Object>} props.games - Jeux normalises a afficher.
  * @param {Array<string>} props.columns - Colonnes visibles.
- * @param {Object} props.valuesByColumn - Valeurs disponibles par colonne.
- * @param {Object} props.columnFilters - Filtres actifs par colonne.
  * @param {Object} props.sortConfig - Configuration de tri courante.
  * @param {Array<Object>} props.sortedGames - Jeux tries et filtres.
  * @param {Array<Object>} props.filteredGames - Jeux filtres avant affichage final.
@@ -31,39 +29,30 @@ import TableComponent from "./TableComponent";
  * @param {string} props.emptyMessage - Message affiche sans jeu.
  * @param {string} props.filteredEmptyMessage - Message affiche si les filtres masquent tout.
  * @param {import("react").ReactNode} props.controlsContent - Controles affiches avant le tableau.
- * @param {Array<string>|null} props.filterableColumns - Colonnes filtrables, ou toutes si absent.
  * @param {Array<string>|null} props.sortableColumns - Colonnes triables, ou toutes si absent.
  * @param {Function} props.onToggleSort - Callback de tri.
- * @param {Function} props.onColumnFiltersChange - Callback de modification des filtres.
  * @param {Function|null} props.getRowClassName - Callback de classe de ligne.
  * @param {Function|null} props.renderRowActions - Callback de rendu des actions.
+ * @param {Function|null} props.onRowClick - Callback d'ouverture d'une ligne.
  * @returns {import("react").JSX.Element} Tableau et etats associes.
  */
 function CollectionGamesTable({
   games,
   columns,
-  valuesByColumn,
-  columnFilters,
   sortConfig,
   sortedGames,
   filteredGames,
   isLoadingGames,
   loadingLabel = "Chargement des jeux",
   emptyMessage = "Aucun jeu a afficher.",
-  filteredEmptyMessage = "Aucun jeu ne correspond aux filtres de colonnes.",
+  filteredEmptyMessage = "Aucun jeu ne correspond aux filtres.",
   controlsContent = null,
-  filterableColumns = null,
   sortableColumns = null,
   onToggleSort,
-  onColumnFiltersChange,
   getRowClassName = null,
   renderRowActions = null,
+  onRowClick = null,
 }) {
-  const filterableColumnSet = filterableColumns ? new Set(filterableColumns) : null;
-  const renderColumnFilter = filterableColumnSet
-    ? (column) => (filterableColumnSet.has(column) ? undefined : null)
-    : undefined;
-
   return (
     <>
       {controlsContent}
@@ -78,16 +67,13 @@ function CollectionGamesTable({
         <TableComponent
           rows={games}
           columns={columns}
-          valuesByColumn={valuesByColumn}
-          columnFilters={columnFilters}
           sortConfig={sortConfig}
           sortedRows={sortedGames}
           sortableColumns={sortableColumns}
           onToggleSort={onToggleSort}
-          onColumnFiltersChange={onColumnFiltersChange}
-          renderColumnFilter={renderColumnFilter}
           getRowClassName={getRowClassName}
           renderRowActions={renderRowActions}
+          onRowClick={onRowClick}
         />
       ) : null}
 
