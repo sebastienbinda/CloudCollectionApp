@@ -33,7 +33,11 @@
 }
 
 .libraryEntityCard {
-  min-height: 10rem;
+  min-height: 5.4rem;
+}
+
+.libraryEntityCard.platformCard {
+  justify-content: center;
 }
 
 .librarySearchForm {
@@ -124,6 +128,16 @@
 }
 
 @media (max-width: 640px) {
+  .libraryEntityGrid {
+    gap: 0.45rem;
+    grid-template-columns: 1fr;
+  }
+
+  .libraryEntityCard.platformCard {
+    min-height: 0;
+    padding: 0.55rem 0.6rem;
+  }
+
   .librarySearchForm > div {
     grid-template-columns: 1fr;
   }

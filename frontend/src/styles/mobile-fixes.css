@@ -1,0 +1,154 @@
+/*
+ *   ____ _                 _  ____      _ _           _   _             ___
+ *  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+ * | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+ * | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+ *  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+ *                                                                            |_|   |_|
+ * Projet : CloudCollectionApp
+ * Date de creation : 2026-06-13
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+ * Licence : Apache 2.0
+ *
+ * Description : ajustements responsives transverses pour les pages mobiles.
+ */
+
+.statCardTopPlatform span {
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .pageHeader {
+    min-height: 0;
+    padding: 0.55rem 0.75rem;
+    padding-top: 2.75rem;
+  }
+
+  .projectIcon {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .pageHeader .eyebrow,
+  .pageHeaderDateSummary {
+    display: none;
+  }
+
+  .homeSearchForm {
+    padding-right: 0;
+  }
+
+  .homeSearchSectionClosable .homeSearchForm {
+    padding-right: 2.75rem;
+  }
+
+  .closeSearchButton {
+    font-size: 0.85rem;
+    height: 2.25rem;
+    right: 0.5rem;
+    top: 0.65rem;
+    width: 2.25rem;
+  }
+
+  .homeSearchFormWithCount input {
+    padding-right: 6.25rem;
+  }
+
+  .homeSearchResultCount {
+    font-size: 0.62rem;
+    height: 1.4rem;
+    padding: 0 0.35rem;
+    right: 2.25rem;
+  }
+
+  .searchResults {
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+  }
+
+  .searchResultCard {
+    gap: 0.2rem;
+    padding: 0.42rem 0.5rem;
+  }
+
+  .searchResultCard span {
+    font-size: 0.66rem;
+    line-height: 1;
+    margin-bottom: 0.12rem;
+  }
+
+  .searchResultCard h3 {
+    font-size: 0.84rem;
+    line-height: 1.05;
+  }
+
+  .searchResultCard dl {
+    display: block;
+  }
+
+  .searchResultCard dl > div {
+    display: none;
+  }
+
+  .searchResultCard dl > div:nth-child(2) {
+    display: block;
+  }
+
+  .searchResultCard dt {
+    font-size: 0.6rem;
+    line-height: 1;
+  }
+
+  .searchResultCard dd {
+    font-size: 0.72rem;
+    line-height: 1;
+    margin-top: 0.08rem;
+  }
+
+  .searchResultCard button {
+    display: none;
+  }
+
+  .platformSection .sectionHeader > div {
+    align-items: baseline;
+    display: flex;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .platformSection .sectionHeader span {
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .statsGridAuthenticated {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .statCard {
+    min-height: 2.25rem;
+    padding: 0.28rem 0.35rem;
+  }
+
+  .statCard span {
+    font-size: 0.56rem;
+    line-height: 1;
+  }
+
+  .statCard strong {
+    font-size: 0.82rem;
+    line-height: 1;
+    margin-top: 0.16rem;
+  }
+
+  .statCardTopPlatform {
+    display: none;
+  }
+
+  .statCardTopPlatform span {
+    font-size: 0.48rem;
+    letter-spacing: -0.01rem;
+    white-space: nowrap;
+  }
+}

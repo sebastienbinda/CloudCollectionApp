@@ -35,6 +35,7 @@ const STUDIO_CONFIGURATION = {
     editor_total_games: "Editeur",
     developer_total_games: "Developpeur",
   },
+  mobileVisibleColumns: ["name", "country"],
   sortableColumns: ["name", "country", "creation_date"],
   defaultSortColumn: "name",
   errorMessage: "Impossible de charger les studios Bibliotheque.",
@@ -50,6 +51,7 @@ const STUDIO_CONFIGURATION = {
 function useLibraryStudios(options = {}) {
   return useLibraryEntityList({
     ...STUDIO_CONFIGURATION,
+    autoSearchEnabled: true,
     enabled: options.enabled,
   });
 }

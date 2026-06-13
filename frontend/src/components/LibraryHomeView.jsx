@@ -73,12 +73,6 @@ function LibraryHomeView({
       {entitiesError ? <p className="error">{entitiesError}</p> : null}
 
       <section className="platformSection libraryEntitySection">
-        <div className="sectionHeader">
-          <div>
-            <h2>Entites</h2>
-            <span>Referentiel global</span>
-          </div>
-        </div>
         <GridComponent className="libraryEntityGrid">
           {cards.map(([label, count, onClick]) => (
             <CardComponent key={label} className="libraryEntityCard" onClick={onClick}>
