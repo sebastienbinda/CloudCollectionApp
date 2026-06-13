@@ -26,6 +26,11 @@ une API securisee pour proteger les donnees utilisateur et alimenter le
 referentiel commun, tandis que le frontend fournit une interface web de
 consultation, recherche et import.
 
+## Version Deployee
+
+La derniere version release de l'application est deployee en ligne. Vous pouvez
+voir le resultat a cette adresse : https://www.cloud-collection.fr
+
 ## Fonctionnalites
 
 - Tableau de bord de collection avec statistiques par plateforme.
