@@ -20,6 +20,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
 from .database_configuration import DatabaseConfiguration
+from .platform_catalog_cache import PlatformCatalogCache
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,7 @@ class SqlAlchemyLibraryResetRepository:
         configuration: DatabaseConfiguration,
         engine: Engine | None = None,
         engine_factory: EngineFactory = create_engine,
+        platform_catalog_cache: PlatformCatalogCache | None = None,
     ):
         """Initialise le repository de reset Bibliotheque.
 
@@ -63,6 +65,7 @@ class SqlAlchemyLibraryResetRepository:
             configuration (DatabaseConfiguration): Configuration SQLAlchemy.
             engine (Engine | None): Moteur SQLAlchemy injectable en test.
             engine_factory (EngineFactory): Fabrique de moteur SQLAlchemy.
+            platform_catalog_cache (PlatformCatalogCache | None): Cache plateformes injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -76,6 +79,7 @@ class SqlAlchemyLibraryResetRepository:
             raise ValueError("DATABASE_URL est requis pour reinitialiser la Bibliotheque.")
         self.configuration = configuration
         self.engine = engine or engine_factory(configuration.database_url)
+        self.platform_catalog_cache = platform_catalog_cache or PlatformCatalogCache()
 
     def clean_library_tables(self) -> None:
         """Vide les tables reconstruites par le reset Bibliotheque.
@@ -91,10 +95,11 @@ class SqlAlchemyLibraryResetRepository:
         """
 
         schema_name = self.configuration.schema_name
-        table_names = ("t_user_collection", "t_game", "t_studio", "t_platform")
+        table_names = ("t_user_collection", "t_game", "t_studio")
         with self.engine.begin() as connection:
             for table_name in table_names:
                 connection.execute(text(f'DELETE FROM "{schema_name}".{table_name}'))
+        self.platform_catalog_cache.invalidate(schema_name)
 
     def list_importable_users(self) -> list[LibraryResetImportableUser]:
         """Liste les utilisateurs dont un fichier de collection est reference.

@@ -12,6 +12,7 @@
 
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 
 from alembic.config import Config
@@ -181,6 +182,19 @@ class FakeLogger:
         """
 
         self.info_messages.append((message, args))
+
+
+def build_noop_platform_seed_service(schema_name):
+    """Construit un service de seed plateformes sans effet.
+
+    Args:
+        schema_name (str): Schema PostgreSQL ignore.
+
+    Returns:
+        SimpleNamespace: Service factice compatible avec l'initialisation.
+    """
+
+    return SimpleNamespace(seed_from_csv=lambda connection, csv_path: 0)
 
 
 class DatabaseSchemaServiceTest(unittest.TestCase):
@@ -366,6 +380,7 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
             configuration,
             engine_factory=lambda database_url: fake_engine,
             migration_runner=migration_runner,
+            platform_catalog_seed_service_factory=build_noop_platform_seed_service,
         )
 
         self.assertTrue(service.initialize_database_schema())
@@ -377,6 +392,46 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertTrue(any(statement.startswith("INSERT INTO") for statement in executed_sql))
         self.assertEqual(1, len(migrations))
         self.assertEqual(configuration, migrations[0][1])
+
+    def test_initialize_database_schema_seeds_platform_catalog_on_each_startup(self):
+        """Verifie que le catalogue plateformes est recharge apres les migrations.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le seed idempotent de demarrage.
+        """
+
+        fake_engine = FakeEngine()
+        configuration = DatabaseConfiguration(
+            database_url="postgresql://database/app",
+            schema_name="collection",
+            application_version="1.0",
+        )
+        seed_calls = []
+
+        def seed_service_factory(schema_name):
+            return SimpleNamespace(
+                seed_from_csv=lambda connection, csv_path: seed_calls.append(
+                    (schema_name, connection, csv_path)
+                ) or 2
+            )
+
+        service = DatabaseSchemaService(
+            configuration,
+            engine_factory=lambda database_url: fake_engine,
+            migration_runner=lambda engine, runner_configuration, migrations_path: None,
+            platform_catalog_seed_service_factory=seed_service_factory,
+        )
+
+        self.assertTrue(service.initialize_database_schema())
+
+        self.assertEqual(1, len(seed_calls))
+        schema_name, connection, csv_path = seed_calls[0]
+        self.assertEqual("collection", schema_name)
+        self.assertIs(fake_engine.connection, connection)
+        self.assertEqual("platform_catalog.csv", csv_path.name)
 
     def test_initialize_database_schema_keeps_existing_creation_date(self):
         """Verifie que la date de creation existante est conservee.
@@ -399,6 +454,7 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
             configuration,
             engine_factory=lambda database_url: fake_engine,
             migration_runner=lambda engine, runner_configuration, migrations_path: None,
+            platform_catalog_seed_service_factory=build_noop_platform_seed_service,
         )
 
         service.initialize_database_schema()

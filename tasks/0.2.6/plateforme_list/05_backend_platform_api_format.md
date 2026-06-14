@@ -7,8 +7,8 @@ nouveau format `t_platform`.
 
 Cette tâche doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
-- `task/0.2.6/plateforme_list/02_database_platform_schema_and_seed.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/02_database_platform_schema_and_seed.md`
 - `documentation/backend-api.md`
 
 ## Backend À Modifier

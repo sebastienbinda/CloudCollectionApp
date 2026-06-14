@@ -9,7 +9,7 @@ Cette tâche est volontairement la dernière du découpage.
 
 Elle doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
 - toutes les tâches d'implémentation validées.
 
 ## Documentation À Mettre À Jour
@@ -19,7 +19,10 @@ Mettre à jour selon les changements réellement implémentés :
 - `README.md` pour indiquer que la liste des plateformes est fournie par défaut
   par l'application ;
 - `documentation/database.md` pour le schéma final de `t_platform`, ses
-  contraintes et la stratégie de chargement ;
+  contraintes, la stratégie de chargement et la preservation du référentiel lors
+  des resets/réinitialisations ;
+- `documentation/backend-arch.md` pour préciser que le seed du catalogue
+  plateformes est rejoué au démarrage de manière idempotente après Alembic ;
 - `documentation/import.md` pour le nouveau fonctionnement d'import, le
   rattachement au référentiel, les seuils de matching, les warnings, les jeux
   non importés et l'email administrateur ;
@@ -57,7 +60,7 @@ Vérifier aussi :
 
 ```bash
 git diff --check
-rg -n "plateform|platforme|misent|recheche|aovir" documentation README.md task/0.2.6/plateforme_list
+rg -n "plateform|platforme|misent|recheche|aovir" documentation README.md tasks/0.2.6/plateforme_list
 ```
 
 ## Critères D'Acceptation

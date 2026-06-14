@@ -7,8 +7,8 @@ plateformes liées à l'import.
 
 Cette tâche doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
-- `task/0.2.6/plateforme_list/03_backend_platform_matching_import.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/03_backend_platform_matching_import.md`
 - `documentation/backend-api.md`
 - `documentation/import.md`
 

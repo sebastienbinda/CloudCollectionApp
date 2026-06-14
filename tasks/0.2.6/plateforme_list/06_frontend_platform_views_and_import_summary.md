@@ -7,9 +7,9 @@ au nouveau contrat backend.
 
 Cette tâche doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
-- `task/0.2.6/plateforme_list/04_backend_import_result_contract.md`
-- `task/0.2.6/plateforme_list/05_backend_platform_api_format.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/04_backend_import_result_contract.md`
+- `tasks/0.2.6/plateforme_list/05_backend_platform_api_format.md`
 - `documentation/frontend-arch.md`
 - `documentation/site-plan.md`
 

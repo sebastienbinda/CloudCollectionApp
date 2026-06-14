@@ -246,6 +246,9 @@ function HomeView({
                       {formatNumber(platform.games_count)} jeux
                     </CardCountComponent>
                   </CardHeaderComponent>
+                  <p className="platformLifecycle">
+                    {formatPlatformLifecycle(platform)}
+                  </p>
                   {isAuthenticated ? (
                     <dl>
                       <div>
@@ -266,6 +269,18 @@ function HomeView({
       ) : null}
     </PageLayout>
   );
+}
+
+/**
+ * Formate les dates de vie commerciale d'une plateforme.
+ *
+ * @param {Object} platform - Plateforme normalisee par le service frontend.
+ * @returns {string} Dates de sortie et retrait affichees sur une ligne.
+ */
+function formatPlatformLifecycle(platform) {
+  const releaseDate = formatCellValue("Date", platform.release_date);
+  const endDate = formatCellValue("Date", platform.end_date);
+  return `${releaseDate || "-"} / ${endDate || "-"}`;
 }
 
 export default HomeView;

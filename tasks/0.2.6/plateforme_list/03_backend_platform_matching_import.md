@@ -8,7 +8,7 @@ applicatif existant.
 
 Cette tâche doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
 - `documentation/import.md`
 - `documentation/backend-arch.md`
 

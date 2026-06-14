@@ -17,16 +17,16 @@ import useLibraryEntityList from "./useLibraryEntityList";
 
 const PLATFORM_CONFIGURATION = {
   rowsKey: "platforms",
-  columns: ["name", "release_date", "manufacturer", "status", "total_games"],
+  columns: ["name", "release_date", "end_date", "manufacturer", "total_games"],
   columnLabels: {
     name: "Nom",
     release_date: "Sortie",
+    end_date: "Retrait",
     manufacturer: "Constructeur",
-    status: "Statut",
     total_games: "Jeux",
   },
-  mobileVisibleColumns: ["name", "total_games"],
-  sortableColumns: ["name", "release_date", "manufacturer"],
+  mobileVisibleColumns: ["name", "end_date"],
+  sortableColumns: ["name", "release_date", "end_date", "manufacturer"],
   defaultSortColumn: "name",
   errorMessage: "Impossible de charger les plateformes Bibliotheque.",
   fetchList: (criteria) => LibraryApi.fetchPlatforms(criteria),

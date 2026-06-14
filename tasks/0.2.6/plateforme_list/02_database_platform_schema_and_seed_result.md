@@ -17,7 +17,7 @@ La tâche 2 a été implémentée côté backend.
   fichiers applicatifs et les helpers/tests ajoutés sur cette tâche.
 - Chargement initial depuis :
   `backend/services/database/platform_catalog.csv`, copie runtime du contrat
-  `task/0.2.6/plateforme_list/consoles_jeux_video.csv`.
+  `tasks/0.2.6/plateforme_list/consoles_jeux_video.csv`.
 - Seed idempotent par clé fonctionnelle trimmee, minuscule et sans accents.
 - Conservation de la ponctuation significative dans la clé, notamment `+` pour
   distinguer `Atari 7800` et `Atari 7800+`.

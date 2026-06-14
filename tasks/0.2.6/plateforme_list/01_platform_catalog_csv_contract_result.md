@@ -5,7 +5,7 @@
 Cette tache stabilise le contrat de donnees du fichier :
 
 ```text
-task/0.2.6/plateforme_list/consoles_jeux_video.csv
+tasks/0.2.6/plateforme_list/consoles_jeux_video.csv
 ```
 
 Elle ne modifie pas le code applicatif. Le resultat doit etre repris par la

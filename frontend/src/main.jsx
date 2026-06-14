@@ -14,6 +14,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import "./styles/home.css";
+import "./styles/platform-cards.css";
 import "./styles/table-components.css";
 import "./styles/library.css";
 import "./styles/admin.css";

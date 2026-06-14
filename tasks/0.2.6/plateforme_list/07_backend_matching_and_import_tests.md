@@ -7,7 +7,7 @@ plateformes et le mapping d'import.
 
 Cette tâche doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
 - les tâches backend `02`, `03`, `04` et `05`.
 
 ## Tests À Couvrir
@@ -40,6 +40,10 @@ Ajouter ou compléter les tests backend pour valider :
 - email administrateur ;
 - absence de création de plateforme par l'import ;
 - utilisation du cache plateformes pendant l'import ;
+- reset Bibliothèque admin sans suppression de `t_platform` ;
+- réinitialisation collection utilisateur sans suppression de `t_platform` ;
+- invalidation du cache plateformes après reset Bibliothèque et après import
+  créant des jeux ;
 - compteur de plateformes liées.
 
 ## Validation

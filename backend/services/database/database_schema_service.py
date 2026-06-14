@@ -22,9 +22,11 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
 from .database_configuration import DatabaseConfiguration
+from .platform_catalog_seed_service import PlatformCatalogSeedService
 
 EngineFactory = Callable[[str], Engine]
 MigrationRunner = Callable[[Engine, DatabaseConfiguration, Path], None]
+PlatformCatalogSeedServiceFactory = Callable[[str], PlatformCatalogSeedService]
 
 
 class DatabaseSchemaService:
@@ -43,6 +45,7 @@ class DatabaseSchemaService:
         migrations_path: Optional[Path] = None,
         engine_factory: Optional[EngineFactory] = None,
         migration_runner: Optional[MigrationRunner] = None,
+        platform_catalog_seed_service_factory: Optional[PlatformCatalogSeedServiceFactory] = None,
     ):
         """Initialise le service de gestion du schema SQL.
 
@@ -51,6 +54,8 @@ class DatabaseSchemaService:
             migrations_path (Optional[Path]): Dossier Alembic contenant `env.py`.
             engine_factory (Optional[EngineFactory]): Fabrique SQLAlchemy injectable en test.
             migration_runner (Optional[MigrationRunner]): Lanceur Alembic injectable en test.
+            platform_catalog_seed_service_factory (Optional[PlatformCatalogSeedServiceFactory]):
+                Fabrique injectable du service de seed plateformes.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -60,6 +65,9 @@ class DatabaseSchemaService:
         self.migrations_path = migrations_path or Path(__file__).resolve().parents[2] / "migrations"
         self.engine_factory = engine_factory or create_engine
         self.migration_runner = migration_runner or run_alembic_migrations
+        self.platform_catalog_seed_service_factory = (
+            platform_catalog_seed_service_factory or PlatformCatalogSeedService
+        )
 
     def initialize_database_schema(self) -> bool:
         """Cree le schema, applique les migrations et trace la version applicative.
@@ -86,8 +94,29 @@ class DatabaseSchemaService:
             )
 
         self.migration_runner(engine, self.configuration, self.migrations_path)
+        self._seed_platform_catalog(engine)
         self._upsert_schema_version(engine)
         return True
+
+    def _seed_platform_catalog(self, engine: Engine) -> int:
+        """Recharge les plateformes applicatives absentes apres les migrations.
+
+        Args:
+            engine (Engine): Moteur SQLAlchemy connecte a PostgreSQL.
+
+        Returns:
+            int: Nombre de plateformes ajoutees au catalogue.
+
+        Raises:
+            ValueError: Si le CSV de plateformes contient des donnees invalides.
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse le chargement.
+        """
+
+        csv_path = Path(__file__).resolve().parent / "platform_catalog.csv"
+        with engine.begin() as connection:
+            return self.platform_catalog_seed_service_factory(
+                self.configuration.schema_name
+            ).seed_from_csv(connection, csv_path)
 
     @classmethod
     def initialize_database_schema_on_startup(

@@ -223,6 +223,7 @@ class SqlAlchemyUserCollectionImportRepository:
                 collection_file_path,
                 collection_file_description,
             )
+        self.platform_repository.invalidate_cache()
         return UserCollectionImportPersistenceResult(
             linked_platforms=linked_platforms,
             created_studios=created_studios,

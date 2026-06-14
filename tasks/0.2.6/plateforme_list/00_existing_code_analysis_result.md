@@ -7,7 +7,7 @@ applicatif. Elle sert de contrat de travail pour les sous-taches suivantes.
 
 Documents lus :
 
-- `task/0.2.6/plateforme_list/plateforme_list.md`
+- `tasks/0.2.6/plateforme_list/plateforme_list.md`
 - `documentation/database.md`
 - `documentation/import.md`
 - `documentation/backend-api.md`
@@ -215,7 +215,7 @@ backend/services/database/platform_catalog_seed_service.py
 Classes proposees :
 
 - `PlatformCatalogCsvReader`
-  - lit `task/0.2.6/plateforme_list/consoles_jeux_video.csv` ;
+  - lit `tasks/0.2.6/plateforme_list/consoles_jeux_video.csv` ;
   - valide les colonnes ;
   - parse les dates ;
   - retourne des objets metier simples.

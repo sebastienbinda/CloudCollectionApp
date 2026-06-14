@@ -7,9 +7,9 @@ l'application avant de modifier la base de données.
 
 Cette tâche doit s'appuyer sur :
 
-- `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
-- `task/0.2.6/plateforme_list/consoles_jeux_video.csv`
-- `task/0.2.6/plateforme_list/plateforme_list.md`
+- `tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
+- `tasks/0.2.6/plateforme_list/consoles_jeux_video.csv`
+- `tasks/0.2.6/plateforme_list/plateforme_list.md`
 
 ## Travail À Réaliser
 

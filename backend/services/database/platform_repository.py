@@ -92,6 +92,18 @@ class SqlAlchemyPlatformRepository:
         self.platform_catalog_cache.invalidate(self.schema_name)
         return platform_id
 
+    def invalidate_cache(self) -> int:
+        """Invalide le cache serveur du catalogue plateformes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            int: `1` si une entree de cache existait, sinon `0`.
+        """
+
+        return self.platform_catalog_cache.invalidate(self.schema_name)
+
     def count_public_library_platforms(self, connection: Connection) -> int:
         """Compte toutes les plateformes globales de reference.
 

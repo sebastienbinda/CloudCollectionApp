@@ -11,7 +11,7 @@ rapport d'architecture utilisé par toutes les sous-tâches suivantes.
 
 ## Documentation À Lire
 
-- `task/0.2.6/plateforme_list/plateforme_list.md`
+- `tasks/0.2.6/plateforme_list/plateforme_list.md`
 - `documentation/database.md`
 - `documentation/import.md`
 - `documentation/backend-api.md`
@@ -60,7 +60,7 @@ fonctions et tests à créer ou modifier pour :
 
 - le nouveau schéma `t_platform` avec `end_date` et sans colonne obsolète ;
 - le chargement initial des plateformes depuis
-  `task/0.2.6/plateforme_list/consoles_jeux_video.csv` ;
+  `tasks/0.2.6/plateforme_list/consoles_jeux_video.csv` ;
 - la stratégie de migration compatible avec les règles de
   `documentation/database.md` ;
 - la stratégie de parsing des dates CSV, y compris `Inconnue` et `En vente` ;
@@ -102,7 +102,7 @@ Le rapport doit trancher explicitement :
 Créer le fichier :
 
 ```text
-task/0.2.6/plateforme_list/00_existing_code_analysis_result.md
+tasks/0.2.6/plateforme_list/00_existing_code_analysis_result.md
 ```
 
 Le rapport doit contenir :

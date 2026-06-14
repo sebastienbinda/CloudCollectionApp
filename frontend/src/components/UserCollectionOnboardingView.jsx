@@ -178,7 +178,7 @@ function UserCollectionOnboardingView({
  */
 function ImportSummary({ result, onOpenHome }) {
   const counters = [
-    ["Plateformes creees", result.created_platforms],
+    ["Plateformes liees", result.linked_platforms],
     ["Studios crees", result.created_studios],
     ["Jeux crees", result.created_games],
     ["Jeux associes", result.associated_games],
@@ -187,6 +187,12 @@ function ImportSummary({ result, onOpenHome }) {
   const invalidWishlist = result.warnings?.invalid_wishlist || 0;
   const invalidGames = Array.isArray(result.warnings?.invalid_games)
     ? result.warnings.invalid_games
+    : [];
+  const platformMatches = Array.isArray(result.warnings?.platform_matches)
+    ? result.warnings.platform_matches
+    : [];
+  const skippedGames = Array.isArray(result.warnings?.skipped_games)
+    ? result.warnings.skipped_games
     : [];
   return (
     <section className="importSummary" aria-label="Resume de l'import">
@@ -207,9 +213,61 @@ function ImportSummary({ result, onOpenHome }) {
       {invalidGames.length > 0 ? (
         <InvalidImportedGamesList invalidGames={invalidGames} />
       ) : null}
+      {platformMatches.length > 0 ? (
+        <PlatformMatchWarningsList platformMatches={platformMatches} />
+      ) : null}
+      {skippedGames.length > 0 ? (
+        <SkippedGamesWarningsList skippedGames={skippedGames} />
+      ) : null}
       <button type="button" onClick={onOpenHome}>
         Ouvrir Ma collection
       </button>
+    </section>
+  );
+}
+
+/**
+ * Affiche les plateformes rattachees avec verification manuelle.
+ *
+ * @param {Object} props - Warnings de plateformes incertaines.
+ * @returns {import("react").JSX.Element} Liste des rattachements incertains.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function PlatformMatchWarningsList({ platformMatches }) {
+  return (
+    <section className="invalidImportedGames" aria-label="Plateformes a verifier">
+      <h3>Plateformes a verifier</h3>
+      <ul>
+        {platformMatches.map((warning) => (
+          <li key={`${warning.game_name}-${warning.imported_platform}-${warning.matched_platform}`}>
+            <strong>{warning.game_name}</strong>
+            <span>{formatPlatformMatchWarning(warning)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Affiche les jeux ignores faute de plateforme fiable.
+ *
+ * @param {Object} props - Warnings de jeux ignores.
+ * @returns {import("react").JSX.Element} Liste des jeux ignores.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function SkippedGamesWarningsList({ skippedGames }) {
+  return (
+    <section className="invalidImportedGames" aria-label="Jeux ignores">
+      <h3>Jeux ignores</h3>
+      <ul>
+        {skippedGames.map((warning) => (
+          <li key={`${warning.game_name}-${warning.imported_platform}-${warning.reason}`}>
+            <strong>{warning.game_name}</strong>
+            <span>{formatSkippedGameWarning(warning)}</span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -251,6 +309,44 @@ function formatInvalidFields(invalidFields) {
       return field.value ? `${label}: ${field.value}` : label;
     })
     .join(", ");
+}
+
+/**
+ * Formate un warning de rattachement de plateforme incertain.
+ *
+ * @param {Object} warning - Warning retourne par l'API d'import.
+ * @returns {string} Description concise du rattachement.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatPlatformMatchWarning(warning) {
+  return `${warning.imported_platform || "-"} -> ${warning.matched_platform || "-"} (${Number(warning.score || 0)}%)`;
+}
+
+/**
+ * Formate un warning de jeu ignore.
+ *
+ * @param {Object} warning - Warning retourne par l'API d'import.
+ * @returns {string} Description concise du refus.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatSkippedGameWarning(warning) {
+  return `${warning.imported_platform || "-"} - ${formatSkippedGameReason(warning.reason)} (${Number(warning.score || 0)}%)`;
+}
+
+/**
+ * Traduit la raison technique d'un jeu ignore.
+ *
+ * @param {string} reason - Raison backend.
+ * @returns {string} Raison lisible.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatSkippedGameReason(reason) {
+  const labels = {
+    ambiguous: "correspondance ambigue",
+    low_score: "score trop faible",
+    no_match: "aucune correspondance",
+  };
+  return labels[reason] || "plateforme non fiable";
 }
 
 export default UserCollectionOnboardingView;
