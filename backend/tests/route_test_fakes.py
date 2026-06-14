@@ -44,7 +44,20 @@ class FakeLibraryService:
         """
 
         self.__class__.last_platforms_criteria = criteria
-        return {"page": self._page(criteria), "platforms": [{"id": 1, "name": "Switch", "release_date": "2017-03-03", "manufacturer": "Nintendo", "description": "", "status": "ACTIVE", "total_games": 12}]}
+        return {
+            "page": self._page(criteria),
+            "platforms": [
+                {
+                    "id": 1,
+                    "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": "",
+                    "manufacturer": "Nintendo",
+                    "description": "",
+                    "total_games": 12,
+                }
+            ],
+        }
 
     def list_studios(self, criteria):
         """Liste les studios publics.

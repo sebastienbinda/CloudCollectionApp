@@ -151,9 +151,9 @@ class FakePlatformRepository:
                 "id": 1,
                 "name": "Switch",
                 "release_date": datetime(2017, 3, 3, 9, 30),
+                "end_date": None,
                 "manufacturer": None,
                 "description": {"screen": "portable"},
-                "status": "ACTIVE",
                 "total_games": 12,
             }
         ]
@@ -383,9 +383,9 @@ class LibraryServiceTest(unittest.TestCase):
                     "id": 1,
                     "name": "Switch",
                     "release_date": "2017-03-03",
+                    "end_date": "",
                     "manufacturer": "",
                     "description": {"screen": "portable"},
-                    "status": "ACTIVE",
                     "total_games": 12,
                 }
             ],

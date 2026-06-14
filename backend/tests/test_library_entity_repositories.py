@@ -162,6 +162,8 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         sql, parameters = connection.executed_statements[0]
         self.assertEqual([{"id": 1, "name": "Switch", "total_games": 12}], rows)
         self.assertIn("COUNT(game.id) AS total_games", sql)
+        self.assertIn("platform.end_date", sql)
+        self.assertNotIn("platform.status", sql)
         self.assertIn("LEFT JOIN", sql)
         self.assertIn("t_game", sql)
         self.assertIn("TRANSLATE(LOWER(platform.name)", sql)

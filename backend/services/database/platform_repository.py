@@ -23,10 +23,10 @@ from .library_query_sql_builder import LibraryQuerySqlBuilder
 class SqlAlchemyPlatformRepository:
     """Persiste les plateformes de collection dans `t_platform`."""
 
-    UNKNOWN_STATUS = "UNKNOWN"
     LIBRARY_SORT_COLUMNS = {
         "name": "platform.name",
         "release_date": "platform.release_date",
+        "end_date": "platform.end_date",
         "manufacturer": "platform.manufacturer",
     }
 
@@ -62,7 +62,7 @@ class SqlAlchemyPlatformRepository:
         }
 
     def insert(self, connection: Connection, platform_name: str) -> int:
-        """Insere une plateforme avec le statut `UNKNOWN`.
+        """Insere une plateforme minimale.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
@@ -74,10 +74,10 @@ class SqlAlchemyPlatformRepository:
 
         return int(connection.execute(
             text(
-                f'INSERT INTO "{self.schema_name}".t_platform (name, status) '
-                "VALUES (:name, :status) RETURNING id"
+                f'INSERT INTO "{self.schema_name}".t_platform (name) '
+                "VALUES (:name) RETURNING id"
             ),
-            {"name": platform_name, "status": self.UNKNOWN_STATUS},
+            {"name": platform_name},
         ).scalar_one())
 
     def count_public_library_platforms(self, connection: Connection) -> int:
@@ -153,13 +153,13 @@ class SqlAlchemyPlatformRepository:
         rows = connection.execute(
             text(
                 "SELECT "
-                "platform.id, platform.name, platform.release_date, platform.manufacturer, "
-                "platform.description, platform.status, COUNT(game.id) AS total_games "
+                "platform.id, platform.name, platform.release_date, platform.end_date, "
+                "platform.manufacturer, platform.description, COUNT(game.id) AS total_games "
                 f'FROM "{self.schema_name}".t_platform platform '
                 f'LEFT JOIN "{self.schema_name}".t_game game ON game.platform = platform.id '
                 f"{where_clause} "
                 "GROUP BY platform.id, platform.name, platform.release_date, "
-                "platform.manufacturer, platform.description, platform.status "
+                "platform.end_date, platform.manufacturer, platform.description "
                 f"{order_by_clause} "
                 "LIMIT :limit OFFSET :offset"
             ),

@@ -384,9 +384,9 @@ class LibraryService:
             "id": row["id"],
             "name": self._text_value(row.get("name")),
             "release_date": self._date_value(row.get("release_date")),
+            "end_date": self._date_value(row.get("end_date")),
             "manufacturer": self._text_value(row.get("manufacturer")),
             "description": self._description_value(row.get("description")),
-            "status": self._text_value(row.get("status")),
             "total_games": self._integer_value(row.get("total_games")),
         }
 
