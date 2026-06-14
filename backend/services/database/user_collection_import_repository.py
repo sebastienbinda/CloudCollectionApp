@@ -23,6 +23,8 @@ from services.users.user_collection_name_normalizer import UserCollectionNameNor
 
 from .database_configuration import DatabaseConfiguration
 from .game_repository import SqlAlchemyGameRepository
+from .platform_matching_admin_notifier import PlatformMatchingAdminNotifier
+from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
 from .studio_repository import SqlAlchemyStudioRepository
 from .user_collection_file_repository import (
@@ -98,6 +100,8 @@ class SqlAlchemyUserCollectionImportRepository:
         configuration: DatabaseConfiguration,
         name_normalizer: UserCollectionNameNormalizer | None = None,
         collection_file_remover=None,
+        platform_matching_service: PlatformMatchingService | None = None,
+        platform_matching_notifier: PlatformMatchingAdminNotifier | None = None,
     ):
         """Initialise l'orchestrateur SQL d'import de collection.
 
@@ -105,6 +109,8 @@ class SqlAlchemyUserCollectionImportRepository:
             configuration (DatabaseConfiguration): Configuration SQLAlchemy.
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur metier.
             collection_file_remover (object | None): Suppresseur de fichier injecte.
+            platform_matching_service (PlatformMatchingService | None): Matching plateformes.
+            platform_matching_notifier (PlatformMatchingAdminNotifier | None): Notifier admin.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -138,6 +144,14 @@ class SqlAlchemyUserCollectionImportRepository:
             configuration.schema_name
         )
         self.collection_file_remover = collection_file_remover or _UserCollectionFileRemover()
+        self.platform_matching_service = (
+            platform_matching_service
+            or PlatformMatchingService(name_normalizer=self.name_normalizer)
+        )
+        self.platform_matching_notifier = (
+            platform_matching_notifier
+            or PlatformMatchingAdminNotifier()
+        )
 
     def user_has_collection(self, user_id: int) -> bool:
         """Indique si l'utilisateur possede deja un fichier de collection.
@@ -189,6 +203,7 @@ class SqlAlchemyUserCollectionImportRepository:
 
         with self.engine.begin() as connection:
             self.user_file_repository.lock_user_collection_state(connection, user_id)
+            import_data = self._match_platforms(connection, import_data)
             platform_ids, created_platforms = self._ensure_platforms(connection, import_data)
             studio_ids, created_studios = self._ensure_studios(connection, import_data)
             game_associations, created_games = self._ensure_games(
@@ -214,6 +229,21 @@ class SqlAlchemyUserCollectionImportRepository:
             created_games=created_games,
             associated_games=associated_games,
         )
+
+    def _match_platforms(
+        self,
+        connection: Connection,
+        import_data: CollectionImportData,
+    ) -> CollectionImportData:
+        platform_rows = self.platform_repository.load_catalog_rows(connection)
+        matched_import_data = self.platform_matching_service.match_import_data(
+            import_data,
+            platform_rows,
+        )
+        self.platform_matching_notifier.notify_manual_matches(
+            matched_import_data.warnings.platform_matches
+        )
+        return matched_import_data
 
     def reinitialize_collection(self, user_id: int) -> None:
         """Reinitialise la collection d'un utilisateur dans une transaction SQL.
@@ -267,18 +297,7 @@ class SqlAlchemyUserCollectionImportRepository:
             tuple[dict[str, int], int]: Identifiants par cle et nombre de creations.
         """
 
-        platform_ids = self.platform_repository.load_ids_by_key(connection)
-        created_count = 0
-        for platform in import_data.platforms:
-            platform_key = self.name_normalizer.comparison_key(platform.name)
-            if platform_key in platform_ids:
-                continue
-            platform_ids[platform_key] = self.platform_repository.insert(
-                connection,
-                platform.name,
-            )
-            created_count += 1
-        return platform_ids, created_count
+        return self.platform_repository.load_ids_by_key(connection), 0
 
     def _ensure_studios(
         self,

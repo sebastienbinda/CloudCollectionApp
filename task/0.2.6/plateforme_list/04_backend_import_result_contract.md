@@ -28,6 +28,10 @@ Selon les noms confirmés dans le rapport d'analyse :
 - Le résultat doit exposer le nombre de plateformes du référentiel liées aux
   jeux importés.
 - Le contrat doit rester clair pour les imports partiels ou avec warnings.
+- Les warnings de matching produits par la tâche 03 doivent être conservés dans
+  la réponse :
+  - `platform_matches` pour les jeux importés avec vérification manuelle ;
+  - `skipped_games` pour les jeux ignorés faute de plateforme fiable.
 - Les anciens champs ne doivent être conservés que si le rapport d'analyse
   justifie une période de compatibilité.
 

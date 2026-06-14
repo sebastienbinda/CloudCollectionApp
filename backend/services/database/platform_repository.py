@@ -59,6 +59,18 @@ class SqlAlchemyPlatformRepository:
             for row in self._cached_platform_rows(connection)
         }
 
+    def load_catalog_rows(self, connection: Connection) -> list[dict[str, object]]:
+        """Charge les plateformes du catalogue applicatif depuis le cache.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            list[dict[str, object]]: Plateformes candidates au matching.
+        """
+
+        return self._cached_platform_rows(connection)
+
     def insert(self, connection: Connection, platform_name: str) -> int:
         """Insere une plateforme minimale.
 

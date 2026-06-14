@@ -160,6 +160,8 @@ class UserCollectionImportResult:
                 "invalid_wishlist": 0,
                 "invalid_wishlist_values_found": [],
                 "invalid_games": [],
+                "platform_matches": [],
+                "skipped_games": [],
             },
         }
 

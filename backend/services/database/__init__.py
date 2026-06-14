@@ -22,6 +22,9 @@ from .platform_catalog_cache import PlatformCatalogCache
 from .platform_catalog_csv_reader import PlatformCatalogCsvReader
 from .platform_catalog_entry import PlatformCatalogEntry
 from .platform_catalog_seed_service import PlatformCatalogSeedService
+from .platform_matching_admin_notifier import PlatformMatchingAdminNotifier
+from .platform_matching_configuration import PlatformMatchingConfiguration
+from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
 from .schema_version import SchemaVersion
 from .studio import Studio
@@ -51,6 +54,9 @@ __all__ = [
     "PlatformCatalogCsvReader",
     "PlatformCatalogEntry",
     "PlatformCatalogSeedService",
+    "PlatformMatchingAdminNotifier",
+    "PlatformMatchingConfiguration",
+    "PlatformMatchingService",
     "SqlAlchemyPlatformRepository",
     "SchemaVersion",
     "Studio",

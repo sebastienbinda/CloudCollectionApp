@@ -112,6 +112,8 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
                 "invalid_wishlist": 1,
                 "invalid_wishlist_values_found": ["Peut etre"],
                 "invalid_games": [],
+                "platform_matches": [],
+                "skipped_games": [],
             },
             result.warnings,
         )
