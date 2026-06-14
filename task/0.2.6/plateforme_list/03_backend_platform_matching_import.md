@@ -27,6 +27,10 @@ Selon les noms confirmés dans le rapport d'analyse :
 ## Règles Fonctionnelles
 
 - L'import ne doit plus insérer de nouvelles plateformes dans `t_platform`.
+- Le matching d'import doit utiliser le cache serveur du catalogue plateformes
+  quand il charge les plateformes candidates.
+- Le cache plateformes expire toutes les 5 heures ; aucun cache local plus long
+  ne doit être ajouté dans le matching.
 - La recherche doit ignorer les différences de casse, espaces et accents.
 - Une coquille dans le nom peut être corrigée par correspondance approximative
   selon les seuils définis dans la tâche chapeau.
@@ -72,6 +76,8 @@ Ajouter des tests backend poussés couvrant :
 - warnings retournés avec la liste des jeux impactés ;
 - email administrateur déclenché uniquement quand nécessaire ;
 - absence de création de plateforme pendant l'import.
+- utilisation du cache plateformes pour charger les candidates sans requêtes SQL
+  répétées.
 
 ## Critères D'Acceptation
 

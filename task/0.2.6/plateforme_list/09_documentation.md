@@ -23,6 +23,8 @@ Mettre à jour selon les changements réellement implémentés :
 - `documentation/import.md` pour le nouveau fonctionnement d'import, le
   rattachement au référentiel, les seuils de matching, les warnings, les jeux
   non importés et l'email administrateur ;
+- `documentation/backend-arch.md` pour le cache serveur du catalogue plateformes
+  partagé entre imports et recherche, avec expiration toutes les 5 heures ;
 - `README.md` et les fichiers Docker si les variables
   `MATCHING_LOW_LVL_RATING` et `MATCHING_HIGH_LEVEL_RATING` doivent être
   exposées dans les environnements local ou online ;

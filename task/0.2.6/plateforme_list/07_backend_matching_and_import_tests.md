@@ -17,6 +17,9 @@ Ajouter ou compléter les tests backend pour valider :
 - schéma `t_platform` ;
 - chargement du catalogue plateformes ;
 - endpoint de liste / recherche plateformes ;
+- cache serveur du catalogue plateformes avec TTL 5 heures ;
+- absence de requêtes SQL répétées pour le catalogue plateformes avant
+  expiration du cache ;
 - import avec rattachement exact ;
 - import avec casse différente ;
 - import avec accents différents ;
@@ -35,6 +38,7 @@ Ajouter ou compléter les tests backend pour valider :
 - warnings d'import ;
 - email administrateur ;
 - absence de création de plateforme par l'import ;
+- utilisation du cache plateformes pendant l'import ;
 - compteur de plateformes liées.
 
 ## Validation

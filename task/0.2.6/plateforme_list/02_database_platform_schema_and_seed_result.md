@@ -24,6 +24,10 @@ La tâche 2 a été implémentée côté backend.
 - Adaptation du repository plateformes public et du payload bibliothèque :
   `release_date`, `end_date`, `manufacturer`, `description`, `total_games`.
 - Autorisation du tri public des plateformes par `end_date`.
+- Ajout d'un cache serveur `PlatformCatalogCache` pour le catalogue plateformes,
+  avec expiration toutes les 5 heures.
+- Le repository plateformes utilise ce cache pour les imports et la recherche
+  publique ; les insertions plateforme invalident le cache par prudence.
 
 ## Règles CSV Appliquées
 
@@ -60,3 +64,5 @@ La tâche 2 a été implémentée côté backend.
 - `documentation/database.md` et `documentation/backend-api.md` devront être mis
   à jour dans la tâche documentation finale pour refléter `end_date` et
   l'absence de `status` côté plateformes publiques.
+- `documentation/backend-arch.md` devra aussi documenter que le cache plateformes
+  est un cache serveur partagé par l'import et la recherche, avec TTL 5h.

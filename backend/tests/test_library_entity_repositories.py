@@ -14,6 +14,7 @@
 import unittest
 
 from services.database import (
+    PlatformCatalogCache,
     SqlAlchemyGameRepository,
     SqlAlchemyPlatformRepository,
     SqlAlchemyStudioRepository,
@@ -111,6 +112,7 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         """
 
         normalizer = UserCollectionNameNormalizer()
+        PlatformCatalogCache().invalidate("collection")
         self.query_parser = LibraryQueryParser(normalizer)
         self.platform_repository = SqlAlchemyPlatformRepository("collection", normalizer)
         self.studio_repository = SqlAlchemyStudioRepository("collection", normalizer)
@@ -126,7 +128,10 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
             None: Les assertions valident les tables lues.
         """
 
-        connection = FakeRepositoryConnection(scalar_value=7)
+        connection = FakeRepositoryConnection(
+            scalar_value=7,
+            rows=[{"id": index, "name": f"Platform {index}"} for index in range(7)],
+        )
 
         self.assertEqual(7, self.platform_repository.count_public_library_platforms(connection))
         self.assertEqual(7, self.studio_repository.count_public_library_studios(connection))
@@ -149,29 +154,57 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
             None: Les assertions valident la requete generee.
         """
 
-        criteria = self.query_parser.parse(
-            "platforms",
-            {"name": " École ", "page": "2", "size": "25", "sort": "manufacturer,desc"},
-        )
+        criteria = self.query_parser.parse("platforms", {
+            "name": " École ",
+            "page": "0",
+            "size": "1",
+            "sort": "manufacturer,desc",
+        })
         connection = FakeRepositoryConnection(
-            rows=[{"id": 1, "name": "Switch", "total_games": 12}]
+            rows=[
+                {
+                    "id": 1,
+                    "name": "Switch",
+                    "manufacturer": "Nintendo",
+                    "total_games": 12,
+                },
+                {
+                    "id": 2,
+                    "name": "École Z",
+                    "manufacturer": "Beta",
+                    "total_games": 4,
+                },
+                {
+                    "id": 3,
+                    "name": "Ecole A",
+                    "manufacturer": "Alpha",
+                    "total_games": 8,
+                },
+            ]
         )
 
         rows = self.platform_repository.list_public_library_platforms(connection, criteria)
 
         sql, parameters = connection.executed_statements[0]
-        self.assertEqual([{"id": 1, "name": "Switch", "total_games": 12}], rows)
+        self.assertEqual(
+            [{"id": 2, "name": "École Z", "manufacturer": "Beta", "total_games": 4}],
+            rows,
+        )
         self.assertIn("COUNT(game.id) AS total_games", sql)
         self.assertIn("platform.end_date", sql)
         self.assertNotIn("platform.status", sql)
         self.assertIn("LEFT JOIN", sql)
         self.assertIn("t_game", sql)
-        self.assertIn("TRANSLATE(LOWER(platform.name)", sql)
-        self.assertIn("ORDER BY platform.manufacturer DESC, platform.name ASC", sql)
-        self.assertEqual("%ecole%", parameters["name_pattern"])
-        self.assertEqual(25, parameters["limit"])
-        self.assertEqual(50, parameters["offset"])
+        self.assertNotIn("TRANSLATE(LOWER(platform.name)", sql)
+        self.assertNotIn("ORDER BY", sql)
+        self.assertEqual({}, parameters)
         self.assertNotIn("t_user", sql)
+
+        self.platform_repository.count_public_library_platforms_by_criteria(
+            connection,
+            criteria,
+        )
+        self.assertEqual(1, len(connection.executed_statements))
 
     def test_list_public_library_studios_counts_editor_and_developer_games(self):
         """Verifie la liste publique des studios.

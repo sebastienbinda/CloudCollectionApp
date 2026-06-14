@@ -19,6 +19,7 @@ Selon les noms confirmés dans le rapport d'analyse :
 - service Bibliothèque ;
 - controller plateformes ;
 - endpoint de recherche plateformes utilisé par la collection ;
+- cache serveur du catalogue plateformes ;
 - tests de route et service.
 
 ## Format Cible
@@ -45,6 +46,8 @@ Ajouter ou modifier des tests backend couvrant :
 - tri par `name`, `release_date`, `end_date` et `manufacturer` si supporté ;
 - sérialisation de `end_date` ;
 - absence de champ obsolète si applicable.
+- utilisation du cache plateformes sur les recherches répétées ;
+- expiration du cache après 5 heures.
 
 ## Critères D'Acceptation
 
