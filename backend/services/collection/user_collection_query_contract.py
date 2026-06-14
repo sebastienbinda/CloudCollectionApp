@@ -97,7 +97,7 @@ class UserCollectionQueryParser:
             "sort",
         }
     )
-    PLATFORM_SORT_COLUMNS = frozenset({"name"})
+    PLATFORM_SORT_COLUMNS = frozenset({"name", "release_date", "end_date", "manufacturer"})
     GAME_SORT_COLUMNS = frozenset(
         {"name", "platform_name", "release_date", "studio_name", "buy_date", "grade"}
     )

@@ -28,7 +28,12 @@ from .library_query_sql_builder import LibraryQuerySqlBuilder
 class SqlAlchemyUserCollectionQueryRepository:
     """Lit la collection utilisateur depuis les tables SQL."""
 
-    PLATFORM_SORT_COLUMNS = {"name": "platform.name"}
+    PLATFORM_SORT_COLUMNS = {
+        "name": "platform.name",
+        "release_date": "platform.release_date",
+        "end_date": "platform.end_date",
+        "manufacturer": "platform.manufacturer",
+    }
     GAME_SORT_COLUMNS = {
         "name": "game.name",
         "platform_name": "platform.name",
@@ -203,12 +208,17 @@ class SqlAlchemyUserCollectionQueryRepository:
         where_clause = self._build_platform_where_clause(criteria, parameters)
         rows = connection.execute(
             text(
-                "SELECT platform.id, platform.name, COUNT(game.id) AS nb_games "
+                "SELECT "
+                "platform.id, platform.name, platform.release_date::text AS release_date, "
+                "platform.end_date::text AS end_date, platform.manufacturer, "
+                "platform.description, COUNT(game.id) AS nb_games, COUNT(game.id) AS total_games "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
                 f"{where_clause} "
-                "GROUP BY platform.id, platform.name "
+                "GROUP BY "
+                "platform.id, platform.name, platform.release_date, platform.end_date, "
+                "platform.manufacturer, platform.description "
                 f"{self._build_order_by(criteria.sort_rules, self.PLATFORM_SORT_COLUMNS)} "
                 "LIMIT :limit OFFSET :offset"
             ),

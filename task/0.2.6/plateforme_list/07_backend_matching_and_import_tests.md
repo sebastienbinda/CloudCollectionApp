@@ -16,7 +16,8 @@ Ajouter ou compléter les tests backend pour valider :
 
 - schéma `t_platform` ;
 - chargement du catalogue plateformes ;
-- endpoint de liste / recherche plateformes ;
+- endpoint public de liste / recherche plateformes ;
+- endpoint collection de recherche plateformes ;
 - cache serveur du catalogue plateformes avec TTL 5 heures ;
 - absence de requêtes SQL répétées pour le catalogue plateformes avant
   expiration du cache ;

@@ -178,7 +178,18 @@ class FakeUserCollectionQueryRepository:
         """
 
         self.calls.append(("list_platforms", connection, user_id, criteria))
-        return [{"id": 1, "name": "Switch", "nb_games": 25}]
+        return [
+            {
+                "id": 1,
+                "name": "Switch",
+                "release_date": datetime(2017, 3, 3, 9, 0),
+                "end_date": None,
+                "manufacturer": "Nintendo",
+                "description": {"generation": "8"},
+                "nb_games": 25,
+                "total_games": 25,
+            }
+        ]
 
     def count_games_by_criteria(self, connection, user_id, criteria):
         """Compte les jeux factices.
@@ -454,7 +465,12 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                 {
                     "id": 1,
                     "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": "",
+                    "manufacturer": "Nintendo",
+                    "description": {"generation": "8"},
                     "nb_games": 25,
+                    "total_games": 25,
                     "total_value": 0,
                     "average_value": 0,
                 }
@@ -673,6 +689,23 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertIsNone(self.query_parser.parse_platforms({}).wishlist)
         with self.assertRaisesRegex(ValueError, "Invalid wishlist"):
             self.query_parser.parse_platforms({"wishlist": "1"})
+
+    def test_parser_accepts_platform_catalog_sort_columns(self):
+        """Verifie les tris catalogue autorises pour les plateformes collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les colonnes de tri.
+        """
+
+        for column in ["name", "release_date", "end_date", "manufacturer"]:
+            criteria = self.query_parser.parse_platforms({"sort": f"{column},desc"})
+            self.assertEqual((column, "desc"), (
+                criteria.sort_rules[0].column,
+                criteria.sort_rules[0].direction,
+            ))
 
     def test_parser_rejects_unsupported_platform_query_parameter(self):
         """Verifie le refus explicite d'un critere plateforme inconnu.

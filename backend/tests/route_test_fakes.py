@@ -166,7 +166,12 @@ class FakeUserCollectionQueryService:
                 {
                     "id": 1,
                     "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": "",
+                    "manufacturer": "Nintendo",
+                    "description": {"generation": "8"},
                     "nb_games": 25,
+                    "total_games": 25,
                     "total_value": 0,
                     "average_value": 0,
                 }
