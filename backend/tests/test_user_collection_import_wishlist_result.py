@@ -107,6 +107,9 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
             )
 
         self.assertEqual(1, result.wishlisted_games)
+        self.assertEqual(1, result.linked_platforms)
+        self.assertNotIn("created_platforms", result.to_dict())
+        self.assertEqual(1, result.to_dict()["linked_platforms"])
         self.assertEqual(
             {
                 "invalid_wishlist": 1,

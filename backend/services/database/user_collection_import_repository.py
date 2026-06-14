@@ -39,13 +39,13 @@ class UserCollectionImportPersistenceResult:
     """Regroupe les compteurs de persistance d'un import de collection.
 
     Attributes:
-        created_platforms (int): Nombre de plateformes creees.
+        linked_platforms (int): Nombre de plateformes du referentiel liees.
         created_studios (int): Nombre de studios crees.
         created_games (int): Nombre de jeux crees.
         associated_games (int): Nombre de jeux rattaches a l'utilisateur.
     """
 
-    created_platforms: int
+    linked_platforms: int
     created_studios: int
     created_games: int
     associated_games: int
@@ -204,7 +204,7 @@ class SqlAlchemyUserCollectionImportRepository:
         with self.engine.begin() as connection:
             self.user_file_repository.lock_user_collection_state(connection, user_id)
             import_data = self._match_platforms(connection, import_data)
-            platform_ids, created_platforms = self._ensure_platforms(connection, import_data)
+            platform_ids, linked_platforms = self._ensure_platforms(connection, import_data)
             studio_ids, created_studios = self._ensure_studios(connection, import_data)
             game_associations, created_games = self._ensure_games(
                 connection,
@@ -224,7 +224,7 @@ class SqlAlchemyUserCollectionImportRepository:
                 collection_file_description,
             )
         return UserCollectionImportPersistenceResult(
-            created_platforms=created_platforms,
+            linked_platforms=linked_platforms,
             created_studios=created_studios,
             created_games=created_games,
             associated_games=associated_games,
@@ -287,17 +287,23 @@ class SqlAlchemyUserCollectionImportRepository:
         connection: Connection,
         import_data: CollectionImportData,
     ) -> tuple[dict[str, int], int]:
-        """Cree les plateformes absentes et retourne leurs identifiants.
+        """Retourne les plateformes du referentiel liees a l'import.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             import_data (CollectionImportData): Donnees importees.
 
         Returns:
-            tuple[dict[str, int], int]: Identifiants par cle et nombre de creations.
+            tuple[dict[str, int], int]: Identifiants par cle et nombre de plateformes liees.
         """
 
-        return self.platform_repository.load_ids_by_key(connection), 0
+        platform_ids = self.platform_repository.load_ids_by_key(connection)
+        linked_keys = {
+            self.name_normalizer.comparison_key(game.platform_name)
+            for game in import_data.games
+            if self.name_normalizer.comparison_key(game.platform_name)
+        }
+        return platform_ids, len(linked_keys.intersection(platform_ids))
 
     def _ensure_studios(
         self,

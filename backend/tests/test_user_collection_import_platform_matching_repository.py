@@ -18,6 +18,7 @@ from services.collection.imports import CollectionImportData, CollectionImportPl
 from services.database.user_collection_import_repository import (
     SqlAlchemyUserCollectionImportRepository,
 )
+from services.users import UserCollectionNameNormalizer
 
 
 class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
@@ -35,18 +36,28 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
 
         insert_calls = []
         repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
         repository.platform_repository = SimpleNamespace(
-            load_ids_by_key=lambda connection: {"switch": 7},
+            load_ids_by_key=lambda connection: {"switch": 7, "nes": 8},
             insert=lambda connection, name: insert_calls.append(name),
         )
 
-        platform_ids, created_count = repository._ensure_platforms(
+        platform_ids, linked_platforms = repository._ensure_platforms(
             object(),
-            CollectionImportData([CollectionImportPlatform("Unknown")], [], []),
+            CollectionImportData(
+                [CollectionImportPlatform("Switch")],
+                [],
+                [
+                    SimpleNamespace(platform_name="Switch"),
+                    SimpleNamespace(platform_name="Switch"),
+                    SimpleNamespace(platform_name="NES"),
+                    SimpleNamespace(platform_name="Unknown"),
+                ],
+            ),
         )
 
-        self.assertEqual({"switch": 7}, platform_ids)
-        self.assertEqual(0, created_count)
+        self.assertEqual({"switch": 7, "nes": 8}, platform_ids)
+        self.assertEqual(2, linked_platforms)
         self.assertEqual([], insert_calls)
 
 

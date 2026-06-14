@@ -63,9 +63,15 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
 
         headers = self.get_user_auth_headers()
 
-        self.assertEqual({"has_collection": False}, self.client.get("/api/users/me/collection", headers=headers).get_json())
+        self.assertEqual(
+            {"has_collection": False},
+            self.client.get("/api/users/me/collection", headers=headers).get_json(),
+        )
         FakeUserCollectionImportRepository.has_collection = True
-        self.assertEqual({"has_collection": True}, self.client.get("/api/users/me/collection", headers=headers).get_json())
+        self.assertEqual(
+            {"has_collection": True},
+            self.client.get("/api/users/me/collection", headers=headers).get_json(),
+        )
 
     def test_current_user_import_configuration_requires_authentication(self):
         """Verifie que la recuperation de configuration exige un token.
@@ -177,6 +183,8 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(201, response.status_code)
         payload = response.get_json()
+        self.assertEqual(1, payload["linked_platforms"])
+        self.assertNotIn("created_platforms", payload)
         self.assertEqual(4, payload["associated_games"])
         self.assertEqual(0, payload["wishlisted_games"])
         self.assertEqual(

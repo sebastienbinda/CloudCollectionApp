@@ -125,7 +125,7 @@ class UserCollectionImportResult:
     """Regroupe les compteurs retournes apres un import reussi.
 
     Attributes:
-        created_platforms (int): Nombre de plateformes creees.
+        linked_platforms (int): Nombre de plateformes du referentiel liees.
         created_studios (int): Nombre de studios crees.
         created_games (int): Nombre de jeux crees.
         associated_games (int): Nombre de jeux associes a l'utilisateur.
@@ -133,7 +133,7 @@ class UserCollectionImportResult:
         warnings (dict): Avertissements fonctionnels de l'import.
     """
 
-    created_platforms: int
+    linked_platforms: int
     created_studios: int
     created_games: int
     associated_games: int
@@ -151,7 +151,7 @@ class UserCollectionImportResult:
         """
 
         return {
-            "created_platforms": self.created_platforms,
+            "linked_platforms": self.linked_platforms,
             "created_studios": self.created_studios,
             "created_games": self.created_games,
             "associated_games": self.associated_games,
@@ -483,7 +483,7 @@ class UserCollectionImportService:
         import_data: CollectionImportData,
     ) -> UserCollectionImportResult:
         return UserCollectionImportResult(
-            created_platforms=persistence_result.created_platforms,
+            linked_platforms=persistence_result.linked_platforms,
             created_studios=persistence_result.created_studios,
             created_games=persistence_result.created_games,
             associated_games=persistence_result.associated_games,
