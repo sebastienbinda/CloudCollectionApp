@@ -9,6 +9,7 @@ Cette tâche doit s'appuyer sur :
 
 - `task/0.2.6/plateforme_list/00_existing_code_analysis_result.md`
 - `task/0.2.6/plateforme_list/01_platform_catalog_csv_and_contract.md`
+- `task/0.2.6/plateforme_list/01_platform_catalog_csv_contract_result.md`
 - `documentation/database.md`
 
 ## Backend À Modifier
