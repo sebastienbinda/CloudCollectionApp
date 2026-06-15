@@ -92,7 +92,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             match_import_data=lambda import_data, platform_rows: import_data,
         )
         repository.platform_matching_notifier = SimpleNamespace(
-            notify_manual_matches=lambda warnings: None,
+            notify_import_report=lambda warnings: None,
         )
         repository.studio_repository = SimpleNamespace(load_ids_by_key=lambda connection: {})
         repository.game_repository = SimpleNamespace(

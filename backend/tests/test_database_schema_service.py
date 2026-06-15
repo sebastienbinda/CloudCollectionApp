@@ -194,7 +194,7 @@ def build_noop_platform_seed_service(schema_name):
         SimpleNamespace: Service factice compatible avec l'initialisation.
     """
 
-    return SimpleNamespace(seed_from_csv=lambda connection, csv_path: 0)
+    return SimpleNamespace(seed_from_csv=lambda connection, csv_path, alias_csv_path: 0)
 
 
 class DatabaseSchemaServiceTest(unittest.TestCase):
@@ -297,8 +297,11 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn('"end_date"', migration_source)
         self.assertIn("op.add_column", migration_source)
         self.assertIn('op.drop_column("t_platform", "status"', migration_source)
+        self.assertIn("t_platform_alias", migration_source)
+        self.assertIn("s_platform_alias", migration_source)
         self.assertIn("PlatformCatalogSeedService", migration_source)
         self.assertIn("platform_catalog.csv", migration_source)
+        self.assertIn("platform_alias_catalog.csv", migration_source)
 
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.
@@ -413,8 +416,8 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         def seed_service_factory(schema_name):
             return SimpleNamespace(
-                seed_from_csv=lambda connection, csv_path: seed_calls.append(
-                    (schema_name, connection, csv_path)
+                seed_from_csv=lambda connection, csv_path, alias_csv_path: seed_calls.append(
+                    (schema_name, connection, csv_path, alias_csv_path)
                 ) or 2
             )
 
@@ -428,10 +431,11 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertTrue(service.initialize_database_schema())
 
         self.assertEqual(1, len(seed_calls))
-        schema_name, connection, csv_path = seed_calls[0]
+        schema_name, connection, csv_path, alias_csv_path = seed_calls[0]
         self.assertEqual("collection", schema_name)
         self.assertIs(fake_engine.connection, connection)
         self.assertEqual("platform_catalog.csv", csv_path.name)
+        self.assertEqual("platform_alias_catalog.csv", alias_csv_path.name)
 
     def test_initialize_database_schema_keeps_existing_creation_date(self):
         """Verifie que la date de creation existante est conservee.

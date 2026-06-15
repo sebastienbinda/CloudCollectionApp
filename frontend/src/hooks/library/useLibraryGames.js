@@ -70,7 +70,7 @@ function useLibraryGames(options = {}) {
           sort: [{ column: "name", direction: "asc" }],
         });
         if (isMounted) {
-          setPlatformOptions(Array.isArray(data.platforms) ? data.platforms : []);
+          setPlatformOptions(filterPlatformsWithGames(data.platforms));
         }
       } catch (caughtError) {
         if (isMounted) {
@@ -94,6 +94,15 @@ function useLibraryGames(options = {}) {
     setSelectedPlatform(platformName);
   }, []);
 
+  useEffect(() => {
+    if (
+      selectedPlatform
+      && !platformOptions.some((platform) => platform.name === selectedPlatform)
+    ) {
+      setSelectedPlatform("");
+    }
+  }, [platformOptions, selectedPlatform]);
+
   const listState = useLibraryEntityList({
     ...GAME_CONFIGURATION,
     autoSearchEnabled: true,
@@ -111,6 +120,19 @@ function useLibraryGames(options = {}) {
       onChange: handlePlatformChange,
     },
   };
+}
+
+/**
+ * Garde les plateformes utilisables comme filtre de jeux Bibliotheque.
+ *
+ * @param {Array<Object>} platforms - Plateformes retournees par l'API.
+ * @returns {Array<Object>} Plateformes ayant au moins un jeu associe.
+ */
+function filterPlatformsWithGames(platforms) {
+  if (!Array.isArray(platforms)) {
+    return [];
+  }
+  return platforms.filter((platform) => Number(platform.total_games || 0) > 0);
 }
 
 export default useLibraryGames;

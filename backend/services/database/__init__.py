@@ -18,6 +18,9 @@ from .game import Game
 from .game_repository import SqlAlchemyGameRepository
 from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
 from .platform import Platform
+from .platform_alias import PlatformAlias
+from .platform_alias_catalog_csv_reader import PlatformAliasCatalogCsvReader
+from .platform_alias_catalog_entry import PlatformAliasCatalogEntry
 from .platform_catalog_cache import PlatformCatalogCache
 from .platform_catalog_csv_reader import PlatformCatalogCsvReader
 from .platform_catalog_entry import PlatformCatalogEntry
@@ -50,6 +53,9 @@ __all__ = [
     "SqlAlchemyGameRepository",
     "SqlAlchemyLibraryResetRepository",
     "Platform",
+    "PlatformAlias",
+    "PlatformAliasCatalogCsvReader",
+    "PlatformAliasCatalogEntry",
     "PlatformCatalogCache",
     "PlatformCatalogCsvReader",
     "PlatformCatalogEntry",

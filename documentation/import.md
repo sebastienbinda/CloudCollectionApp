@@ -121,6 +121,17 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Technical sheets such as `Accueil` and `Liste de souhaits` must be ignored
   only when the import configuration excludes them.
 - Platforms are matched by normalized platform name.
+- When the best direct platform match is below `MATCHING_HIGH_LEVEL_RATING`, the
+  backend searches platform aliases from the SQL reference catalog and uses an
+  alias match only when it improves the direct score.
+- The import warnings keep a `platform_mappings` list with the imported platform
+  name, matched platform name, matching score, imported game count and alias
+  usage flag for every platform read from the file.
+- The import warnings keep `total_import_duration_seconds`, measured across the
+  complete backend import execution after the user lock is acquired.
+- At the end of import, the backend sends the administrator a platform mapping
+  report including this list, the total import duration and the import warnings when
+  `ADMIN_NOTIFICATION_EMAIL` is configured.
 - Studios are matched by normalized studio name.
 - Games are matched by normalized game name and platform.
 - Duplicate ODS entries after normalization keep the first occurrence and ignore

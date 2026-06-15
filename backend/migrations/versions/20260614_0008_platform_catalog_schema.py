@@ -28,7 +28,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Ajoute `end_date`, retire `status` et charge les plateformes CSV.
+    """Ajoute le catalogue des plateformes et de leurs alias.
 
     Args:
         Aucun.
@@ -38,20 +38,46 @@ def upgrade() -> None:
     """
 
     schema_name = op.get_context().opts["schema_name"]
+    op.execute(sa.schema.CreateSequence(sa.Sequence("s_platform_alias", schema=schema_name)))
     op.add_column(
         "t_platform",
         sa.Column("end_date", sa.DateTime(), nullable=True),
         schema=schema_name,
     )
     op.drop_column("t_platform", "status", schema=schema_name)
+    op.create_table(
+        "t_platform_alias",
+        sa.Column(
+            "id",
+            sa.BigInteger(),
+            server_default=sa.text(_next_sequence_value(schema_name, "s_platform_alias")),
+            nullable=False,
+        ),
+        sa.Column("platform", sa.BigInteger(), nullable=False),
+        sa.Column("name", sa.String(length=128), nullable=False),
+        sa.Column("category", sa.String(length=64), nullable=True),
+        sa.Column("usage_region", sa.String(length=128), nullable=True),
+        sa.Column("comment", sa.String(length=256), nullable=True),
+        sa.ForeignKeyConstraint(["platform"], [f"{schema_name}.t_platform.id"]),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("platform", "name", name="uq_t_platform_alias_platform_name"),
+        schema=schema_name,
+    )
+    op.create_index(
+        "ix_t_platform_alias_platform",
+        "t_platform_alias",
+        ["platform"],
+        schema=schema_name,
+    )
     PlatformCatalogSeedService(schema_name).seed_from_csv(
         op.get_bind(),
         _catalog_csv_path(),
+        _alias_catalog_csv_path(),
     )
 
 
 def downgrade() -> None:
-    """Retablit la colonne `status` et retire `end_date`.
+    """Retablit la colonne `status` et retire le catalogue des alias.
 
     Args:
         Aucun.
@@ -61,6 +87,13 @@ def downgrade() -> None:
     """
 
     schema_name = op.get_context().opts["schema_name"]
+    op.drop_index(
+        "ix_t_platform_alias_platform",
+        table_name="t_platform_alias",
+        schema=schema_name,
+    )
+    op.drop_table("t_platform_alias", schema=schema_name)
+    op.execute(sa.schema.DropSequence(sa.Sequence("s_platform_alias", schema=schema_name)))
     op.add_column(
         "t_platform",
         sa.Column(
@@ -86,3 +119,30 @@ def _catalog_csv_path() -> Path:
     """
 
     return Path(__file__).resolve().parents[2] / "services" / "database" / "platform_catalog.csv"
+
+
+def _alias_catalog_csv_path() -> Path:
+    """Retourne le chemin du CSV de reference embarque des alias.
+
+    Args:
+        Aucun.
+
+    Returns:
+        Path: Chemin absolu vers le catalogue CSV des alias.
+    """
+
+    return Path(__file__).resolve().parents[2] / "services" / "database" / "platform_alias_catalog.csv"
+
+
+def _next_sequence_value(schema_name: str, sequence_name: str) -> str:
+    """Construit l'appel SQL `nextval` pour une sequence du schema.
+
+    Args:
+        schema_name (str): Nom du schema PostgreSQL cible.
+        sequence_name (str): Nom de la sequence PostgreSQL.
+
+    Returns:
+        str: Expression SQL de valeur par defaut.
+    """
+
+    return f"nextval('\"{schema_name}\".\"{sequence_name}\"'::regclass)"

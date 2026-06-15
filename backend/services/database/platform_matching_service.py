@@ -63,6 +63,9 @@ class PlatformMatchingService:
 
         matches_by_key = self._build_matches_by_imported_platform(import_data, platform_rows)
         warnings = self._copy_warnings(import_data.warnings)
+        warnings.platform_mappings.extend(
+            self._platform_mapping_warnings(import_data, matches_by_key)
+        )
         matched_games = []
         for game in import_data.games:
             platform_key = self._compact_key(game.platform_name)
@@ -98,23 +101,117 @@ class PlatformMatchingService:
         platform_rows: list[dict[str, object]],
     ) -> dict[str, object]:
         imported_key = self._compact_key(imported_platform)
-        scored_rows = [
-            (self._matching_score(imported_key, self._compact_key(row["name"])), row)
+        direct_match = self._best_match_from_candidates(
+            self._direct_match_candidates(imported_key, platform_rows)
+        )
+        if direct_match["score"] >= self.configuration.high_level_rating:
+            return self._finalize_match(imported_platform, direct_match)
+
+        alias_match = self._best_match_from_candidates(
+            self._alias_match_candidates(imported_key, platform_rows)
+        )
+        best_match = alias_match if alias_match["score"] > direct_match["score"] else direct_match
+        return self._finalize_match(imported_platform, best_match)
+
+    def _direct_match_candidates(
+        self,
+        imported_key: str,
+        platform_rows: list[dict[str, object]],
+    ) -> list[tuple[int, dict[str, object], str]]:
+        return [
+            (self._matching_score(imported_key, self._compact_key(row["name"])), row, "")
             for row in platform_rows
         ]
-        scored_rows.sort(key=lambda scored_row: scored_row[0], reverse=True)
+
+    def _alias_match_candidates(
+        self,
+        imported_key: str,
+        platform_rows: list[dict[str, object]],
+    ) -> list[tuple[int, dict[str, object], str]]:
+        candidates = []
+        for row in platform_rows:
+            alias_matches = [
+                (self._matching_score(imported_key, self._compact_key(alias_name)), alias_name)
+                for alias_name in self._alias_names(row)
+            ]
+            if alias_matches:
+                best_score, best_alias = max(alias_matches, key=lambda alias_match: alias_match[0])
+                candidates.append((best_score, row, str(best_alias)))
+        return candidates
+
+    def _best_match_from_candidates(
+        self,
+        candidates: list[tuple[int, dict[str, object], str]],
+    ) -> dict[str, object]:
+        scored_rows = sorted(candidates, key=lambda scored_row: scored_row[0], reverse=True)
         best_score = scored_rows[0][0] if scored_rows else 0
-        best_rows = [row for score, row in scored_rows if score == best_score]
+        best_rows_by_name = {
+            str(row["name"]): {"row": row, "alias": alias_name}
+            for score, row, alias_name in scored_rows
+            if score == best_score
+        }
+        return {
+            "score": best_score,
+            "rows": [value["row"] for value in best_rows_by_name.values()],
+            "alias": next(
+                (value["alias"] for value in best_rows_by_name.values() if value["alias"]),
+                "",
+            ),
+        }
+
+    def _finalize_match(
+        self,
+        imported_platform: str,
+        best_match: dict[str, object],
+    ) -> dict[str, object]:
+        best_score = int(best_match["score"])
+        best_rows = list(best_match["rows"])
         if best_score == 0:
             return self._match_result(imported_platform, "", 0, False, False, "no_match")
         if len(best_rows) > 1:
             return self._match_result(imported_platform, "", best_score, False, False, "ambiguous")
         matched_name = str(best_rows[0]["name"])
+        matched_alias = str(best_match.get("alias") or "")
         if best_score >= self.configuration.high_level_rating:
-            return self._match_result(imported_platform, matched_name, best_score, True, False, "")
+            return self._match_result(
+                imported_platform,
+                matched_name,
+                best_score,
+                True,
+                False,
+                "",
+                bool(matched_alias),
+                matched_alias,
+            )
         if best_score >= self.configuration.low_level_rating:
-            return self._match_result(imported_platform, matched_name, best_score, True, True, "")
-        return self._match_result(imported_platform, matched_name, best_score, False, False, "low_score")
+            return self._match_result(
+                imported_platform,
+                matched_name,
+                best_score,
+                True,
+                True,
+                "",
+                bool(matched_alias),
+                matched_alias,
+            )
+        return self._match_result(
+            imported_platform,
+            matched_name,
+            best_score,
+            False,
+            False,
+            "low_score",
+            bool(matched_alias),
+            matched_alias,
+        )
+
+    def _alias_names(self, row: dict[str, object]) -> list[object]:
+        aliases = row.get("aliases") or []
+        return [
+            alias.get("name")
+            for alias in aliases
+            if isinstance(alias, dict) and alias.get("name")
+        ]
 
     def _matching_score(self, imported_key: str, candidate_key: str) -> int:
         if imported_key == candidate_key:
@@ -132,6 +229,7 @@ class PlatformMatchingService:
             invalid_wishlist=warnings.invalid_wishlist,
             invalid_wishlist_values_found=list(warnings.invalid_wishlist_values_found),
             invalid_games=list(warnings.invalid_games),
+            platform_mappings=list(warnings.platform_mappings),
             platform_matches=list(warnings.platform_matches),
             skipped_games=list(warnings.skipped_games),
         )
@@ -191,6 +289,47 @@ class PlatformMatchingService:
             "reason": "no_match" if match is None else match["reason"],
         }
 
+    def _platform_mapping_warnings(
+        self,
+        import_data: CollectionImportData,
+        matches_by_key: dict[str, dict[str, object]],
+    ) -> list[dict[str, object]]:
+        game_counts_by_platform_key = self._game_counts_by_imported_platform(import_data.games)
+        platform_mappings = []
+        seen_keys = set()
+        for platform in import_data.platforms:
+            platform_key = self._compact_key(platform.name)
+            if platform_key in seen_keys:
+                continue
+            seen_keys.add(platform_key)
+            match = matches_by_key.get(platform_key)
+            platform_mappings.append(
+                {
+                    "imported_platform": platform.name,
+                    "matched_platform": "" if match is None else match["matched_name"],
+                    "score": 0 if match is None else match["score"],
+                    "games_count": game_counts_by_platform_key.get(platform_key, 0),
+                    "matched_by_alias": False if match is None else match["matched_by_alias"],
+                    "matched_alias": "" if match is None else match["matched_alias"],
+                    "accepted": False if match is None else match["accepted"],
+                    "manual_check": False if match is None else match["manual_check"],
+                    "reason": "no_match" if match is None else match["reason"],
+                }
+            )
+        return platform_mappings
+
+    def _game_counts_by_imported_platform(
+        self,
+        games: list[CollectionImportGame],
+    ) -> dict[str, int]:
+        game_counts_by_platform_key = {}
+        for game in games:
+            platform_key = self._compact_key(game.platform_name)
+            game_counts_by_platform_key[platform_key] = (
+                game_counts_by_platform_key.get(platform_key, 0) + 1
+            )
+        return game_counts_by_platform_key
+
     def _match_result(
         self,
         imported_name: str,
@@ -199,6 +338,8 @@ class PlatformMatchingService:
         accepted: bool,
         manual_check: bool,
         reason: str,
+        matched_by_alias: bool = False,
+        matched_alias: str = "",
     ) -> dict[str, object]:
         return {
             "imported_name": imported_name,
@@ -207,4 +348,6 @@ class PlatformMatchingService:
             "accepted": accepted,
             "manual_check": manual_check,
             "reason": reason,
+            "matched_by_alias": matched_by_alias,
+            "matched_alias": matched_alias,
         }

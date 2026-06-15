@@ -44,4 +44,8 @@ class FakePlatformCatalogConnection:
         self.executed_statements.append((str(statement), parameters or {}))
         if str(statement).startswith("SELECT name"):
             return FakePlatformCatalogResult(self.existing_rows)
+        if str(statement).startswith("SELECT id, name"):
+            return FakePlatformCatalogResult(self.existing_rows)
+        if str(statement).startswith("SELECT platform, name"):
+            return FakePlatformCatalogResult(self.existing_rows)
         return FakePlatformCatalogResult()

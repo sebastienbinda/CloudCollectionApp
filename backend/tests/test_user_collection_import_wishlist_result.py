@@ -81,6 +81,20 @@ class FakeReaderFactory:
         return FakeWishlistReader()
 
 
+class FakeImportReportNotifier:
+    """Capture le rapport administrateur de fin d'import."""
+
+    def __init__(self):
+        """Initialise le notifier factice."""
+
+        self.warnings = []
+
+    def notify_import_report(self, warnings):
+        """Memorise les warnings transmis au notifier."""
+
+        self.warnings.append(warnings)
+
+
 class UserCollectionImportWishlistResultTest(unittest.TestCase):
     """Valide les compteurs wishlist retournes par le service."""
 
@@ -90,6 +104,7 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source_file = Path(directory) / "collection.ods"
             source_file.write_bytes(b"ods")
+            notifier = FakeImportReportNotifier()
             service = UserCollectionImportService(
                 UserCollectionImportConfiguration(
                     workspace_path=str(Path(directory) / "workspace"),
@@ -97,6 +112,7 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
                 ),
                 FakeImportRepository(),
                 FakeReaderFactory(),
+                report_notifier=notifier,
             )
 
             result = service.import_collection(
@@ -110,13 +126,19 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
         self.assertEqual(1, result.linked_platforms)
         self.assertNotIn("created_platforms", result.to_dict())
         self.assertEqual(1, result.to_dict()["linked_platforms"])
+        self.assertGreaterEqual(result.warnings["total_import_duration_seconds"], 0)
+        self.assertEqual(1, len(notifier.warnings))
         self.assertEqual(
             {
                 "invalid_wishlist": 1,
                 "invalid_wishlist_values_found": ["Peut etre"],
                 "invalid_games": [],
+                "platform_mappings": [],
                 "platform_matches": [],
                 "skipped_games": [],
+                "total_import_duration_seconds": result.warnings[
+                    "total_import_duration_seconds"
+                ],
             },
             result.warnings,
         )

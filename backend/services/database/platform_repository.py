@@ -162,7 +162,7 @@ class SqlAlchemyPlatformRepository:
         rows = self._sort_platform_rows(rows, criteria)
         offset = criteria.page_request.offset
         limit = criteria.page_request.size
-        return rows[offset:offset + limit]
+        return [self._public_platform_row(row) for row in rows[offset:offset + limit]]
 
     def _cached_platform_rows(self, connection: Connection) -> list[dict[str, object]]:
         return self.platform_catalog_cache.remember(
@@ -182,7 +182,35 @@ class SqlAlchemyPlatformRepository:
                 "platform.end_date, platform.manufacturer, platform.description"
             )
         ).mappings()
-        return [dict(row) for row in rows]
+        platform_rows = [dict(row) for row in rows]
+        aliases_by_platform_id = self._load_aliases_by_platform_id(connection)
+        for row in platform_rows:
+            row["aliases"] = aliases_by_platform_id.get(int(row["id"]), [])
+        return platform_rows
+
+    def _load_aliases_by_platform_id(
+        self,
+        connection: Connection,
+    ) -> dict[int, list[dict[str, object]]]:
+        rows = connection.execute(
+            text(
+                "SELECT platform, name, category, usage_region, comment "
+                f'FROM "{self.schema_name}".t_platform_alias '
+                "ORDER BY platform, name"
+            )
+        ).mappings()
+        aliases_by_platform_id = {}
+        for row in rows:
+            platform_id = int(row["platform"])
+            aliases_by_platform_id.setdefault(platform_id, []).append(
+                {
+                    "name": row["name"],
+                    "category": row["category"],
+                    "usage_region": row["usage_region"],
+                    "comment": row["comment"],
+                }
+            )
+        return aliases_by_platform_id
 
     def _filter_platform_rows(
         self,
@@ -217,3 +245,10 @@ class SqlAlchemyPlatformRepository:
         if isinstance(value, str):
             return value == "", value.lower()
         return value is None, value
+
+    def _public_platform_row(self, row: dict[str, object]) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in row.items()
+            if key != "aliases"
+        }

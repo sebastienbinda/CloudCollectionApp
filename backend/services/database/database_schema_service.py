@@ -113,10 +113,11 @@ class DatabaseSchemaService:
         """
 
         csv_path = Path(__file__).resolve().parent / "platform_catalog.csv"
+        alias_csv_path = Path(__file__).resolve().parent / "platform_alias_catalog.csv"
         with engine.begin() as connection:
             return self.platform_catalog_seed_service_factory(
                 self.configuration.schema_name
-            ).seed_from_csv(connection, csv_path)
+            ).seed_from_csv(connection, csv_path, alias_csv_path)
 
     @classmethod
     def initialize_database_schema_on_startup(

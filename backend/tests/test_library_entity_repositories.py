@@ -94,7 +94,10 @@ class FakeRepositoryConnection:
             FakeRepositoryResult: Resultat SQL factice.
         """
 
-        self.executed_statements.append((str(statement), parameters or {}))
+        sql = str(statement)
+        self.executed_statements.append((sql, parameters or {}))
+        if "t_platform_alias" in sql:
+            return FakeRepositoryResult(self.scalar_value, [])
         return FakeRepositoryResult(self.scalar_value, self.rows)
 
 
@@ -199,12 +202,13 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertNotIn("ORDER BY", sql)
         self.assertEqual({}, parameters)
         self.assertNotIn("t_user", sql)
+        executed_statement_count = len(connection.executed_statements)
 
         self.platform_repository.count_public_library_platforms_by_criteria(
             connection,
             criteria,
         )
-        self.assertEqual(1, len(connection.executed_statements))
+        self.assertEqual(executed_statement_count, len(connection.executed_statements))
 
     def test_list_public_library_studios_counts_editor_and_developer_games(self):
         """Verifie la liste publique des studios.

@@ -32,6 +32,7 @@ class DatabaseConfigurationTest(unittest.TestCase):
             {
                 "t_schema_version",
                 "t_platform",
+                "t_platform_alias",
                 "t_studio",
                 "t_user",
                 "t_game",

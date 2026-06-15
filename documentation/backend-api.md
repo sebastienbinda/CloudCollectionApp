@@ -749,7 +749,24 @@ Successful response:
   "wishlisted_games": 12,
   "warnings": {
     "invalid_wishlist": 3,
-    "invalid_wishlist_values_found": ["Ok", "Peut etre", "Nop"]
+    "invalid_wishlist_values_found": ["Ok", "Peut etre", "Nop"],
+    "invalid_games": [],
+    "platform_mappings": [
+      {
+        "imported_platform": "Super Nintendo",
+        "matched_platform": "Super Nintendo Entertainment System / Super Famicom",
+        "score": 100,
+        "games_count": 3,
+        "matched_by_alias": true,
+        "matched_alias": "Super Nintendo",
+        "accepted": true,
+        "manual_check": false,
+        "reason": ""
+      }
+    ],
+    "platform_matches": [],
+    "skipped_games": [],
+    "total_import_duration_seconds": 2.431
   }
 }
 ```
@@ -758,6 +775,13 @@ The `associated_games` counter is the number of games attached to the user after
 the import payload is processed, including games that already existed before the
 request. `wishlisted_games` counts imported games whose final retained import
 value is `wishlist=true`.
+`warnings.platform_mappings` lists every platform name read from the imported
+file, the reference platform retained by matching, the matching score, the
+number of imported games using that source platform name, and whether a platform
+alias produced the retained match.
+`warnings.total_import_duration_seconds` contains the total backend import
+duration in seconds, measured around file validation, optional workspace copy,
+file reading, matching and SQL persistence.
 
 Import errors use:
 

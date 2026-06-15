@@ -23,7 +23,6 @@ from services.users.user_collection_name_normalizer import UserCollectionNameNor
 
 from .database_configuration import DatabaseConfiguration
 from .game_repository import SqlAlchemyGameRepository
-from .platform_matching_admin_notifier import PlatformMatchingAdminNotifier
 from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
 from .studio_repository import SqlAlchemyStudioRepository
@@ -101,7 +100,6 @@ class SqlAlchemyUserCollectionImportRepository:
         name_normalizer: UserCollectionNameNormalizer | None = None,
         collection_file_remover=None,
         platform_matching_service: PlatformMatchingService | None = None,
-        platform_matching_notifier: PlatformMatchingAdminNotifier | None = None,
     ):
         """Initialise l'orchestrateur SQL d'import de collection.
 
@@ -110,7 +108,6 @@ class SqlAlchemyUserCollectionImportRepository:
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur metier.
             collection_file_remover (object | None): Suppresseur de fichier injecte.
             platform_matching_service (PlatformMatchingService | None): Matching plateformes.
-            platform_matching_notifier (PlatformMatchingAdminNotifier | None): Notifier admin.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -147,10 +144,6 @@ class SqlAlchemyUserCollectionImportRepository:
         self.platform_matching_service = (
             platform_matching_service
             or PlatformMatchingService(name_normalizer=self.name_normalizer)
-        )
-        self.platform_matching_notifier = (
-            platform_matching_notifier
-            or PlatformMatchingAdminNotifier()
         )
 
     def user_has_collection(self, user_id: int) -> bool:
@@ -240,9 +233,6 @@ class SqlAlchemyUserCollectionImportRepository:
         matched_import_data = self.platform_matching_service.match_import_data(
             import_data,
             platform_rows,
-        )
-        self.platform_matching_notifier.notify_manual_matches(
-            matched_import_data.warnings.platform_matches
         )
         return matched_import_data
 

@@ -12,7 +12,7 @@
 # Description : service metier d'import de collection utilisateur.
 
 import shutil
-from dataclasses import dataclass
+from time import perf_counter
 from pathlib import Path
 from threading import Lock
 from typing import Protocol
@@ -31,9 +31,11 @@ from services.database.user_collection_import_repository import (
     UserCollectionImportUserNotFoundError,
     UserCollectionReinitializationNotFoundError,
 )
+from services.database.platform_matching_admin_notifier import PlatformMatchingAdminNotifier
 
 from .collection_import_date_validator import CollectionImportDateValidator
 from .user_collection_import_configuration import UserCollectionImportConfiguration
+from .user_collection_import_result import UserCollectionImportResult
 
 
 class UserCollectionImportError(Exception):
@@ -120,50 +122,18 @@ class UserCollectionImportRepository(Protocol):
         """
 
 
-@dataclass(frozen=True)
-class UserCollectionImportResult:
-    """Regroupe les compteurs retournes apres un import reussi.
+class UserCollectionImportReportNotifier(Protocol):
+    """Definit l'envoi du rapport administrateur apres import."""
 
-    Attributes:
-        linked_platforms (int): Nombre de plateformes du referentiel liees.
-        created_studios (int): Nombre de studios crees.
-        created_games (int): Nombre de jeux crees.
-        associated_games (int): Nombre de jeux associes a l'utilisateur.
-        wishlisted_games (int): Nombre de jeux importes comme souhaits.
-        warnings (dict): Avertissements fonctionnels de l'import.
-    """
-
-    linked_platforms: int
-    created_studios: int
-    created_games: int
-    associated_games: int
-    wishlisted_games: int = 0
-    warnings: dict | None = None
-
-    def to_dict(self) -> dict[str, int | dict]:
-        """Convertit le resultat en dictionnaire serialisable.
+    def notify_import_report(self, warnings: object) -> None:
+        """Envoie le rapport de fin d'import.
 
         Args:
-            Aucun.
+            warnings (object): Warnings et metadonnees de l'import.
 
         Returns:
-            dict[str, int]: Compteurs d'import.
+            None: La methode ne retourne aucune valeur.
         """
-
-        return {
-            "linked_platforms": self.linked_platforms,
-            "created_studios": self.created_studios,
-            "created_games": self.created_games,
-            "associated_games": self.associated_games,
-            "wishlisted_games": self.wishlisted_games,
-            "warnings": self.warnings or {
-                "invalid_wishlist": 0,
-                "invalid_wishlist_values_found": [],
-                "invalid_games": [],
-                "platform_matches": [],
-                "skipped_games": [],
-            },
-        }
 
 
 class UserCollectionImportService:
@@ -178,6 +148,7 @@ class UserCollectionImportService:
         repository: UserCollectionImportRepository,
         reader_factory: CollectionFileReaderFactory,
         date_validator: CollectionImportDateValidator | None = None,
+        report_notifier: UserCollectionImportReportNotifier | None = None,
     ):
         """Initialise le service d'import de collection.
 
@@ -186,6 +157,7 @@ class UserCollectionImportService:
             repository (UserCollectionImportRepository): Persistance transactionnelle.
             reader_factory (CollectionFileReaderFactory): Factory de lecteurs.
             date_validator (CollectionImportDateValidator | None): Validateur des dates lues.
+            report_notifier (UserCollectionImportReportNotifier | None): Notifier admin.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -195,6 +167,7 @@ class UserCollectionImportService:
         self.repository = repository
         self.reader_factory = reader_factory
         self.date_validator = date_validator or CollectionImportDateValidator()
+        self.report_notifier = report_notifier or PlatformMatchingAdminNotifier()
 
     def upload_import_file(
         self,
@@ -360,6 +333,7 @@ class UserCollectionImportService:
         self, user_id: int, source_file_path: Path, original_filename: str | None,
         file_description: CollectionFileDescription, copy_to_workspace: bool,
     ) -> UserCollectionImportResult:
+        import_started_at = perf_counter()
         reader = self.reader_factory.create(file_description.file_type)
         self._validate_source_file(source_file_path, original_filename, reader)
         import_file_path = source_file_path
@@ -376,6 +350,8 @@ class UserCollectionImportService:
                 import_data,
                 file_description.to_dict(),
             )
+            self._set_total_import_duration(import_data, import_started_at)
+            self.report_notifier.notify_import_report(import_data.warnings)
             return self._map_result(persistence_result, import_data)
         except CollectionFileDescriptionValidationError:
             self._delete_copied_file(copied_file_path)
@@ -489,6 +465,18 @@ class UserCollectionImportService:
             associated_games=persistence_result.associated_games,
             wishlisted_games=sum(1 for game in import_data.games if game.wishlist),
             warnings=import_data.warnings.to_dict(),
+        )
+
+    def _set_total_import_duration(
+        self,
+        import_data: CollectionImportData,
+        import_started_at: float,
+    ) -> None:
+        duration_seconds = round(max(0.0, perf_counter() - import_started_at), 3)
+        object.__setattr__(
+            import_data.warnings,
+            "total_import_duration_seconds",
+            duration_seconds,
         )
 
     @classmethod

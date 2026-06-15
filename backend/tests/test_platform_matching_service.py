@@ -78,6 +78,60 @@ class PlatformMatchingServiceTest(unittest.TestCase):
 
         self.assertEqual(["Switch"], [game.platform_name for game in matched_data.games])
         self.assertEqual("Sports", matched_data.warnings.platform_matches[0]["game_name"])
+        self.assertEqual(
+            [
+                {
+                    "imported_platform": "Wii",
+                    "matched_platform": "Switch",
+                    "score": 44,
+                    "games_count": 1,
+                    "matched_by_alias": False,
+                    "matched_alias": "",
+                    "accepted": True,
+                    "manual_check": True,
+                    "reason": "",
+                }
+            ],
+            matched_data.warnings.platform_mappings,
+        )
+        self.assertEqual([], matched_data.warnings.skipped_games)
+
+    def test_match_import_data_uses_alias_when_direct_score_is_not_high(self):
+        """Verifie le recours aux alias quand le score direct est sous le seuil haut.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le matching par alias.
+        """
+
+        import_data = CollectionImportData(
+            platforms=[CollectionImportPlatform("Super Nintendo")],
+            studios=[],
+            games=[CollectionImportGame("Mario", "Super Nintendo", "", None)],
+        )
+        rows = [
+            {
+                "name": "Super Nintendo Entertainment System / Super Famicom",
+                "aliases": [{"name": "Super Nintendo"}, {"name": "Super Famicom"}],
+            },
+            {"name": "Nintendo Switch", "aliases": [{"name": "Switch"}]},
+        ]
+
+        matched_data = self._service().match_import_data(import_data, rows)
+
+        self.assertEqual(
+            ["Super Nintendo Entertainment System / Super Famicom"],
+            [game.platform_name for game in matched_data.games],
+        )
+        self.assertTrue(matched_data.warnings.platform_mappings[0]["matched_by_alias"])
+        self.assertEqual(
+            "Super Nintendo",
+            matched_data.warnings.platform_mappings[0]["matched_alias"],
+        )
+        self.assertEqual(1, matched_data.warnings.platform_mappings[0]["games_count"])
+        self.assertEqual([], matched_data.warnings.platform_matches)
         self.assertEqual([], matched_data.warnings.skipped_games)
 
     def test_match_import_data_rejects_too_low_score_zero_and_ambiguity(self):

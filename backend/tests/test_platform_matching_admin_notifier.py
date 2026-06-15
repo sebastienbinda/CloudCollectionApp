@@ -13,6 +13,7 @@
 
 import unittest
 
+from services.collection.imports import CollectionImportWarnings
 from services.database import PlatformMatchingAdminNotifier
 from tests.fake_platform_matching_email_sender import FakePlatformMatchingEmailSender
 
@@ -47,6 +48,59 @@ class PlatformMatchingAdminNotifierTest(unittest.TestCase):
         self.assertEqual("admin@example.com", sender.sent_emails[0]["recipient_email"])
         self.assertIn("Sports", sender.sent_emails[0]["body"])
         self.assertIn("Switch", sender.sent_emails[0]["body"])
+
+    def test_notify_import_report_sends_platform_mappings_and_warnings(self):
+        """Verifie le rapport complet de fin d'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contenu du mail.
+        """
+
+        sender = FakePlatformMatchingEmailSender()
+        notifier = PlatformMatchingAdminNotifier(sender, "admin@example.com")
+        warnings = CollectionImportWarnings(
+            invalid_wishlist=1,
+            invalid_wishlist_values_found=["Peut etre"],
+            invalid_games=[{"name": "Chrono"}],
+            total_import_duration_seconds=1.234,
+            platform_mappings=[
+                {
+                    "imported_platform": "Super Nintendo",
+                    "matched_platform": "Super Nintendo Entertainment System / Super Famicom",
+                    "score": 100,
+                    "games_count": 3,
+                    "matched_by_alias": True,
+                    "matched_alias": "Super Nintendo",
+                    "accepted": True,
+                    "manual_check": False,
+                    "reason": "",
+                }
+            ],
+            platform_matches=[],
+            skipped_games=[
+                {
+                    "game_name": "Unknown Game",
+                    "imported_platform": "Unknown",
+                    "score": 0,
+                    "reason": "no_match",
+                }
+            ],
+        )
+
+        notifier.notify_import_report(warnings)
+
+        self.assertEqual(1, len(sender.sent_emails))
+        body = sender.sent_emails[0]["body"]
+        self.assertIn("Super Nintendo", body)
+        self.assertIn("Jeux: 3", body)
+        self.assertIn("Duree totale de l'import: 1.234 seconde(s).", body)
+        self.assertIn("Alias: oui (Super Nintendo)", body)
+        self.assertIn("Unknown Game", body)
+        self.assertIn("Chrono", body)
+        self.assertIn("Peut etre", body)
 
 
 if __name__ == "__main__":

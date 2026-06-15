@@ -192,8 +192,10 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
                 "invalid_wishlist": 0,
                 "invalid_wishlist_values_found": [],
                 "invalid_games": [],
+                "platform_mappings": [],
                 "platform_matches": [],
                 "skipped_games": [],
+                "total_import_duration_seconds": 0.0,
             },
             payload["warnings"],
         )

@@ -177,12 +177,16 @@ function UserCollectionOnboardingView({
  * @throws {void} Ne leve pas d'exception.
  */
 function ImportSummary({ result, onOpenHome }) {
+  const totalImportDuration = formatImportDuration(
+    result.warnings?.total_import_duration_seconds
+  );
   const counters = [
     ["Plateformes liees", result.linked_platforms],
     ["Studios crees", result.created_studios],
     ["Jeux crees", result.created_games],
     ["Jeux associes", result.associated_games],
     ["Souhaits importes", result.wishlisted_games],
+    ["Duree totale", totalImportDuration],
   ];
   const invalidWishlist = result.warnings?.invalid_wishlist || 0;
   const invalidGames = Array.isArray(result.warnings?.invalid_games)
@@ -201,7 +205,7 @@ function ImportSummary({ result, onOpenHome }) {
         {counters.map(([label, value]) => (
           <div key={label}>
             <dt>{label}</dt>
-            <dd>{Number(value || 0)}</dd>
+            <dd>{value}</dd>
           </div>
         ))}
       </dl>
@@ -224,6 +228,29 @@ function ImportSummary({ result, onOpenHome }) {
       </button>
     </section>
   );
+}
+
+/**
+ * Formate la duree totale d'import retournee par le backend.
+ *
+ * @param {number|string|undefined} durationSeconds - Duree brute en secondes.
+ * @returns {string} Duree lisible pour le resume d'import.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatImportDuration(durationSeconds) {
+  const duration = Number(durationSeconds || 0);
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return "0 s";
+  }
+  if (duration < 1) {
+    return `${Math.round(duration * 1000)} ms`;
+  }
+  if (duration < 60) {
+    return `${duration.toFixed(2)} s`;
+  }
+  const minutes = Math.floor(duration / 60);
+  const seconds = Math.round(duration % 60);
+  return `${minutes} min ${seconds.toString().padStart(2, "0")} s`;
 }
 
 /**

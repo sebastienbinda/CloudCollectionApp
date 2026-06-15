@@ -13,9 +13,14 @@
 
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 
-from services.database import PlatformCatalogEntry, PlatformCatalogSeedService
+from services.database import (
+    PlatformAliasCatalogEntry,
+    PlatformCatalogEntry,
+    PlatformCatalogSeedService,
+)
 from tests.fake_platform_catalog_connection import FakePlatformCatalogConnection
 from tests.static_platform_catalog_reader import StaticPlatformCatalogReader
 
@@ -73,6 +78,63 @@ class PlatformCatalogSeedServiceTest(unittest.TestCase):
             service.catalog_key("Atari 7800"),
             service.catalog_key("Atari 7800+"),
         )
+
+    def test_seed_inserts_missing_aliases_only(self):
+        """Verifie que le seed alias rattache les noms alternatifs au catalogue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les insertions.
+        """
+
+        aliases = [
+            PlatformAliasCatalogEntry(
+                "Super Nintendo Entertainment System / Super Famicom",
+                "Super Nintendo",
+                "nom_court",
+                "France",
+                "Nom courant.",
+            ),
+            PlatformAliasCatalogEntry(
+                "Super Nintendo Entertainment System / Super Famicom",
+                "SNES",
+                "abreviation",
+                "Occident",
+                "Abreviation.",
+            ),
+        ]
+        connection = FakePlatformCatalogConnection(
+            existing_rows=[
+                {
+                    "id": 7,
+                    "name": "Super Nintendo Entertainment System / Super Famicom",
+                    "platform": 7,
+                },
+                {"id": 7, "platform": 7, "name": "SNES"},
+            ]
+        )
+        service = PlatformCatalogSeedService(
+            "collection",
+            csv_reader=StaticPlatformCatalogReader([]),
+            alias_csv_reader=SimpleNamespace(read=lambda path: aliases),
+        )
+
+        inserted_count = service.seed_from_csv(
+            connection,
+            Path("unused.csv"),
+            Path("unused_alias.csv"),
+        )
+
+        alias_insert_parameters = [
+            parameters
+            for statement, parameters in connection.executed_statements
+            if "t_platform_alias" in statement and statement.startswith("INSERT INTO")
+        ]
+        self.assertEqual(1, inserted_count)
+        self.assertEqual("Super Nintendo", alias_insert_parameters[0]["name"])
+        self.assertEqual(7, alias_insert_parameters[0]["platform"])
 
 
 if __name__ == "__main__":
