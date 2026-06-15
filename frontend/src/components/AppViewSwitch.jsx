@@ -20,6 +20,7 @@ import GameDetailView from "./GameDetailView";
 import HomeView from "./HomeView";
 import LibraryEntityListView from "./LibraryEntityListView";
 import LibraryHomeView from "./LibraryHomeView";
+import LibraryPlatformDetailView from "./LibraryPlatformDetailView";
 import PlatformDetailView from "./PlatformDetailView";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
@@ -96,6 +97,10 @@ class AppViewSwitch {
 
     if (props.currentView === "libraryPlatforms") {
       return this.renderLibraryList(props, "Plateformes", "Plateformes du referentiel commun.", props.libraryPlatforms);
+    }
+
+    if (props.currentView === "libraryPlatformDetail") {
+      return this.renderLibraryPlatformDetail(props);
     }
 
     if (props.currentView === "libraryStudios") {
@@ -339,6 +344,8 @@ class AppViewSwitch {
         onRowClick={
           listState === props.libraryGames
             ? (game) => props.openGameDetail(game, "library")
+            : listState === props.libraryPlatforms
+              ? (platform) => props.openLibraryPlatformDetail(platform)
             : null
         }
       />
@@ -357,6 +364,22 @@ class AppViewSwitch {
         {...this.buildPageLayoutProps(props)}
         gameDetailPage={props.gameDetailPage}
         selectedGameSource={props.selectedGameSource}
+        onBack={() => window.history.back()}
+      />
+    );
+  }
+
+  /**
+   * Rend la page de detail d'une plateforme Bibliotheque.
+   *
+   * @param {Object} props - Etat et callbacks de navigation.
+   * @returns {import("react").JSX.Element} Vue detail plateforme Bibliotheque.
+   */
+  static renderLibraryPlatformDetail(props) {
+    return (
+      <LibraryPlatformDetailView
+        {...this.buildPageLayoutProps(props)}
+        platformDetailPage={props.libraryPlatformDetailPage}
         onBack={() => window.history.back()}
       />
     );

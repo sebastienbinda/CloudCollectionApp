@@ -140,6 +140,38 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual("nes", criteria.normalized_platform)
         self.assertEqual("developer", criteria.sort_rules[0].column)
 
+    def test_library_platform_detail_route_is_public(self):
+        """Verifie la route publique de detail d'une plateforme.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload public.
+        """
+
+        response = self.client.get("/api/library/platforms/1")
+        platform = response.get_json()["platform"]
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("Switch", platform["name"])
+        self.assertEqual("Japon", platform["aliases"][0]["usage_region"])
+        self.assertNotIn("collection_file_path", platform)
+
+    def test_library_platform_detail_route_returns_404_for_unknown_platform(self):
+        """Verifie l'absence de plateforme publique.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut 404.
+        """
+
+        response = self.client.get("/api/library/platforms/999")
+
+        self.assertEqual(404, response.status_code)
+
     def test_library_game_detail_route_is_public(self):
         """Verifie la route publique de detail d'un jeu.
 
@@ -200,6 +232,7 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertFalse(routes_by_key[("/auth/token", ("POST",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"])
+        self.assertFalse(routes_by_key[("/api/library/platforms/<int:platform_id>", ("GET",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/library/games", ("GET",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/library/games/<int:game_id>", ("GET",))]["requires_auth"])
         self.assertTrue(routes_by_key[("/api/routes", ("GET",))]["requires_auth"])

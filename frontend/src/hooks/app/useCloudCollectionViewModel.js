@@ -24,6 +24,7 @@ import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
 import useLibraryHomeSearch from "../library/useLibraryHomeSearch";
+import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPage";
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
@@ -105,6 +106,10 @@ function useCloudCollectionViewModel() {
     source: navigation.selectedGameSource,
     hasAccessToken: canUseCollectionViews,
   });
+  const libraryPlatformDetailPage = useLibraryPlatformDetailPage({
+    currentView: navigation.currentView,
+    platformId: navigation.selectedLibraryPlatformId,
+  });
   const libraryEntities = useLibraryEntities({
     enabled: navigation.currentView === "library",
   });
@@ -146,8 +151,10 @@ function useCloudCollectionViewModel() {
     viewProps: {
       currentView: navigation.currentView,
       selectedGameId: navigation.selectedGameId,
+      selectedLibraryPlatformId: navigation.selectedLibraryPlatformId,
       selectedGameSource: navigation.selectedGameSource,
       gameDetailPage,
+      libraryPlatformDetailPage,
       homeStats: homePage.homeStats,
       platforms: platformsCatalog.platforms,
       selectedPlatform: navigation.selectedPlatform,
@@ -196,6 +203,7 @@ function useCloudCollectionViewModel() {
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
       openGameDetail: navigation.openGameDetail,
+      openLibraryPlatformDetail: navigation.openLibraryPlatformDetail,
       openWishlist: navigation.openWishlist,
       openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,

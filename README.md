@@ -35,7 +35,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
-- Navigation par plateforme, detail de jeu et consultation de la collection personnelle.
+- Navigation par plateforme, detail de jeu, detail de plateforme et consultation de la collection personnelle.
 - Page Liste de souhaits pour consulter les jeux importes avec
   `wishlist=true`.
 - Recherche globale par nom de jeu.

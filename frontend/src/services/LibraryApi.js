@@ -41,6 +41,19 @@ class LibraryApi {
   }
 
   /**
+   * Charge le detail public d'une plateforme.
+   *
+   * @param {string|number} platformId - Identifiant de la plateforme recherchee.
+   * @returns {Promise<Object>} Objet contenant `platform`.
+   */
+  static async fetchPlatform(platformId) {
+    return this.fetchJson(
+      `/api/library/platforms/${encodeURIComponent(platformId)}`,
+      "Impossible de charger la plateforme Bibliotheque."
+    );
+  }
+
+  /**
    * Charge la liste paginee des studios publics.
    *
    * @param {Object} criteria - Criteres de recherche, pagination et tri.

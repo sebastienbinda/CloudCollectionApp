@@ -164,6 +164,29 @@ class SqlAlchemyPlatformRepository:
         limit = criteria.page_request.size
         return [self._public_platform_row(row) for row in rows[offset:offset + limit]]
 
+    def find_public_library_platform(
+        self,
+        connection: Connection,
+        platform_id: int,
+    ) -> dict[str, object] | None:
+        """Retourne une plateforme publique de reference avec ses alias.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            platform_id (int): Identifiant de la plateforme recherchee.
+
+        Returns:
+            dict[str, object] | None: Plateforme trouvee ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        for row in self._cached_platform_rows(connection):
+            if int(row["id"]) == int(platform_id):
+                return dict(row)
+        return None
+
     def _cached_platform_rows(self, connection: Connection) -> list[dict[str, object]]:
         return self.platform_catalog_cache.remember(
             self.schema_name,

@@ -12,6 +12,8 @@
 - `/bibliotheque`: public Library landing page with global entity counters and
   public global game search.
 - `/bibliotheque/plateformes`: public paginated platform reference list.
+- `/bibliotheque/plateformes/<platform_id>`: public platform detail from the
+  global reference Library, including platform aliases and usage regions.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global

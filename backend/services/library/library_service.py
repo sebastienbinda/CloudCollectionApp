@@ -11,8 +11,6 @@
 #
 # Description : service metier de consultation publique de la Bibliotheque.
 
-from datetime import date, datetime
-from math import ceil
 from typing import Any, Callable, Protocol
 
 from sqlalchemy import create_engine
@@ -25,6 +23,7 @@ from services.database.studio_repository import SqlAlchemyStudioRepository
 from services.users import UserCollectionNameNormalizer
 
 from .library_query_contract import LibraryQueryCriteria
+from .library_payload_serializer import LibraryPayloadSerializer
 
 EngineFactory = Callable[[str], Engine]
 
@@ -76,6 +75,24 @@ class PublicLibraryPlatformRepository(Protocol):
 
         Returns:
             list[dict[str, Any]]: Plateformes lues.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+    def find_public_library_platform(
+        self,
+        connection: Connection,
+        platform_id: int,
+    ) -> dict[str, Any] | None:
+        """Retourne une plateforme correspondant a l'identifiant.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            platform_id (int): Identifiant de plateforme.
+
+        Returns:
+            dict[str, Any] | None: Plateforme lue ou absence.
 
         Raises:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
@@ -187,6 +204,24 @@ class PublicLibraryGameRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def find_public_library_game(
+        self,
+        connection: Connection,
+        game_id: int,
+    ) -> dict[str, Any] | None:
+        """Retourne un jeu correspondant a l'identifiant.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            game_id (int): Identifiant de jeu.
+
+        Returns:
+            dict[str, Any] | None: Jeu lu ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
 
 class LibraryService:
     """Orchestre la consultation publique de la base globale."""
@@ -200,6 +235,7 @@ class LibraryService:
         engine: Engine | None = None,
         engine_factory: EngineFactory = create_engine,
         name_normalizer: UserCollectionNameNormalizer | None = None,
+        payload_serializer: LibraryPayloadSerializer | None = None,
     ):
         """Initialise le service Bibliotheque.
 
@@ -211,6 +247,7 @@ class LibraryService:
             engine (Engine | None): Moteur SQLAlchemy injectable en test.
             engine_factory (EngineFactory): Fabrique de moteur SQLAlchemy.
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur partage.
+            payload_serializer (LibraryPayloadSerializer | None): Serialiseur de payloads.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -237,6 +274,7 @@ class LibraryService:
             configuration.schema_name,
             resolved_normalizer,
         )
+        self.payload_serializer = payload_serializer or LibraryPayloadSerializer()
 
     def count_entities(self) -> dict[str, int]:
         """Compte les entites globales exposees par la Bibliotheque.
@@ -278,8 +316,8 @@ class LibraryService:
             )
             rows = self.platform_repository.list_public_library_platforms(connection, criteria)
         return {
-            "page": self._page_payload(criteria, total_elements),
-            "platforms": [self._platform_payload(row) for row in rows],
+            "page": self.payload_serializer.page_payload(criteria, total_elements),
+            "platforms": [self.payload_serializer.platform_payload(row) for row in rows],
         }
 
     def list_studios(self, criteria: LibraryQueryCriteria) -> dict[str, Any]:
@@ -302,8 +340,8 @@ class LibraryService:
             )
             rows = self.studio_repository.list_public_library_studios(connection, criteria)
         return {
-            "page": self._page_payload(criteria, total_elements),
-            "studios": [self._studio_payload(row) for row in rows],
+            "page": self.payload_serializer.page_payload(criteria, total_elements),
+            "studios": [self.payload_serializer.studio_payload(row) for row in rows],
         }
 
     def list_games(self, criteria: LibraryQueryCriteria) -> dict[str, Any]:
@@ -326,8 +364,8 @@ class LibraryService:
             )
             rows = self.game_repository.list_public_library_games(connection, criteria)
         return {
-            "page": self._page_payload(criteria, total_elements),
-            "games": [self._game_payload(row) for row in rows],
+            "page": self.payload_serializer.page_payload(criteria, total_elements),
+            "games": [self.payload_serializer.game_payload(row) for row in rows],
         }
 
     def get_game(self, game_id: int) -> dict[str, Any] | None:
@@ -345,140 +383,21 @@ class LibraryService:
 
         with self.engine.connect() as connection:
             row = self.game_repository.find_public_library_game(connection, game_id)
-        return None if row is None else self._game_payload(row)
+        return None if row is None else self.payload_serializer.game_payload(row)
 
-    def _page_payload(
-        self,
-        criteria: LibraryQueryCriteria,
-        total_elements: int,
-    ) -> dict[str, int]:
-        """Construit la section de pagination du payload.
+    def get_platform(self, platform_id: int) -> dict[str, Any] | None:
+        """Retourne le detail public d'une plateforme globale.
 
         Args:
-            criteria (LibraryQueryCriteria): Criteres contenant la page demandee.
-            total_elements (int): Nombre total d'elements filtres.
+            platform_id (int): Identifiant de la plateforme recherchee.
 
         Returns:
-            dict[str, int]: Metadonnees de pagination.
+            dict[str, Any] | None: Plateforme serialisable ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une requete.
         """
 
-        page_size = criteria.page_request.size
-        return {
-            "totalElements": total_elements,
-            "page": criteria.page_request.page,
-            "size": page_size,
-            "totalPages": ceil(total_elements / page_size) if total_elements else 0,
-        }
-
-    def _platform_payload(self, row: dict[str, Any]) -> dict[str, Any]:
-        """Normalise une plateforme pour l'API Bibliotheque.
-
-        Args:
-            row (dict[str, Any]): Ligne retournee par le repository.
-
-        Returns:
-            dict[str, Any]: Plateforme serialisable.
-        """
-
-        return {
-            "id": row["id"],
-            "name": self._text_value(row.get("name")),
-            "release_date": self._date_value(row.get("release_date")),
-            "end_date": self._date_value(row.get("end_date")),
-            "manufacturer": self._text_value(row.get("manufacturer")),
-            "description": self._description_value(row.get("description")),
-            "total_games": self._integer_value(row.get("total_games")),
-        }
-
-    def _studio_payload(self, row: dict[str, Any]) -> dict[str, Any]:
-        """Normalise un studio pour l'API Bibliotheque.
-
-        Args:
-            row (dict[str, Any]): Ligne retournee par le repository.
-
-        Returns:
-            dict[str, Any]: Studio serialisable.
-        """
-
-        return {
-            "id": row["id"],
-            "name": self._text_value(row.get("name")),
-            "country": self._text_value(row.get("country")),
-            "city": self._text_value(row.get("city")),
-            "creation_date": self._date_value(row.get("creation_date")),
-            "status": self._text_value(row.get("status")),
-            "editor_total_games": self._integer_value(row.get("editor_total_games")),
-            "developer_total_games": self._integer_value(row.get("developer_total_games")),
-        }
-
-    def _game_payload(self, row: dict[str, Any]) -> dict[str, Any]:
-        """Normalise un jeu pour l'API Bibliotheque.
-
-        Args:
-            row (dict[str, Any]): Ligne retournee par le repository.
-
-        Returns:
-            dict[str, Any]: Jeu serialisable.
-        """
-
-        return {
-            "id": row["id"],
-            "name": self._text_value(row.get("name")),
-            "release_date": self._date_value(row.get("release_date")),
-            "developer": self._text_value(row.get("developer")),
-            "editor": self._text_value(row.get("editor")),
-            "status": self._text_value(row.get("status")),
-            "platform": self._text_value(row.get("platform")),
-        }
-
-    def _date_value(self, value: Any) -> str:
-        """Serialise une date pour l'API Bibliotheque.
-
-        Args:
-            value (Any): Valeur brute retournee par le repository.
-
-        Returns:
-            str: Date ISO ou chaine vide.
-        """
-
-        if isinstance(value, datetime):
-            return value.date().isoformat()
-        if isinstance(value, date):
-            return value.isoformat()
-        return self._text_value(value)
-
-    def _description_value(self, value: Any) -> Any:
-        """Normalise une description JSON.
-
-        Args:
-            value (Any): Description brute.
-
-        Returns:
-            Any: Description JSON existante ou chaine vide.
-        """
-
-        return value if value is not None else ""
-
-    def _text_value(self, value: Any) -> str:
-        """Normalise une valeur textuelle.
-
-        Args:
-            value (Any): Valeur brute.
-
-        Returns:
-            str: Texte serialisable ou chaine vide.
-        """
-
-        return "" if value is None else str(value)
-
-    def _integer_value(self, value: Any) -> int:
-        """Normalise une valeur entiere.
-
-        Args:
-            value (Any): Valeur brute.
-
-        Returns:
-            int: Entier serialisable.
-        """
-
-        return int(value or 0)
+        with self.engine.connect() as connection:
+            row = self.platform_repository.find_public_library_platform(connection, platform_id)
+        return None if row is None else self.payload_serializer.platform_payload(row)

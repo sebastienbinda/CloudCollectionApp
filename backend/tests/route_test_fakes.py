@@ -59,6 +59,36 @@ class FakeLibraryService:
             ],
         }
 
+    def get_platform(self, platform_id):
+        """Retourne une plateforme publique factice.
+
+        Args:
+            platform_id (int): Identifiant de la plateforme recherchee.
+
+        Returns:
+            dict[str, object] | None: Plateforme factice ou absence.
+        """
+
+        if platform_id != 1:
+            return None
+        return {
+            "id": 1,
+            "name": "Switch",
+            "release_date": "2017-03-03",
+            "end_date": "",
+            "manufacturer": "Nintendo",
+            "description": "",
+            "total_games": 12,
+            "aliases": [
+                {
+                    "name": "Nintendo Switch",
+                    "category": "official",
+                    "usage_region": "Japon",
+                    "comment": "",
+                }
+            ],
+        }
+
     def list_studios(self, criteria):
         """Liste les studios publics.
 

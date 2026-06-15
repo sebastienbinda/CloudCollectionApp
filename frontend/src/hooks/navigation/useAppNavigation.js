@@ -26,6 +26,9 @@ function useAppNavigation(options) {
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
     AppRouting.getPlatformIdFromUrl()
   );
+  const [selectedLibraryPlatformId, setSelectedLibraryPlatformId] = useState(() =>
+    AppRouting.getLibraryPlatformDetailIdFromUrl()
+  );
   const [selectedGameId, setSelectedGameId] = useState(() => AppRouting.getGameIdFromUrl());
   const [selectedGameSource, setSelectedGameSource] = useState(() =>
     AppRouting.getGameDetailSourceFromUrl()
@@ -44,6 +47,9 @@ function useAppNavigation(options) {
     options.clearDeleteGameFeedback();
     if (view !== "gameDetail") {
       setSelectedGameId("");
+    }
+    if (view !== "libraryPlatformDetail") {
+      setSelectedLibraryPlatformId("");
     }
     setCurrentView(view);
     window.history.pushState({}, "", path);
@@ -84,6 +90,7 @@ function useAppNavigation(options) {
     }
     options.clearDeleteGameFeedback();
     setSelectedGameId(String(gameId));
+    setSelectedLibraryPlatformId("");
     setSelectedGameSource(resolvedSource);
     setCurrentView("gameDetail");
     const path = resolvedSource === "collection"
@@ -92,18 +99,38 @@ function useAppNavigation(options) {
     window.history.pushState({}, "", path);
   };
 
+  const openLibraryPlatformDetail = (platform) => {
+    const platformId = typeof platform === "object" && platform !== null ? platform.id : platform;
+    if (!platformId) {
+      return;
+    }
+    options.clearDeleteGameFeedback();
+    setSelectedGameId("");
+    setSelectedLibraryPlatformId(String(platformId));
+    setCurrentView("libraryPlatformDetail");
+    window.history.pushState({}, "", `/bibliotheque/plateformes/${encodeURIComponent(platformId)}`);
+  };
+
   useEffect(() => {
     const handlePopState = () => {
       options.clearDeleteGameFeedback();
       const pathname = window.location.pathname;
+      if (/^\/bibliotheque\/plateformes\/\d+$/.test(pathname)) {
+        setSelectedLibraryPlatformId(AppRouting.getLibraryPlatformDetailIdFromUrl());
+        setSelectedGameId("");
+        setCurrentView("libraryPlatformDetail");
+        return;
+      }
       if (/^\/bibliotheque\/jeux\/\d+$/.test(pathname)) {
         setSelectedGameId(AppRouting.getGameIdFromUrl());
+        setSelectedLibraryPlatformId("");
         setSelectedGameSource("library");
         setCurrentView("gameDetail");
         return;
       }
       if (/^\/collection\/jeux\/\d+$/.test(pathname)) {
         setSelectedGameId(AppRouting.getGameIdFromUrl());
+        setSelectedLibraryPlatformId("");
         setSelectedGameSource("collection");
         setCurrentView("gameDetail");
         return;
@@ -125,6 +152,7 @@ function useAppNavigation(options) {
 
       if (mappedView) {
         setSelectedGameId("");
+        setSelectedLibraryPlatformId("");
         setCurrentView(mappedView);
         return;
       }
@@ -189,6 +217,7 @@ function useAppNavigation(options) {
     setCurrentView,
     selectedPlatform,
     setSelectedPlatform,
+    selectedLibraryPlatformId,
     selectedGameId,
     selectedGameSource,
     goHome: () => {
@@ -224,6 +253,7 @@ function useAppNavigation(options) {
     },
     openPlatform,
     openGameDetail,
+    openLibraryPlatformDetail,
   };
 }
 

@@ -1,0 +1,2 @@
+Le  mail de validation d'un nouvel utilisateur ne doit etre envoyée que apres que le user ai valider son adresse email si la validation est active.
+Apres avoir valider son email, le user est redirigé sur une page, cette page doit indiquer que son compte sera utilisable une fois que l'admin autra valider son email si la validation est active, sinon on le redirige directement sur la page de connexion. 

@@ -101,6 +101,41 @@ class FakeRepositoryConnection:
         return FakeRepositoryResult(self.scalar_value, self.rows)
 
 
+class FakePlatformAliasRepositoryConnection(FakeRepositoryConnection):
+    """Connexion factice avec lignes plateformes et alias separes."""
+
+    def __init__(self, platform_rows=None, alias_rows=None):
+        """Initialise les resultats plateformes et alias.
+
+        Args:
+            platform_rows (list[dict] | None): Lignes de plateformes.
+            alias_rows (list[dict] | None): Lignes d'alias.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        super().__init__(rows=platform_rows or [])
+        self.alias_rows = alias_rows or []
+
+    def execute(self, statement, parameters=None):
+        """Retourne les lignes selon la table cible.
+
+        Args:
+            statement (object): Requete SQLAlchemy recue.
+            parameters (dict | None): Parametres associes a la requete.
+
+        Returns:
+            FakeRepositoryResult: Resultat SQL factice.
+        """
+
+        sql = str(statement)
+        self.executed_statements.append((sql, parameters or {}))
+        if "t_platform_alias" in sql:
+            return FakeRepositoryResult(rows=self.alias_rows)
+        return FakeRepositoryResult(rows=self.rows)
+
+
 class LibraryEntityRepositoriesTest(unittest.TestCase):
     """Valide les methodes de consultation publique des repositories."""
 
@@ -209,6 +244,39 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
             criteria,
         )
         self.assertEqual(executed_statement_count, len(connection.executed_statements))
+
+    def test_find_public_library_platform_returns_aliases(self):
+        """Verifie le detail public d'une plateforme et ses alias.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le detail retourne.
+        """
+
+        connection = FakePlatformAliasRepositoryConnection(
+            platform_rows=[
+                {"id": 1, "name": "NES", "total_games": 3},
+                {"id": 2, "name": "Super NES", "total_games": 4},
+            ],
+            alias_rows=[
+                {
+                    "platform": 2,
+                    "name": "Super Famicom",
+                    "category": "regional",
+                    "usage_region": "Japon",
+                    "comment": "Nom japonais",
+                }
+            ],
+        )
+
+        row = self.platform_repository.find_public_library_platform(connection, 2)
+
+        self.assertEqual("Super NES", row["name"])
+        self.assertEqual("Super Famicom", row["aliases"][0]["name"])
+        self.assertEqual("Japon", row["aliases"][0]["usage_region"])
+        self.assertIsNone(self.platform_repository.find_public_library_platform(connection, 999))
 
     def test_list_public_library_studios_counts_editor_and_developer_games(self):
         """Verifie la liste publique des studios.

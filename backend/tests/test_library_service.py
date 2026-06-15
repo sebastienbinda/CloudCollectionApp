@@ -158,6 +158,38 @@ class FakePlatformRepository:
             }
         ]
 
+    def find_public_library_platform(self, connection, platform_id):
+        """Retourne une plateforme factice.
+
+        Args:
+            connection (object): Connexion recue.
+            platform_id (int): Identifiant de plateforme.
+
+        Returns:
+            dict | None: Plateforme factice ou absence.
+        """
+
+        self.calls.append(("find", connection, platform_id))
+        if platform_id != 1:
+            return None
+        return {
+            "id": 1,
+            "name": "Switch",
+            "release_date": datetime(2017, 3, 3, 9, 30),
+            "end_date": None,
+            "manufacturer": "Nintendo",
+            "description": {"screen": "portable"},
+            "total_games": 12,
+            "aliases": [
+                {
+                    "name": "Nintendo Switch",
+                    "category": "official",
+                    "usage_region": "Japon",
+                    "comment": None,
+                }
+            ],
+        }
+
 
 class FakeStudioRepository:
     """Repository studios factice pour la Bibliotheque."""
@@ -482,6 +514,35 @@ class LibraryServiceTest(unittest.TestCase):
         """
 
         self.assertIsNone(self.service.get_game(999))
+
+    def test_get_platform_returns_detail_payload_with_aliases(self):
+        """Verifie le payload detail d'une plateforme publique.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la plateforme serialisee.
+        """
+
+        platform = self.service.get_platform(1)
+
+        self.assertEqual("Switch", platform["name"])
+        self.assertEqual("2017-03-03", platform["release_date"])
+        self.assertEqual("Japon", platform["aliases"][0]["usage_region"])
+        self.assertEqual("", platform["aliases"][0]["comment"])
+
+    def test_get_platform_returns_none_for_unknown_platform(self):
+        """Verifie l'absence de plateforme publique.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence.
+        """
+
+        self.assertIsNone(self.service.get_platform(999))
 
     def test_constructor_rejects_missing_database_url_without_injected_engine(self):
         """Verifie qu'un moteur est requis sans configuration SQL.

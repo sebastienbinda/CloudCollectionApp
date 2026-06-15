@@ -148,6 +148,8 @@ Use the following domain folders for new or modified hooks:
   collection endpoints.
 - Public game detail opened from Library pages must query
   `/api/library/games/<game_id>` through `LibraryApi`.
+- Public platform detail opened from Library pages must query
+  `/api/library/platforms/<platform_id>` through `LibraryApi`.
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.

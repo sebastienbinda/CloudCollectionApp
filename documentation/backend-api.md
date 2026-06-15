@@ -127,6 +127,7 @@ user data, imported collection file paths or `t_user_collection` associations.
 | --- | --- | --- |
 | `GET` | `/api/library/entities` | Counts global reference platforms, studios and games. |
 | `GET` | `/api/library/platforms` | Lists global reference platforms. |
+| `GET` | `/api/library/platforms/<platform_id>` | Returns one global reference platform with aliases. |
 | `GET` | `/api/library/studios` | Lists global reference studios. |
 | `GET` | `/api/library/games` | Lists global reference games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
@@ -207,6 +208,30 @@ Invalid page, size or sort values fall back to the default page, default size or
     "size": 500,
     "totalElements": 1,
     "totalPages": 1
+  }
+}
+```
+
+### Library Platform Detail Response
+
+```json
+{
+  "platform": {
+    "id": 1,
+    "name": "Super NES",
+    "release_date": "1990-11-21",
+    "end_date": "2003-09-25",
+    "manufacturer": "Nintendo",
+    "description": {},
+    "total_games": 42,
+    "aliases": [
+      {
+        "name": "Super Famicom",
+        "category": "regional",
+        "usage_region": "Japon",
+        "comment": "Nom japonais"
+      }
+    ]
   }
 }
 ```
