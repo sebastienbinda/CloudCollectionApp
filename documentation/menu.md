@@ -28,6 +28,10 @@ session state received through props.
   compact icon actions.
 - The mobile `Plus` button opens and closes the secondary action panel.
 - Menu entries must be rendered as `<button>` elements.
+- The menu entry matching the current page must be highlighted on desktop and
+  mobile using a muted darker green accent. When a page has no dedicated menu
+  entry, the closest existing entry is highlighted instead of adding a new menu
+  item.
 - A click or pointer event outside the mobile secondary action panel closes it.
 - The `Escape` key closes the mobile secondary action panel when it is open.
 - Clicking an action closes the menu before triggering navigation.
@@ -51,6 +55,8 @@ session state received through props.
 - On mobile and touch devices, pointer leave must not cause accidental closing;
   filter events by `pointerType`.
 - The mobile `Plus` trigger must keep `aria-expanded` and `aria-haspopup`.
+- The mobile `Plus` trigger is highlighted when the active page belongs to a
+  secondary mobile action hidden behind it.
 - Menu icons are inline styled SVG icons. Do not replace them with letter-only
   shortcuts.
 

@@ -334,6 +334,14 @@
   color: #2563eb;
 }
 
+.mainNavigationItem.isActiveNavigationItem:not(:disabled),
+.mobileDockItem.isActiveNavigationItem:not(:disabled),
+.mobileNavigationItem.isActiveNavigationItem:not(:disabled) {
+  background: #dbeadf;
+  border-color: #9fbea9;
+  color: #166534;
+}
+
 .mainNavigationItem:disabled,
 .mobileNavigationItem:disabled {
   background: transparent;
@@ -351,6 +359,14 @@
   background: #374151;
   border-color: #374151;
   color: #ffffff;
+}
+
+.sessionNavigationItem.isActiveNavigationItem:not(:disabled),
+.sessionNavigationItem.isActiveNavigationItem:hover:not(:disabled),
+.sessionNavigationItem.isActiveNavigationItem:focus-visible {
+  background: #dbeadf;
+  border-color: #9fbea9;
+  color: #166534;
 }
 
 .mainNavigationIcon {
@@ -381,13 +397,23 @@
 .mobileDockItem:hover:not(:disabled) .mainNavigationIcon,
 .mobileDockItem:focus-visible .mainNavigationIcon,
 .mobileNavigationItem:hover:not(:disabled) .mainNavigationIcon,
-.mobileNavigationItem:focus-visible .mainNavigationIcon {
+.mobileNavigationItem:focus-visible .mainNavigationIcon,
+.isActiveNavigationItem:not(:disabled) .mainNavigationIcon {
   background: #2563eb;
   color: #ffffff;
 }
 
+.isActiveNavigationItem:not(:disabled) .mainNavigationIcon {
+  background: #15803d;
+}
+
 .sessionNavigationItem .mainNavigationIcon {
   background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.sessionNavigationItem.isActiveNavigationItem:not(:disabled) .mainNavigationIcon {
+  background: #15803d;
   color: #ffffff;
 }
 
@@ -515,6 +541,12 @@
   background: #eff6ff;
   border-color: #bfdbfe;
   color: #2563eb;
+}
+
+.mobileDockMore.isOpen .mobileDockMoreTrigger.isActiveNavigationItem {
+  background: #dbeadf;
+  border-color: #9fbea9;
+  color: #166534;
 }
 
 .mobileDockItem:disabled {

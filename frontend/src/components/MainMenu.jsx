@@ -95,6 +95,7 @@ function MainMenu({
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
+  activeNavigationKey = "",
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -266,20 +267,27 @@ function MainMenu({
   const mobileSecondaryItems = (
     isAuthenticated ? mobileAuthenticatedSecondaryItems : mobileAnonymousSecondaryItems
   ).filter(Boolean);
-
-  const renderNavigationButton = (item, className = "mainNavigationItem") => (
-    <button
-      className={className}
-      type="button"
-      onClick={() => runMenuAction(item.action)}
-      disabled={item.disabled}
-      key={item.key}
-    >
-      <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon(item.icon)}</span>
-      <span className="mainNavigationLabel">{item.label}</span>
-      <span className="mainNavigationShortLabel">{item.shortLabel}</span>
-    </button>
+  const isMobileSecondaryItemActive = mobileSecondaryItems.some(
+    (item) => item.key === activeNavigationKey
   );
+
+  const renderNavigationButton = (item, className = "mainNavigationItem") => {
+    const isActive = item.key === activeNavigationKey;
+    return (
+      <button
+        aria-current={isActive ? "page" : undefined}
+        className={`${className}${isActive ? " isActiveNavigationItem" : ""}`}
+        type="button"
+        onClick={() => runMenuAction(item.action)}
+        disabled={item.disabled}
+        key={item.key}
+      >
+        <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon(item.icon)}</span>
+        <span className="mainNavigationLabel">{item.label}</span>
+        <span className="mainNavigationShortLabel">{item.shortLabel}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="appNavigationBar">
@@ -304,7 +312,9 @@ function MainMenu({
               aria-expanded={isOpen}
               aria-haspopup="true"
               aria-label="Ouvrir les autres actions"
-              className="mobileDockItem mobileDockMoreTrigger"
+              className={`mobileDockItem mobileDockMoreTrigger${
+                isMobileSecondaryItemActive ? " isActiveNavigationItem" : ""
+              }`}
               type="button"
               onClick={toggleMenu}
             >
