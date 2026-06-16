@@ -97,8 +97,9 @@ The supported user profiles are:
   `AUTH_PASSWORD_ENCRYPTED` account.
 
 Profiles are hierarchical. `ADMIN` inherits every route right granted to `USER`.
-Every protected route currently requires at least `USER`, so both profiles can
-access the existing protected API surface.
+Protected user routes require at least `USER`, while administrative routes such
+as `POST /api/library/reset` and `POST /api/library/platform-catalog/sync`
+require `ADMIN`.
 
 This hierarchy is a backend authorization rule only. The configured technical
 `ADMIN` account is not a collection owner in the frontend workflow: it must not

@@ -18,6 +18,17 @@ from .game import Game
 from .game_repository import SqlAlchemyGameRepository
 from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
 from .platform import Platform
+from .platform_alias import PlatformAlias
+from .platform_alias_catalog_csv_reader import PlatformAliasCatalogCsvReader
+from .platform_alias_catalog_entry import PlatformAliasCatalogEntry
+from .platform_catalog_cache import PlatformCatalogCache
+from .platform_catalog_csv_reader import PlatformCatalogCsvReader
+from .platform_catalog_entry import PlatformCatalogEntry
+from .platform_catalog_seed_service import PlatformCatalogSeedResult, PlatformCatalogSeedService
+from .platform_catalog_update_service import PlatformCatalogUpdateService
+from .platform_matching_admin_notifier import PlatformMatchingAdminNotifier
+from .platform_matching_configuration import PlatformMatchingConfiguration
+from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
 from .schema_version import SchemaVersion
 from .studio import Studio
@@ -43,6 +54,18 @@ __all__ = [
     "SqlAlchemyGameRepository",
     "SqlAlchemyLibraryResetRepository",
     "Platform",
+    "PlatformAlias",
+    "PlatformAliasCatalogCsvReader",
+    "PlatformAliasCatalogEntry",
+    "PlatformCatalogCache",
+    "PlatformCatalogCsvReader",
+    "PlatformCatalogEntry",
+    "PlatformCatalogSeedResult",
+    "PlatformCatalogSeedService",
+    "PlatformCatalogUpdateService",
+    "PlatformMatchingAdminNotifier",
+    "PlatformMatchingConfiguration",
+    "PlatformMatchingService",
     "SqlAlchemyPlatformRepository",
     "SchemaVersion",
     "Studio",

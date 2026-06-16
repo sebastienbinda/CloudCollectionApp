@@ -44,8 +44,8 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/games/`: platform game collection, game filtering,
   sorting, editing, game detail and add-game form workflows.
 - `frontend/src/hooks/library/`: public Library counters, public entity search,
-  server-side pagination and backend-driven sorting for platforms, studios and
-  games.
+  server-side pagination, backend-driven sorting for platforms, studios and
+  games, and Library administration actions exposed from Configuration.
 
 ## Current Entry Points
 
@@ -148,9 +148,14 @@ Use the following domain folders for new or modified hooks:
   collection endpoints.
 - Public game detail opened from Library pages must query
   `/api/library/games/<game_id>` through `LibraryApi`.
+- Public platform detail opened from Library pages must query
+  `/api/library/platforms/<platform_id>` through `LibraryApi`.
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
+- Keep protected Library administration calls in a dedicated admin service and
+  user-triggered hooks. They must use route discovery before being displayed and
+  must not change the public read-only Library consultation routes.
 
 ### User Administration
 

@@ -5,6 +5,7 @@
 - Prefer maintainable, modular, and reusable code.
 - Respect existing project architecture and conventions.
 - Use explicit naming for classes, methods, variables, and files.
+- Use one  file per class. No file with multiple class in it.
 - Before creating new code, always search for existing similar implementations in the project.
 - Reuse existing patterns and utilities whenever possible.
 - Avoid introducing new frameworks or dependencies unless necessary. If it is necessary ask for confirmation before adding any new framework or dependency.

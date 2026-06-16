@@ -24,9 +24,11 @@ import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
 import useLibraryHomeSearch from "../library/useLibraryHomeSearch";
+import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPage";
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
+import usePlatformCatalogSyncAction from "../library/usePlatformCatalogSyncAction";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
 import useOdsDownload from "../useOdsDownload";
@@ -105,6 +107,10 @@ function useCloudCollectionViewModel() {
     source: navigation.selectedGameSource,
     hasAccessToken: canUseCollectionViews,
   });
+  const libraryPlatformDetailPage = useLibraryPlatformDetailPage({
+    currentView: navigation.currentView,
+    platformId: navigation.selectedLibraryPlatformId,
+  });
   const libraryEntities = useLibraryEntities({
     enabled: navigation.currentView === "library",
   });
@@ -121,6 +127,7 @@ function useCloudCollectionViewModel() {
     enabled: navigation.currentView === "libraryGames",
   });
   const libraryResetAction = useLibraryResetAction();
+  const platformCatalogSyncAction = usePlatformCatalogSyncAction();
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
     hasAccessToken: canUseCollectionViews,
@@ -146,8 +153,10 @@ function useCloudCollectionViewModel() {
     viewProps: {
       currentView: navigation.currentView,
       selectedGameId: navigation.selectedGameId,
+      selectedLibraryPlatformId: navigation.selectedLibraryPlatformId,
       selectedGameSource: navigation.selectedGameSource,
       gameDetailPage,
+      libraryPlatformDetailPage,
       homeStats: homePage.homeStats,
       platforms: platformsCatalog.platforms,
       selectedPlatform: navigation.selectedPlatform,
@@ -178,6 +187,9 @@ function useCloudCollectionViewModel() {
       libraryResetError: libraryResetAction.libraryResetError,
       libraryResetMessage: libraryResetAction.libraryResetMessage,
       isResettingLibrary: libraryResetAction.isResettingLibrary,
+      platformCatalogSyncError: platformCatalogSyncAction.platformCatalogSyncError,
+      platformCatalogSyncMessage: platformCatalogSyncAction.platformCatalogSyncMessage,
+      isSyncingPlatformCatalog: platformCatalogSyncAction.isSyncingPlatformCatalog,
       reinitializationError: userCollectionReinitialization.reinitializationError,
       isReinitializingCollection: userCollectionReinitialization.isReinitializingCollection,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
@@ -196,6 +208,7 @@ function useCloudCollectionViewModel() {
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
       openGameDetail: navigation.openGameDetail,
+      openLibraryPlatformDetail: navigation.openLibraryPlatformDetail,
       openWishlist: navigation.openWishlist,
       openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,
@@ -208,6 +221,7 @@ function useCloudCollectionViewModel() {
       closeHomeSearch: homePage.closeHomeSearch,
       downloadOdsFile: odsDownload.downloadOdsFile,
       resetLibrary: libraryResetAction.resetLibrary,
+      syncPlatformCatalog: platformCatalogSyncAction.syncPlatformCatalog,
       reinitializeCollection: userCollectionReinitialization.reinitializeCollection,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
       selectCollectionFile: userCollectionOnboarding.selectCollectionFile,

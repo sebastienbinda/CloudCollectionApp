@@ -14,7 +14,7 @@
 from datetime import datetime
 import unittest
 
-from services.database import SqlAlchemyLibraryResetRepository
+from services.database import PlatformCatalogCache, SqlAlchemyLibraryResetRepository
 
 
 class FakeDatabaseConfiguration:
@@ -253,8 +253,8 @@ class FakeEngine:
 class LibraryResetRepositoryTest(unittest.TestCase):
     """Valide les requetes du repository de reset Bibliotheque."""
 
-    def test_clean_library_tables_deletes_in_dependency_order(self):
-        """Verifie l'ordre de suppression des tables.
+    def test_clean_library_tables_preserves_platform_catalog(self):
+        """Verifie que le reset conserve le referentiel plateformes.
 
         Args:
             Aucun.
@@ -264,9 +264,12 @@ class LibraryResetRepositoryTest(unittest.TestCase):
         """
 
         connection = FakeConnection()
+        cache = PlatformCatalogCache()
+        cache.remember("public", lambda: [{"id": 1, "name": "Switch"}])
         repository = SqlAlchemyLibraryResetRepository(
             FakeDatabaseConfiguration(),
             engine=FakeEngine(connection),
+            platform_catalog_cache=cache,
         )
 
         repository.clean_library_tables()
@@ -274,7 +277,8 @@ class LibraryResetRepositoryTest(unittest.TestCase):
         executed_sql = "\n".join(connection.executed_sql)
         self.assertLess(executed_sql.index("t_user_collection"), executed_sql.index("t_game"))
         self.assertLess(executed_sql.index("t_game"), executed_sql.index("t_studio"))
-        self.assertLess(executed_sql.index("t_game"), executed_sql.index("t_platform"))
+        self.assertNotIn("t_platform", executed_sql)
+        self.assertEqual(0, cache.invalidate("public"))
 
     def test_clean_library_tables_rolls_back_on_error(self):
         """Verifie le rollback implicite quand le clean echoue.

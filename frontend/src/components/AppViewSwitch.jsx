@@ -20,6 +20,7 @@ import GameDetailView from "./GameDetailView";
 import HomeView from "./HomeView";
 import LibraryEntityListView from "./LibraryEntityListView";
 import LibraryHomeView from "./LibraryHomeView";
+import LibraryPlatformDetailView from "./LibraryPlatformDetailView";
 import PlatformDetailView from "./PlatformDetailView";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
@@ -98,6 +99,10 @@ class AppViewSwitch {
       return this.renderLibraryList(props, "Plateformes", "Plateformes du referentiel commun.", props.libraryPlatforms);
     }
 
+    if (props.currentView === "libraryPlatformDetail") {
+      return this.renderLibraryPlatformDetail(props);
+    }
+
     if (props.currentView === "libraryStudios") {
       return this.renderLibraryList(props, "Studios", "Studios du referentiel commun.", props.libraryStudios);
     }
@@ -169,6 +174,7 @@ class AppViewSwitch {
         canAddGame={props.actionPermissions.canAddGame}
         canDownloadOds={props.actionPermissions.canDownloadOds}
         canResetLibrary={props.actionPermissions.canResetLibrary}
+        canSyncPlatformCatalog={props.actionPermissions.canSyncPlatformCatalog}
         canReinitializeCollection={props.actionPermissions.canReinitializeCollection}
         canSearchUsers={props.actionPermissions.canSearchUsers}
         downloadError={props.downloadError}
@@ -176,6 +182,9 @@ class AppViewSwitch {
         libraryResetError={props.libraryResetError}
         libraryResetMessage={props.libraryResetMessage}
         isResettingLibrary={props.isResettingLibrary}
+        platformCatalogSyncError={props.platformCatalogSyncError}
+        platformCatalogSyncMessage={props.platformCatalogSyncMessage}
+        isSyncingPlatformCatalog={props.isSyncingPlatformCatalog}
         reinitializationError={props.reinitializationError}
         isReinitializingCollection={props.isReinitializingCollection}
         onAddGame={props.openAddGamePage}
@@ -183,6 +192,7 @@ class AppViewSwitch {
         onOpenCollectionOnboarding={props.openCollectionOnboarding}
         onDownloadOds={props.downloadOdsFile}
         onResetLibrary={props.resetLibrary}
+        onSyncPlatformCatalog={props.syncPlatformCatalog}
         onReinitializeCollection={props.reinitializeCollection}
       />
     );
@@ -339,6 +349,8 @@ class AppViewSwitch {
         onRowClick={
           listState === props.libraryGames
             ? (game) => props.openGameDetail(game, "library")
+            : listState === props.libraryPlatforms
+              ? (platform) => props.openLibraryPlatformDetail(platform)
             : null
         }
       />
@@ -357,6 +369,22 @@ class AppViewSwitch {
         {...this.buildPageLayoutProps(props)}
         gameDetailPage={props.gameDetailPage}
         selectedGameSource={props.selectedGameSource}
+        onBack={() => window.history.back()}
+      />
+    );
+  }
+
+  /**
+   * Rend la page de detail d'une plateforme Bibliotheque.
+   *
+   * @param {Object} props - Etat et callbacks de navigation.
+   * @returns {import("react").JSX.Element} Vue detail plateforme Bibliotheque.
+   */
+  static renderLibraryPlatformDetail(props) {
+    return (
+      <LibraryPlatformDetailView
+        {...this.buildPageLayoutProps(props)}
+        platformDetailPage={props.libraryPlatformDetailPage}
         onBack={() => window.history.back()}
       />
     );

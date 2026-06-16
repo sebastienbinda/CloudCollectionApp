@@ -12,6 +12,8 @@
 - `/bibliotheque`: public Library landing page with global entity counters and
   public global game search.
 - `/bibliotheque/plateformes`: public paginated platform reference list.
+- `/bibliotheque/plateformes/<platform_id>`: public platform detail from the
+  global reference Library, including platform aliases and usage regions.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global
@@ -26,6 +28,8 @@ reference database and must not depend on connected-user collection status.
 
 - `/collection`: authenticated Ma collection page for non-`ADMIN` users who
   already have a collection.
+- `/collection?platform_id=<platform_id>`: authenticated platform detail for a
+  non-`ADMIN` user's collection, listing games attached to that platform.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
   attached to the connected user's collection.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
@@ -80,6 +84,12 @@ launching the reset, display a success message after `202`, display an
 already-running message after `409`, and must not add polling or a job status
 page. This does not make public Bibliotheque pages writable; they remain public
 read-only consultation routes.
+
+For `ADMIN`, the Configuration page may also expose `Mettre a jour` for the
+platform catalog only when route discovery confirms access to
+`POST /api/library/platform-catalog/sync`. The action must ask for explicit
+confirmation before inserting missing platforms and aliases from backend CSV
+resources, then display the insertion counters returned by the backend.
 
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the

@@ -92,7 +92,8 @@ Use domain folders under `backend/services/`:
 
 - `auth/`: token, password, profile, registration and email verification logic;
 - `database/`: database configuration, ORM models, repositories and schema
-  initialization;
+  initialization. The platform catalog seed/update services also live there
+  because they own SQL synchronization from backend CSV resources;
 - `email/`: email configuration and sending;
 - `formatting/`: value formatting helpers;
 - `collection/`: connected-user SQL collection consultation and query
@@ -126,6 +127,10 @@ Database code must follow these boundaries:
   infrastructure services or `backend/migrations/env.py`;
 - database structure changes must use Alembic migrations and update
   `documentation/database.md` when the schema contract changes.
+- the platform reference catalog is cached server-side by schema for five
+  hours. The cache is shared by public Library reads and user import platform
+  matching, protected by an in-process lock, and invalidated after imports,
+  Library reset cleanup and admin CSV synchronization.
 
 ### ODS Infrastructure
 

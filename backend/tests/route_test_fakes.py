@@ -44,7 +44,50 @@ class FakeLibraryService:
         """
 
         self.__class__.last_platforms_criteria = criteria
-        return {"page": self._page(criteria), "platforms": [{"id": 1, "name": "Switch", "release_date": "2017-03-03", "manufacturer": "Nintendo", "description": "", "status": "ACTIVE", "total_games": 12}]}
+        return {
+            "page": self._page(criteria),
+            "platforms": [
+                {
+                    "id": 1,
+                    "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": "",
+                    "manufacturer": "Nintendo",
+                    "description": "",
+                    "total_games": 12,
+                }
+            ],
+        }
+
+    def get_platform(self, platform_id):
+        """Retourne une plateforme publique factice.
+
+        Args:
+            platform_id (int): Identifiant de la plateforme recherchee.
+
+        Returns:
+            dict[str, object] | None: Plateforme factice ou absence.
+        """
+
+        if platform_id != 1:
+            return None
+        return {
+            "id": 1,
+            "name": "Switch",
+            "release_date": "2017-03-03",
+            "end_date": "",
+            "manufacturer": "Nintendo",
+            "description": "",
+            "total_games": 12,
+            "aliases": [
+                {
+                    "name": "Nintendo Switch",
+                    "category": "official",
+                    "usage_region": "Japon",
+                    "comment": "",
+                }
+            ],
+        }
 
     def list_studios(self, criteria):
         """Liste les studios publics.
@@ -153,7 +196,12 @@ class FakeUserCollectionQueryService:
                 {
                     "id": 1,
                     "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": "",
+                    "manufacturer": "Nintendo",
+                    "description": {"generation": "8"},
                     "nb_games": 25,
+                    "total_games": 25,
                     "total_value": 0,
                     "average_value": 0,
                 }

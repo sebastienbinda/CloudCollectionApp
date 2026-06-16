@@ -179,6 +179,20 @@ class LibraryQueryParserTest(unittest.TestCase):
             criteria.sort_rules,
         )
 
+    def test_parse_accepts_platform_end_date_sort(self):
+        """Verifie que les plateformes peuvent etre triees par date de retrait.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la colonne de tri.
+        """
+
+        criteria = self.parser.parse("platforms", {"sort": "end_date,desc"})
+
+        self.assertEqual((LibrarySortRule("end_date", "desc"),), criteria.sort_rules)
+
     def test_parse_rejects_sort_columns_outside_entity_allowlist(self):
         """Verifie qu'une colonne non autorisee retombe sur `name,asc`.
 

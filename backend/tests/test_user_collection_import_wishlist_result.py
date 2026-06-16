@@ -53,6 +53,46 @@ class FakeImportRepository:
         return UserCollectionImportPersistenceResult(1, 1, 2, len(import_data.games))
 
 
+class FakePlatformWarningImportRepository(FakeImportRepository):
+    """Simule une persistance ajoutant des warnings de matching plateforme."""
+
+    def import_collection(self, user_id, collection_file_path, import_data, description):
+        """Ajoute un warning plateforme puis retourne des compteurs factices.
+
+        Args:
+            user_id (int): Identifiant utilisateur ignore.
+            collection_file_path (str): Chemin de fichier ignore.
+            import_data (CollectionImportData): Donnees d'import a enrichir.
+            description (dict): Description d'import ignoree.
+
+        Returns:
+            UserCollectionImportPersistenceResult: Compteurs factices.
+        """
+
+        import_data.warnings.platform_mappings.append(
+            {
+                "imported_platform": "Wii",
+                "matched_platform": "Switch",
+                "score": 44,
+                "games_count": 1,
+                "matched_by_alias": False,
+                "matched_alias": "",
+                "accepted": True,
+                "manual_check": True,
+                "reason": "",
+            }
+        )
+        import_data.warnings.platform_matches.append(
+            {
+                "game_name": "Zelda",
+                "imported_platform": "Wii",
+                "matched_platform": "Switch",
+                "score": 44,
+            }
+        )
+        return UserCollectionImportPersistenceResult(1, 1, 1, len(import_data.games))
+
+
 class FakeWishlistReader:
     """Reader factice retournant des jeux avec wishlist et warnings."""
 
@@ -81,6 +121,20 @@ class FakeReaderFactory:
         return FakeWishlistReader()
 
 
+class FakeImportReportNotifier:
+    """Capture le rapport administrateur de fin d'import."""
+
+    def __init__(self):
+        """Initialise le notifier factice."""
+
+        self.warnings = []
+
+    def notify_import_report(self, warnings):
+        """Memorise les warnings transmis au notifier."""
+
+        self.warnings.append(warnings)
+
+
 class UserCollectionImportWishlistResultTest(unittest.TestCase):
     """Valide les compteurs wishlist retournes par le service."""
 
@@ -90,6 +144,7 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source_file = Path(directory) / "collection.ods"
             source_file.write_bytes(b"ods")
+            notifier = FakeImportReportNotifier()
             service = UserCollectionImportService(
                 UserCollectionImportConfiguration(
                     workspace_path=str(Path(directory) / "workspace"),
@@ -97,6 +152,7 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
                 ),
                 FakeImportRepository(),
                 FakeReaderFactory(),
+                report_notifier=notifier,
             )
 
             result = service.import_collection(
@@ -107,15 +163,62 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
             )
 
         self.assertEqual(1, result.wishlisted_games)
+        self.assertEqual(1, result.linked_platforms)
+        self.assertNotIn("created_platforms", result.to_dict())
+        self.assertEqual(1, result.to_dict()["linked_platforms"])
+        self.assertGreaterEqual(result.warnings["total_import_duration_seconds"], 0)
+        self.assertEqual(1, len(notifier.warnings))
         self.assertEqual(
             {
                 "invalid_wishlist": 1,
                 "invalid_wishlist_values_found": ["Peut etre"],
                 "invalid_games": [],
+                "platform_mappings": [],
+                "platform_matches": [],
+                "skipped_games": [],
+                "total_import_duration_seconds": result.warnings[
+                    "total_import_duration_seconds"
+                ],
             },
             result.warnings,
         )
         self.assertEqual(1, result.to_dict()["wishlisted_games"])
+
+    def test_import_notifier_receives_platform_matching_warnings(self):
+        """Verifie que le mail admin recoit les warnings de matching.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la propagation vers le notifier.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            source_file = Path(directory) / "collection.ods"
+            source_file.write_bytes(b"ods")
+            notifier = FakeImportReportNotifier()
+            service = UserCollectionImportService(
+                UserCollectionImportConfiguration(
+                    workspace_path=str(Path(directory) / "workspace"),
+                    max_upload_bytes=1024,
+                ),
+                FakePlatformWarningImportRepository(),
+                FakeReaderFactory(),
+                report_notifier=notifier,
+            )
+
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                CollectionFileDescription(CollectionFileType.LIBREOFFICE_ODS),
+            )
+
+        self.assertEqual("Switch", result.warnings["platform_mappings"][0]["matched_platform"])
+        self.assertEqual("Zelda", result.warnings["platform_matches"][0]["game_name"])
+        self.assertEqual(1, len(notifier.warnings))
+        self.assertEqual("Switch", notifier.warnings[0].platform_mappings[0]["matched_platform"])
 
 
 if __name__ == "__main__":

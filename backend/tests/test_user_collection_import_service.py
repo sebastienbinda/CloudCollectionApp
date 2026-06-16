@@ -243,7 +243,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(0o440, target_file.stat().st_mode & 0o777)
             self.assertEqual(str(target_file), reader.read_paths[0])
             self.assertEqual((1, 1, 1, 1), (
-                result.created_platforms,
+                result.linked_platforms,
                 result.created_studios,
                 result.created_games,
                 result.associated_games,
@@ -435,7 +435,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 directory,
                 repository=FakeUserCollectionImportRepository(
                     result=UserCollectionImportPersistenceResult(
-                        created_platforms=0,
+                        linked_platforms=1,
                         created_studios=0,
                         created_games=0,
                         associated_games=2,
@@ -451,6 +451,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             self.assertEqual(0, result.created_games)
+            self.assertEqual(1, result.linked_platforms)
             self.assertEqual(2, result.associated_games)
             self.assertEqual(1, len(repository.import_calls))
             self.assertEqual(1, len(reader.read_paths))

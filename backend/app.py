@@ -64,8 +64,12 @@ user_collection_import_controller = UserCollectionImportController(
     auth_guard,
     reset_job_coordinator=library_reset_job_coordinator,
 )
-library_controller = LibraryController(auth_guard, library_reset_job_coordinator)
 library_service_provider = LibraryServiceProvider()
+library_controller = LibraryController(
+    auth_guard,
+    library_reset_job_coordinator,
+    library_service_provider=library_service_provider,
+)
 platform_controller = PlatformController(library_service_factory=library_service_provider)
 studio_controller = StudioController(library_service_factory=library_service_provider)
 game_controller = GameController(library_service_factory=library_service_provider)

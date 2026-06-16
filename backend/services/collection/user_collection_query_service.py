@@ -380,7 +380,12 @@ class UserCollectionQueryService:
         return {
             "id": int(row["id"]),
             "name": self._text_value(row.get("name")),
+            "release_date": self._date_value(row.get("release_date")),
+            "end_date": self._date_value(row.get("end_date")),
+            "manufacturer": self._text_value(row.get("manufacturer")),
+            "description": self._description_value(row.get("description")),
             "nb_games": self._integer_value(row.get("nb_games")),
+            "total_games": self._integer_value(row.get("total_games")),
             "total_value": 0,
             "average_value": 0,
         }
@@ -407,6 +412,9 @@ class UserCollectionQueryService:
         if isinstance(value, date):
             return value.isoformat()
         return self._text_value(value)
+
+    def _description_value(self, value: Any) -> Any:
+        return value if value is not None else ""
 
     def _text_value(self, value: Any) -> str:
         return "" if value is None else str(value)

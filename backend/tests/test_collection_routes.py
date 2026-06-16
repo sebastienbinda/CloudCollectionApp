@@ -55,7 +55,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
 
         statistics = self.client.get("/collections/videogames", headers=headers).get_json()
         platforms = self.client.get(
-            "/collections/videogames/platforms/search?name=École&page=2&size=25&sort=name,desc",
+            "/collections/videogames/platforms/search?name=École&page=2&size=25&sort=end_date,desc",
             headers=headers,
         ).get_json()
         games = self.client.get(
@@ -69,11 +69,21 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(3, statistics["wishlist"]["total"])
         self.assertEqual("Switch", platforms["platforms"][0]["name"])
         self.assertEqual(25, platforms["platforms"][0]["nb_games"])
+        self.assertEqual("2017-03-03", platforms["platforms"][0]["release_date"])
+        self.assertEqual("", platforms["platforms"][0]["end_date"])
+        self.assertEqual("Nintendo", platforms["platforms"][0]["manufacturer"])
+        self.assertEqual({"generation": "8"}, platforms["platforms"][0]["description"])
+        self.assertEqual(25, platforms["platforms"][0]["total_games"])
+        self.assertNotIn("status", platforms["platforms"][0])
         self.assertEqual("Mario Kart", games["games"][0]["name"])
         self.assertEqual(1, games["games"][0]["platform_id"])
         self.assertFalse(games["games"][0]["wishlist"])
         self.assertFalse(FakeUserCollectionQueryService.last_games_criteria.wishlist)
         self.assertEqual("ecole", FakeUserCollectionQueryService.last_platforms_criteria.normalized_name)
+        self.assertEqual(("end_date", "desc"), (
+            FakeUserCollectionQueryService.last_platforms_criteria.sort_rules[0].column,
+            FakeUserCollectionQueryService.last_platforms_criteria.sort_rules[0].direction,
+        ))
         self.assertEqual(("studio_name", "desc"), (
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].column,
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].direction,

@@ -53,6 +53,17 @@ class AppRouting {
   }
 
   /**
+   * Lit l'identifiant de detail plateforme Bibliotheque depuis l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.pathname`.
+   * @returns {string} Identifiant de plateforme ou chaine vide.
+   */
+  static getLibraryPlatformDetailIdFromUrl() {
+    const match = window.location.pathname.match(/^\/bibliotheque\/plateformes\/(\d+)$/);
+    return match ? match[1] : "";
+  }
+
+  /**
    * Deduit la source de detail jeu depuis l'URL courante.
    *
    * @param {void} Aucun - Utilise `window.location.pathname`.
@@ -94,6 +105,9 @@ class AppRouting {
    * @returns {boolean} `true` si le chemin est public.
    */
   static isPublicPath(pathname) {
+    if (/^\/bibliotheque\/plateformes\/\d+$/.test(pathname)) {
+      return true;
+    }
     if (/^\/bibliotheque\/jeux\/\d+$/.test(pathname)) {
       return true;
     }
@@ -111,9 +125,12 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"users"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
    */
   static getViewFromUrl() {
+    if (/^\/bibliotheque\/plateformes\/\d+$/.test(window.location.pathname)) {
+      return "libraryPlatformDetail";
+    }
     if (/^\/bibliotheque\/jeux\/\d+$/.test(window.location.pathname)) {
       return "gameDetail";
     }

@@ -24,6 +24,7 @@ class PlatformController:
     PUBLIC_ENDPOINTS = frozenset(
         {
             "count_library_entities",
+            "get_library_platform",
             "list_library_platforms",
         }
     )
@@ -68,6 +69,12 @@ class PlatformController:
             "/api/library/platforms",
             endpoint="list_library_platforms",
             view_func=self._as_view(self.list_library_platforms),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/platforms/<int:platform_id>",
+            endpoint="get_library_platform",
+            view_func=self._as_view(self.get_library_platform),
             methods=["GET"],
         )
 
@@ -117,6 +124,26 @@ class PlatformController:
             return jsonify({"error": str(exc)}), 503
         except Exception as exc:
             return jsonify({"error": f"Unable to read library platforms: {exc}"}), 500
+
+    def get_library_platform(self, platform_id: int):
+        """Retourne le detail public d'une plateforme de la Bibliotheque.
+
+        Args:
+            platform_id (int): Identifiant de la plateforme recherchee.
+
+        Returns:
+            flask.Response | tuple[flask.Response, int]: Plateforme JSON ou erreur JSON.
+        """
+
+        try:
+            platform = self._get_library_service().get_platform(platform_id)
+            if platform is None:
+                return jsonify({"error": "Library platform not found."}), 404
+            return jsonify({"platform": platform})
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 503
+        except Exception as exc:
+            return jsonify({"error": f"Unable to read library platform: {exc}"}), 500
 
     @property
     def library_service_factory(self):

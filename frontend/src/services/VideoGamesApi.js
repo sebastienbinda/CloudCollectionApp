@@ -291,6 +291,11 @@ class VideoGamesApi {
     return platforms.map((platform) => ({
       id: platform.id,
       name: platform.name || "",
+      release_date: platform.release_date || "",
+      end_date: platform.end_date || "",
+      manufacturer: platform.manufacturer || "",
+      description: platform.description || "",
+      total_games: platform.total_games || platform.nb_games || 0,
       games_count: platform.nb_games || 0,
       total_price: platform.total_value || 0,
       average_price: platform.average_value || 0,

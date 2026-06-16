@@ -28,9 +28,9 @@ class Platform(DatabaseModelBase):
         id (int): Identifiant technique genere par la sequence `s_platform`.
         name (str): Nom de la plateforme.
         release_date (Optional[datetime]): Date de sortie de la plateforme.
+        end_date (Optional[datetime]): Date de retrait de la vente.
         manufacturer (Optional[str]): Fabricant de la plateforme.
         description (Optional[dict]): Description structuree stockee en JSONB.
-        status (str): Statut fonctionnel de la plateforme.
     """
 
     __tablename__ = "t_platform"
@@ -42,6 +42,6 @@ class Platform(DatabaseModelBase):
     )
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     release_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     manufacturer: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     description: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    status: Mapped[str] = mapped_column(String(16), nullable=False)

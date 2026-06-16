@@ -1,0 +1,1 @@
+Aujourd'hui le mail d'import est envoyé a l'admin en cas d'erreur ou warning, je veux que le mail soit toujours envoyé avec toutes les informations du context d'import. Il faut bien centraliser l'envoi du mail en dehors du reader et ne pas dépendre. du type de fichier. et l'envoie est fait en toute fin d'import. On envoie un seul mail par import.

@@ -205,22 +205,56 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
                 "name": " École ",
                 "page": "2",
                 "size": "25",
-                "sort": "name,desc",
+                "sort": "manufacturer,desc",
                 "wishlist": "false",
             }
         )
-        connection = FakeRepositoryConnection(rows=[{"id": 1, "name": "Switch", "nb_games": 3}])
+        connection = FakeRepositoryConnection(
+            rows=[
+                {
+                    "id": 1,
+                    "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": None,
+                    "manufacturer": "Nintendo",
+                    "description": {"generation": "8"},
+                    "nb_games": 3,
+                    "total_games": 3,
+                }
+            ]
+        )
 
         rows = self.repository.list_platforms(connection, 12, criteria)
 
         sql, parameters = connection.executed_statements[0]
-        self.assertEqual([{"id": 1, "name": "Switch", "nb_games": 3}], rows)
+        self.assertEqual(
+            [
+                {
+                    "id": 1,
+                    "name": "Switch",
+                    "release_date": "2017-03-03",
+                    "end_date": None,
+                    "manufacturer": "Nintendo",
+                    "description": {"generation": "8"},
+                    "nb_games": 3,
+                    "total_games": 3,
+                }
+            ],
+            rows,
+        )
         self.assertIn("COUNT(game.id) AS nb_games", sql)
+        self.assertIn("COUNT(game.id) AS total_games", sql)
+        self.assertIn("platform.release_date", sql)
+        self.assertIn("platform.end_date", sql)
+        self.assertIn("platform.manufacturer", sql)
+        self.assertIn("platform.description", sql)
+        self.assertNotIn("platform.status", sql)
         self.assertIn("user_collection.user_id = :user_id", sql)
         self.assertIn("user_collection.wishlist = :wishlist", sql)
         self.assertIn("TRANSLATE(LOWER(platform.name)", sql)
-        self.assertIn("GROUP BY platform.id, platform.name", sql)
-        self.assertIn("ORDER BY platform.name DESC", sql)
+        self.assertIn("GROUP BY", sql)
+        self.assertIn("platform.description", sql)
+        self.assertIn("ORDER BY platform.manufacturer DESC, platform.name ASC", sql)
         self.assertEqual(12, parameters["user_id"])
         self.assertFalse(parameters["wishlist"])
         self.assertEqual("%ecole%", parameters["platform_name_pattern"])

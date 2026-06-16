@@ -120,7 +120,7 @@ class LibraryQueryParser:
     DEFAULT_SORT_COLUMN = "name"
     DEFAULT_SORT_DIRECTION = "asc"
     ALLOWED_SORT_COLUMNS = {
-        "platforms": frozenset({"name", "release_date", "manufacturer"}),
+        "platforms": frozenset({"name", "release_date", "end_date", "manufacturer"}),
         "studios": frozenset({"name", "country", "creation_date"}),
         "games": frozenset({"name", "release_date", "developer", "platform"}),
     }
