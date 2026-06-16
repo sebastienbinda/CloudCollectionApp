@@ -12,6 +12,7 @@
 # Description : chargement du catalogue applicatif des plateformes.
 
 import unicodedata
+from dataclasses import dataclass
 from pathlib import Path
 
 from sqlalchemy import text
@@ -23,6 +24,48 @@ from .platform_alias_catalog_csv_reader import PlatformAliasCatalogCsvReader
 from .platform_alias_catalog_entry import PlatformAliasCatalogEntry
 from .platform_catalog_csv_reader import PlatformCatalogCsvReader
 from .platform_catalog_entry import PlatformCatalogEntry
+
+
+@dataclass(frozen=True)
+class PlatformCatalogSeedResult:
+    """Regroupe les insertions realisees par le seed du catalogue plateformes.
+
+    Attributes:
+        inserted_platforms (int): Nombre de plateformes ajoutees.
+        inserted_aliases (int): Nombre d'alias ajoutes.
+    """
+
+    inserted_platforms: int = 0
+    inserted_aliases: int = 0
+
+    @property
+    def total_inserted(self) -> int:
+        """Retourne le nombre total de lignes ajoutees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            int: Somme des plateformes et alias ajoutes.
+        """
+
+        return self.inserted_platforms + self.inserted_aliases
+
+    def to_dict(self) -> dict[str, int]:
+        """Convertit le resultat en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict[str, int]: Compteurs d'insertions.
+        """
+
+        return {
+            "inserted_platforms": self.inserted_platforms,
+            "inserted_aliases": self.inserted_aliases,
+            "total_inserted": self.total_inserted,
+        }
 
 
 class PlatformCatalogSeedService:
@@ -70,13 +113,41 @@ class PlatformCatalogSeedService:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
-        inserted_count = self._seed_platforms(connection, self.csv_reader.read(csv_path))
-        if alias_csv_path is None:
-            return inserted_count
-        return inserted_count + self._seed_aliases(
+        return self.seed_from_csv_detailed(
             connection,
-            self.alias_csv_reader.read(alias_csv_path),
-        )
+            csv_path,
+            alias_csv_path,
+        ).total_inserted
+
+    def seed_from_csv_detailed(
+        self,
+        connection: Connection,
+        csv_path: Path,
+        alias_csv_path: Path | None = None,
+    ) -> PlatformCatalogSeedResult:
+        """Insere les plateformes et alias absents avec compteurs detailles.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            csv_path (Path): Chemin du fichier CSV de reference.
+            alias_csv_path (Path | None): Chemin du fichier CSV des alias.
+
+        Returns:
+            PlatformCatalogSeedResult: Compteurs des lignes ajoutees.
+
+        Raises:
+            ValueError: Si le CSV contient des donnees invalides.
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        inserted_platforms = self._seed_platforms(connection, self.csv_reader.read(csv_path))
+        inserted_aliases = 0
+        if alias_csv_path is not None:
+            inserted_aliases = self._seed_aliases(
+                connection,
+                self.alias_csv_reader.read(alias_csv_path),
+            )
+        return PlatformCatalogSeedResult(inserted_platforms, inserted_aliases)
 
     def catalog_key(self, value: str) -> str:
         """Construit la cle d'unicite fonctionnelle du catalogue.

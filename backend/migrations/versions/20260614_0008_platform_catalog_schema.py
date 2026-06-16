@@ -118,7 +118,7 @@ def _catalog_csv_path() -> Path:
         Path: Chemin absolu vers le catalogue CSV.
     """
 
-    return Path(__file__).resolve().parents[2] / "services" / "database" / "platform_catalog.csv"
+    return Path(__file__).resolve().parents[2] / "resources" / "platform_catalog.csv"
 
 
 def _alias_catalog_csv_path() -> Path:
@@ -131,7 +131,7 @@ def _alias_catalog_csv_path() -> Path:
         Path: Chemin absolu vers le catalogue CSV des alias.
     """
 
-    return Path(__file__).resolve().parents[2] / "services" / "database" / "platform_alias_catalog.csv"
+    return Path(__file__).resolve().parents[2] / "resources" / "platform_alias_catalog.csv"
 
 
 def _next_sequence_value(schema_name: str, sequence_name: str) -> str:

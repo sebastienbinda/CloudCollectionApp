@@ -124,6 +124,15 @@ database structure in `documentation/database.md`, and frontend navigation in
 - When the best direct platform match is below `MATCHING_HIGH_LEVEL_RATING`, the
   backend searches platform aliases from the SQL reference catalog and uses an
   alias match only when it improves the direct score.
+- Matching scores range from `0` to `100`. The defaults are
+  `MATCHING_LOW_LVL_RATING=25` and `MATCHING_HIGH_LEVEL_RATING=75`.
+- Scores greater than or equal to `MATCHING_HIGH_LEVEL_RATING` are imported
+  without manual-verification warning.
+- Scores greater than or equal to `MATCHING_LOW_LVL_RATING` and lower than
+  `MATCHING_HIGH_LEVEL_RATING` are imported and reported in
+  `warnings.platform_matches` for administrator verification.
+- Scores lower than `MATCHING_LOW_LVL_RATING`, including `0`, skip the impacted
+  games and report them in `warnings.skipped_games`.
 - The import warnings keep a `platform_mappings` list with the imported platform
   name, matched platform name, matching score, imported game count and alias
   usage flag for every platform read from the file.
@@ -177,6 +186,13 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` is the single upload size setting.
 - The same value must configure Flask request size handling and the Nginx
   `client_max_body_size` used by the `web` service.
+- `MATCHING_LOW_LVL_RATING` configures the minimum platform score accepted for
+  import with administrator verification. Default: `25`.
+- `MATCHING_HIGH_LEVEL_RATING` configures the platform score accepted without
+  manual-verification warning. Default: `75`.
+- Matching ratings must be numeric integers between `0` and `100`, and
+  `MATCHING_LOW_LVL_RATING` must be strictly lower than
+  `MATCHING_HIGH_LEVEL_RATING`.
 - Docker must mount the host `USERS_WORKSPACE` into `/users/workspace` for the
   backend container.
 - Do not hardcode secrets, tokens or user-specific absolute host paths.

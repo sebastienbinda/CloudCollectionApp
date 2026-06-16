@@ -16,7 +16,7 @@ La tâche 2 a été implémentée côté backend.
 - Découpage conforme a la règle `un fichier par classe` pour les nouveaux
   fichiers applicatifs et les helpers/tests ajoutés sur cette tâche.
 - Chargement initial depuis :
-  `backend/services/database/platform_catalog.csv`, copie runtime du contrat
+  `backend/resources/platform_catalog.csv`, copie runtime du contrat
   `tasks/0.2.6/plateforme_list/consoles_jeux_video.csv`.
 - Seed idempotent par clé fonctionnelle trimmee, minuscule et sans accents.
 - Conservation de la ponctuation significative dans la clé, notamment `+` pour

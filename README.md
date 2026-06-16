@@ -35,6 +35,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
+- Referentiel de plateformes et alias fourni par defaut depuis les CSV backend.
 - Navigation par plateforme, detail de jeu, detail de plateforme et consultation de la collection personnelle.
 - Page Liste de souhaits pour consulter les jeux importes avec
   `wishlist=true`.
@@ -127,6 +128,10 @@ Variables principales :
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
+- `MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
+  avec verification administrateur. Valeur par defaut : `25`.
+- `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
+  l'import est accepte sans warning de verification. Valeur par defaut : `75`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur et des rapports de reset Bibliotheque.
 
@@ -159,6 +164,8 @@ Structure fonctionnelle attendue pour l'import :
   de la Bibliotheque globale. Le reset reconstruit le referentiel depuis les
   fichiers utilisateurs stockes, refuse temporairement les imports utilisateur,
   puis envoie le rapport final a `ADMIN_NOTIFICATION_EMAIL`.
+- depuis Configuration, un utilisateur `ADMIN` peut mettre a jour le catalogue
+  plateformes et alias en ajoutant en base les entrees absentes des CSV backend.
 
 ## Lancement Local
 

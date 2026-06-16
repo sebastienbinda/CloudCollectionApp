@@ -146,7 +146,7 @@ Allowed sort columns:
 
 | Route | Columns |
 | --- | --- |
-| `/api/library/platforms` | `name`, `release_date`, `manufacturer` |
+| `/api/library/platforms` | `name`, `release_date`, `end_date`, `manufacturer` |
 | `/api/library/studios` | `name`, `country`, `creation_date` |
 | `/api/library/games` | `name`, `release_date`, `developer`, `platform` |
 
@@ -172,9 +172,9 @@ Invalid page, size or sort values fall back to the default page, default size or
       "id": 1,
       "name": "Switch",
       "release_date": "2017-03-03",
+      "end_date": null,
       "manufacturer": "Nintendo",
       "description": {},
-      "status": "",
       "total_games": 42
     }
   ],
@@ -289,6 +289,7 @@ are separate from the public read-only Library consultation endpoints.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
+| `POST` | `/api/library/platform-catalog/sync` | Adds missing platforms and aliases from backend CSV resources. |
 
 ### Reset Library
 
@@ -334,6 +335,35 @@ logs the user error, records it in the in-memory reset context and continues
 with the next user. In that case, the Library can be rebuilt partially from the
 successful user imports. If the initial database clean fails, the reset stops
 and the clean transaction is rolled back.
+
+### Sync Platform Catalog
+
+```http
+POST /api/library/platform-catalog/sync
+Authorization: Bearer <admin-token>
+```
+
+The route compares the SQL platform and alias catalog with
+`backend/resources/platform_catalog.csv` and
+`backend/resources/platform_alias_catalog.csv`. It inserts only missing
+platforms and aliases. Existing rows are preserved.
+
+Successful response:
+
+```json
+{
+  "inserted_platforms": 1,
+  "inserted_aliases": 2,
+  "total_inserted": 3
+}
+```
+
+with status `200`.
+
+Access and error status:
+
+- `403` when the Bearer token is missing or does not carry profile `ADMIN`;
+- `500` when the CSV read or SQL update fails unexpectedly.
 
 ## Game Collection Routes
 
@@ -757,17 +787,18 @@ succeeds. The copied file is chmod `0440`.
 
 Only configured ODS sheets are imported. With a shared layout, the user may
 either provide the sheets to import or the sheets to exclude; without either
-list, every sheet is imported. Missing platforms, studios and games are
-created; existing records are reused. User-game associations are inserted in
-`t_user_collection` when missing with their `wishlist` value and ignored when
-already present. No existing platform, studio, game or user association is
-updated by this endpoint.
+list, every sheet is imported. Platforms are matched against the application
+reference catalog and are not created by this endpoint. Missing studios and
+games are created; existing records are reused. User-game associations are
+inserted in `t_user_collection` when missing with their `wishlist` value and
+ignored when already present. No existing platform, studio, game or user
+association is updated by this endpoint.
 
 Successful response:
 
 ```json
 {
-  "created_platforms": 3,
+  "linked_platforms": 3,
   "created_studios": 12,
   "created_games": 42,
   "associated_games": 58,
@@ -799,11 +830,17 @@ Successful response:
 The `associated_games` counter is the number of games attached to the user after
 the import payload is processed, including games that already existed before the
 request. `wishlisted_games` counts imported games whose final retained import
-value is `wishlist=true`.
+value is `wishlist=true`. `linked_platforms` counts distinct reference catalog
+platforms used by the imported games.
 `warnings.platform_mappings` lists every platform name read from the imported
 file, the reference platform retained by matching, the matching score, the
 number of imported games using that source platform name, and whether a platform
 alias produced the retained match.
+`warnings.platform_matches` lists games imported with a platform score greater
+than or equal to `MATCHING_LOW_LVL_RATING` and lower than
+`MATCHING_HIGH_LEVEL_RATING`; they are imported but require manual
+administrator verification. `warnings.skipped_games` lists games ignored
+because the platform score is lower than `MATCHING_LOW_LVL_RATING`.
 `warnings.total_import_duration_seconds` contains the total backend import
 duration in seconds, measured around file validation, optional workspace copy,
 file reading, matching and SQL persistence.

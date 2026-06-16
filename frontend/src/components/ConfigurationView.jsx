@@ -30,6 +30,7 @@ function ConfigurationView({
   canAddGame,
   canDownloadOds,
   canResetLibrary,
+  canSyncPlatformCatalog,
   canReinitializeCollection,
   canSearchUsers,
   canUseCollectionViews,
@@ -38,6 +39,9 @@ function ConfigurationView({
   libraryResetError,
   libraryResetMessage,
   isResettingLibrary,
+  platformCatalogSyncError,
+  platformCatalogSyncMessage,
+  isSyncingPlatformCatalog,
   reinitializationError,
   isReinitializingCollection,
   onOpenAbout,
@@ -51,6 +55,7 @@ function ConfigurationView({
   onOpenCollectionOnboarding,
   onDownloadOds,
   onResetLibrary,
+  onSyncPlatformCatalog,
   onReinitializeCollection,
   onLogout,
 }) {
@@ -77,6 +82,8 @@ function ConfigurationView({
       {downloadError ? <p className="error">{downloadError}</p> : null}
       {libraryResetError ? <p className="error">{libraryResetError}</p> : null}
       {libraryResetMessage ? <p className="success">{libraryResetMessage}</p> : null}
+      {platformCatalogSyncError ? <p className="error">{platformCatalogSyncError}</p> : null}
+      {platformCatalogSyncMessage ? <p className="success">{platformCatalogSyncMessage}</p> : null}
       {reinitializationError ? <p className="error">{reinitializationError}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
@@ -144,6 +151,25 @@ function ConfigurationView({
             </button>
             {isReinitializingCollection ? (
               <ProgressBar label="Reinitialisation de la collection en cours" />
+            ) : null}
+          </article>
+        ) : null}
+
+        {isAdmin ? (
+          <article className="adminActionCard">
+            <span>Plateformes</span>
+            <h2>Mettre a jour</h2>
+            <p>Ajoute en base les plateformes et alias manquants depuis les CSV backend.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onSyncPlatformCatalog}
+              disabled={!canSyncPlatformCatalog || isSyncingPlatformCatalog}
+            >
+              Mettre a jour
+            </button>
+            {isSyncingPlatformCatalog ? (
+              <ProgressBar label="Mise a jour du catalogue plateformes en cours" />
             ) : null}
           </article>
         ) : null}

@@ -201,6 +201,15 @@ During import:
 - duplicate rows in the ODS file are ignored after the first normalized match;
 - invalid or empty game release dates are stored as `NULL`.
 
+The platform catalog CSV resources in `backend/resources` are idempotent seed
+inputs. Startup schema initialization replays them after Alembic migrations, and
+the admin synchronization action may replay them on demand. Both paths insert
+missing `t_platform` and `t_platform_alias` rows only. Existing platforms and
+aliases are preserved; the sync does not delete or overwrite database rows.
+Library reset cleanup preserves `t_platform` and `t_platform_alias`, and
+connected-user collection reinitialization never deletes global reference
+platforms.
+
 ### Sequences
 
 | Sequence | Table | Column |

@@ -83,6 +83,12 @@ already-running message after `409`, and must not add polling or a job status
 page. This does not make public Bibliotheque pages writable; they remain public
 read-only consultation routes.
 
+For `ADMIN`, the Configuration page may also expose `Mettre a jour` for the
+platform catalog only when route discovery confirms access to
+`POST /api/library/platform-catalog/sync`. The action must ask for explicit
+confirmation before inserting missing platforms and aliases from backend CSV
+resources, then display the insertion counters returned by the backend.
+
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the
 backend.

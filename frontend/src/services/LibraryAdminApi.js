@@ -62,6 +62,30 @@ class LibraryAdminApi {
   }
 
   /**
+   * Synchronise le catalogue plateformes SQL depuis les CSV backend.
+   *
+   * @returns {Promise<Object>} Compteurs de plateformes et alias ajoutes.
+   * @throws {LibraryAdminApiError} Si la synchronisation est refusee ou impossible.
+   */
+  static async syncPlatformCatalog() {
+    const requestOptions = {
+      method: "POST",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const fallbackMessage = "Impossible de mettre a jour le catalogue plateformes.";
+    const response = await BackendAvailabilityGuard.fetch(
+      "/api/library/platform-catalog/sync",
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
    * Decode une reponse JSON backend.
    *
    * @param {Response} response - Reponse HTTP retournee par `fetch`.

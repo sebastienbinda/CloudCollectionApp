@@ -112,8 +112,9 @@ class DatabaseSchemaService:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse le chargement.
         """
 
-        csv_path = Path(__file__).resolve().parent / "platform_catalog.csv"
-        alias_csv_path = Path(__file__).resolve().parent / "platform_alias_catalog.csv"
+        resources_directory = Path(__file__).resolve().parents[2] / "resources"
+        csv_path = resources_directory / "platform_catalog.csv"
+        alias_csv_path = resources_directory / "platform_alias_catalog.csv"
         with engine.begin() as connection:
             return self.platform_catalog_seed_service_factory(
                 self.configuration.schema_name

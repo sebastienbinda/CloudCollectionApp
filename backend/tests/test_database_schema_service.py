@@ -300,6 +300,7 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn("t_platform_alias", migration_source)
         self.assertIn("s_platform_alias", migration_source)
         self.assertIn("PlatformCatalogSeedService", migration_source)
+        self.assertIn('"resources"', migration_source)
         self.assertIn("platform_catalog.csv", migration_source)
         self.assertIn("platform_alias_catalog.csv", migration_source)
 
@@ -434,6 +435,8 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         schema_name, connection, csv_path, alias_csv_path = seed_calls[0]
         self.assertEqual("collection", schema_name)
         self.assertIs(fake_engine.connection, connection)
+        self.assertEqual("resources", csv_path.parent.name)
+        self.assertEqual("resources", alias_csv_path.parent.name)
         self.assertEqual("platform_catalog.csv", csv_path.name)
         self.assertEqual("platform_alias_catalog.csv", alias_csv_path.name)
 

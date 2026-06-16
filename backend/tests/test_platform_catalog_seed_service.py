@@ -19,6 +19,7 @@ import unittest
 from services.database import (
     PlatformAliasCatalogEntry,
     PlatformCatalogEntry,
+    PlatformCatalogSeedResult,
     PlatformCatalogSeedService,
 )
 from tests.fake_platform_catalog_connection import FakePlatformCatalogConnection
@@ -135,6 +136,40 @@ class PlatformCatalogSeedServiceTest(unittest.TestCase):
         self.assertEqual(1, inserted_count)
         self.assertEqual("Super Nintendo", alias_insert_parameters[0]["name"])
         self.assertEqual(7, alias_insert_parameters[0]["platform"])
+
+    def test_seed_from_csv_detailed_returns_serializable_counts(self):
+        """Verifie les compteurs detailles serialisables du seed catalogue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les compteurs separes.
+        """
+
+        entries = [
+            PlatformCatalogEntry("Atari 7800+", "Atari", None, None, {}),
+        ]
+        connection = FakePlatformCatalogConnection()
+        service = PlatformCatalogSeedService(
+            "collection",
+            csv_reader=StaticPlatformCatalogReader(entries),
+        )
+
+        result = service.seed_from_csv_detailed(
+            connection,
+            Path("unused.csv"),
+        )
+
+        self.assertEqual(PlatformCatalogSeedResult(1, 0), result)
+        self.assertEqual(
+            {
+                "inserted_platforms": 1,
+                "inserted_aliases": 0,
+                "total_inserted": 1,
+            },
+            result.to_dict(),
+        )
 
 
 if __name__ == "__main__":

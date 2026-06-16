@@ -28,6 +28,7 @@ import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPag
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
+import usePlatformCatalogSyncAction from "../library/usePlatformCatalogSyncAction";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
 import useOdsDownload from "../useOdsDownload";
@@ -126,6 +127,7 @@ function useCloudCollectionViewModel() {
     enabled: navigation.currentView === "libraryGames",
   });
   const libraryResetAction = useLibraryResetAction();
+  const platformCatalogSyncAction = usePlatformCatalogSyncAction();
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
     hasAccessToken: canUseCollectionViews,
@@ -185,6 +187,9 @@ function useCloudCollectionViewModel() {
       libraryResetError: libraryResetAction.libraryResetError,
       libraryResetMessage: libraryResetAction.libraryResetMessage,
       isResettingLibrary: libraryResetAction.isResettingLibrary,
+      platformCatalogSyncError: platformCatalogSyncAction.platformCatalogSyncError,
+      platformCatalogSyncMessage: platformCatalogSyncAction.platformCatalogSyncMessage,
+      isSyncingPlatformCatalog: platformCatalogSyncAction.isSyncingPlatformCatalog,
       reinitializationError: userCollectionReinitialization.reinitializationError,
       isReinitializingCollection: userCollectionReinitialization.isReinitializingCollection,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
@@ -216,6 +221,7 @@ function useCloudCollectionViewModel() {
       closeHomeSearch: homePage.closeHomeSearch,
       downloadOdsFile: odsDownload.downloadOdsFile,
       resetLibrary: libraryResetAction.resetLibrary,
+      syncPlatformCatalog: platformCatalogSyncAction.syncPlatformCatalog,
       reinitializeCollection: userCollectionReinitialization.reinitializeCollection,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,
       selectCollectionFile: userCollectionOnboarding.selectCollectionFile,
