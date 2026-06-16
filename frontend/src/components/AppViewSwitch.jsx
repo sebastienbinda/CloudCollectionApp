@@ -31,6 +31,41 @@ import WishlistView from "./WishlistView";
  */
 class AppViewSwitch {
   /**
+   * Determine l'entree de menu correspondant a la vue active.
+   *
+   * @param {Object} props - Etat et source de navigation courants.
+   * @returns {string} Cle de l'entree de menu active.
+   */
+  static getActiveNavigationKey(props) {
+    if (props.currentView === "auth") {
+      return "login";
+    }
+    if (props.currentView === "about") {
+      return "about";
+    }
+    if (["configuration", "users"].includes(props.currentView)) {
+      return "configuration";
+    }
+    if (props.currentView === "wishlist") {
+      return "wishlist";
+    }
+    if (props.currentView === "gameDetail" && props.selectedGameSource !== "collection") {
+      return "library";
+    }
+    const libraryViews = [
+      "library",
+      "libraryPlatforms",
+      "libraryPlatformDetail",
+      "libraryStudios",
+      "libraryGames",
+    ];
+    if (libraryViews.includes(props.currentView)) {
+      return "library";
+    }
+    return "collection";
+  }
+
+  /**
    * Construit les proprietes communes au layout de page.
    *
    * @param {Object} props - Etat et callbacks applicatifs.
@@ -49,6 +84,7 @@ class AppViewSwitch {
       onOpenWishlist: props.openWishlist,
       onOpenConfiguration: props.openConfiguration,
       onLogout: props.logout,
+      activeNavigationKey: this.getActiveNavigationKey(props),
     };
   }
 

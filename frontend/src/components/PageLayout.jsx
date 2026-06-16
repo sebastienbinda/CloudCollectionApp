@@ -20,6 +20,34 @@ import ProjectIcon from "./ProjectIcon";
 const SCROLL_TOP_VISIBILITY_THRESHOLD = 520;
 
 /**
+ * Deduit l'entree de menu active depuis l'URL courante.
+ *
+ * @returns {string} Cle de navigation active.
+ */
+function resolveActiveNavigationKeyFromLocation() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  const pathname = window.location.pathname;
+  if (pathname === "/auth") {
+    return "login";
+  }
+  if (pathname === "/about") {
+    return "about";
+  }
+  if (pathname === "/configuration" || pathname === "/users") {
+    return "configuration";
+  }
+  if (pathname === "/wishlist") {
+    return "wishlist";
+  }
+  if (pathname.startsWith("/bibliotheque")) {
+    return "library";
+  }
+  return "collection";
+}
+
+/**
  * Structure une page avec header, menu principal, contenu et footer.
  *
  * @param {Object} props - Informations de page, session et callbacks de navigation.
@@ -45,6 +73,7 @@ const SCROLL_TOP_VISIBILITY_THRESHOLD = 520;
  * @param {Function} props.onOpenWishlist - Callback ouvrant la liste de souhaits.
  * @param {Function} props.onOpenConfiguration - Callback ouvrant la page Configuration.
  * @param {Function} props.onLogout - Callback de deconnexion.
+ * @param {string} props.activeNavigationKey - Cle de l'entree de menu active.
  * @returns {import("react").JSX.Element} Page complete avec layout commun.
  */
 function PageLayout({
@@ -70,8 +99,12 @@ function PageLayout({
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
+  activeNavigationKey = "",
 }) {
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
+  const resolvedActiveNavigationKey = (
+    activeNavigationKey || resolveActiveNavigationKeyFromLocation()
+  );
   const renderedTitleContent = titleContent || (
     <span className="pageTitleWithIcon">
       <ProjectIcon />
@@ -133,6 +166,7 @@ function PageLayout({
           onOpenWishlist={onOpenWishlist}
           onOpenConfiguration={onOpenConfiguration}
           onLogout={onLogout}
+          activeNavigationKey={resolvedActiveNavigationKey}
         />
         {children}
       </main>
