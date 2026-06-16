@@ -31,6 +31,7 @@ The public frontend routes are:
 | --- | --- | --- |
 | `/bibliotheque` | `LibraryHomeView` | Shows global counters and a public global game search. |
 | `/bibliotheque/plateformes` | `LibraryEntityListView` | Lists reference platforms. |
+| `/bibliotheque/plateformes/<platform_id>` | `LibraryPlatformDetailView` | Shows one reference platform with aliases and usage regions. |
 | `/bibliotheque/studios` | `LibraryEntityListView` | Lists reference studios. |
 | `/bibliotheque/jeux` | `LibraryEntityListView` | Lists reference games. |
 | `/bibliotheque/jeux/<game_id>` | `GameDetailView` | Shows one public reference game. |
@@ -62,6 +63,11 @@ and the second line displays release date plus platform when available. This
 mobile presentation must preserve the public read-only behavior and must not
 introduce authentication requirements.
 
+The `/bibliotheque/plateformes/<platform_id>` detail page displays only public
+reference platform data: name, release date, end date, manufacturer,
+description, total game count and aliases with category, usage region and
+comment. It must not display connected-user collection values.
+
 ## Backend Endpoints
 
 The public backend endpoints are:
@@ -70,6 +76,7 @@ The public backend endpoints are:
 | --- | --- | --- |
 | `GET` | `/api/library/entities` | Counts global platforms, studios and games. |
 | `GET` | `/api/library/platforms` | Lists global platforms. |
+| `GET` | `/api/library/platforms/<platform_id>` | Returns one global platform with aliases. |
 | `GET` | `/api/library/studios` | Lists global studios. |
 | `GET` | `/api/library/games` | Lists global games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global game. |
@@ -86,7 +93,7 @@ Allowed sort columns:
 
 | Endpoint | Sort columns |
 | --- | --- |
-| `/api/library/platforms` | `name`, `release_date`, `manufacturer` |
+| `/api/library/platforms` | `name`, `release_date`, `end_date`, `manufacturer` |
 | `/api/library/studios` | `name`, `country`, `creation_date` |
 | `/api/library/games` | `name`, `release_date`, `developer`, `platform` |
 

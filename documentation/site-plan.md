@@ -28,6 +28,8 @@ reference database and must not depend on connected-user collection status.
 
 - `/collection`: authenticated Ma collection page for non-`ADMIN` users who
   already have a collection.
+- `/collection?platform_id=<platform_id>`: authenticated platform detail for a
+  non-`ADMIN` user's collection, listing games attached to that platform.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
   attached to the connected user's collection.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
