@@ -226,6 +226,9 @@ platforms.
 - The production Docker stack must provide PostgreSQL through the
   `database` service in `docker/docker-compose.online.yml` and must keep it on
   an internal Docker network.
+- Production PostgreSQL data must be persisted through `POSTGRES_DATA_HOST_DIR`,
+  an absolute host directory mounted to `/var/lib/postgresql/data` by the
+  online Docker Compose file.
 - Never rely on manual SQL execution as the normal deployment path.
 - New migrations must be forward-only fixes for production data: they must not
   require emptying, recreating or resetting a production database.
