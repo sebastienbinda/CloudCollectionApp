@@ -87,7 +87,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-cloudcollectionapp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD doit etre defini}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_HOST_DIR:?POSTGRES_DATA_HOST_DIR doit etre defini avec un chemin absolu}:/var/lib/postgresql/data
     expose:
       - "5432"
     healthcheck:
@@ -120,7 +120,6 @@ services:
 
 volumes:
   traefik_letsencrypt:
-  postgres_data:
 
 networks:
   frontend:

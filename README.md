@@ -134,6 +134,8 @@ Variables principales :
   l'import est accepte sans warning de verification. Valeur par defaut : `75`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur et des rapports de reset Bibliotheque.
+- `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
+  production pour persister les donnees PostgreSQL du conteneur `database`.
 
 Un fichier exemple versionnable est fourni :
 
@@ -188,6 +190,10 @@ Ou depuis `docker/` :
 ```bash
 docker compose -f docker-compose.local.yml up --build
 ```
+
+En production, `docker/docker-compose.online.yml` exige
+`POSTGRES_DATA_HOST_DIR` avec un chemin absolu existant et sauvegardable pour
+monter les donnees PostgreSQL dans `/var/lib/postgresql/data`.
 
 Services locaux :
 

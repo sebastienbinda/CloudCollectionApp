@@ -148,6 +148,12 @@ internal Docker network. The backend `DATABASE_URL` is built from
 `POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD`, and the backend must wait
 for the database healthcheck before starting.
 
+Production PostgreSQL data must be persisted through the host bind mount
+configured by `POSTGRES_DATA_HOST_DIR`. Deployment `.env` files must set this
+variable to an absolute host path, mounted to `/var/lib/postgresql/data` by
+`docker/docker-compose.online.yml`. Do not replace this production persistence
+path with a transient anonymous volume.
+
 ## Required GitHub Permissions
 
 The workflow requires:
