@@ -196,12 +196,16 @@ class SqlAlchemyUserCollectionImportRepository:
 
         with self.engine.begin() as connection:
             self.user_file_repository.lock_user_collection_state(connection, user_id)
-            import_data = self._match_platforms(connection, import_data)
-            platform_ids, linked_platforms = self._ensure_platforms(connection, import_data)
-            studio_ids, created_studios = self._ensure_studios(connection, import_data)
+            matched_import_data = self._match_platforms(connection, import_data)
+            self._synchronize_import_data(import_data, matched_import_data)
+            platform_ids, linked_platforms = self._ensure_platforms(
+                connection,
+                matched_import_data,
+            )
+            studio_ids, created_studios = self._ensure_studios(connection, matched_import_data)
             game_associations, created_games = self._ensure_games(
                 connection,
-                import_data,
+                matched_import_data,
                 platform_ids,
                 studio_ids,
             )
@@ -223,6 +227,26 @@ class SqlAlchemyUserCollectionImportRepository:
             created_games=created_games,
             associated_games=associated_games,
         )
+
+    def _synchronize_import_data(
+        self,
+        import_data: CollectionImportData,
+        matched_import_data: CollectionImportData,
+    ) -> None:
+        """Expose les donnees filtrees au service appelant apres matching.
+
+        Args:
+            import_data (CollectionImportData): Donnees initiales lues par le reader.
+            matched_import_data (CollectionImportData): Donnees rattachees au catalogue.
+
+        Returns:
+            None: La methode met a jour l'objet transmis par l'appelant.
+        """
+
+        object.__setattr__(import_data, "platforms", matched_import_data.platforms)
+        object.__setattr__(import_data, "studios", matched_import_data.studios)
+        object.__setattr__(import_data, "games", matched_import_data.games)
+        object.__setattr__(import_data, "warnings", matched_import_data.warnings)
 
     def _match_platforms(
         self,

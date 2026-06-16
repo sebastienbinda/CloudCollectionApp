@@ -46,6 +46,44 @@ Ajouter ou compléter les tests backend pour valider :
   créant des jeux ;
 - compteur de plateformes liées.
 
+## État Branche `list_platform` - 2026-06-16
+
+Les tests backend de la branche couvrent désormais les points suivants :
+
+- schéma `t_platform`, `t_platform_alias` et seed catalogue CSV via
+  `backend/tests/test_database_schema_service.py` et
+  `backend/tests/test_platform_catalog_seed_service.py` ;
+- chargement du catalogue plateformes et alias via
+  `backend/tests/test_platform_catalog_csv_reader.py`,
+  `backend/tests/test_platform_alias_catalog_csv_reader.py` et
+  `backend/tests/test_platform_catalog_seed_service.py` ;
+- endpoint public plateformes et endpoint collection plateformes via
+  `backend/tests/test_library_routes.py` et
+  `backend/tests/test_collection_routes.py` ;
+- cache serveur plateformes, TTL et absence de requêtes SQL répétées via
+  `backend/tests/test_platform_catalog_cache.py` ;
+- matching exact, casse, accents, espaces, coquille acceptée, warning manuel,
+  refus score bas, refus score nul et ambiguïté via
+  `backend/tests/test_platform_matching_service.py` ;
+- seuils par défaut, variables d'environnement et configurations invalides via
+  `backend/tests/test_platform_matching_configuration.py` ;
+- warnings d'import et email administrateur via
+  `backend/tests/test_platform_matching_admin_notifier.py` et
+  `backend/tests/test_user_collection_import_wishlist_result.py` ;
+- absence de création de plateforme par l'import, utilisation du catalogue
+  pendant l'import, propagation des warnings de matching et compteur de
+  plateformes liées via
+  `backend/tests/test_user_collection_import_platform_matching_repository.py` ;
+- reset Bibliothèque sans suppression de `t_platform` et réinitialisation
+  collection utilisateur sans suppression du référentiel global via
+  `backend/tests/test_library_reset_repository.py` et
+  `backend/tests/test_user_collection_reinitialization_repository.py` ;
+- invalidation du cache plateformes après import créant des jeux via
+  `backend/tests/test_user_collection_import_platform_matching_repository.py`.
+
+La tâche 7 doit être considérée réalisée quand `./test_backend.sh` passe ou que
+les échecs non liés sont listés explicitement.
+
 ## Validation
 
 Lancer :

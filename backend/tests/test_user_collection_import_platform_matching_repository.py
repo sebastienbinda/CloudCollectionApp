@@ -23,6 +23,7 @@ from services.collection.imports import (
 from services.database.user_collection_import_repository import (
     SqlAlchemyUserCollectionImportRepository,
 )
+from services.database import PlatformMatchingConfiguration, PlatformMatchingService
 from services.users import UserCollectionNameNormalizer
 
 
@@ -121,6 +122,61 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual(["platforms"], invalidations)
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(1, result.created_games)
+
+    def test_import_collection_exposes_platform_matching_warnings_to_caller(self):
+        """Verifie la propagation des warnings de matching vers le service.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les warnings de l'objet d'import initial.
+        """
+
+        repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
+        repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
+        repository.user_file_repository = SimpleNamespace(
+            lock_user_collection_state=lambda connection, user_id: "",
+            update_collection_file=lambda connection, user_id, path, description: None,
+        )
+        repository.platform_repository = SimpleNamespace(
+            load_catalog_rows=lambda connection: [{"name": "Switch"}],
+            load_ids_by_key=lambda connection: {"switch": 7},
+            invalidate_cache=lambda: None,
+        )
+        repository.platform_matching_service = PlatformMatchingService(
+            PlatformMatchingConfiguration(low_level_rating=25, high_level_rating=75)
+        )
+        repository.studio_repository = SimpleNamespace(load_ids_by_key=lambda connection: {})
+        repository.game_repository = SimpleNamespace(
+            load_ids_by_key=lambda connection: {},
+            game_key=lambda game: (
+                repository.name_normalizer.comparison_key(game.platform_name),
+                repository.name_normalizer.comparison_key(game.name),
+            ),
+            insert=lambda connection, game, platform_id, studio_id: 11,
+        )
+        repository.user_collection_repository = SimpleNamespace(
+            ensure_user_game_associations=lambda connection, user_id, associations: len(associations),
+        )
+        import_data = CollectionImportData(
+            platforms=[CollectionImportPlatform("Wii")],
+            studios=[],
+            games=[CollectionImportGame("Sports", "Wii", "", None)],
+        )
+
+        result = repository.import_collection(
+            7,
+            "/users/workspace/7/7-collection.ods",
+            import_data,
+            {"file_type": "libreoffice_ods"},
+        )
+
+        self.assertEqual(1, result.linked_platforms)
+        self.assertEqual(["Switch"], [game.platform_name for game in import_data.games])
+        self.assertEqual("Sports", import_data.warnings.platform_matches[0]["game_name"])
+        self.assertEqual("Switch", import_data.warnings.platform_mappings[0]["matched_platform"])
 
 
 if __name__ == "__main__":

@@ -53,6 +53,46 @@ class FakeImportRepository:
         return UserCollectionImportPersistenceResult(1, 1, 2, len(import_data.games))
 
 
+class FakePlatformWarningImportRepository(FakeImportRepository):
+    """Simule une persistance ajoutant des warnings de matching plateforme."""
+
+    def import_collection(self, user_id, collection_file_path, import_data, description):
+        """Ajoute un warning plateforme puis retourne des compteurs factices.
+
+        Args:
+            user_id (int): Identifiant utilisateur ignore.
+            collection_file_path (str): Chemin de fichier ignore.
+            import_data (CollectionImportData): Donnees d'import a enrichir.
+            description (dict): Description d'import ignoree.
+
+        Returns:
+            UserCollectionImportPersistenceResult: Compteurs factices.
+        """
+
+        import_data.warnings.platform_mappings.append(
+            {
+                "imported_platform": "Wii",
+                "matched_platform": "Switch",
+                "score": 44,
+                "games_count": 1,
+                "matched_by_alias": False,
+                "matched_alias": "",
+                "accepted": True,
+                "manual_check": True,
+                "reason": "",
+            }
+        )
+        import_data.warnings.platform_matches.append(
+            {
+                "game_name": "Zelda",
+                "imported_platform": "Wii",
+                "matched_platform": "Switch",
+                "score": 44,
+            }
+        )
+        return UserCollectionImportPersistenceResult(1, 1, 1, len(import_data.games))
+
+
 class FakeWishlistReader:
     """Reader factice retournant des jeux avec wishlist et warnings."""
 
@@ -143,6 +183,42 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
             result.warnings,
         )
         self.assertEqual(1, result.to_dict()["wishlisted_games"])
+
+    def test_import_notifier_receives_platform_matching_warnings(self):
+        """Verifie que le mail admin recoit les warnings de matching.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la propagation vers le notifier.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            source_file = Path(directory) / "collection.ods"
+            source_file.write_bytes(b"ods")
+            notifier = FakeImportReportNotifier()
+            service = UserCollectionImportService(
+                UserCollectionImportConfiguration(
+                    workspace_path=str(Path(directory) / "workspace"),
+                    max_upload_bytes=1024,
+                ),
+                FakePlatformWarningImportRepository(),
+                FakeReaderFactory(),
+                report_notifier=notifier,
+            )
+
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                CollectionFileDescription(CollectionFileType.LIBREOFFICE_ODS),
+            )
+
+        self.assertEqual("Switch", result.warnings["platform_mappings"][0]["matched_platform"])
+        self.assertEqual("Zelda", result.warnings["platform_matches"][0]["game_name"])
+        self.assertEqual(1, len(notifier.warnings))
+        self.assertEqual("Switch", notifier.warnings[0].platform_mappings[0]["matched_platform"])
 
 
 if __name__ == "__main__":
