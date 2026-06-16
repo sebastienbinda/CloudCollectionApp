@@ -138,9 +138,11 @@ database structure in `documentation/database.md`, and frontend navigation in
   usage flag for every platform read from the file.
 - The import warnings keep `total_import_duration_seconds`, measured across the
   complete backend import execution after the user lock is acquired.
-- At the end of import, the backend sends the administrator a platform mapping
-  report including this list, the total import duration and the import warnings when
-  `ADMIN_NOTIFICATION_EMAIL` is configured.
+- At the end of each import, the backend sends exactly one administrator report
+  when `ADMIN_NOTIFICATION_EMAIL` is configured, even when the import has no
+  warning. The report is sent outside the reader layer and includes the import
+  context, counters, validated configuration, total duration, platform mappings
+  and every import warning.
 - Studios are matched by normalized studio name.
 - Games are matched by normalized game name and platform.
 - Duplicate ODS entries after normalization keep the first occurrence and ignore

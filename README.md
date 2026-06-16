@@ -133,7 +133,8 @@ Variables principales :
 - `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
   l'import est accepte sans warning de verification. Valeur par defaut : `75`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
-  attente de validation administrateur et des rapports de reset Bibliotheque.
+  attente de validation administrateur, des rapports de fin d'import utilisateur
+  et des rapports de reset Bibliotheque.
 - `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
   production pour persister les donnees PostgreSQL du conteneur `database`.
 
@@ -156,6 +157,9 @@ Structure fonctionnelle attendue pour l'import :
   une colonne dediee ;
 - apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
   collection.
+- si `ADMIN_NOTIFICATION_EMAIL` est configure, le backend envoie un seul
+  rapport administrateur en fin d'import avec le contexte, les compteurs, la
+  configuration validee, la duree et les warnings eventuels ;
 - depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
   le parcours `/collection/import` pour ajouter les jeux d'un nouveau fichier
   sans supprimer sa collection actuelle ;

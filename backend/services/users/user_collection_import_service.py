@@ -11,11 +11,11 @@
 #
 # Description : service metier d'import de collection utilisateur.
 
+import logging
 import shutil
 from time import perf_counter
 from pathlib import Path
 from threading import Lock
-from typing import Protocol
 
 from services.collection.imports import (
     CollectionFileDescription,
@@ -31,10 +31,13 @@ from services.database.user_collection_import_repository import (
     UserCollectionImportUserNotFoundError,
     UserCollectionReinitializationNotFoundError,
 )
-from services.database.platform_matching_admin_notifier import PlatformMatchingAdminNotifier
 
+from .user_collection_import_admin_notifier import UserCollectionImportAdminNotifier
 from .collection_import_date_validator import CollectionImportDateValidator
 from .user_collection_import_configuration import UserCollectionImportConfiguration
+from .user_collection_import_report_notifier import UserCollectionImportReportNotifier
+from .user_collection_import_repository_protocol import UserCollectionImportRepository
+from .user_collection_import_report_context import UserCollectionImportReportContext
 from .user_collection_import_result import UserCollectionImportResult
 
 
@@ -76,66 +79,6 @@ class UserCollectionImportUnexpectedError(UserCollectionImportError):
     """Signale une erreur non fonctionnelle pendant l'import."""
 
 
-class UserCollectionImportRepository(Protocol):
-    """Definit les operations de persistance requises par l'import."""
-
-    def user_has_collection(self, user_id: int) -> bool:
-        """Indique si un utilisateur a deja une collection.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-
-        Returns:
-            bool: `True` si une collection existe deja.
-        """
-
-    def import_collection(
-        self,
-        user_id: int,
-        collection_file_path: str,
-        import_data: CollectionImportData,
-        collection_file_description: dict,
-    ) -> UserCollectionImportPersistenceResult:
-        """Persiste les donnees importees dans une transaction.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-            collection_file_path (str): Chemin final du fichier.
-            import_data (CollectionImportData): Donnees lues depuis le fichier.
-            collection_file_description (dict): Description valide ayant servi a l'import.
-
-        Returns:
-            UserCollectionImportPersistenceResult: Compteurs de persistance.
-        """
-    def reinitialize_collection(self, user_id: int) -> None:
-        """Reinitialise la collection persistante d'un utilisateur.
-
-        Args:
-            user_id (int): Identifiant utilisateur.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-
-        Raises:
-            UserCollectionImportNotFoundError: Si aucune collection n'existe.
-            UserCollectionImportUnexpectedError: Si la reinitialisation echoue.
-        """
-
-
-class UserCollectionImportReportNotifier(Protocol):
-    """Definit l'envoi du rapport administrateur apres import."""
-
-    def notify_import_report(self, warnings: object) -> None:
-        """Envoie le rapport de fin d'import.
-
-        Args:
-            warnings (object): Warnings et metadonnees de l'import.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-        """
-
-
 class UserCollectionImportService:
     """Orchestre l'import complet d'une collection utilisateur."""
 
@@ -149,6 +92,7 @@ class UserCollectionImportService:
         reader_factory: CollectionFileReaderFactory,
         date_validator: CollectionImportDateValidator | None = None,
         report_notifier: UserCollectionImportReportNotifier | None = None,
+        logger=None,
     ):
         """Initialise le service d'import de collection.
 
@@ -158,6 +102,7 @@ class UserCollectionImportService:
             reader_factory (CollectionFileReaderFactory): Factory de lecteurs.
             date_validator (CollectionImportDateValidator | None): Validateur des dates lues.
             report_notifier (UserCollectionImportReportNotifier | None): Notifier admin.
+            logger (object | None): Logger injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -167,7 +112,8 @@ class UserCollectionImportService:
         self.repository = repository
         self.reader_factory = reader_factory
         self.date_validator = date_validator or CollectionImportDateValidator()
-        self.report_notifier = report_notifier or PlatformMatchingAdminNotifier()
+        self.report_notifier = report_notifier or UserCollectionImportAdminNotifier()
+        self.logger = logger or logging.getLogger(__name__)
 
     def upload_import_file(
         self,
@@ -351,8 +297,19 @@ class UserCollectionImportService:
                 file_description.to_dict(),
             )
             self._set_total_import_duration(import_data, import_started_at)
-            self.report_notifier.notify_import_report(import_data.warnings)
-            return self._map_result(persistence_result, import_data)
+            result = self._map_result(persistence_result, import_data)
+            self._notify_import_report(
+                self._build_import_report_context(
+                    user_id,
+                    original_filename or source_file_path.name,
+                    file_description,
+                    copy_to_workspace,
+                    persistence_result,
+                    import_data,
+                    result,
+                )
+            )
+            return result
         except CollectionFileDescriptionValidationError:
             self._delete_copied_file(copied_file_path)
             raise
@@ -466,6 +423,37 @@ class UserCollectionImportService:
             wishlisted_games=sum(1 for game in import_data.games if game.wishlist),
             warnings=import_data.warnings.to_dict(),
         )
+
+    def _build_import_report_context(
+        self,
+        user_id: int,
+        original_filename: str,
+        file_description: CollectionFileDescription,
+        copy_to_workspace: bool,
+        persistence_result: UserCollectionImportPersistenceResult,
+        import_data: CollectionImportData,
+        result: UserCollectionImportResult,
+    ) -> UserCollectionImportReportContext:
+        return UserCollectionImportReportContext(
+            user_id=user_id,
+            file_type=str(file_description.file_type.value),
+            original_filename=original_filename,
+            source_mode="temporary_upload" if copy_to_workspace else "stored_file",
+            copied_to_workspace=copy_to_workspace,
+            linked_platforms=persistence_result.linked_platforms,
+            created_studios=persistence_result.created_studios,
+            created_games=persistence_result.created_games,
+            associated_games=persistence_result.associated_games,
+            wishlisted_games=result.wishlisted_games,
+            warnings=import_data.warnings,
+            collection_file_description=file_description.to_dict(),
+        )
+
+    def _notify_import_report(self, context: UserCollectionImportReportContext) -> None:
+        try:
+            self.report_notifier.notify_import_report(context)
+        except Exception:
+            self.logger.exception("Impossible d'envoyer le rapport d'import utilisateur.")
 
     def _set_total_import_duration(
         self,

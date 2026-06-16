@@ -18,12 +18,16 @@ from .user_management_service import (
     UserSummary,
 )
 from .user_collection_import_configuration import UserCollectionImportConfiguration
+from .user_collection_import_admin_notifier import UserCollectionImportAdminNotifier
 from .user_collection_name_normalizer import UserCollectionNameNormalizer
+from .user_collection_import_report_context import UserCollectionImportReportContext
 from .user_status import UserStatus
 
 __all__ = [
+    "UserCollectionImportAdminNotifier",
     "UserCollectionImportConfiguration",
     "UserCollectionNameNormalizer",
+    "UserCollectionImportReportContext",
     "UserManagementService",
     "UserNotFoundError",
     "UserSearchCriteria",
