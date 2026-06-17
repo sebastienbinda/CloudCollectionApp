@@ -127,12 +127,12 @@ class FakeImportReportNotifier:
     def __init__(self):
         """Initialise le notifier factice."""
 
-        self.warnings = []
+        self.contexts = []
 
-    def notify_import_report(self, warnings):
-        """Memorise les warnings transmis au notifier."""
+    def notify_import_report(self, context):
+        """Memorise le contexte transmis au notifier."""
 
-        self.warnings.append(warnings)
+        self.contexts.append(context)
 
 
 class UserCollectionImportWishlistResultTest(unittest.TestCase):
@@ -167,7 +167,9 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
         self.assertNotIn("created_platforms", result.to_dict())
         self.assertEqual(1, result.to_dict()["linked_platforms"])
         self.assertGreaterEqual(result.warnings["total_import_duration_seconds"], 0)
-        self.assertEqual(1, len(notifier.warnings))
+        self.assertEqual(1, len(notifier.contexts))
+        self.assertEqual(7, notifier.contexts[0].user_id)
+        self.assertEqual(1, notifier.contexts[0].warnings.invalid_wishlist)
         self.assertEqual(
             {
                 "invalid_wishlist": 1,
@@ -217,8 +219,8 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
 
         self.assertEqual("Switch", result.warnings["platform_mappings"][0]["matched_platform"])
         self.assertEqual("Zelda", result.warnings["platform_matches"][0]["game_name"])
-        self.assertEqual(1, len(notifier.warnings))
-        self.assertEqual("Switch", notifier.warnings[0].platform_mappings[0]["matched_platform"])
+        self.assertEqual(1, len(notifier.contexts))
+        self.assertEqual("Switch", notifier.contexts[0].warnings.platform_mappings[0]["matched_platform"])
 
 
 if __name__ == "__main__":

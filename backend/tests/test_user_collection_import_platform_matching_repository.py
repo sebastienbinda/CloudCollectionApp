@@ -82,6 +82,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
         repository.user_file_repository = SimpleNamespace(
             lock_user_collection_state=lambda connection, user_id: "",
+            find_user_email=lambda connection, user_id: "importer@example.com",
             update_collection_file=lambda connection, user_id, path, description: None,
         )
         repository.platform_repository = SimpleNamespace(
@@ -120,6 +121,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         )
 
         self.assertEqual(["platforms"], invalidations)
+        self.assertEqual("importer@example.com", result.user_email)
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(1, result.created_games)
 
@@ -138,6 +140,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
         repository.user_file_repository = SimpleNamespace(
             lock_user_collection_state=lambda connection, user_id: "",
+            find_user_email=lambda connection, user_id: "importer@example.com",
             update_collection_file=lambda connection, user_id, path, description: None,
         )
         repository.platform_repository = SimpleNamespace(

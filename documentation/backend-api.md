@@ -911,6 +911,13 @@ The same address receives the final report of each asynchronous Library reset
 job, including the global status, successfully imported users and per-user
 errors when the rebuild is partial.
 
+The same address receives exactly one report after each user collection import
+when the import reaches its final backend step. This report is sent outside the
+file reader layer and does not depend on the imported file type. It is sent even
+when the import has no warning and includes the user import context, counters,
+validated import configuration, total duration, platform mappings and every
+import warning.
+
 In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
 the Docker local stack can use Mailpit.
 

@@ -59,7 +59,13 @@ class FakeUserCollectionImportRepository:
         """
 
         self.has_collection = has_collection
-        self.result = result or UserCollectionImportPersistenceResult(1, 1, 1, 1)
+        self.result = result or UserCollectionImportPersistenceResult(
+            1,
+            1,
+            1,
+            1,
+            user_email="importer@example.com",
+        )
         self.import_error = import_error
         self.import_calls = []
 
@@ -215,6 +221,40 @@ class FakeCollectionFileReaderFactory:
         return self.reader
 
 
+class FakeImportReportNotifier:
+    """Capture les contextes de rapport d'import."""
+
+    def __init__(self, error=None):
+        """Initialise le notifier factice.
+
+        Args:
+            error (Exception | None): Erreur optionnelle a lever.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.error = error
+        self.contexts = []
+
+    def notify_import_report(self, context):
+        """Memorise le contexte de rapport ou leve l'erreur configuree.
+
+        Args:
+            context (object): Contexte complet du rapport d'import.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            Exception: Erreur configuree pour le test.
+        """
+
+        if self.error:
+            raise self.error
+        self.contexts.append(context)
+
+
 class UserCollectionImportServiceTest(unittest.TestCase):
     """Valide le service metier d'import de collection utilisateur."""
 
@@ -253,6 +293,73 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 self._valid_description().to_dict(),
                 repository.import_calls[0][3],
             )
+
+    def test_import_collection_sends_report_context_after_success(self):
+        """Verifie l'envoi du contexte complet apres import reussi.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte transmis.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            notifier = FakeImportReportNotifier()
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                report_notifier=notifier,
+            )
+
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
+
+            self.assertEqual(1, len(notifier.contexts))
+            context = notifier.contexts[0]
+            self.assertEqual(7, context.user_id)
+            self.assertEqual("importer@example.com", context.user_email)
+            self.assertEqual("collection.ods", context.original_filename)
+            self.assertEqual("libreoffice_ods", context.file_type)
+            self.assertEqual("temporary_upload", context.source_mode)
+            self.assertTrue(context.copied_to_workspace)
+            self.assertEqual(result.associated_games, context.associated_games)
+            self.assertEqual(result.wishlisted_games, context.wishlisted_games)
+            self.assertEqual(
+                self._valid_description().to_dict(),
+                context.collection_file_description,
+            )
+            self.assertGreaterEqual(context.warnings.total_import_duration_seconds, 0)
+
+    def test_import_collection_keeps_success_when_report_email_fails(self):
+        """Verifie qu'un echec email ne transforme pas l'import en erreur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident que l'import reste reussi.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                report_notifier=FakeImportReportNotifier(RuntimeError("smtp")),
+            )
+
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
+
+            self.assertEqual(1, result.associated_games)
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
 
     def test_import_collection_accepts_existing_collection(self):
         """Verifie l'ajout depuis un nouveau fichier sur une collection existante.
@@ -464,6 +571,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
         max_upload_bytes=104857600,
         source_filename="collection.ods",
         source_content=b"ods-content",
+        report_notifier=None,
     ):
         source_file = Path(directory) / source_filename
         source_file.write_bytes(source_content)
@@ -478,6 +586,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 configuration,
                 repository,
                 FakeCollectionFileReaderFactory(reader),
+                report_notifier=report_notifier,
             ),
             repository,
             reader,

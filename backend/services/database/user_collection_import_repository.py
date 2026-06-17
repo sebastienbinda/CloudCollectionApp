@@ -42,12 +42,14 @@ class UserCollectionImportPersistenceResult:
         created_studios (int): Nombre de studios crees.
         created_games (int): Nombre de jeux crees.
         associated_games (int): Nombre de jeux rattaches a l'utilisateur.
+        user_email (str): Adresse email de l'utilisateur importe.
     """
 
     linked_platforms: int
     created_studios: int
     created_games: int
     associated_games: int
+    user_email: str = ""
 
 
 class UserCollectionReinitializationNotFoundError(Exception):
@@ -196,6 +198,7 @@ class SqlAlchemyUserCollectionImportRepository:
 
         with self.engine.begin() as connection:
             self.user_file_repository.lock_user_collection_state(connection, user_id)
+            user_email = self.user_file_repository.find_user_email(connection, user_id)
             matched_import_data = self._match_platforms(connection, import_data)
             self._synchronize_import_data(import_data, matched_import_data)
             platform_ids, linked_platforms = self._ensure_platforms(
@@ -226,6 +229,7 @@ class SqlAlchemyUserCollectionImportRepository:
             created_studios=created_studios,
             created_games=created_games,
             associated_games=associated_games,
+            user_email=user_email,
         )
 
     def _synchronize_import_data(
