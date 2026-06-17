@@ -12,6 +12,7 @@
 # Description : tests du rapport email administrateur apres import utilisateur.
 
 import unittest
+from pathlib import Path
 
 from services.collection.imports import CollectionImportWarnings
 from services.users import UserCollectionImportAdminNotifier, UserCollectionImportReportContext
@@ -39,9 +40,33 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertEqual(1, len(sender.sent_emails))
         body = sender.sent_emails[0]["body"]
         self.assertIn("Utilisateur: 7", body)
+        self.assertIn("Email utilisateur: importer@example.com", body)
         self.assertIn("Type de fichier: libreoffice_ods", body)
         self.assertIn("Jeux associes: 4", body)
         self.assertIn("Warnings: aucun warning detecte.", body)
+
+    def test_notify_import_report_uses_backend_resource_template(self):
+        """Verifie que le rapport utilise le template texte des ressources backend.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le chemin et le rendu du template.
+        """
+
+        sender = FakePlatformMatchingEmailSender()
+        template_path = UserCollectionImportAdminNotifier.default_template_path()
+        notifier = UserCollectionImportAdminNotifier(sender, "admin@example.com")
+
+        notifier.notify_import_report(self._context(CollectionImportWarnings()))
+
+        self.assertEqual(Path("backend/resources"), Path(*template_path.parts[-3:-1]))
+        self.assertTrue(template_path.exists())
+        self.assertIn(
+            template_path.read_text(encoding="utf-8").splitlines()[0],
+            sender.sent_emails[0]["body"],
+        )
 
     def test_notify_import_report_sends_all_warning_sections(self):
         """Verifie l'envoi des informations de warnings dans le rapport.
@@ -105,6 +130,7 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
     def _context(self, warnings):
         return UserCollectionImportReportContext(
             user_id=7,
+            user_email="importer@example.com",
             file_type="libreoffice_ods",
             original_filename="collection.ods",
             source_mode="temporary_upload",

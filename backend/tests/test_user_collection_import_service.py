@@ -59,7 +59,13 @@ class FakeUserCollectionImportRepository:
         """
 
         self.has_collection = has_collection
-        self.result = result or UserCollectionImportPersistenceResult(1, 1, 1, 1)
+        self.result = result or UserCollectionImportPersistenceResult(
+            1,
+            1,
+            1,
+            1,
+            user_email="importer@example.com",
+        )
         self.import_error = import_error
         self.import_calls = []
 
@@ -315,6 +321,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(1, len(notifier.contexts))
             context = notifier.contexts[0]
             self.assertEqual(7, context.user_id)
+            self.assertEqual("importer@example.com", context.user_email)
             self.assertEqual("collection.ods", context.original_filename)
             self.assertEqual("libreoffice_ods", context.file_type)
             self.assertEqual("temporary_upload", context.source_mode)

@@ -20,6 +20,7 @@ class UserCollectionImportReportContext:
 
     Attributes:
         user_id (int): Identifiant de l'utilisateur importe.
+        user_email (str): Adresse email de l'utilisateur importe.
         file_type (str): Type de fichier traite.
         original_filename (str): Nom de fichier fourni ou conserve.
         source_mode (str): Mode de source utilise par l'import.
@@ -34,6 +35,7 @@ class UserCollectionImportReportContext:
     """
 
     user_id: int
+    user_email: str
     file_type: str
     original_filename: str
     source_mode: str

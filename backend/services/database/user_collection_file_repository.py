@@ -77,6 +77,26 @@ class SqlAlchemyUserCollectionFileRepository:
             return None
         return collection_file_description
 
+    def find_user_email(self, connection: Connection, user_id: int) -> str:
+        """Retourne l'adresse email d'un utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL.
+            user_id (int): Identifiant technique de l'utilisateur.
+
+        Returns:
+            str: Adresse email de l'utilisateur ou chaine vide si absent.
+        """
+
+        user_email = connection.execute(
+            text(
+                f'SELECT email FROM "{self.schema_name}".t_user '
+                "WHERE id = :user_id"
+            ),
+            {"user_id": user_id},
+        ).scalar_one_or_none()
+        return str(user_email or "")
+
     def lock_user_collection_state(self, connection: Connection, user_id: int) -> str:
         """Verrouille l'utilisateur et retourne son chemin de collection.
 

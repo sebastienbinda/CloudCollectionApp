@@ -436,6 +436,7 @@ class UserCollectionImportService:
     ) -> UserCollectionImportReportContext:
         return UserCollectionImportReportContext(
             user_id=user_id,
+            user_email=str(getattr(persistence_result, "user_email", "") or ""),
             file_type=str(file_description.file_type.value),
             original_filename=original_filename,
             source_mode="temporary_upload" if copy_to_workspace else "stored_file",

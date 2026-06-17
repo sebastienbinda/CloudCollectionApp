@@ -13,6 +13,8 @@
 
 import json
 import os
+from pathlib import Path
+from string import Template
 
 from services.email import EmailConfiguration, EmailSenderFactory
 
@@ -22,12 +24,18 @@ from .user_collection_import_report_context import UserCollectionImportReportCon
 class UserCollectionImportAdminNotifier:
     """Envoie un rapport administrateur unique apres chaque import utilisateur."""
 
-    def __init__(self, email_sender=None, admin_notification_email: str | None = None):
+    def __init__(
+        self,
+        email_sender=None,
+        admin_notification_email: str | None = None,
+        template_path: str | Path | None = None,
+    ):
         """Initialise le notifier administrateur.
 
         Args:
             email_sender (object | None): Expediteur email injectable.
             admin_notification_email (str | None): Adresse administrateur destinataire.
+            template_path (str | Path | None): Chemin optionnel du template texte.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -37,6 +45,7 @@ class UserCollectionImportAdminNotifier:
         if admin_notification_email is None:
             admin_notification_email = os.getenv("ADMIN_NOTIFICATION_EMAIL", "")
         self.admin_notification_email = str(admin_notification_email or "").strip()
+        self.template_path = Path(template_path) if template_path else self.default_template_path()
 
     @classmethod
     def from_environment(cls) -> "UserCollectionImportAdminNotifier":
@@ -50,6 +59,23 @@ class UserCollectionImportAdminNotifier:
         """
 
         return cls(admin_notification_email=os.getenv("ADMIN_NOTIFICATION_EMAIL", ""))
+
+    @classmethod
+    def default_template_path(cls) -> Path:
+        """Retourne le chemin du template email par defaut.
+
+        Args:
+            Aucun.
+
+        Returns:
+            Path: Chemin du template stocke dans `backend/resources`.
+        """
+
+        return (
+            Path(__file__).resolve().parents[2]
+            / "resources"
+            / "user_collection_import_report_email_template.txt"
+        )
 
     def notify_import_report(self, context: UserCollectionImportReportContext) -> None:
         """Envoie le rapport de fin d'import a l'administrateur.
@@ -73,36 +99,38 @@ class UserCollectionImportAdminNotifier:
         )
 
     def _build_email_body(self, context: UserCollectionImportReportContext) -> str:
-        lines = [
-            "Rapport d'import de collection utilisateur.",
-            "",
-            "Contexte:",
-            f"- Utilisateur: {context.user_id}",
-            f"- Type de fichier: {context.file_type}",
-            f"- Fichier: {context.original_filename}",
-            f"- Source: {context.source_mode}",
-            f"- Copie workspace: {'oui' if context.copied_to_workspace else 'non'}",
-            "",
-            "Compteurs:",
-            f"- Plateformes rattachees: {context.linked_platforms}",
-            f"- Studios crees: {context.created_studios}",
-            f"- Jeux crees: {context.created_games}",
-            f"- Jeux associes: {context.associated_games}",
-            f"- Jeux en liste de souhaits: {context.wishlisted_games}",
-            "",
-            "Duree totale de l'import: {duration:.3f} seconde(s).".format(
-                duration=float(
-                    getattr(context.warnings, "total_import_duration_seconds", 0.0)
-                    or 0.0
+        warnings_lines = []
+        self._append_warnings(warnings_lines, context.warnings)
+        return Template(self._load_template()).safe_substitute(
+            {
+                "user_id": context.user_id,
+                "user_email": context.user_email,
+                "file_type": context.file_type,
+                "original_filename": context.original_filename,
+                "source_mode": context.source_mode,
+                "copied_to_workspace": "oui" if context.copied_to_workspace else "non",
+                "linked_platforms": context.linked_platforms,
+                "created_studios": context.created_studios,
+                "created_games": context.created_games,
+                "associated_games": context.associated_games,
+                "wishlisted_games": context.wishlisted_games,
+                "total_import_duration_seconds": "{duration:.3f}".format(
+                    duration=float(
+                        getattr(context.warnings, "total_import_duration_seconds", 0.0)
+                        or 0.0
+                    ),
                 ),
-            ),
-            "",
-            "Configuration d'import:",
-            json.dumps(context.collection_file_description, ensure_ascii=False, sort_keys=True),
-            "",
-        ]
-        self._append_warnings(lines, context.warnings)
-        return "\n".join(lines)
+                "collection_file_description": json.dumps(
+                    context.collection_file_description,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
+                "warnings": "\n".join(warnings_lines),
+            }
+        )
+
+    def _load_template(self) -> str:
+        return self.template_path.read_text(encoding="utf-8")
 
     def _append_warnings(self, lines: list[str], warnings: object) -> None:
         platform_mappings = list(getattr(warnings, "platform_mappings", []) or [])
