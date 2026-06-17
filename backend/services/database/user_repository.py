@@ -94,6 +94,7 @@ class SqlAlchemyUserRepository:
         creation_date: datetime,
         verification_token: EmailVerificationToken,
         profile: str = UserProfile.USER.value,
+        status: str = UserStatus.WAITING_VALIDATION.value,
     ) -> RegisteredUser:
         """Cree un utilisateur en stockant uniquement l'empreinte du mot de passe.
 
@@ -103,6 +104,7 @@ class SqlAlchemyUserRepository:
             creation_date (datetime): Date de creation du compte.
             verification_token (EmailVerificationToken): Token de validation email a stocker.
             profile (str): Profil applicatif initial du compte.
+            status (str): Statut fonctionnel initial du compte.
 
         Returns:
             RegisteredUser: Donnees publiques de l'utilisateur cree.
@@ -128,7 +130,7 @@ class SqlAlchemyUserRepository:
                         "email": email,
                         "password_hash": password_hash,
                         "profile": UserProfile.normalize(profile).value,
-                        "status": UserStatus.WAITING_VALIDATION.value,
+                        "status": UserStatus.normalize(status).value,
                         "token_hash": verification_token.token_hash,
                         "token_expires_at": verification_token.expires_at,
                         "creation_date": creation_date,
@@ -347,12 +349,14 @@ class SqlAlchemyUserRepository:
         self,
         token_hash: str,
         verified_at: datetime,
+        activate_user: bool = False,
     ) -> VerifiedUser:
         """Valide l'adresse email associee a une empreinte de token.
 
         Args:
             token_hash (str): Empreinte SHA-256 du token recu.
             verified_at (datetime): Date de validation.
+            activate_user (bool): Active le compte pendant la validation email.
 
         Returns:
             VerifiedUser: Donnees publiques de l'utilisateur valide.
@@ -369,12 +373,18 @@ class SqlAlchemyUserRepository:
                     "SET is_email_verified = true, "
                     "email_verified_at = :verified_at, "
                     "email_verification_token_hash = NULL, "
-                    "email_verification_expires_at = NULL "
+                    "email_verification_expires_at = NULL, "
+                    "status = CASE WHEN :activate_user THEN :active_status ELSE status END "
                     "WHERE email_verification_token_hash = :token_hash "
                     "AND email_verification_expires_at >= :verified_at "
-                    "RETURNING id, email, email_verified_at"
+                    "RETURNING id, email, email_verified_at, status"
                 ),
-                {"token_hash": token_hash, "verified_at": verified_at},
+                {
+                    "token_hash": token_hash,
+                    "verified_at": verified_at,
+                    "activate_user": activate_user,
+                    "active_status": UserStatus.ACTIVE.value,
+                },
             ).mappings().first()
 
         if not row:
@@ -384,6 +394,7 @@ class SqlAlchemyUserRepository:
             id=int(row["id"]),
             email=str(row["email"]),
             email_verified_at=row["email_verified_at"],
+            status=str(row["status"]),
         )
 
     def _map_user_summary(self, row) -> UserSummary:

@@ -143,11 +143,22 @@ treated as a security boundary.
 Registration and email verification are public by design because they happen
 before the user can authenticate.
 
-- `POST /api/auth/register` creates an unverified user with status
-  `WAITING_VALIDATION` and sends a verification link.
+- `POST /api/auth/register` creates an unverified user and sends a verification
+  link. With `ADMIN_ACCOUNT_VALIDATION_ENABLED=true`, the user status is
+  `WAITING_VALIDATION`; with it disabled, the status is `ACTIVE` but the user
+  still cannot sign in before email verification.
 - `GET /api/auth/verify-email?token=<token>` validates an email from a browser
-  link and returns an HTML confirmation page with a sign-in action.
+  link and redirects to the public frontend page `/auth/verify-email` with a
+  stable result status. The frontend page tells the user whether the account is
+  active or still awaiting administrator validation.
 - `POST /api/auth/verify-email` validates an email from an API payload.
+- The administrator notification for a new account is sent after email
+  verification when `ADMIN_NOTIFICATION_EMAIL` is configured, even when
+  administrator validation is disabled.
+- The frontend `/auth` page may receive `email=<address>` from account
+  activation emails. If the requested account is already connected, it opens
+  `/about`; if another account is connected, it displays a sign-out choice
+  before reconnecting with the requested account.
 
 These routes must not expose collection data, password hashes, raw passwords,
 verification token hashes, or raw verification tokens. Detailed implementation
@@ -257,6 +268,7 @@ Any authentication change must update or add backend tests covering at least:
   behavior.
 - `GET` or `POST /api/auth/verify-email` without a Bearer token preserving
   verification behavior.
+- Administrator notification after successful email verification.
 - A protected endpoint without a token returning `403`.
 - A protected endpoint with an invalid token returning `401`.
 - A protected endpoint with a valid token preserving its business behavior.

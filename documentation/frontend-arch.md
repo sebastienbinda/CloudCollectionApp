@@ -164,6 +164,10 @@ Use the following domain folders for new or modified hooks:
   actions.
 - Validate waiting users only through the backend `POST
   /api/users/<id>/validate` route when route discovery confirms access.
+- Keep activation email sign-in links on `/auth?email=<address>` frontend-only:
+  if the requested account is already connected, open `/about`; if another
+  account is connected, display a sign-out choice before reconnecting with the
+  requested account.
 - Support the `status=WAITING_VALIDATION` query parameter on `/users` as a
   backend search filter for administrator notification links.
 

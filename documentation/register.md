@@ -12,7 +12,7 @@ email verification.
 - `GET /api/auth/verify-email` and `POST /api/auth/verify-email` must remain
   public: the user validates the account from an email link before signing in.
 - `GET /api/auth/verify-email` is used by browser email links and returns an
-  HTML confirmation page.
+  HTTP redirect to the public frontend page `/auth/verify-email`.
 - `POST /api/auth/verify-email` is used by API clients and returns JSON.
 - Keep these endpoints in `AuthGuard.protect_all_routes(..., exempt_endpoints=...)`.
 - Keep `RouteDiscoveryService` reporting these endpoints with
@@ -26,15 +26,20 @@ email verification.
 - Store only non-reversible password hashes.
 - Store only the email verification token hash in database.
 - Registered users must receive the `USER` profile by default.
-- Registered users must receive the `WAITING_VALIDATION` status by default.
+- Registered users must receive the `WAITING_VALIDATION` status by default
+  when `ADMIN_ACCOUNT_VALIDATION_ENABLED` is active.
+- When `ADMIN_ACCOUNT_VALIDATION_ENABLED=false`, registered users receive
+  `ACTIVE` immediately but still cannot sign in until email verification
+  succeeds.
 - Email verification confirms ownership of the address only; it must not change
-  the status to `ACTIVE`.
-- The verification email must explain that administrator validation is required
-  after email verification.
-- After a user is created with `WAITING_VALIDATION`, the backend must send an
-  administrator notification email when `ADMIN_NOTIFICATION_EMAIL` is
-  configured. This email must include the new user's email, the total number of
-  users waiting for administrator validation and a direct link to
+  a `WAITING_VALIDATION` account to `ACTIVE`.
+- The verification email must explain whether administrator validation is
+  required after email verification.
+- After a user validates their email, the backend must send an administrator
+  notification email when `ADMIN_NOTIFICATION_EMAIL` is configured, even when
+  administrator validation is disabled. This email must include the user's
+  email, the total number of users waiting for administrator validation and a
+  direct link to
   `/users?status=WAITING_VALIDATION`.
 - Treat duplicate email, invalid password and invalid verification token as
   controlled business errors.
@@ -55,8 +60,10 @@ without a real SMTP account or production domain.
   local application.
 - `FRONTEND_PUBLIC_URL` must point to the public frontend origin used in
   administrator notification links.
+- `ADMIN_ACCOUNT_VALIDATION_ENABLED` controls whether email-verified accounts
+  must wait for administrator validation before sign-in. It defaults to `true`.
 - `ADMIN_NOTIFICATION_EMAIL` configures the administrator recipient for new user
-  validation notifications.
+  email validation notifications.
 - The production SMTP variables (`SMTP_HOST`, `SMTP_FROM_EMAIL`,
   `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`) remain reserved for the
   online Docker stack and must not be required to test registration locally.
@@ -71,11 +78,13 @@ When modifying registration or email verification, update backend tests for:
 - duplicate email rejection;
 - password policy rejection;
 - public email verification without Bearer token;
-- browser email verification page from `GET /api/auth/verify-email`;
+- browser email verification redirect from `GET /api/auth/verify-email`;
 - JSON email verification from `POST /api/auth/verify-email`;
 - missing or invalid verification token rejection;
-- created users receiving `WAITING_VALIDATION`;
-- administrator notification email after user creation when
+- created users receiving `WAITING_VALIDATION` when administrator validation is
+  active;
+- created users receiving `ACTIVE` when administrator validation is disabled;
+- administrator notification email after user email verification when
   `ADMIN_NOTIFICATION_EMAIL` is configured;
 - `/api/routes` public indicators for registration and verification routes.
 

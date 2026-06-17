@@ -14,9 +14,8 @@
 import json
 import os
 from pathlib import Path
-from string import Template
 
-from services.email import EmailConfiguration, EmailSenderFactory
+from services.email import EmailConfiguration, EmailSenderFactory, EmailTemplateRenderer
 
 from .user_collection_import_report_context import UserCollectionImportReportContext
 
@@ -29,6 +28,7 @@ class UserCollectionImportAdminNotifier:
         email_sender=None,
         admin_notification_email: str | None = None,
         template_path: str | Path | None = None,
+        template_renderer: EmailTemplateRenderer | None = None,
     ):
         """Initialise le notifier administrateur.
 
@@ -36,6 +36,7 @@ class UserCollectionImportAdminNotifier:
             email_sender (object | None): Expediteur email injectable.
             admin_notification_email (str | None): Adresse administrateur destinataire.
             template_path (str | Path | None): Chemin optionnel du template texte.
+            template_renderer (EmailTemplateRenderer | None): Moteur de rendu injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -46,6 +47,7 @@ class UserCollectionImportAdminNotifier:
             admin_notification_email = os.getenv("ADMIN_NOTIFICATION_EMAIL", "")
         self.admin_notification_email = str(admin_notification_email or "").strip()
         self.template_path = Path(template_path) if template_path else self.default_template_path()
+        self.template_renderer = template_renderer or EmailTemplateRenderer()
 
     @classmethod
     def from_environment(cls) -> "UserCollectionImportAdminNotifier":
@@ -72,8 +74,7 @@ class UserCollectionImportAdminNotifier:
         """
 
         return (
-            Path(__file__).resolve().parents[2]
-            / "resources"
+            EmailTemplateRenderer.default_resources_directory()
             / "user_collection_import_report_email_template.txt"
         )
 
@@ -101,7 +102,8 @@ class UserCollectionImportAdminNotifier:
     def _build_email_body(self, context: UserCollectionImportReportContext) -> str:
         warnings_lines = []
         self._append_warnings(warnings_lines, context.warnings)
-        return Template(self._load_template()).safe_substitute(
+        return self.template_renderer.render(
+            self.template_path,
             {
                 "user_id": context.user_id,
                 "user_email": context.user_email,
@@ -126,11 +128,8 @@ class UserCollectionImportAdminNotifier:
                     sort_keys=True,
                 ),
                 "warnings": "\n".join(warnings_lines),
-            }
+            },
         )
-
-    def _load_template(self) -> str:
-        return self.template_path.read_text(encoding="utf-8")
 
     def _append_warnings(self, lines: list[str], warnings: object) -> None:
         platform_mappings = list(getattr(warnings, "platform_mappings", []) or [])

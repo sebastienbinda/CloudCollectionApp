@@ -132,9 +132,8 @@ class AuthenticationRoutesTest(BaseAppRoutesTest):
 
         response = self.client.get("/api/auth/verify-email?token=valid-token")
 
-        self.assertEqual(200, response.status_code)
-        self.assertIn("text/html", response.content_type)
-        self.assertIn("Compte valide", response.get_data(as_text=True))
+        self.assertEqual(303, response.status_code)
+        self.assertIn("/auth/verify-email?status=waiting_admin", response.headers["Location"])
 
     def test_verify_email_route_post_returns_verified_user_json(self):
         """Verifie la validation email JSON.
@@ -150,6 +149,7 @@ class AuthenticationRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("user@example.com", response.get_json()["user"]["email"])
+        self.assertEqual("WAITING_VALIDATION", response.get_json()["user"]["status"])
 
     def test_verify_email_route_rejects_invalid_or_missing_token(self):
         """Verifie les refus de validation email.
@@ -161,5 +161,8 @@ class AuthenticationRoutesTest(BaseAppRoutesTest):
             None: Les assertions valident les statuts 400.
         """
 
-        self.assertEqual(400, self.client.get("/api/auth/verify-email").status_code)
+        response = self.client.get("/api/auth/verify-email")
+
+        self.assertEqual(303, response.status_code)
+        self.assertIn("/auth/verify-email?status=invalid", response.headers["Location"])
         self.assertEqual(400, self.client.post("/api/auth/verify-email", json={"token": "invalid-token"}).status_code)

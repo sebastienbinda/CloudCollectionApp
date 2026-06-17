@@ -16,6 +16,7 @@ import AddGameView from "./AddGameView";
 import ConfigurationView from "./ConfigurationView";
 import AboutView from "./AboutView";
 import AuthView from "./AuthView";
+import EmailVerificationResultView from "./EmailVerificationResultView";
 import GameDetailView from "./GameDetailView";
 import HomeView from "./HomeView";
 import LibraryEntityListView from "./LibraryEntityListView";
@@ -37,7 +38,7 @@ class AppViewSwitch {
    * @returns {string} Cle de l'entree de menu active.
    */
   static getActiveNavigationKey(props) {
-    if (props.currentView === "auth") {
+    if (["auth", "emailVerificationResult"].includes(props.currentView)) {
       return "login";
     }
     if (props.currentView === "about") {
@@ -109,6 +110,10 @@ class AppViewSwitch {
 
     if (props.currentView === "auth") {
       return this.renderAuth(props);
+    }
+
+    if (props.currentView === "emailVerificationResult") {
+      return this.renderEmailVerificationResult(props);
     }
 
     if (props.currentView === "configuration") {
@@ -288,6 +293,20 @@ class AppViewSwitch {
       <AuthView
         {...this.buildPageLayoutProps(props)}
         onAuthenticated={props.handleAuthenticatedUser}
+      />
+    );
+  }
+
+  /**
+   * Rend la page de resultat de validation email.
+   *
+   * @param {Object} props - Etat et callbacks de navigation.
+   * @returns {import("react").JSX.Element} Vue de resultat de validation email.
+   */
+  static renderEmailVerificationResult(props) {
+    return (
+      <EmailVerificationResultView
+        {...this.buildPageLayoutProps(props)}
       />
     );
   }

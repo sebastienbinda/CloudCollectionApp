@@ -12,7 +12,7 @@
  *
  * Description : page React d'authentification et de gestion du token Bearer.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AuthApi from "../services/AuthApi";
 import PageLayout from "./PageLayout";
 
@@ -36,8 +36,9 @@ function AuthView({
   onLogout,
   onAuthenticated,
 }) {
+  const requestedLoginEmail = new URLSearchParams(window.location.search).get("email") || "";
   const [activeMode, setActiveMode] = useState("login");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(requestedLoginEmail);
   const [password, setPassword] = useState("");
   const [registrationEmail, setRegistrationEmail] = useState("");
   const [registrationPassword, setRegistrationPassword] = useState("");
@@ -51,6 +52,19 @@ function AuthView({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const normalizedRequestedLoginEmail = requestedLoginEmail.trim().toLowerCase();
+  const normalizedAuthenticatedUsername = String(authenticatedUsername || "").trim().toLowerCase();
+  const isRequestedUserAlreadyConnected = Boolean(
+    isAuthenticated
+    && normalizedRequestedLoginEmail
+    && normalizedRequestedLoginEmail === normalizedAuthenticatedUsername
+  );
+
+  useEffect(() => {
+    if (isRequestedUserAlreadyConnected) {
+      onOpenAbout();
+    }
+  }, [isRequestedUserAlreadyConnected, onOpenAbout]);
 
   /**
    * Soumet les identifiants au backend et stocke le token retourne.
@@ -102,7 +116,7 @@ function AuthView({
       setActiveMode("login");
       setUsername(createdEmail);
       setMessage(
-        "Compte cree. Consultez votre email pour valider votre adresse, puis attendez la validation administrateur avant connexion."
+        "Compte cree. Consultez votre email pour valider votre adresse avant connexion."
       );
     } catch (e) {
       setError(e.message || "Inscription impossible.");
@@ -124,6 +138,20 @@ function AuthView({
   };
 
   /**
+   * Deconnecte la session courante pour preparer une connexion avec le compte cible.
+   *
+   * @returns {void} Vide le token et pre-remplit l'identifiant cible.
+   */
+  const logoutForRequestedUser = () => {
+    AuthApi.clearAccessToken();
+    setActiveMode("login");
+    setUsername(requestedLoginEmail);
+    setPassword("");
+    setMessage("Session fermee. Vous pouvez maintenant vous connecter avec le compte demande.");
+    setError("");
+  };
+
+  /**
    * Change le formulaire affiche et remet a zero les messages.
    *
    * @param {"login"|"register"} nextMode - Mode de formulaire cible.
@@ -134,6 +162,69 @@ function AuthView({
     setMessage("");
     setError("");
   };
+  const authNavigationProps = {
+    isAuthenticated: false,
+    canUseCollectionViews: false,
+    authenticatedUsername: "",
+    authenticatedProfile: "",
+    activeNavigationKey: "login",
+  };
+
+  if (isRequestedUserAlreadyConnected) {
+    return (
+      <PageLayout
+        shellClassName="container authContainer"
+        eyebrow="Session active"
+        title="Connexion deja active"
+        subtitle="Vous etes deja connecte avec le compte demande."
+        {...authNavigationProps}
+        onOpenAbout={onOpenAbout}
+        onOpenAuth={onOpenAuth}
+        onOpenHome={onOpenHome}
+        onOpenLibrary={onOpenLibrary}
+        onOpenWishlist={onOpenWishlist}
+        onOpenConfiguration={onOpenConfiguration}
+        onLogout={onLogout}
+      >
+        <p className="success">Redirection vers la page A propos.</p>
+      </PageLayout>
+    );
+  }
+
+  if (isAuthenticated) {
+    const requestedAccountText = requestedLoginEmail
+      ? `Le lien concerne le compte ${requestedLoginEmail}.`
+      : "Vous pouvez fermer la session courante pour utiliser un autre compte.";
+    return (
+      <PageLayout
+        shellClassName="container authContainer"
+        eyebrow="Session active"
+        title="Vous etes deja connecte"
+        subtitle="Une session est deja ouverte dans ce navigateur."
+        {...authNavigationProps}
+        onOpenAbout={onOpenAbout}
+        onOpenAuth={onOpenAuth}
+        onOpenHome={onOpenHome}
+        onOpenLibrary={onOpenLibrary}
+        onOpenWishlist={onOpenWishlist}
+        onOpenConfiguration={onOpenConfiguration}
+        onLogout={onLogout}
+      >
+        <section className="authForm" aria-label="Session deja active">
+          <p className="success">Vous etes connecte avec {authenticatedUsername}.</p>
+          <p>{requestedAccountText}</p>
+          <div className="formActions">
+            <button className="secondaryButton" type="button" onClick={logoutForRequestedUser}>
+              Se deconnecter
+            </button>
+            <button type="button" onClick={onOpenAbout}>
+              Continuer avec ce compte
+            </button>
+          </div>
+        </section>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout

@@ -11,10 +11,10 @@
 #
 # Description : controleur HTTP d'authentification, inscription et validation email.
 
-from html import escape
 import os
+from urllib.parse import urlencode
 
-from flask import Flask, current_app, jsonify, request
+from flask import Flask, current_app, jsonify, redirect, request
 
 from services import (
     AuthTokenService,
@@ -170,12 +170,7 @@ class AuthenticationController:
             registration_service = self.user_registration_service_class(
                 user_repository,
                 email_verification_service,
-                admin_notification_sender=self._create_email_sender(),
-                admin_notification_email=os.getenv("ADMIN_NOTIFICATION_EMAIL", ""),
-                frontend_public_url=os.getenv(
-                    "FRONTEND_PUBLIC_URL",
-                    os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777"),
-                ),
+                admin_account_validation_enabled=self._is_admin_account_validation_enabled(),
             )
             registered_user = registration_service.register_user(email=email, password=password)
             current_app.logger.info("Utilisateur inscrit avec succes: id=%s.", registered_user.id)
@@ -220,158 +215,46 @@ class AuthenticationController:
             verified_user = email_verification_service.verify_email(raw_token)
             current_app.logger.info("Email utilisateur valide avec succes: id=%s.", verified_user.id)
             if request.method == "GET":
-                return self._render_email_verification_page(
-                    title="Compte valide",
-                    message="Votre compte CloudCollectionApp est desormais operationnel.",
-                    detail="Vous pouvez maintenant vous connecter avec votre adresse email.",
-                    status_code=200,
-                    action_label="Se connecter",
-                    action_href="/auth",
-                )
+                if verified_user.admin_validation_required:
+                    return self._redirect_email_verification_result("waiting_admin")
+                return self._redirect_email_verification_result("active")
             return jsonify({"user": verified_user.to_public_dict()})
         except InvalidEmailVerificationTokenError as exc:
             current_app.logger.warning("Validation email refusee: token invalide ou expire.")
             if request.method == "GET":
-                return self._render_email_verification_page(
-                    title="Validation impossible",
-                    message="Le lien de validation est invalide ou expire.",
-                    detail=str(exc),
-                    status_code=400,
-                    action_label="Retour a la connexion",
-                    action_href="/auth",
-                )
+                return self._redirect_email_verification_result("invalid")
             return jsonify({"error": str(exc)}), 400
         except ValueError as exc:
             current_app.logger.warning("Validation email refusee: %s", str(exc))
             if "DATABASE_URL" in str(exc):
                 if request.method == "GET":
-                    return self._render_email_verification_page(
-                        title="Service indisponible",
-                        message="La validation email est temporairement indisponible.",
-                        detail=str(exc),
-                        status_code=503,
-                        action_label="Retour a la connexion",
-                        action_href="/auth",
-                    )
+                    return self._redirect_email_verification_result("unavailable")
                 return jsonify({"error": str(exc)}), 503
             if request.method == "GET":
-                return self._render_email_verification_page(
-                    title="Validation impossible",
-                    message="La validation email ne peut pas aboutir.",
-                    detail=str(exc),
-                    status_code=400,
-                    action_label="Retour a la connexion",
-                    action_href="/auth",
-                )
+                return self._redirect_email_verification_result("invalid")
             return jsonify({"error": str(exc)}), 400
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant la validation email.")
             if request.method == "GET":
-                return self._render_email_verification_page(
-                    title="Erreur de validation",
-                    message="Une erreur inattendue empeche la validation email.",
-                    detail="Veuillez reessayer plus tard.",
-                    status_code=500,
-                    action_label="Retour a la connexion",
-                    action_href="/auth",
-                )
+                return self._redirect_email_verification_result("error")
             return jsonify({"error": "Unable to verify email."}), 500
 
-    def _render_email_verification_page(
-        self,
-        title: str,
-        message: str,
-        detail: str,
-        status_code: int,
-        action_label: str,
-        action_href: str,
-    ):
-        """Construit la page HTML publique de resultat de validation email.
+    def _redirect_email_verification_result(self, status: str):
+        """Redirige le lien navigateur vers la page frontend de validation email.
 
         Args:
-            title (str): Titre principal de la page.
-            message (str): Message de resultat affiche a l'utilisateur.
-            detail (str): Detail complementaire affiche sous le message.
-            status_code (int): Statut HTTP a retourner.
-            action_label (str): Libelle du lien d'action principal.
-            action_href (str): URL du lien d'action principal.
+            status (str): Statut fonctionnel a exposer a la page frontend.
 
         Returns:
-            tuple[str, int, dict[str, str]]: Page HTML, statut HTTP et en-tete de contenu.
+            flask.Response: Redirection HTTP vers la page React publique.
         """
 
-        safe_title = escape(title)
-        safe_message = escape(message)
-        safe_detail = escape(detail)
-        safe_action_label = escape(action_label)
-        safe_action_href = escape(action_href, quote=True)
-        html = f"""<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{safe_title} - CloudCollectionApp</title>
-  <style>
-    :root {{
-      color-scheme: light;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #18202f;
-      background: #f4f7fb;
-    }}
-    body {{
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }}
-    main {{
-      width: min(100%, 520px);
-      background: #ffffff;
-      border: 1px solid #d9e1ec;
-      border-radius: 8px;
-      padding: 32px;
-      box-shadow: 0 16px 42px rgba(24, 32, 47, 0.12);
-    }}
-    h1 {{
-      margin: 0 0 16px;
-      font-size: 28px;
-      line-height: 1.2;
-    }}
-    p {{
-      margin: 0 0 14px;
-      font-size: 16px;
-      line-height: 1.55;
-    }}
-    a {{
-      display: inline-flex;
-      margin-top: 12px;
-      min-height: 44px;
-      align-items: center;
-      justify-content: center;
-      padding: 0 18px;
-      border-radius: 6px;
-      background: #2457d6;
-      color: #ffffff;
-      font-weight: 700;
-      text-decoration: none;
-    }}
-    a:focus {{
-      outline: 3px solid #9eb7ff;
-      outline-offset: 3px;
-    }}
-  </style>
-</head>
-<body>
-  <main>
-    <h1>{safe_title}</h1>
-    <p>{safe_message}</p>
-    <p>{safe_detail}</p>
-    <a href="{safe_action_href}">{safe_action_label}</a>
-  </main>
-</body>
-</html>"""
-        return html, status_code, {"Content-Type": "text/html; charset=utf-8"}
+        frontend_public_url = os.getenv(
+            "FRONTEND_PUBLIC_URL",
+            os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777"),
+        ).rstrip("/")
+        query_string = urlencode({"status": status})
+        return redirect(f"{frontend_public_url}/auth/verify-email?{query_string}", code=303)
 
     def _create_user_repository(self):
         """Cree le repository utilisateur configure.
@@ -411,7 +294,30 @@ class AuthenticationController:
             EmailVerificationService: Service pret a valider ou envoyer les emails.
         """
 
-        return self.email_verification_service_class(user_repository, self._create_email_sender())
+        return self.email_verification_service_class(
+            user_repository,
+            self._create_email_sender(),
+            admin_notification_sender=self._create_email_sender(),
+            admin_notification_email=os.getenv("ADMIN_NOTIFICATION_EMAIL", ""),
+            admin_account_validation_enabled=self._is_admin_account_validation_enabled(),
+            frontend_public_url=os.getenv(
+                "FRONTEND_PUBLIC_URL",
+                os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777"),
+            ),
+        )
+
+    def _is_admin_account_validation_enabled(self) -> bool:
+        """Indique si la validation administrateur est active.
+
+        Args:
+            Aucun.
+
+        Returns:
+            bool: `True` sauf si l'environnement desactive explicitement la validation.
+        """
+
+        raw_value = os.getenv("ADMIN_ACCOUNT_VALIDATION_ENABLED", "true")
+        return str(raw_value).strip().lower() not in {"0", "false", "no", "non", "off"}
 
     def _create_email_sender(self):
         """Cree l'expediteur email configure.
