@@ -138,6 +138,7 @@ function useAppNavigation(options) {
       const mappedView = {
         "/about": "about",
         "/auth": "auth",
+        "/auth/verify-email": "emailVerificationResult",
         "/bibliotheque": "library",
         "/bibliotheque/plateformes": "libraryPlatforms",
         "/bibliotheque/studios": "libraryStudios",

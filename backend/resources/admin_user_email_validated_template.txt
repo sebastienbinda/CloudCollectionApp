@@ -1,0 +1,15 @@
+Bonjour,
+
+Un utilisateur vient de valider son adresse email sur CloudCollectionApp.
+
+Email utilisateur : ${user_email}
+Identifiant utilisateur : ${user_id}
+Validation administrateur active : ${admin_validation_enabled}
+Statut du compte : ${user_status}
+
+Nombre total d'utilisateurs en attente : ${waiting_users_count}
+
+Page d'administration des utilisateurs :
+${validation_link}
+
+Cet email est envoye automatiquement apres la validation de l'adresse email utilisateur.

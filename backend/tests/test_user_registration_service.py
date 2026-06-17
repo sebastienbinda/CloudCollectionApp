@@ -60,7 +60,7 @@ class FakeUserRepository:
 
         return email in self.existing_emails
 
-    def create_user(self, email, password_hash, creation_date, verification_token, profile):
+    def create_user(self, email, password_hash, creation_date, verification_token, profile, status):
         """Memorise la creation utilisateur factice.
 
         Args:
@@ -69,6 +69,7 @@ class FakeUserRepository:
             creation_date (datetime): Date de creation.
             verification_token (EmailVerificationToken): Token de validation email.
             profile (str): Profil initial de l'utilisateur.
+            status (str): Statut initial de l'utilisateur.
 
         Returns:
             RegisteredUser: Utilisateur public factice.
@@ -78,13 +79,14 @@ class FakeUserRepository:
         self.created_password_hash = password_hash
         self.created_verification_token = verification_token
         self.created_profile = profile
+        self.created_status = status
         return RegisteredUser(
             id=42,
             email=email,
             creation_date=creation_date,
             is_email_verified=False,
             profile=profile,
-            status=UserStatus.WAITING_VALIDATION.value,
+            status=status,
         )
 
     def count_users_by_status(self, status):
@@ -147,40 +149,6 @@ class FakeEmailVerificationService:
         self.sent_email = {"email": email, "raw_token": raw_token}
 
 
-class FakeAdminNotificationSender:
-    """Expediteur factice de notification administrateur."""
-
-    def __init__(self):
-        """Initialise l'expediteur factice.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Le constructeur ne retourne aucune valeur.
-        """
-
-        self.sent_email = None
-
-    def send_email(self, recipient_email, subject, body):
-        """Memorise l'email administrateur.
-
-        Args:
-            recipient_email (str): Adresse destinataire.
-            subject (str): Sujet de l'email.
-            body (str): Corps texte.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-        """
-
-        self.sent_email = {
-            "recipient_email": recipient_email,
-            "subject": subject,
-            "body": body,
-        }
-
-
 class UserRegistrationServiceTest(unittest.TestCase):
     def test_register_user_normalizes_email_and_hashes_password(self):
         """Verifie la normalisation email et le stockage d'une empreinte.
@@ -204,6 +172,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         self.assertEqual(UserProfile.USER.value, user.profile)
         self.assertEqual(UserStatus.WAITING_VALIDATION.value, user.status)
         self.assertEqual(UserProfile.USER.value, repository.created_profile)
+        self.assertEqual(UserStatus.WAITING_VALIDATION.value, repository.created_status)
         self.assertNotEqual("VeryStrongPassword123!", repository.created_password_hash)
         self.assertTrue(repository.created_password_hash.startswith("scrypt:"))
         self.assertEqual("hashed-token", repository.created_verification_token.token_hash)
@@ -212,65 +181,27 @@ class UserRegistrationServiceTest(unittest.TestCase):
             email_verification_service.sent_email,
         )
 
-    def test_register_user_notifies_admin_when_email_is_configured(self):
-        """Verifie l'envoi d'un email administrateur apres creation.
+    def test_register_user_sets_active_status_when_admin_validation_is_disabled(self):
+        """Verifie le statut initial sans validation administrateur.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions valident le destinataire et le lien.
+            None: Les assertions valident le statut cree.
         """
 
-        admin_sender = FakeAdminNotificationSender()
-        repository = FakeUserRepository(waiting_users_count=5)
+        repository = FakeUserRepository()
         service = UserRegistrationService(
             repository,
             FakeEmailVerificationService(),
-            admin_notification_sender=admin_sender,
-            admin_notification_email="admin@example.com",
-            frontend_public_url="https://cloud.example.com",
+            admin_account_validation_enabled=False,
         )
 
-        service.register_user("user@example.com", "VeryStrongPassword123!")
+        user = service.register_user("user@example.com", "VeryStrongPassword123!")
 
-        self.assertEqual("admin@example.com", admin_sender.sent_email["recipient_email"])
-        self.assertEqual(
-            "Nouvel utilisateur en attente de validation",
-            admin_sender.sent_email["subject"],
-        )
-        self.assertIn("user@example.com", admin_sender.sent_email["body"])
-        self.assertEqual(UserStatus.WAITING_VALIDATION.value, repository.counted_status)
-        self.assertIn(
-            "Nombre total d'utilisateurs en attente : 5",
-            admin_sender.sent_email["body"],
-        )
-        self.assertIn(
-            "https://cloud.example.com/users?status=WAITING_VALIDATION",
-            admin_sender.sent_email["body"],
-        )
-
-    def test_register_user_skips_admin_notification_without_admin_email(self):
-        """Verifie qu'aucun email admin n'est envoye sans destinataire.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident l'absence d'envoi.
-        """
-
-        admin_sender = FakeAdminNotificationSender()
-        service = UserRegistrationService(
-            FakeUserRepository(),
-            FakeEmailVerificationService(),
-            admin_notification_sender=admin_sender,
-            admin_notification_email="",
-        )
-
-        service.register_user("user@example.com", "VeryStrongPassword123!")
-
-        self.assertIsNone(admin_sender.sent_email)
+        self.assertEqual(UserStatus.ACTIVE.value, user.status)
+        self.assertEqual(UserStatus.ACTIVE.value, repository.created_status)
 
     def test_register_user_rejects_invalid_email(self):
         """Verifie le refus d'un email invalide.

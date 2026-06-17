@@ -47,6 +47,9 @@
 
 - Always create or update backend unit tests when modifying logic.
 - Run and validate tests after each code modification.
+- Do not try to use `pytest`: it is not installed in the local environment.
+  Use `./test_backend.sh` for backend tests because it initializes the required
+  Python environment before running the test suite.
 - Rebuild Docker images when changes impact runtime behavior.
 
 ## Local Tooling Constraints

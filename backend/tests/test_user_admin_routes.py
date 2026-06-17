@@ -100,5 +100,5 @@ class UserAdministrationRoutesTest(BaseAppRoutesTest):
         self.assertEqual("ACTIVE", response.get_json()["user"]["status"])
         self.assertEqual("waiting@example.com", FakeEmailSender.sent_emails[0]["recipient_email"])
         self.assertIn("valide par un administrateur", FakeEmailSender.sent_emails[0]["body"])
-        self.assertIn("/auth", FakeEmailSender.sent_emails[0]["body"])
+        self.assertIn("/auth?email=waiting%40example.com", FakeEmailSender.sent_emails[0]["body"])
         self.assertEqual(404, self.client.post("/api/users/404/validate", headers=headers).status_code)

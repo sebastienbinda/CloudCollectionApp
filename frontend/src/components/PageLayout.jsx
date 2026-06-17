@@ -29,7 +29,7 @@ function resolveActiveNavigationKeyFromLocation() {
     return "";
   }
   const pathname = window.location.pathname;
-  if (pathname === "/auth") {
+  if (pathname === "/auth" || pathname === "/auth/verify-email") {
     return "login";
   }
   if (pathname === "/about") {

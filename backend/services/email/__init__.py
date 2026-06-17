@@ -13,11 +13,13 @@
 
 from .email_configuration import EmailConfiguration
 from .email_sender import ConsoleEmailSender, EmailSender, EmailSenderFactory, SmtpEmailSender
+from .email_template_renderer import EmailTemplateRenderer
 
 __all__ = [
     "ConsoleEmailSender",
     "EmailConfiguration",
     "EmailSender",
     "EmailSenderFactory",
+    "EmailTemplateRenderer",
     "SmtpEmailSender",
 ]

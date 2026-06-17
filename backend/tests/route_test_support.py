@@ -202,12 +202,13 @@ class FakeSqlAlchemyUserRepository:
         ]
         return len([user for user in users if user.status == status])
 
-    def verify_email_by_token_hash(self, token_hash, verified_at):
+    def verify_email_by_token_hash(self, token_hash, verified_at, activate_user=False):
         """Valide un token email factice.
 
         Args:
             token_hash (str): Empreinte du token.
             verified_at (datetime): Date de validation.
+            activate_user (bool): Active le compte pendant la validation email.
 
         Returns:
             VerifiedUser: Utilisateur valide.
@@ -218,7 +219,13 @@ class FakeSqlAlchemyUserRepository:
 
         if token_hash == EmailVerificationService.hash_token("invalid-token"):
             raise InvalidEmailVerificationTokenError("Le token de validation est invalide ou expire.")
-        return VerifiedUser(id=7, email="user@example.com", email_verified_at=verified_at)
+        status = UserStatus.ACTIVE.value if activate_user else UserStatus.WAITING_VALIDATION.value
+        return VerifiedUser(
+            id=7,
+            email="user@example.com",
+            email_verified_at=verified_at,
+            status=status,
+        )
 
 
 class FakeDatabaseConfiguration:

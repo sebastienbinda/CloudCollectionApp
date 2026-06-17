@@ -44,7 +44,8 @@ All user administration routes are protected backend routes and must require the
 - `POST /api/users/<id>/lock`: changes one user status to `LOCKED`.
 - `POST /api/users/<id>/unlock`: changes one user status to `ACTIVE`.
 - `POST /api/users/<id>/validate`: changes one waiting user status to `ACTIVE`
-  and sends the account activation email.
+  and sends the account activation email with a sign-in link containing the
+  validated email as `email=<address>`.
 
 These routes must never be public and must appear in `/api/routes` with
 `requires_auth: true`, `auth_schemes: ["Bearer"]` and
@@ -95,9 +96,9 @@ When `/users` receives `status=WAITING_VALIDATION` in the query string, the page
 must display all users waiting for administrator validation so the administrator
 can process the pending accounts from the notification email link.
 
-The administrator notification email sent after a public registration must name
-the newly created waiting user and include the total number of users currently
-waiting for validation.
+The administrator notification email sent after user email verification must
+name the newly verified user, indicate whether administrator validation is
+active and include the total number of users currently waiting for validation.
 
 ## Status Rules
 
@@ -105,7 +106,8 @@ Supported user statuses are:
 
 - `ACTIVE`: account status allowed to sign in after email verification.
 - `WAITING_VALIDATION`: default status for registered users after account
-  creation, pending administrator approval.
+  creation when administrator validation is active, pending administrator
+  approval.
 - `LOCKED`: blocked status that prevents token issuance.
 
 When a user is `WAITING_VALIDATION`, `POST /auth/token` must reject the account

@@ -74,7 +74,8 @@ Request:
 
 This route is public because the user does not yet own a Bearer token. The
 password is stored as a non-reversible hash. The created user remains unusable
-until email verification succeeds and an administrator validates the account.
+until email verification succeeds. When `ADMIN_ACCOUNT_VALIDATION_ENABLED=true`,
+the account also remains unusable until an administrator validates it.
 
 ### Verify Email
 
@@ -83,6 +84,9 @@ Browser link:
 ```http
 GET /api/auth/verify-email?token=<token>
 ```
+
+The browser flow validates the token and returns a redirect to the public
+frontend page `/auth/verify-email?status=<result>`.
 
 API payload:
 
@@ -619,7 +623,7 @@ The routes in this section require profile `ADMIN`.
 | `DELETE` | `/api/users/<id>` | Deletes a user. |
 | `POST` | `/api/users/<id>/lock` | Locks a user with status `LOCKED`. |
 | `POST` | `/api/users/<id>/unlock` | Unlocks a user with status `ACTIVE`. |
-| `POST` | `/api/users/<id>/validate` | Validates a waiting user with status `ACTIVE` and sends an activation email. |
+| `POST` | `/api/users/<id>/validate` | Validates a waiting user with status `ACTIVE` and sends an activation email whose sign-in link includes the user email as `email=<address>`. |
 
 Supported search query parameters:
 
@@ -892,6 +896,7 @@ BACKEND_PUBLIC_URL=https://api.example.com
 FRONTEND_PUBLIC_URL=https://app.example.com
 EMAIL_DELIVERY_MODE=smtp
 ADMIN_NOTIFICATION_EMAIL=admin@example.com
+ADMIN_ACCOUNT_VALIDATION_ENABLED=true
 EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
 SMTP_FROM_EMAIL=noreply@example.com
 SMTP_HOST=smtp.example.com
@@ -901,11 +906,12 @@ SMTP_PASSWORD=...
 SMTP_USE_TLS=true
 ```
 
-`ADMIN_NOTIFICATION_EMAIL` receives a message after every successful public
-registration. The message links to `/users?status=WAITING_VALIDATION` on
-`FRONTEND_PUBLIC_URL` so an administrator can validate the waiting accounts. The
-message includes the new user's email and the total number of users currently
-waiting for administrator validation.
+`ADMIN_NOTIFICATION_EMAIL` receives a message after every successful user email
+verification, even when administrator validation is disabled. The message links
+to `/users?status=WAITING_VALIDATION` on `FRONTEND_PUBLIC_URL` so an
+administrator can validate waiting accounts when required. The message includes
+the user's email and the total number of users currently waiting for
+administrator validation.
 
 The same address receives the final report of each asynchronous Library reset
 job, including the global status, successfully imported users and per-user

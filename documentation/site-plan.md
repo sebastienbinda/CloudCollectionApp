@@ -8,7 +8,12 @@
 ## Public Routes
 
 - `/about`: public About page for unauthenticated visitors.
-- `/auth`: sign-in page.
+- `/auth`: sign-in page. When opened from an activation email with
+  `email=<address>`, it redirects to `/about` if that account is already
+  connected, or asks the connected user to sign out before reconnecting with
+  the requested account.
+- `/auth/verify-email`: public email verification result page opened after the
+  backend validates a browser verification link.
 - `/bibliotheque`: public Library landing page with global entity counters and
   public global game search.
 - `/bibliotheque/plateformes`: public paginated platform reference list.
@@ -65,8 +70,10 @@ collection import routes must be disabled or redirected to `/configuration` for
 
 The `/users` administration page lets an `ADMIN` validate users with status
 `WAITING_VALIDATION`. Validation activates the account on the backend and sends
-the user an activation email containing the sign-in link.
-Administrator notification emails may link directly to
+the user an activation email containing the sign-in link with the validated
+email as the `email` query parameter.
+Administrator notification emails are sent after user email verification and may
+link directly to
 `/users?status=WAITING_VALIDATION`, which must open the users page filtered to
 all accounts waiting for validation.
 

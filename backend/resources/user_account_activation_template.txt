@@ -1,0 +1,8 @@
+Bonjour,
+
+Votre compte CloudCollectionApp a ete valide par un administrateur.
+
+Vous pouvez maintenant vous connecter avec votre adresse email depuis le lien suivant :
+${login_link}
+
+Si vous n'etes pas a l'origine de cette demande, contactez l'administrateur.

@@ -14,7 +14,11 @@
 from dataclasses import dataclass
 from datetime import datetime
 import os
+from pathlib import Path
 from typing import Protocol
+from urllib.parse import urlencode
+
+from services.email import EmailTemplateRenderer
 
 from .user_status import UserStatus
 
@@ -167,6 +171,7 @@ class UserManagementService:
         user_repository: UserAdministrationRepository,
         activation_email_sender: UserActivationEmailSender | None = None,
         frontend_public_url: str | None = None,
+        template_renderer: EmailTemplateRenderer | None = None,
     ):
         """Initialise le service de gestion utilisateur.
 
@@ -174,6 +179,7 @@ class UserManagementService:
             user_repository (UserAdministrationRepository): Port de persistance utilisateur.
             activation_email_sender (UserActivationEmailSender | None): Expediteur email optionnel.
             frontend_public_url (str | None): URL publique frontend pour le lien de connexion.
+            template_renderer (EmailTemplateRenderer | None): Moteur de rendu injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -186,6 +192,7 @@ class UserManagementService:
             or os.getenv("FRONTEND_PUBLIC_URL")
             or os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777")
         ).rstrip("/")
+        self.template_renderer = template_renderer or EmailTemplateRenderer()
 
     def search_users(self, criteria: UserSearchCriteria) -> list[UserSummary]:
         """Recherche les utilisateurs avec les criteres fournis.
@@ -295,18 +302,30 @@ class UserManagementService:
 
         if not self.activation_email_sender:
             return
-        login_link = f"{self.frontend_public_url}/auth"
+        login_link = f"{self.frontend_public_url}/auth?{urlencode({'email': user.email})}"
         self.activation_email_sender.send_email(
             recipient_email=user.email,
             subject="Votre compte CloudCollectionApp est active",
-            body=(
-                "Bonjour,\n\n"
-                "Votre compte CloudCollectionApp a ete valide par un administrateur.\n\n"
-                "Vous pouvez maintenant vous connecter avec votre adresse email depuis le lien "
-                "suivant :\n"
-                f"{login_link}\n\n"
-                "Si vous n'etes pas a l'origine de cette demande, contactez l'administrateur."
+            body=self.template_renderer.render(
+                self.default_activation_template_path(),
+                {"login_link": login_link},
             ),
+        )
+
+    @classmethod
+    def default_activation_template_path(cls) -> Path:
+        """Retourne le template du mail d'activation utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            Path: Chemin du template stocke dans les ressources backend.
+        """
+
+        return (
+            EmailTemplateRenderer.default_resources_directory()
+            / "user_account_activation_template.txt"
         )
 
     def _validate_user_id(self, user_id: int) -> int:

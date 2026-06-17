@@ -42,7 +42,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
 - Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
-- Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur.
+- Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur optionnelle.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
@@ -135,6 +135,8 @@ Variables principales :
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur, des rapports de fin d'import utilisateur
   et des rapports de reset Bibliotheque.
+- `ADMIN_ACCOUNT_VALIDATION_ENABLED` : active la validation administrateur apres
+  validation email utilisateur. Valeur par defaut : `true`.
 - `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
   production pour persister les donnees PostgreSQL du conteneur `database`.
 
@@ -157,7 +159,8 @@ Structure fonctionnelle attendue pour l'import :
   une colonne dediee ;
 - apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
   collection.
-- si `ADMIN_NOTIFICATION_EMAIL` est configure, le backend envoie un seul
+- si `ADMIN_NOTIFICATION_EMAIL` est configure, le backend notifie
+  l'administrateur apres chaque validation email utilisateur et envoie un seul
   rapport administrateur en fin d'import avec le contexte, les compteurs, la
   configuration validee, la duree et les warnings eventuels ;
 - depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
