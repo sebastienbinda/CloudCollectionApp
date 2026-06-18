@@ -40,6 +40,8 @@ services:
     environment:
       BACKEND_PORT: "7777"
       USER_COLLECTION_MAX_UPLOAD_BYTES: ${USER_COLLECTION_MAX_UPLOAD_BYTES:-104857600}
+      BACKEND_IMG_DIR: ${BACKEND_IMG_DIR:-/images}
+      PLATFORM_IMAGE_MAX_UPLOAD_BYTES: ${PLATFORM_IMAGE_MAX_UPLOAD_BYTES:-10485760}
       MATCHING_LOW_LVL_RATING: ${MATCHING_LOW_LVL_RATING:-25}
       MATCHING_HIGH_LEVEL_RATING: ${MATCHING_HIGH_LEVEL_RATING:-75}
       BACKEND_LOG_LEVEL: ${BACKEND_LOG_LEVEL:-INFO}
@@ -70,6 +72,7 @@ services:
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
     volumes:
       - ${USERS_WORKSPACE:-../users-workspace}:/users/workspace
+      - ${BACKEND_IMG_HOST_DIR:?BACKEND_IMG_HOST_DIR doit etre defini avec un chemin absolu}:/images
       - ${BACKEND_LOG_HOST_DIR:-../logs}:/app/logs
     expose:
       - "7777"

@@ -48,6 +48,10 @@ pour retourner les images `ACCEPTED` associées à la plateforme.
 - Le nom original est conservé ; en cas de collision, ajouter un compteur en
   suffixe.
 - L'entrée créée a le type `OTHER` et le statut `WAITING_VALIDATION`.
+- L'entrée créée renseigne `user_id` avec l'identifiant de l'utilisateur connecté
+  à l'origine de l'upload.
+- Le backend dérive `user_id` du token validé ; le frontend ne doit pas envoyer
+  cet identifiant.
 - Le chemin stocké en base est absolu.
 - Un email administrateur est envoyé après création.
 - Si l'email administrateur n'est pas configuré, un warning est loggé.
@@ -75,6 +79,7 @@ Ajouter ou modifier des tests backend couvrant :
 - refus d'une image trop volumineuse ;
 - refus d'une extension ou d'un MIME invalide ;
 - copie disque et insertion SQL ;
+- insertion SQL avec `user_id` issu du token ;
 - collision de nom de fichier ;
 - notification email ou warning ;
 - lecture publique d'une image `ACCEPTED` ;

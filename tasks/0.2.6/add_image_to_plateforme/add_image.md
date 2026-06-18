@@ -5,10 +5,10 @@ Ce endpoint enregistre l'image fourni dans un répertoire dédiés aux images qu
 Vérification : La taille des images qu'il est possible d'upload est limité par configuration et var d'env avec la nouvelle variable PLATFORM_IMAGE_MAX_UPLOAD_BYTES.
 Apres validation et copie du fichier :
  - Validation du format de l'image : Les formats acceptés sont définis : jpg/jpeg, png, webp, gif. Il faut vérifier le MIME et l’extension.
- - Enregistrement en base de l'image et association a la platform via une nouvelle table t_platform_image avec id, id de la platform, path de l'image en absolu, type de l'image, status, id user, date de creation.
+ - Enregistrement en base de l'image et association a la platform via une nouvelle table t_platform_image avec id, id de la platform, path de l'image en absolu, type de l'image, status, user_id, date de creation.
  - Le type de l'image est un énumée avec deux valeurs possibles pour l'instant : MAIN, OTHER. Il ne peut y avori qu'une seule image de type MAIN. il faut une contrainte d'unicité bd sur le couple id/type=MAIN.
  - Le status est un énumée pouvant etre : WAITING_VALIDATION, ACCEPTED
- - Le id user est l'identifiant de l'utilisateur qui propose l'image.
+ - Le user_id est l'identifiant de l'utilisateur connecté qui propose l'image. Il est dérivé du token backend au moment de l'insertion et ne doit pas être fourni par le frontend.
 A la création l'image est enregistré avec le statut a WAITING_VALIDATION et  le type OTHER et un email est envoyé à l'admin pour lui indiquer qu'une nouvelle image est proposée par un utilisateur et qu'il doit la valider. Si l'email admin n'est pas configuré, un warning est loggé.
 Retour du endpoint : 
  - 201 : created nouvele image déposé
@@ -55,5 +55,4 @@ documentation/frontend-arch.md
 documentation/backend-arch.md
 README.md
  
-
 

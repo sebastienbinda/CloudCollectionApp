@@ -30,10 +30,14 @@ Créer la table `t_platform_image` avec :
 - chemin absolu de l'image ;
 - type d'image `MAIN` ou `OTHER` ;
 - statut `WAITING_VALIDATION` ou `ACCEPTED` ;
-- identifiant utilisateur proposant l'image ;
+- colonne `user_id` contenant l'identifiant de l'utilisateur proposant l'image ;
 - date de création.
 
 Ajouter les clés étrangères vers `t_platform` et `t_user`.
+
+`user_id` est obligatoire. Il doit être alimenté par le backend depuis le token
+de l'utilisateur connecté au moment de l'upload, et non depuis une valeur fournie
+par le frontend.
 
 Ajouter une contrainte d'unicité permettant une seule image `MAIN` par
 plateforme, sans empêcher plusieurs images `OTHER`.
@@ -60,6 +64,8 @@ Ajouter ou modifier des tests backend couvrant :
 - la validation des variables d'environnement ;
 - la création du répertoire de stockage ;
 - la structure SQL attendue ;
+- la présence et la non-nullabilité de `user_id` ;
+- la clé étrangère `user_id` vers `t_user.id` ;
 - la contrainte unique sur l'image `MAIN`.
 
 ## Critères D'Acceptation

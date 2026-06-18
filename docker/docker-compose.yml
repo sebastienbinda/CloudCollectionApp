@@ -18,6 +18,8 @@ services:
     environment:
       APP_HOME_TITLE: ${APP_HOME_TITLE:-Ma collection}
       BACKEND_PORT: "7777"
+      BACKEND_IMG_DIR: ${BACKEND_IMG_DIR:-/images}
+      PLATFORM_IMAGE_MAX_UPLOAD_BYTES: ${PLATFORM_IMAGE_MAX_UPLOAD_BYTES:-10485760}
       JEUXVIDEO_ODS_PATH: /project/collection.ods
       JEUXVIDEO_ODS_TMP_DIR: /project/tmp
       JEUXVIDEO_ODS_BACKUP_DIR: /project/backup
@@ -30,6 +32,7 @@ services:
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods
       - ${JEUXVIDEO_BACKUP_DIR:-../backup}:/project/backup
+      - ${BACKEND_IMG_HOST_DIR:-../images}:/images
     tmpfs:
       - /project/tmp
     expose:

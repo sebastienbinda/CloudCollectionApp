@@ -56,6 +56,8 @@ fonctions et tests à créer ou modifier pour :
 - le champ multipart `image` ;
 - les extensions et MIME acceptés ;
 - les endpoints publics et protégés ;
+- la colonne obligatoire `user_id` de `t_platform_image`, alimentée depuis le
+  token de l'utilisateur connecté lors de l'insertion ;
 - le format JSON retourné par `GET /api/library/platforms/{id}` ;
 - les règles de cache-busting ;
 - les règles d'accès frontend selon le profil connecté.

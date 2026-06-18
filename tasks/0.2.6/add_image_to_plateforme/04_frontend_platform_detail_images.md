@@ -27,6 +27,8 @@ Selon les noms confirmés dans le rapport d'analyse :
 - La page reste publique.
 - Le bouton d'ajout d'image est visible uniquement pour un utilisateur connecté.
 - L'upload utilise le champ multipart `image`.
+- L'upload frontend ne transmet pas de `user_id` ; le backend déduit
+  l'utilisateur à partir du token.
 - Les erreurs backend sont affichées clairement.
 - Les images `ACCEPTED` retournées par le détail plateforme sont affichées.
 - L'image `MAIN` est mise en avant.

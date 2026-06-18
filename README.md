@@ -128,6 +128,12 @@ Variables principales :
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
+- `BACKEND_IMG_DIR` : repertoire conteneur utilise par le backend pour stocker
+  les images de plateformes. Valeur par defaut : `/images`.
+- `PLATFORM_IMAGE_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une image de
+  plateforme. Valeur par defaut : `10485760`.
+- `BACKEND_IMG_HOST_DIR` : repertoire hote monte par Docker Compose dans
+  `BACKEND_IMG_DIR` pour persister les images de plateformes.
 - `MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
   avec verification administrateur. Valeur par defaut : `25`.
 - `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
@@ -201,6 +207,8 @@ docker compose -f docker-compose.local.yml up --build
 En production, `docker/docker-compose.online.yml` exige
 `POSTGRES_DATA_HOST_DIR` avec un chemin absolu existant et sauvegardable pour
 monter les donnees PostgreSQL dans `/var/lib/postgresql/data`.
+Il exige aussi `BACKEND_IMG_HOST_DIR` avec un chemin absolu existant et
+sauvegardable pour persister les images de plateformes.
 
 Services locaux :
 

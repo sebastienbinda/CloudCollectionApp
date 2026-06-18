@@ -19,6 +19,8 @@ Valider au minimum :
 
 - migrations et modèles ;
 - upload utilisateur ;
+- persistance du `user_id` correspondant à l'utilisateur connecté qui a uploadé
+  l'image ;
 - lecture publique des images acceptées ;
 - endpoints admin ;
 - route catalog ;
@@ -47,6 +49,8 @@ Vérifier dans un environnement lancé :
 
 - détail plateforme sans image ;
 - upload avec un utilisateur connecté ;
+- vérification admin que l'image proposée affiche le `user_id` ou l'utilisateur
+  correspondant ;
 - image en attente non visible publiquement ;
 - acceptation par admin ;
 - image acceptée visible publiquement ;

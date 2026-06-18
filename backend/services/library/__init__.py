@@ -22,6 +22,7 @@ from .library_reset_job_coordinator import (
     LibraryResetJob,
     LibraryResetJobCoordinator,
 )
+from .platform_image_configuration import PlatformImageConfiguration
 
 __all__ = [
     "LibraryPageRequest",
@@ -31,4 +32,5 @@ __all__ = [
     "LibraryResetJob",
     "LibraryResetJobCoordinator",
     "LibrarySortRule",
+    "PlatformImageConfiguration",
 ]

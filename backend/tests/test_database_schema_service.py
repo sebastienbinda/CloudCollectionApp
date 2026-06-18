@@ -217,8 +217,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260614_0008"], script_directory.get_heads())
-        self.assertEqual(5, len(revisions))
+        self.assertEqual(["20260618_0009"], script_directory.get_heads())
+        self.assertEqual(6, len(revisions))
+        self.assertEqual("20260614_0008", revisions_by_id["20260618_0009"].down_revision)
         self.assertEqual("20260605_0007", revisions_by_id["20260614_0008"].down_revision)
         self.assertEqual("20260603_0006", revisions_by_id["20260605_0007"].down_revision)
         self.assertEqual("20260525_0005", revisions_by_id["20260603_0006"].down_revision)
@@ -303,6 +304,35 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn('"resources"', migration_source)
         self.assertIn("platform_catalog.csv", migration_source)
         self.assertIn("platform_alias_catalog.csv", migration_source)
+
+    def test_platform_image_migration_declares_expected_schema_changes(self):
+        """Verifie que la migration images plateformes declare le schema attendu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les changements declares.
+        """
+
+        migration_path = (
+            Path(__file__).resolve().parents[1]
+            / "migrations"
+            / "versions"
+            / "20260618_0009_add_platform_images.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn("t_platform_image", migration_source)
+        self.assertIn("s_platform_image", migration_source)
+        self.assertIn('"user_id"', migration_source)
+        self.assertIn("nullable=False", migration_source)
+        self.assertIn("t_user.id", migration_source)
+        self.assertIn("ck_t_platform_image_type", migration_source)
+        self.assertIn("ck_t_platform_image_status", migration_source)
+        self.assertIn("ix_t_platform_image_user_id", migration_source)
+        self.assertIn("uq_t_platform_image_single_main", migration_source)
+        self.assertIn("postgresql_where=sa.text(\"type = 'MAIN'\")", migration_source)
 
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.

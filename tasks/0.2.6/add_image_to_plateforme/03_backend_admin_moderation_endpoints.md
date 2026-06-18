@@ -45,6 +45,7 @@ PUT /api/library/platforms/{platform_id}/image/{image_id}/status/{status}
   - nom de plateforme ;
   - statut ;
   - type ;
+  - `user_id` de l'utilisateur proposant l'image ;
   - identifiant ou nom de l'utilisateur proposant l'image ;
   - date de création ;
   - informations nécessaires pour reconstruire l'URL image.
@@ -66,6 +67,7 @@ Ajouter ou modifier des tests backend couvrant :
 - accès refusé sans token ;
 - accès refusé avec profil `USER` ;
 - liste acceptée avec profil `ADMIN` ;
+- liste exposant le `user_id` enregistré à l'upload ;
 - pagination et filtres ;
 - acceptation d'image ;
 - refus avec suppression disque et SQL ;

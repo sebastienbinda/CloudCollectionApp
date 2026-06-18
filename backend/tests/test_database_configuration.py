@@ -33,6 +33,7 @@ class DatabaseConfigurationTest(unittest.TestCase):
                 "t_schema_version",
                 "t_platform",
                 "t_platform_alias",
+                "t_platform_image",
                 "t_studio",
                 "t_user",
                 "t_game",
@@ -56,6 +57,31 @@ class DatabaseConfigurationTest(unittest.TestCase):
         self.assertIn("wishlist", table.columns)
         self.assertFalse(table.columns["wishlist"].nullable)
         self.assertEqual("false", str(table.columns["wishlist"].server_default.arg))
+
+    def test_platform_image_model_exposes_user_and_validation_columns(self):
+        """Verifie que le modele ORM expose le schema des images plateformes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les colonnes et contraintes.
+        """
+
+        table = DatabaseModelBase.metadata.tables["t_platform_image"]
+
+        self.assertIn("user_id", table.columns)
+        self.assertFalse(table.columns["user_id"].nullable)
+        self.assertFalse(table.columns["platform"].nullable)
+        self.assertFalse(table.columns["path"].nullable)
+        self.assertFalse(table.columns["type"].nullable)
+        self.assertFalse(table.columns["status"].nullable)
+        self.assertFalse(table.columns["creation_date"].nullable)
+        self.assertIn("ix_t_platform_image_user_id", {index.name for index in table.indexes})
+        self.assertIn(
+            "uq_t_platform_image_single_main",
+            {index.name for index in table.indexes if index.unique},
+        )
 
     def test_from_environment_reads_database_settings(self):
         """Verifie la lecture des variables d'environnement SQL.

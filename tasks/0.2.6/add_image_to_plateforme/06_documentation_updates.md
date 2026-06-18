@@ -32,6 +32,9 @@ Documenter :
 - la règle d'authentification de l'upload utilisateur ;
 - la règle `ADMIN` pour la modération ;
 - la table `t_platform_image` ;
+- la colonne obligatoire `user_id`, sa clé étrangère vers `t_user.id` et le fait
+  qu'elle est alimentée depuis le token de l'utilisateur connecté lors de
+  l'upload ;
 - les enums et contraintes associées ;
 - les variables `BACKEND_IMG_DIR` et `PLATFORM_IMAGE_MAX_UPLOAD_BYTES` ;
 - le volume Docker ;

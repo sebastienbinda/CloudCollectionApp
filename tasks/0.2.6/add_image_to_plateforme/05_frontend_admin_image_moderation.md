@@ -34,6 +34,7 @@ Selon les noms confirmés dans le rapport d'analyse :
   - statut ;
   - type ;
   - miniature ;
+  - `user_id` enregistré lors de l'upload ;
   - utilisateur proposant l'image ;
   - date de création ;
   - actions disponibles.
