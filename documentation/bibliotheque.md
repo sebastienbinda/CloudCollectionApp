@@ -12,6 +12,7 @@ endpoints that expose the global reference database.
 - The Bibliotheque is read-only: it must never create, update or delete data.
 - The Bibliotheque reads only the global reference tables:
   - `t_platform`;
+  - `t_platform_image` for accepted platform images only;
   - `t_studio`;
   - `t_game`.
 - The Bibliotheque must not expose private user data from `t_user`,
@@ -20,8 +21,9 @@ endpoints that expose the global reference database.
   Bibliotheque pages and endpoints remain consultation-only.
 - Public Bibliotheque API calls must not require or send authentication headers.
 - The only write-capable Bibliotheque route is the protected administrator
-  reset endpoint documented below. It is not part of the public consultation
-  API and must require profile `ADMIN`.
+  reset endpoint documented below, plus protected platform image upload and
+  moderation endpoints. They are not part of the public consultation API and
+  must require their documented profiles.
 
 ## Frontend Routes
 
@@ -66,7 +68,16 @@ introduce authentication requirements.
 The `/bibliotheque/plateformes/<platform_id>` detail page displays only public
 reference platform data: name, release date, end date, manufacturer,
 description, total game count and aliases with category, usage region and
-comment. It must not display connected-user collection values.
+comment. It also displays accepted platform images returned by the public
+platform detail payload: the `MAIN` image is featured, otherwise the first
+`OTHER` image is featured, and up to five remaining images may appear in the
+carousel. It must not display connected-user collection values or images still
+waiting for validation.
+
+Authenticated non-`ADMIN` users may propose a new image from this public
+platform detail page. The upload uses multipart field `image` and is protected;
+the public page displays only the backend response message, not the pending
+image before administrator acceptance.
 
 ## Backend Endpoints
 
@@ -77,6 +88,7 @@ The public backend endpoints are:
 | `GET` | `/api/library/entities` | Counts global platforms, studios and games. |
 | `GET` | `/api/library/platforms` | Lists global platforms. |
 | `GET` | `/api/library/platforms/<platform_id>` | Returns one global platform with aliases. |
+| `GET` | `/api/library/platforms/<platform_id>/image/<image_id>` | Returns one accepted platform image file. |
 | `GET` | `/api/library/studios` | Lists global studios. |
 | `GET` | `/api/library/games` | Lists global games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global game. |
@@ -128,6 +140,28 @@ List endpoints return a collection key and a shared `page` object:
 The collection key is `platforms`, `studios` or `games` according to the
 endpoint.
 
+`GET /api/library/platforms/<platform_id>` includes an `images` array containing
+only accepted platform image metadata. `GET
+/api/library/platforms/<platform_id>/image/<image_id>` returns `404` when the
+image is unknown, missing on disk or not accepted.
+
+## Protected Library Write Endpoints
+
+`POST /api/library/platforms/<platform_id>/image` is an authenticated endpoint
+for users with at least profile `USER`. It creates a proposed image with
+`status = WAITING_VALIDATION`, `type = OTHER` and `user_id` resolved from the
+Bearer token subject. The request must use multipart field `image`; accepted
+MIME types are JPEG, PNG, WebP and GIF. Invalid files return `422`, and unknown
+platforms return `404`.
+
+`GET /api/library/platforms/images`,
+`PUT /api/library/platforms/<platform_id>/image/<image_id>/status/<status>` and
+`PUT /api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>`
+are authenticated `ADMIN` endpoints used by the Configuration moderation
+section. Accepting an image makes it public by setting `status = ACCEPTED`.
+Refusing an image deletes the row and the stored file. Setting `MAIN` updates
+other images of the same platform to `OTHER`.
+
 ## Protected Administration Endpoint
 
 `POST /api/library/reset` is an authenticated `ADMIN` endpoint exposed for the
@@ -155,9 +189,9 @@ Only one reset can run at a time. A second launch attempt returns `409`.
 ## Architecture Rules
 
 - Frontend HTTP details stay in `frontend/src/services/LibraryApi.js`.
-- Protected admin reset HTTP details stay outside the public `LibraryApi`
-  client so public read-only calls and destructive admin actions remain
-  separated.
+- Protected admin reset and platform image moderation HTTP details stay outside
+  the public `LibraryApi` client so public read-only calls and administrative
+  actions remain separated.
 - Library state orchestration stays under `frontend/src/hooks/library/`.
 - Page components only render state and user interactions.
 - Backend routing stays in controllers under `backend/controllers/`.
@@ -173,6 +207,10 @@ When changing the Bibliotheque feature:
 - verify unauthenticated access to public `GET /api/library/*` consultation
   endpoints;
 - verify that `POST /api/library/reset` remains protected by profile `ADMIN`;
+- verify that image upload remains protected by at least profile `USER`;
+- verify that image moderation remains protected by profile `ADMIN`;
+- verify that pending images are not returned by public platform detail or image
+  file routes;
 - verify that list endpoints remain read-only and paginated;
 - verify that no private user table is exposed by repository queries;
 - run backend tests when backend API, services or repositories change;

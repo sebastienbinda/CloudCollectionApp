@@ -101,6 +101,17 @@ Indexes:
 - `ix_t_platform_image_user_id`: `user_id`
 - `uq_t_platform_image_single_main`: unique partial index on `platform` where `type = 'MAIN'`
 
+Rows are created by the authenticated platform image upload workflow. The
+backend derives `user_id` from the Bearer token subject and never accepts a user
+identifier from the upload request. New rows start with `type = OTHER` and
+`status = WAITING_VALIDATION`. Public Library reads expose only rows whose
+status is `ACCEPTED`.
+
+The moderation refusal workflow does not persist a `REFUSED` status. It deletes
+the `t_platform_image` row and removes the stored image file from disk. Setting
+one image to `MAIN` updates previous `MAIN` rows for the same platform to
+`OTHER` so the partial unique constraint remains satisfied.
+
 #### `t_studio`
 
 | Column | Type | Null | Description |

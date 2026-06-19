@@ -150,12 +150,23 @@ Use the following domain folders for new or modified hooks:
   `/api/library/games/<game_id>` through `LibraryApi`.
 - Public platform detail opened from Library pages must query
   `/api/library/platforms/<platform_id>` through `LibraryApi`.
+- Public platform detail displays accepted platform images returned by the
+  platform detail payload. Image URLs are built by `LibraryApi` from the public
+  accepted-image endpoint with cache-busting when needed.
+- Authenticated non-`ADMIN` users may upload a proposed platform image from
+  public platform detail through `LibraryApi.uploadPlatformImage`. The component
+  owns only file selection and display; the hook owns upload state and messages.
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
 - Keep protected Library administration calls in a dedicated admin service and
   user-triggered hooks. They must use route discovery before being displayed and
   must not change the public read-only Library consultation routes.
+- Platform image moderation belongs to the Library admin frontend domain:
+  protected HTTP calls stay in `LibraryAdminApi`, state and user actions stay in
+  `usePlatformImageModeration`, and the Configuration section only renders the
+  filters, paginated `TableComponent`, thumbnails, preview dialog and action
+  buttons.
 
 ### User Administration
 

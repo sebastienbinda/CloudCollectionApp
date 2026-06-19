@@ -35,6 +35,10 @@ avoid unnecessary calls, but all real protection must remain on the backend side
     an email verification link before sign-in.
   - `GET /api/library/entities`, used to expose public reference entity counts.
   - `GET /api/library/platforms`, used to expose public reference platforms.
+  - `GET /api/library/platforms/<platform_id>`, used to expose one public
+    reference platform.
+  - `GET /api/library/platforms/<platform_id>/image/<image_id>`, used to expose
+    accepted public platform images.
   - `GET /api/library/studios`, used to expose public reference studios.
   - `GET /api/library/games` and `GET /api/library/games/<game_id>`, used to
     expose public reference games.
@@ -123,9 +127,25 @@ profile:
 - `POST /collections/videogames/games`
 - `PUT /collections/videogames/games`
 - `DELETE /collections/videogames/games`
+- `POST /api/library/platforms/<platform_id>/image`
 
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.
+For platform image upload, the backend resolves `t_platform_image.user_id` from
+the token subject and stores proposed images with status `WAITING_VALIDATION`.
+
+Protected administrator routes include:
+
+- `POST /api/library/reset`
+- `POST /api/library/platform-catalog/sync`
+- `GET /api/library/platforms/images`
+- `PUT /api/library/platforms/<platform_id>/image/<image_id>/status/<status>`
+- `PUT /api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>`
+
+Platform image moderation must require profile `ADMIN`. Accepting an image
+changes its status to `ACCEPTED`; refusing an image deletes the row and stored
+file; setting an image to `MAIN` switches any previous platform `MAIN` image to
+`OTHER`.
 
 The Bearer token payload must contain:
 
@@ -218,7 +238,7 @@ tests, documentation, or scripts.
 - The frontend must avoid calling protected endpoints when no token is stored.
 - Public unauthenticated frontend pages are `AboutView` on `/about` and the
   Library consultation pages under `/bibliotheque`, including public game
-  detail pages.
+  detail pages, public platform detail pages and accepted platform images.
 - The authenticated Ma collection page is `HomeView` on `/collection`.
 - Authenticated game detail pages under `/collection/jeux/<game_id>` must remain
   unavailable without a non-`ADMIN` collection session.
@@ -234,6 +254,10 @@ tests, documentation, or scripts.
   backend route catalog confirms their availability.
 - If a sent token is rejected (`401` or `403`), the frontend must clear the local
   session and open the sign-in flow again.
+- Public accepted platform images may be used directly in `<img>` tags because
+  their file route is explicitly public. Pending images are moderated only from
+  protected administrator API calls and must not be publicly visible before
+  acceptance.
 
 ## Route Discovery
 

@@ -35,6 +35,8 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
+- Images publiques acceptees sur les fiches plateformes de la Bibliotheque,
+  avec proposition d'image par utilisateur connecte.
 - Referentiel de plateformes et alias fourni par defaut depuis les CSV backend.
 - Navigation par plateforme, detail de jeu, detail de plateforme et consultation de la collection personnelle.
 - Page Liste de souhaits pour consulter les jeux importes avec
@@ -45,6 +47,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 - Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur optionnelle.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
+- Moderation administrateur des images de plateformes proposees.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
 
 ## Architecture Globale
@@ -133,7 +136,8 @@ Variables principales :
 - `PLATFORM_IMAGE_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une image de
   plateforme. Valeur par defaut : `10485760`.
 - `BACKEND_IMG_HOST_DIR` : repertoire hote monte par Docker Compose dans
-  `BACKEND_IMG_DIR` pour persister les images de plateformes.
+  `BACKEND_IMG_DIR` pour persister les images de plateformes. En production, le
+  chemin doit etre absolu, exister et etre sauvegardable.
 - `MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
   avec verification administrateur. Valeur par defaut : `25`.
 - `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel

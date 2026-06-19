@@ -83,6 +83,8 @@ Use one controller per functional area when possible, for example:
 - `RouteController` for `/api/routes`;
 - `PlatformController`, `StudioController` and `GameController` for public
   Bibliotheque reads of global platforms, studios and games.
+- `PlatformImageController` for platform image upload, accepted public image
+  files and administrator moderation routes.
 
 ### Services
 
@@ -99,7 +101,8 @@ Use domain folders under `backend/services/`:
 - `collection/`: connected-user SQL collection consultation and query
   contracts;
 - `library/`: public read-only consultation of global reference games,
-  platforms and studios;
+  platforms and studios, plus platform image upload/public read/moderation
+  business services;
 - `logging/`: backend logging setup and handlers;
 - `ods/`: user collection ODS import readers, archive access, XML fallback and
   import cache;
@@ -153,6 +156,14 @@ dedicated reader infrastructure, such as the ODS readers under
 temporary file, but parsing, copying to the user workspace, transaction
 orchestration, reinitialization cleanup and cleanup on failure belong to
 services and repositories.
+
+Platform image workflows must keep HTTP mapping in
+`backend/controllers/platform_image_controller.py`. File validation, storage
+path selection, public accepted-image lookup, moderation status/type decisions
+and administrator notifications belong in `backend/services/library/`.
+Persistence details for `t_platform_image` belong in
+`backend/services/database/platform_image_repository.py`. Controllers must not
+copy files, build SQL queries or decide whether an image is public.
 
 ### Authentication And Authorization
 

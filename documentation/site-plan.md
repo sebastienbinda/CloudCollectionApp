@@ -18,7 +18,8 @@
   public global game search.
 - `/bibliotheque/plateformes`: public paginated platform reference list.
 - `/bibliotheque/plateformes/<platform_id>`: public platform detail from the
-  global reference Library, including platform aliases and usage regions.
+  global reference Library, including platform aliases, usage regions and
+  accepted platform images.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global
@@ -28,6 +29,10 @@
 
 The Bibliotheque routes must stay public and read-only. They consult the global
 reference database and must not depend on connected-user collection status.
+The platform image file route
+`GET /api/library/platforms/<platform_id>/image/<image_id>` is public only for
+images accepted by an administrator; waiting images must not be displayed from
+public pages.
 
 ## Authenticated Routes
 
@@ -97,6 +102,16 @@ platform catalog only when route discovery confirms access to
 `POST /api/library/platform-catalog/sync`. The action must ask for explicit
 confirmation before inserting missing platforms and aliases from backend CSV
 resources, then display the insertion counters returned by the backend.
+
+For `ADMIN`, the Configuration page may expose a platform image moderation
+section only when backend route discovery confirms access to
+`GET /api/library/platforms/images`. The section lists images with server-side
+pagination, status and platform filters, thumbnail preview, proposer `user_id`
+and proposer email when available. Accept and refuse actions must call the
+protected status endpoint only when route discovery confirms access; refusal
+removes the image from the local list after backend success. The `MAIN` action
+must call the protected type endpoint only when route discovery confirms access
+and refresh the list after success.
 
 The import onboarding page must remain a frontend workflow only: validation,
 deduplication, database updates and filesystem storage decisions belong to the
