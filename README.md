@@ -182,6 +182,9 @@ Structure fonctionnelle attendue pour l'import :
   puis envoie le rapport final a `ADMIN_NOTIFICATION_EMAIL`.
 - depuis Configuration, un utilisateur `ADMIN` peut mettre a jour le catalogue
   plateformes et alias en ajoutant en base les entrees absentes des CSV backend.
+- depuis Configuration, un utilisateur `ADMIN` peut moderer les images de
+  plateformes proposees, les accepter, les refuser ou definir l'image
+  principale.
 
 ## Lancement Local
 

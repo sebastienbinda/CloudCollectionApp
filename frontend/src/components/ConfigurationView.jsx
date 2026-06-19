@@ -14,6 +14,7 @@
  */
 import ProgressBar from "./ProgressBar";
 import PageLayout from "./PageLayout";
+import PlatformImageModerationSection from "./PlatformImageModerationSection";
 
 /**
  * Page dediee aux actions protegees de l'application.
@@ -31,6 +32,7 @@ function ConfigurationView({
   canDownloadOds,
   canResetLibrary,
   canSyncPlatformCatalog,
+  canModeratePlatformImages,
   canReinitializeCollection,
   canSearchUsers,
   canUseCollectionViews,
@@ -42,6 +44,7 @@ function ConfigurationView({
   platformCatalogSyncError,
   platformCatalogSyncMessage,
   isSyncingPlatformCatalog,
+  platformImageModeration,
   reinitializationError,
   isReinitializingCollection,
   onOpenAbout,
@@ -211,6 +214,10 @@ function ConfigurationView({
           </article>
         ) : null}
       </section>
+
+      {isAdmin && canModeratePlatformImages ? (
+        <PlatformImageModerationSection moderation={platformImageModeration} />
+      ) : null}
     </PageLayout>
   );
 }

@@ -41,6 +41,31 @@ class LibraryAdminApiError extends Error {
  */
 class LibraryAdminApi {
   /**
+   * Liste les images de plateformes a moderer.
+   *
+   * @param {Object} criteria - Pagination, filtres et tri de la liste.
+   * @returns {Promise<Object>} Images et informations de page.
+   * @throws {LibraryAdminApiError} Si la liste est refusee ou impossible.
+   */
+  static async listPlatformImages(criteria = {}) {
+    const requestOptions = {
+      method: "GET",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const fallbackMessage = "Impossible de charger les images de plateformes.";
+    const response = await BackendAvailabilityGuard.fetch(
+      this.buildPlatformImagesUrl(criteria),
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
    * Lance un reset asynchrone de la Bibliotheque globale.
    *
    * @returns {Promise<Object>} Payload de job retourne par le backend.
@@ -83,6 +108,85 @@ class LibraryAdminApi {
       throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
     }
     return data;
+  }
+
+  /**
+   * Modifie le statut d'une image de plateforme.
+   *
+   * @param {string|number} platformId - Identifiant de plateforme.
+   * @param {string|number} imageId - Identifiant d'image.
+   * @param {string} status - Statut cible accepte par le backend.
+   * @returns {Promise<Object>} Image moderee retournee par le backend.
+   * @throws {LibraryAdminApiError} Si la mise a jour est refusee ou impossible.
+   */
+  static async updatePlatformImageStatus(platformId, imageId, status) {
+    return this.updatePlatformImage(
+      `/api/library/platforms/${encodeURIComponent(platformId)}/image/` +
+        `${encodeURIComponent(imageId)}/status/${encodeURIComponent(status)}`,
+      "Impossible de modifier le statut de l'image de plateforme."
+    );
+  }
+
+  /**
+   * Modifie le type d'une image de plateforme.
+   *
+   * @param {string|number} platformId - Identifiant de plateforme.
+   * @param {string|number} imageId - Identifiant d'image.
+   * @param {string} imageType - Type cible accepte par le backend.
+   * @returns {Promise<Object>} Image moderee retournee par le backend.
+   * @throws {LibraryAdminApiError} Si la mise a jour est refusee ou impossible.
+   */
+  static async updatePlatformImageType(platformId, imageId, imageType) {
+    return this.updatePlatformImage(
+      `/api/library/platforms/${encodeURIComponent(platformId)}/image/` +
+        `${encodeURIComponent(imageId)}/type/${encodeURIComponent(imageType)}`,
+      "Impossible de modifier le type de l'image de plateforme."
+    );
+  }
+
+  /**
+   * Appelle un endpoint de mise a jour d'image de plateforme.
+   *
+   * @param {string} url - URL backend a appeler.
+   * @param {string} fallbackMessage - Message de repli pour l'interface.
+   * @returns {Promise<Object>} Payload JSON de mise a jour.
+   * @throws {LibraryAdminApiError} Si la mise a jour est refusee ou impossible.
+   */
+  static async updatePlatformImage(url, fallbackMessage) {
+    const requestOptions = {
+      method: "PUT",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const response = await BackendAvailabilityGuard.fetch(url, requestOptions);
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
+   * Construit l'URL de liste admin des images de plateformes.
+   *
+   * @param {Object} criteria - Criteres de liste a encoder.
+   * @returns {string} URL backend avec chaine de requete.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  static buildPlatformImagesUrl(criteria = {}) {
+    const parameters = new URLSearchParams();
+    parameters.set("page", String(criteria.page || 0));
+    parameters.set("size", String(criteria.size || 10));
+    if (criteria.status) {
+      parameters.set("status", criteria.status);
+    }
+    if (criteria.platform) {
+      parameters.set("platform", criteria.platform);
+    }
+    if (criteria.sort) {
+      parameters.append("sort", criteria.sort);
+    }
+    return `/api/library/platforms/images?${parameters.toString()}`;
   }
 
   /**

@@ -28,6 +28,7 @@ import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPag
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
 import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
+import usePlatformImageModeration from "../library/usePlatformImageModeration";
 import usePlatformCatalogSyncAction from "../library/usePlatformCatalogSyncAction";
 import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
@@ -128,6 +129,15 @@ function useCloudCollectionViewModel() {
   });
   const libraryResetAction = useLibraryResetAction();
   const platformCatalogSyncAction = usePlatformCatalogSyncAction();
+  const platformImageModeration = usePlatformImageModeration({
+    enabled: (
+      navigation.currentView === "configuration" &&
+      session.authenticatedProfile === "ADMIN" &&
+      session.actionPermissions.canModeratePlatformImages
+    ),
+    canUpdateStatus: session.actionPermissions.canUpdatePlatformImageStatus,
+    canUpdateType: session.actionPermissions.canUpdatePlatformImageType,
+  });
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
     hasAccessToken: canUseCollectionViews,
@@ -190,6 +200,7 @@ function useCloudCollectionViewModel() {
       platformCatalogSyncError: platformCatalogSyncAction.platformCatalogSyncError,
       platformCatalogSyncMessage: platformCatalogSyncAction.platformCatalogSyncMessage,
       isSyncingPlatformCatalog: platformCatalogSyncAction.isSyncingPlatformCatalog,
+      platformImageModeration,
       reinitializationError: userCollectionReinitialization.reinitializationError,
       isReinitializingCollection: userCollectionReinitialization.isReinitializingCollection,
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,

@@ -216,6 +216,7 @@ class AppViewSwitch {
         canDownloadOds={props.actionPermissions.canDownloadOds}
         canResetLibrary={props.actionPermissions.canResetLibrary}
         canSyncPlatformCatalog={props.actionPermissions.canSyncPlatformCatalog}
+        canModeratePlatformImages={props.actionPermissions.canModeratePlatformImages}
         canReinitializeCollection={props.actionPermissions.canReinitializeCollection}
         canSearchUsers={props.actionPermissions.canSearchUsers}
         downloadError={props.downloadError}
@@ -226,6 +227,7 @@ class AppViewSwitch {
         platformCatalogSyncError={props.platformCatalogSyncError}
         platformCatalogSyncMessage={props.platformCatalogSyncMessage}
         isSyncingPlatformCatalog={props.isSyncingPlatformCatalog}
+        platformImageModeration={props.platformImageModeration}
         reinitializationError={props.reinitializationError}
         isReinitializingCollection={props.isReinitializingCollection}
         onAddGame={props.openAddGamePage}
