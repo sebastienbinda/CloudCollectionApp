@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 import mimetypes
 from pathlib import Path
 import re
+from math import ceil
+from typing import Any, Mapping
 import unicodedata
 
 from sqlalchemy import create_engine
@@ -25,7 +27,9 @@ from werkzeug.datastructures import FileStorage
 from services.database.database_configuration import DatabaseConfiguration
 from services.database.platform_image_repository import SqlAlchemyPlatformImageRepository
 from services.database.user_repository import SqlAlchemyUserRepository
+from services.library.library_query_contract import LibraryPageRequest
 
+from .platform_image_moderation_query import PlatformImageModerationQueryParser
 from .platform_image_admin_notifier import PlatformImageAdminNotifier
 from .platform_image_configuration import PlatformImageConfiguration
 
@@ -44,6 +48,10 @@ class PlatformImageNotFoundError(ValueError):
 
 class PlatformImageUserNotFoundError(ValueError):
     """Signale un utilisateur connecte absent de la base."""
+
+
+class PlatformImageModerationError(ValueError):
+    """Signale une action de moderation invalide ou impossible."""
 
 
 @dataclass(frozen=True)
@@ -69,6 +77,8 @@ class PlatformImageService:
         "image/webp",
         "image/gif",
     }
+    MODERATION_STATUSES = {"WAITING_VALIDATION", "ACCEPTED"}
+    MODERATION_TYPES = {"MAIN", "OTHER"}
 
     def __init__(
         self,
@@ -77,6 +87,7 @@ class PlatformImageService:
         image_repository: SqlAlchemyPlatformImageRepository | None = None,
         user_repository: SqlAlchemyUserRepository | None = None,
         notifier: PlatformImageAdminNotifier | None = None,
+        moderation_query_parser: PlatformImageModerationQueryParser | None = None,
         engine: Engine | None = None,
         engine_factory=create_engine,
     ):
@@ -88,6 +99,7 @@ class PlatformImageService:
             image_repository (SqlAlchemyPlatformImageRepository | None): Repository images.
             user_repository (SqlAlchemyUserRepository | None): Repository utilisateurs.
             notifier (PlatformImageAdminNotifier | None): Notifier administrateur.
+            moderation_query_parser (PlatformImageModerationQueryParser | None): Parseur admin.
             engine (Engine | None): Moteur SQL injectable.
             engine_factory (Callable): Fabrique de moteur SQLAlchemy.
 
@@ -110,6 +122,9 @@ class PlatformImageService:
         )
         self.user_repository = user_repository or SqlAlchemyUserRepository(database_configuration)
         self.notifier = notifier or PlatformImageAdminNotifier.from_environment()
+        self.moderation_query_parser = (
+            moderation_query_parser or PlatformImageModerationQueryParser()
+        )
 
     @classmethod
     def from_environment(cls) -> "PlatformImageService":
@@ -198,6 +213,110 @@ class PlatformImageService:
         mimetype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         return PlatformImageFile(path=str(path), mimetype=mimetype)
 
+    def list_moderation_images(
+        self,
+        query_parameters: Mapping[str, Any],
+    ) -> dict[str, object]:
+        """Liste les images de plateformes a moderer.
+
+        Args:
+            query_parameters (Mapping[str, Any]): Parametres HTTP de pagination et filtres.
+
+        Returns:
+            dict[str, object]: Payload pagine contenant `images` et `page`.
+        """
+
+        criteria = self.moderation_query_parser.parse(query_parameters)
+        with self.engine.connect() as connection:
+            total_elements = self.image_repository.count_moderation_images(
+                connection,
+                criteria.status,
+                criteria.platform,
+            )
+            rows = self.image_repository.list_moderation_images(
+                connection,
+                criteria.status,
+                criteria.platform,
+                criteria.page_request,
+                criteria.sort_rules,
+            )
+        return {
+            "images": [self._moderation_image_payload(row) for row in rows],
+            "page": self._page_payload(criteria.page_request, total_elements),
+        }
+
+    def update_image_status(
+        self,
+        platform_id: int,
+        image_id: int,
+        status: str,
+    ) -> dict[str, object]:
+        """Accepte ou refuse une image de plateforme.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+            status (str): Statut demande, `accepted` ou `refused`.
+
+        Returns:
+            dict[str, object]: Resultat de moderation.
+
+        Raises:
+            PlatformImageNotFoundError: Si l'image ou la plateforme est inconnue.
+            PlatformImageModerationError: Si le statut demande est invalide.
+        """
+
+        normalized_status = str(status or "").strip().lower()
+        if normalized_status == "accepted":
+            with self.engine.begin() as connection:
+                image = self.image_repository.update_image_status(
+                    connection,
+                    platform_id,
+                    image_id,
+                    "ACCEPTED",
+                )
+            if image is None:
+                raise PlatformImageNotFoundError("Image de plateforme introuvable.")
+            return {"image": self._image_payload(image)}
+        if normalized_status == "refused":
+            return self._refuse_image(platform_id, image_id)
+        raise PlatformImageModerationError("Statut de moderation invalide.")
+
+    def update_image_type(
+        self,
+        platform_id: int,
+        image_id: int,
+        image_type: str,
+    ) -> dict[str, object]:
+        """Modifie le type d'une image de plateforme.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+            image_type (str): Type demande, `MAIN` ou `OTHER`.
+
+        Returns:
+            dict[str, object]: Image modifiee.
+
+        Raises:
+            PlatformImageNotFoundError: Si l'image ou la plateforme est inconnue.
+            PlatformImageModerationError: Si le type demande est invalide.
+        """
+
+        normalized_type = str(image_type or "").strip().upper()
+        if normalized_type not in self.MODERATION_TYPES:
+            raise PlatformImageModerationError("Type d'image invalide.")
+        with self.engine.begin() as connection:
+            image = self.image_repository.set_image_type(
+                connection,
+                platform_id,
+                image_id,
+                normalized_type,
+            )
+        if image is None:
+            raise PlatformImageNotFoundError("Image de plateforme introuvable.")
+        return {"image": self._image_payload(image)}
+
     def _validate_uploaded_file(self, uploaded_file: FileStorage | None) -> str:
         if uploaded_file is None or not uploaded_file.filename:
             raise PlatformImageValidationError("Le champ multipart image est requis.")
@@ -257,6 +376,31 @@ class PlatformImageService:
         slug = re.sub(r"-+", "-", slug)
         return slug or f"platform-{platform_id}"
 
+    def _refuse_image(self, platform_id: int, image_id: int) -> dict[str, object]:
+        with self.engine.begin() as connection:
+            image = self.image_repository.find_image(connection, platform_id, image_id)
+            if image is None:
+                raise PlatformImageNotFoundError("Image de plateforme introuvable.")
+            self.image_repository.delete_image(connection, platform_id, image_id)
+        Path(str(image["path"])).unlink(missing_ok=True)
+        return {
+            "image": self._image_payload(image),
+            "deleted": True,
+        }
+
+    def _page_payload(
+        self,
+        page_request: LibraryPageRequest,
+        total_elements: int,
+    ) -> dict[str, int]:
+        page_size = page_request.size
+        return {
+            "totalElements": total_elements,
+            "page": page_request.page,
+            "size": page_size,
+            "totalPages": ceil(total_elements / page_size) if total_elements else 0,
+        }
+
     def _image_payload(self, image: dict[str, object]) -> dict[str, object]:
         return {
             "id": int(image["id"]),
@@ -265,3 +409,22 @@ class PlatformImageService:
             "status": str(image["status"]),
             "user_id": int(image["user_id"]),
         }
+
+    def _moderation_image_payload(self, image: dict[str, object]) -> dict[str, object]:
+        payload = self._image_payload(image)
+        payload.update(
+            {
+                "platform_name": str(image.get("platform_name") or ""),
+                "user_email": str(image.get("user_email") or ""),
+                "creation_date": self._date_value(image.get("creation_date")),
+                "image_url": (
+                    f"/api/library/platforms/{int(image['platform'])}/image/{int(image['id'])}"
+                ),
+            }
+        )
+        return payload
+
+    def _date_value(self, value: Any) -> str:
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return "" if value is None else str(value)

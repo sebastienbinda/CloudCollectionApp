@@ -23,8 +23,10 @@ from .library_reset_job_coordinator import (
     LibraryResetJobCoordinator,
 )
 from .platform_image_configuration import PlatformImageConfiguration
+from .platform_image_moderation_query import PlatformImageModerationCriteria
 from .platform_image_service import (
     PlatformImageFile,
+    PlatformImageModerationError,
     PlatformImageNotFoundError,
     PlatformImagePlatformNotFoundError,
     PlatformImageService,
@@ -41,6 +43,8 @@ __all__ = [
     "LibraryResetJobCoordinator",
     "LibrarySortRule",
     "PlatformImageFile",
+    "PlatformImageModerationCriteria",
+    "PlatformImageModerationError",
     "PlatformImageConfiguration",
     "PlatformImageNotFoundError",
     "PlatformImagePlatformNotFoundError",

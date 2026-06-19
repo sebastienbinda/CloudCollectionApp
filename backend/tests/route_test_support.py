@@ -37,11 +37,13 @@ try:
         FakeLibraryService,
         FakeUserCollectionQueryService,
     )
+    from tests.fake_platform_image_route_service import FakePlatformImageRouteService
 except ModuleNotFoundError:
     from route_test_fakes import (
         FakeLibraryService,
         FakeUserCollectionQueryService,
     )
+    from fake_platform_image_route_service import FakePlatformImageRouteService
 
 
 class FakeSqlAlchemyUserRepository:
@@ -511,56 +513,6 @@ class FakeCollectionFileReaderFactory:
     """Factory de lecteurs de collection factice."""
 
 
-class FakePlatformImageRouteService:
-    """Service factice des images de plateformes pour les tests HTTP."""
-
-    next_upload_error = None
-    next_public_error = None
-    last_upload_call = None
-    last_public_call = None
-
-    def upload_image(self, platform_id, uploaded_file, user_email):
-        """Retourne une image creee ou leve l'erreur configuree.
-
-        Args:
-            platform_id (int): Identifiant de plateforme.
-            uploaded_file (object): Fichier recu.
-            user_email (str): Email issu du token.
-
-        Returns:
-            dict[str, object]: Image factice.
-        """
-
-        self.__class__.last_upload_call = (platform_id, uploaded_file, user_email)
-        if self.next_upload_error:
-            raise self.next_upload_error
-        return {
-            "id": 12,
-            "platform_id": platform_id,
-            "type": "OTHER",
-            "status": "WAITING_VALIDATION",
-            "user_id": 7,
-        }
-
-    def get_accepted_image_file(self, platform_id, image_id):
-        """Retourne une image publique ou leve l'erreur configuree.
-
-        Args:
-            platform_id (int): Identifiant de plateforme.
-            image_id (int): Identifiant d'image.
-
-        Returns:
-            PlatformImageFile: Fichier public factice.
-        """
-
-        from services.library import PlatformImageFile
-
-        self.__class__.last_public_call = (platform_id, image_id)
-        if self.next_public_error:
-            raise self.next_public_error
-        return PlatformImageFile(path=__file__, mimetype="image/png")
-
-
 class BaseAppRoutesTest(unittest.TestCase):
     """Base commune des tests de routes Flask."""
 
@@ -623,8 +575,12 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeLibraryService.last_games_criteria = None
         FakePlatformImageRouteService.next_upload_error = None
         FakePlatformImageRouteService.next_public_error = None
+        FakePlatformImageRouteService.next_moderation_error = None
         FakePlatformImageRouteService.last_upload_call = None
         FakePlatformImageRouteService.last_public_call = None
+        FakePlatformImageRouteService.last_list_query = None
+        FakePlatformImageRouteService.last_type_call = None
+        FakePlatformImageRouteService.last_status_call = None
         FakeUserCollectionQueryService.last_platforms_criteria = None
         FakeUserCollectionQueryService.last_games_criteria = None
         FakeUserCollectionQueryService.collection_file_path = __file__

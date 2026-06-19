@@ -14,6 +14,7 @@
 from io import BytesIO
 
 from services.library import (
+    PlatformImageModerationError,
     PlatformImageNotFoundError,
     PlatformImagePlatformNotFoundError,
     PlatformImageValidationError,
@@ -135,6 +136,183 @@ class PlatformImageRoutesTest(BaseAppRoutesTest):
         response = self.client.get("/api/library/platforms/1/image/12")
 
         self.assertEqual(404, response.status_code)
+
+    def test_admin_image_list_rejects_missing_token(self):
+        """Verifie le refus de liste admin sans token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut.
+        """
+
+        response = self.client.get("/api/library/platforms/images")
+
+        self.assertEqual(403, response.status_code)
+
+    def test_admin_image_list_rejects_user_profile(self):
+        """Verifie le refus de liste admin avec profil USER.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut.
+        """
+
+        response = self.client.get(
+            "/api/library/platforms/images",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(403, response.status_code)
+
+    def test_admin_image_list_accepts_admin_and_forwards_filters(self):
+        """Verifie la liste admin paginee avec filtres.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload.
+        """
+
+        response = self.client.get(
+            "/api/library/platforms/images?page=2&size=25&status=WAITING_VALIDATION&platform=Switch",
+            headers=self.get_admin_auth_headers(),
+        )
+        payload = response.get_json()
+        query = FakePlatformImageRouteService.last_list_query
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(7, payload["images"][0]["user_id"])
+        self.assertEqual("/api/library/platforms/1/image/12", payload["images"][0]["image_url"])
+        self.assertEqual("2", query.get("page"))
+        self.assertEqual("WAITING_VALIDATION", query.get("status"))
+        self.assertEqual("Switch", query.get("platform"))
+
+    def test_admin_image_status_accepts_image(self):
+        """Verifie l'acceptation d'une image par un admin.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'appel service.
+        """
+
+        response = self.client.put(
+            "/api/library/platforms/1/image/12/status/accepted",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual((1, 12, "accepted"), FakePlatformImageRouteService.last_status_call)
+
+    def test_admin_image_status_refuses_image(self):
+        """Verifie le refus d'une image par un admin.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload.
+        """
+
+        response = self.client.put(
+            "/api/library/platforms/1/image/12/status/refused",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.get_json()["deleted"])
+
+    def test_admin_image_type_sets_main(self):
+        """Verifie le typage MAIN d'une image par un admin.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'appel service.
+        """
+
+        response = self.client.put(
+            "/api/library/platforms/1/image/12/type/MAIN",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual((1, 12, "MAIN"), FakePlatformImageRouteService.last_type_call)
+
+    def test_admin_image_moderation_returns_404_for_unknown_image(self):
+        """Verifie le statut 404 pour une image inconnue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut.
+        """
+
+        FakePlatformImageRouteService.next_moderation_error = PlatformImageNotFoundError()
+
+        response = self.client.put(
+            "/api/library/platforms/1/image/99/status/accepted",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_admin_image_moderation_returns_404_for_invalid_value(self):
+        """Verifie le statut 404 pour une valeur de moderation invalide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut.
+        """
+
+        FakePlatformImageRouteService.next_moderation_error = PlatformImageModerationError()
+
+        response = self.client.put(
+            "/api/library/platforms/1/image/12/type/BAD",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_routes_catalog_lists_admin_image_constraints(self):
+        """Verifie les metadonnees d'authentification des routes admin.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le catalogue.
+        """
+
+        response = self.client.get("/api/routes", headers=self.get_admin_auth_headers())
+        routes_by_key = {
+            (route["path"], tuple(route["methods"])): route
+            for route in response.get_json()["routes"]
+        }
+
+        self.assertTrue(routes_by_key[("/api/library/platforms/images", ("GET",))]["requires_auth"])
+        self.assertEqual(
+            ["ADMIN"],
+            routes_by_key[("/api/library/platforms/images", ("GET",))]["required_profiles"],
+        )
+        self.assertTrue(
+            routes_by_key[
+                (
+                    "/api/library/platforms/<int:platform_id>/image/<int:image_id>/type/<image_type>",
+                    ("PUT",),
+                )
+            ]["requires_auth"]
+        )
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ from flask import Flask, jsonify, request, send_file
 
 from services import AuthGuard, UserProfile
 from services.library.platform_image_service import (
+    PlatformImageModerationError,
     PlatformImageNotFoundError,
     PlatformImagePlatformNotFoundError,
     PlatformImageService,
@@ -57,6 +58,14 @@ class PlatformImageController:
         """
 
         flask_app.add_url_rule(
+            "/api/library/platforms/images",
+            endpoint="list_library_platform_images",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self._as_view(self.list_platform_images)
+            ),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
             "/api/library/platforms/<int:platform_id>/image",
             endpoint="upload_library_platform_image",
             view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
@@ -69,6 +78,22 @@ class PlatformImageController:
             endpoint="get_library_platform_image",
             view_func=self._as_view(self.get_platform_image),
             methods=["GET"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/platforms/<int:platform_id>/image/<int:image_id>/type/<image_type>",
+            endpoint="update_library_platform_image_type",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self._as_view(self.update_platform_image_type)
+            ),
+            methods=["PUT"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/platforms/<int:platform_id>/image/<int:image_id>/status/<status>",
+            endpoint="update_library_platform_image_status",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self._as_view(self.update_platform_image_status)
+            ),
+            methods=["PUT"],
         )
 
     def get_public_endpoint_names(self) -> set[str]:
@@ -108,6 +133,18 @@ class PlatformImageController:
         except PlatformImageValidationError as exc:
             return jsonify({"error": str(exc)}), 422
 
+    def list_platform_images(self):
+        """Liste les images de plateformes a moderer.
+
+        Args:
+            Aucun.
+
+        Returns:
+            flask.Response: Liste paginee JSON des images.
+        """
+
+        return jsonify(self.platform_image_service_factory().list_moderation_images(request.args))
+
     def get_platform_image(self, platform_id: int, image_id: int):
         """Retourne le contenu d'une image acceptee.
 
@@ -127,6 +164,50 @@ class PlatformImageController:
             return send_file(image_file.path, mimetype=image_file.mimetype, max_age=0)
         except PlatformImageNotFoundError:
             return jsonify({"error": "Library platform image not found."}), 404
+
+    def update_platform_image_type(self, platform_id: int, image_id: int, image_type: str):
+        """Modifie le type d'une image de plateforme.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+            image_type (str): Type cible.
+
+        Returns:
+            tuple[flask.Response, int]: Image modifiee ou erreur JSON.
+        """
+
+        try:
+            payload = self.platform_image_service_factory().update_image_type(
+                platform_id,
+                image_id,
+                image_type,
+            )
+            return jsonify(payload), 200
+        except (PlatformImageNotFoundError, PlatformImageModerationError) as exc:
+            return jsonify({"error": str(exc)}), 404
+
+    def update_platform_image_status(self, platform_id: int, image_id: int, status: str):
+        """Modifie le statut d'une image de plateforme.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+            status (str): Statut cible.
+
+        Returns:
+            tuple[flask.Response, int]: Image modifiee ou erreur JSON.
+        """
+
+        try:
+            payload = self.platform_image_service_factory().update_image_status(
+                platform_id,
+                image_id,
+                status,
+            )
+            return jsonify(payload), 200
+        except (PlatformImageNotFoundError, PlatformImageModerationError) as exc:
+            return jsonify({"error": str(exc)}), 404
 
     def _as_view(self, route_handler):
         """Transforme une methode liee en fonction Flask annotable.
