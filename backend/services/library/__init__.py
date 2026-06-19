@@ -23,6 +23,14 @@ from .library_reset_job_coordinator import (
     LibraryResetJobCoordinator,
 )
 from .platform_image_configuration import PlatformImageConfiguration
+from .platform_image_service import (
+    PlatformImageFile,
+    PlatformImageNotFoundError,
+    PlatformImagePlatformNotFoundError,
+    PlatformImageService,
+    PlatformImageUserNotFoundError,
+    PlatformImageValidationError,
+)
 
 __all__ = [
     "LibraryPageRequest",
@@ -32,5 +40,11 @@ __all__ = [
     "LibraryResetJob",
     "LibraryResetJobCoordinator",
     "LibrarySortRule",
+    "PlatformImageFile",
     "PlatformImageConfiguration",
+    "PlatformImageNotFoundError",
+    "PlatformImagePlatformNotFoundError",
+    "PlatformImageService",
+    "PlatformImageUserNotFoundError",
+    "PlatformImageValidationError",
 ]

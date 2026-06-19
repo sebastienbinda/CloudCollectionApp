@@ -34,6 +34,7 @@ from .library.library_reset_job_coordinator import (
     LibraryResetJobCoordinator,
 )
 from .library.platform_image_configuration import PlatformImageConfiguration
+from .library.platform_image_service import PlatformImageService
 from .library.library_service import (
     LibraryService,
 )
@@ -71,6 +72,7 @@ __all__ = [
     "LibraryServiceProvider",
     "LibrarySortRule",
     "PlatformImageConfiguration",
+    "PlatformImageService",
     "PasswordPolicyError",
     "RouteDiscoveryService",
     "SqlAlchemyUserRepository",

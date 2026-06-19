@@ -18,6 +18,7 @@ from sqlalchemy.engine import Connection, Engine
 
 from services.database.database_configuration import DatabaseConfiguration
 from services.database.game_repository import SqlAlchemyGameRepository
+from services.database.platform_image_repository import SqlAlchemyPlatformImageRepository
 from services.database.platform_repository import SqlAlchemyPlatformRepository
 from services.database.studio_repository import SqlAlchemyStudioRepository
 from services.users import UserCollectionNameNormalizer
@@ -93,6 +94,28 @@ class PublicLibraryPlatformRepository(Protocol):
 
         Returns:
             dict[str, Any] | None: Plateforme lue ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+
+class PublicLibraryPlatformImageRepository(Protocol):
+    """Decrit les lectures publiques attendues pour les images de plateformes."""
+
+    def list_accepted_images(
+        self,
+        connection: Connection,
+        platform_id: int,
+    ) -> list[dict[str, Any]]:
+        """Liste les images acceptees d'une plateforme.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            platform_id (int): Identifiant de plateforme.
+
+        Returns:
+            list[dict[str, Any]]: Images acceptees.
 
         Raises:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
@@ -230,6 +253,7 @@ class LibraryService:
         self,
         configuration: DatabaseConfiguration,
         platform_repository: PublicLibraryPlatformRepository | None = None,
+        platform_image_repository: PublicLibraryPlatformImageRepository | None = None,
         studio_repository: PublicLibraryStudioRepository | None = None,
         game_repository: PublicLibraryGameRepository | None = None,
         engine: Engine | None = None,
@@ -242,6 +266,7 @@ class LibraryService:
         Args:
             configuration (DatabaseConfiguration): Configuration de connexion SQL.
             platform_repository (PublicLibraryPlatformRepository | None): Repository plateformes.
+            platform_image_repository (PublicLibraryPlatformImageRepository | None): Repository images.
             studio_repository (PublicLibraryStudioRepository | None): Repository studios.
             game_repository (PublicLibraryGameRepository | None): Repository jeux.
             engine (Engine | None): Moteur SQLAlchemy injectable en test.
@@ -265,6 +290,10 @@ class LibraryService:
         self.platform_repository = platform_repository or SqlAlchemyPlatformRepository(
             configuration.schema_name,
             resolved_normalizer,
+        )
+        self.platform_image_repository = (
+            platform_image_repository
+            or SqlAlchemyPlatformImageRepository(configuration.schema_name)
         )
         self.studio_repository = studio_repository or SqlAlchemyStudioRepository(
             configuration.schema_name,
@@ -400,4 +429,10 @@ class LibraryService:
 
         with self.engine.connect() as connection:
             row = self.platform_repository.find_public_library_platform(connection, platform_id)
+            if row is not None:
+                row = dict(row)
+                row["images"] = self.platform_image_repository.list_accepted_images(
+                    connection,
+                    platform_id,
+                )
         return None if row is None else self.payload_serializer.platform_payload(row)

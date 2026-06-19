@@ -16,6 +16,7 @@ from .collection_controller import CollectionController
 from .game_controller import GameController
 from .library_controller import LibraryController
 from .platform_controller import PlatformController
+from .platform_image_controller import PlatformImageController
 from .route_controller import RouteController
 from .studio_controller import StudioController
 from .user_collection_import_controller import UserCollectionImportController
@@ -27,6 +28,7 @@ __all__ = [
     "GameController",
     "LibraryController",
     "PlatformController",
+    "PlatformImageController",
     "RouteController",
     "StudioController",
     "UserController",

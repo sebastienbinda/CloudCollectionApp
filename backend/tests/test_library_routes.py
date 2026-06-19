@@ -156,6 +156,7 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual(200, response.status_code)
         self.assertEqual("Switch", platform["name"])
         self.assertEqual("Japon", platform["aliases"][0]["usage_region"])
+        self.assertEqual([{"id": 41, "type": "MAIN"}], platform["images"])
         self.assertNotIn("collection_file_path", platform)
 
     def test_library_platform_detail_route_returns_404_for_unknown_platform(self):

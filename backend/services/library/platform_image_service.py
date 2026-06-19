@@ -1,0 +1,267 @@
+#   ____ _                 _  ____      _ _           _   _             ___
+#  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+# | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+#                                                                            |_|   |_|
+# Projet : CloudCollectionApp
+# Date de creation : 2026-06-19
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
+#
+# Description : service metier des images de plateformes.
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import mimetypes
+from pathlib import Path
+import re
+import unicodedata
+
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from werkzeug.datastructures import FileStorage
+
+from services.database.database_configuration import DatabaseConfiguration
+from services.database.platform_image_repository import SqlAlchemyPlatformImageRepository
+from services.database.user_repository import SqlAlchemyUserRepository
+
+from .platform_image_admin_notifier import PlatformImageAdminNotifier
+from .platform_image_configuration import PlatformImageConfiguration
+
+
+class PlatformImageValidationError(ValueError):
+    """Signale une image invalide pour l'upload."""
+
+
+class PlatformImagePlatformNotFoundError(ValueError):
+    """Signale une plateforme inconnue."""
+
+
+class PlatformImageNotFoundError(ValueError):
+    """Signale une image publique absente ou inaccessible."""
+
+
+class PlatformImageUserNotFoundError(ValueError):
+    """Signale un utilisateur connecte absent de la base."""
+
+
+@dataclass(frozen=True)
+class PlatformImageFile:
+    """Decrit un fichier image public pret a etre servi.
+
+    Attributes:
+        path (str): Chemin absolu du fichier image.
+        mimetype (str): Type MIME a retourner.
+    """
+
+    path: str
+    mimetype: str
+
+
+class PlatformImageService:
+    """Orchestre l'upload et la lecture publique des images de plateformes."""
+
+    ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
+    ALLOWED_MIME_TYPES = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+    }
+
+    def __init__(
+        self,
+        database_configuration: DatabaseConfiguration,
+        image_configuration: PlatformImageConfiguration,
+        image_repository: SqlAlchemyPlatformImageRepository | None = None,
+        user_repository: SqlAlchemyUserRepository | None = None,
+        notifier: PlatformImageAdminNotifier | None = None,
+        engine: Engine | None = None,
+        engine_factory=create_engine,
+    ):
+        """Initialise le service d'images de plateformes.
+
+        Args:
+            database_configuration (DatabaseConfiguration): Configuration SQL.
+            image_configuration (PlatformImageConfiguration): Configuration image.
+            image_repository (SqlAlchemyPlatformImageRepository | None): Repository images.
+            user_repository (SqlAlchemyUserRepository | None): Repository utilisateurs.
+            notifier (PlatformImageAdminNotifier | None): Notifier administrateur.
+            engine (Engine | None): Moteur SQL injectable.
+            engine_factory (Callable): Fabrique de moteur SQLAlchemy.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+
+        Raises:
+            ValueError: Si la configuration SQL ou image est invalide.
+        """
+
+        database_configuration.validate()
+        image_configuration.validate()
+        if engine is None and not database_configuration.is_database_enabled():
+            raise ValueError("DATABASE_URL est requis pour gerer les images de plateformes.")
+        self.database_configuration = database_configuration
+        self.image_configuration = image_configuration
+        self.engine = engine or engine_factory(database_configuration.database_url)
+        self.image_repository = image_repository or SqlAlchemyPlatformImageRepository(
+            database_configuration.schema_name
+        )
+        self.user_repository = user_repository or SqlAlchemyUserRepository(database_configuration)
+        self.notifier = notifier or PlatformImageAdminNotifier.from_environment()
+
+    @classmethod
+    def from_environment(cls) -> "PlatformImageService":
+        """Construit le service depuis l'environnement.
+
+        Args:
+            Aucun.
+
+        Returns:
+            PlatformImageService: Service configure.
+        """
+
+        return cls(
+            DatabaseConfiguration.from_environment(),
+            PlatformImageConfiguration.from_environment(),
+        )
+
+    def upload_image(
+        self,
+        platform_id: int,
+        uploaded_file: FileStorage | None,
+        user_email: str,
+    ) -> dict[str, object]:
+        """Valide, copie et enregistre une image proposee.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            uploaded_file (FileStorage | None): Fichier multipart recu.
+            user_email (str): Sujet du token utilisateur valide.
+
+        Returns:
+            dict[str, object]: Image creee serialisee.
+
+        Raises:
+            PlatformImageValidationError: Si le fichier est absent ou invalide.
+            PlatformImagePlatformNotFoundError: Si la plateforme est inconnue.
+            PlatformImageUserNotFoundError: Si l'utilisateur du token est inconnu.
+            OSError: Si la copie disque echoue.
+        """
+
+        original_filename = self._validate_uploaded_file(uploaded_file)
+        normalized_user_email = str(user_email or "").strip().lower()
+        user_id = self.user_repository.find_user_id_by_email(normalized_user_email)
+        if user_id is None:
+            raise PlatformImageUserNotFoundError("Utilisateur connecte introuvable.")
+        with self.engine.begin() as connection:
+            platform_name = self.image_repository.find_platform_name(connection, platform_id)
+            if platform_name is None:
+                raise PlatformImagePlatformNotFoundError("Plateforme inconnue.")
+            target_path = self._copy_file(platform_id, platform_name, original_filename, uploaded_file)
+            try:
+                image = self.image_repository.create_waiting_image(
+                    connection,
+                    platform_id,
+                    str(target_path),
+                    user_id,
+                    datetime.now(timezone.utc).replace(tzinfo=None),
+                )
+            except Exception:
+                target_path.unlink(missing_ok=True)
+                raise
+        self.notifier.notify_image_created(platform_name, int(image["id"]), normalized_user_email)
+        return self._image_payload(image)
+
+    def get_accepted_image_file(self, platform_id: int, image_id: int) -> PlatformImageFile:
+        """Retourne le fichier d'une image acceptee.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+
+        Returns:
+            PlatformImageFile: Fichier public a servir.
+
+        Raises:
+            PlatformImageNotFoundError: Si l'image est absente, refusee ou illisible.
+        """
+
+        with self.engine.connect() as connection:
+            image = self.image_repository.find_accepted_image(connection, platform_id, image_id)
+        if image is None:
+            raise PlatformImageNotFoundError("Image acceptee introuvable.")
+        path = Path(str(image["path"]))
+        if not path.is_file():
+            raise PlatformImageNotFoundError("Image acceptee inaccessible.")
+        mimetype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        return PlatformImageFile(path=str(path), mimetype=mimetype)
+
+    def _validate_uploaded_file(self, uploaded_file: FileStorage | None) -> str:
+        if uploaded_file is None or not uploaded_file.filename:
+            raise PlatformImageValidationError("Le champ multipart image est requis.")
+        original_filename = Path(uploaded_file.filename).name
+        extension = original_filename.rsplit(".", 1)[-1].lower() if "." in original_filename else ""
+        if extension not in self.ALLOWED_EXTENSIONS:
+            raise PlatformImageValidationError("Extension d'image invalide.")
+        if uploaded_file.mimetype not in self.ALLOWED_MIME_TYPES:
+            raise PlatformImageValidationError("MIME d'image invalide.")
+        return original_filename
+
+    def _copy_file(
+        self,
+        platform_id: int,
+        platform_name: str,
+        original_filename: str,
+        uploaded_file: FileStorage,
+    ) -> Path:
+        storage_root = self.image_configuration.ensure_image_directory()
+        platform_directory = storage_root / "platforms" / self._slugify(platform_name, platform_id)
+        platform_directory.mkdir(parents=True, exist_ok=True)
+        target_path = self._resolve_available_path(platform_directory, original_filename)
+        bytes_written = 0
+        with target_path.open("wb") as target_file:
+            while True:
+                chunk = uploaded_file.stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                bytes_written += len(chunk)
+                if bytes_written > self.image_configuration.max_upload_bytes:
+                    target_file.close()
+                    target_path.unlink(missing_ok=True)
+                    raise PlatformImageValidationError("Image trop volumineuse.")
+                target_file.write(chunk)
+        if bytes_written == 0:
+            target_path.unlink(missing_ok=True)
+            raise PlatformImageValidationError("Image vide.")
+        return target_path
+
+    def _resolve_available_path(self, directory: Path, original_filename: str) -> Path:
+        candidate = directory / original_filename
+        if not candidate.exists():
+            return candidate
+        stem = candidate.stem
+        suffix = candidate.suffix
+        counter = 1
+        while True:
+            numbered_candidate = directory / f"{stem}-{counter}{suffix}"
+            if not numbered_candidate.exists():
+                return numbered_candidate
+            counter += 1
+
+    def _slugify(self, platform_name: str, platform_id: int) -> str:
+        normalized = unicodedata.normalize("NFKD", platform_name)
+        ascii_value = normalized.encode("ascii", "ignore").decode("ascii").lower()
+        slug = re.sub(r"[^a-z0-9]+", "-", ascii_value).strip("-")
+        slug = re.sub(r"-+", "-", slug)
+        return slug or f"platform-{platform_id}"
+
+    def _image_payload(self, image: dict[str, object]) -> dict[str, object]:
+        return {
+            "id": int(image["id"]),
+            "platform_id": int(image["platform"]),
+            "type": str(image["type"]),
+            "status": str(image["status"]),
+            "user_id": int(image["user_id"]),
+        }

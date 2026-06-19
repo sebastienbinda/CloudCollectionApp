@@ -68,7 +68,27 @@ class LibraryPayloadSerializer:
                 self.platform_alias_payload(alias)
                 for alias in row.get("aliases") or []
             ]
+        if "images" in row:
+            payload["images"] = [
+                self.platform_image_payload(image)
+                for image in row.get("images") or []
+            ]
         return payload
+
+    def platform_image_payload(self, row: dict[str, Any]) -> dict[str, Any]:
+        """Normalise une image de plateforme pour l'API Bibliotheque.
+
+        Args:
+            row (dict[str, Any]): Ligne d'image retournee par le repository.
+
+        Returns:
+            dict[str, Any]: Image serialisable.
+        """
+
+        return {
+            "id": row["id"],
+            "type": self.text_value(row.get("type")),
+        }
 
     def platform_alias_payload(self, row: dict[str, Any]) -> dict[str, str]:
         """Normalise un alias de plateforme pour l'API Bibliotheque.

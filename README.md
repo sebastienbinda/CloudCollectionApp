@@ -140,7 +140,8 @@ Variables principales :
   l'import est accepte sans warning de verification. Valeur par defaut : `75`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur, des rapports de fin d'import utilisateur
-  et des rapports de reset Bibliotheque.
+  des rapports de reset Bibliotheque et des propositions d'images de
+  plateformes.
 - `ADMIN_ACCOUNT_VALIDATION_ENABLED` : active la validation administrateur apres
   validation email utilisateur. Valeur par defaut : `true`.
 - `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
