@@ -74,6 +74,71 @@
   overflow-wrap: anywhere;
 }
 
+.platformImagesSection {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.platformFeaturedImage {
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.platformFeaturedImage img,
+.platformImageCarousel img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.platformImageCarousel {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.platformImageCarousel img {
+  aspect-ratio: 4 / 3;
+  background: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.platformImageUploadForm {
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+}
+
+.platformImageUploadForm button {
+  justify-self: start;
+}
+
+.platformImageFileInput {
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+.platformImageUploadForm .error,
+.platformImageUploadForm .success {
+  margin: 0;
+}
+
 .searchResultCard[role="button"] {
   cursor: pointer;
 }
@@ -171,6 +236,18 @@
 
   .gameDetailGrid div {
     padding: 0.58rem 0.65rem;
+  }
+
+  .platformImagesSection {
+    gap: 0.5rem;
+  }
+
+  .platformImageCarousel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platformImageUploadForm {
+    padding: 0.65rem;
   }
 
   .gameDetailGrid dt {
