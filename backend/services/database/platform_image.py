@@ -35,6 +35,7 @@ class PlatformImage(DatabaseModelBase):
         id (int): Identifiant technique genere par la sequence `s_platform_image`.
         platform (int): Identifiant de la plateforme associee.
         path (str): Chemin absolu du fichier image stocke sur disque.
+        file_size_bytes (int): Taille du fichier image stocke en octets.
         type (str): Type fonctionnel de l'image, `MAIN` ou `OTHER`.
         status (str): Statut de validation, `WAITING_VALIDATION` ou `ACCEPTED`.
         user_id (int): Identifiant de l'utilisateur ayant propose l'image.
@@ -44,6 +45,7 @@ class PlatformImage(DatabaseModelBase):
     __tablename__ = "t_platform_image"
     __table_args__ = (
         CheckConstraint("type IN ('MAIN', 'OTHER')", name="ck_t_platform_image_type"),
+        CheckConstraint("file_size_bytes >= 0", name="ck_t_platform_image_file_size_bytes"),
         CheckConstraint(
             "status IN ('WAITING_VALIDATION', 'ACCEPTED')",
             name="ck_t_platform_image_status",
@@ -70,6 +72,7 @@ class PlatformImage(DatabaseModelBase):
         nullable=False,
     )
     path: Mapped[str] = mapped_column(String(1024), nullable=False)
+    file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     type: Mapped[str] = mapped_column(String(16), nullable=False, default="OTHER")
     status: Mapped[str] = mapped_column(
         String(32),

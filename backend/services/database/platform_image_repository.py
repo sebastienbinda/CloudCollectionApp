@@ -73,6 +73,7 @@ class SqlAlchemyPlatformImageRepository:
         connection: Connection,
         platform_id: int,
         path: str,
+        file_size_bytes: int,
         user_id: int,
         creation_date: datetime,
     ) -> dict[str, object]:
@@ -82,6 +83,7 @@ class SqlAlchemyPlatformImageRepository:
             connection (Connection): Connexion SQL transactionnelle.
             platform_id (int): Identifiant de plateforme.
             path (str): Chemin absolu du fichier stocke.
+            file_size_bytes (int): Taille du fichier stocke en octets.
             user_id (int): Identifiant utilisateur issu du token.
             creation_date (datetime): Date de creation de l'image.
 
@@ -92,14 +94,16 @@ class SqlAlchemyPlatformImageRepository:
         row = connection.execute(
             text(
                 f'INSERT INTO "{self.schema_name}".t_platform_image '
-                "(platform, path, type, status, user_id, creation_date) "
-                "VALUES (:platform, :path, 'OTHER', 'WAITING_VALIDATION', "
+                "(platform, path, file_size_bytes, type, status, user_id, creation_date) "
+                "VALUES (:platform, :path, :file_size_bytes, 'OTHER', 'WAITING_VALIDATION', "
                 ":user_id, :creation_date) "
-                "RETURNING id, platform, path, type, status, user_id, creation_date"
+                "RETURNING id, platform, path, file_size_bytes, type, status, "
+                "user_id, creation_date"
             ),
             {
                 "platform": platform_id,
                 "path": path,
+                "file_size_bytes": file_size_bytes,
                 "user_id": user_id,
                 "creation_date": creation_date,
             },
@@ -123,7 +127,7 @@ class SqlAlchemyPlatformImageRepository:
 
         rows = connection.execute(
             text(
-                "SELECT id, platform, path, type, status, user_id, creation_date "
+                "SELECT id, platform, path, file_size_bytes, type, status, user_id, creation_date "
                 f'FROM "{self.schema_name}".t_platform_image '
                 "WHERE platform = :platform_id AND status = 'ACCEPTED' "
                 "ORDER BY CASE WHEN type = 'MAIN' THEN 0 ELSE 1 END, creation_date, id"
@@ -131,6 +135,63 @@ class SqlAlchemyPlatformImageRepository:
             {"platform_id": platform_id},
         ).mappings().all()
         return [dict(row) for row in rows]
+
+    def get_storage_usage(
+        self,
+        connection: Connection,
+        user_id: int,
+    ) -> dict[str, int]:
+        """Retourne les compteurs de stockage des images de plateformes.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            dict[str, int]: Nombre et tailles utiles aux quotas.
+        """
+
+        row = connection.execute(
+            text(
+                "SELECT "
+                "COUNT(*) FILTER ("
+                "WHERE user_id = :user_id AND status = 'WAITING_VALIDATION'"
+                ") AS pending_image_count, "
+                "COALESCE(SUM(file_size_bytes) FILTER ("
+                "WHERE user_id = :user_id AND status = 'WAITING_VALIDATION'"
+                "), 0) AS pending_image_bytes, "
+                "COALESCE(SUM(file_size_bytes), 0) AS total_image_bytes "
+                f'FROM "{self.schema_name}".t_platform_image '
+            ),
+            {"user_id": user_id},
+        ).mappings().one()
+        return {
+            "pending_image_count": int(row["pending_image_count"] or 0),
+            "pending_image_bytes": int(row["pending_image_bytes"] or 0),
+            "total_image_bytes": int(row["total_image_bytes"] or 0),
+        }
+
+    def get_global_storage_summary(self, connection: Connection) -> dict[str, int]:
+        """Retourne le nombre et la taille totale des images stockees.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            dict[str, int]: Compteurs globaux des images de plateformes.
+        """
+
+        row = connection.execute(
+            text(
+                "SELECT COUNT(*) AS total_images, "
+                "COALESCE(SUM(file_size_bytes), 0) AS total_size_bytes "
+                f'FROM "{self.schema_name}".t_platform_image'
+            )
+        ).mappings().one()
+        return {
+            "total_images": int(row["total_images"] or 0),
+            "total_size_bytes": int(row["total_size_bytes"] or 0),
+        }
 
     def find_accepted_image(
         self,
@@ -151,7 +212,7 @@ class SqlAlchemyPlatformImageRepository:
 
         row = connection.execute(
             text(
-                "SELECT id, platform, path, type, status, user_id, creation_date "
+                "SELECT id, platform, path, file_size_bytes, type, status, user_id, creation_date "
                 f'FROM "{self.schema_name}".t_platform_image '
                 "WHERE platform = :platform_id AND id = :image_id AND status = 'ACCEPTED'"
             ),
@@ -215,7 +276,7 @@ class SqlAlchemyPlatformImageRepository:
         rows = connection.execute(
             text(
                 "SELECT image.id, image.platform, platform.name AS platform_name, "
-                "image.path, image.type, image.status, image.user_id, "
+                "image.path, image.file_size_bytes, image.type, image.status, image.user_id, "
                 "app_user.email AS user_email, image.creation_date "
                 f'FROM "{self.schema_name}".t_platform_image image '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = image.platform '
@@ -247,7 +308,7 @@ class SqlAlchemyPlatformImageRepository:
 
         row = connection.execute(
             text(
-                "SELECT id, platform, path, type, status, user_id, creation_date "
+                "SELECT id, platform, path, file_size_bytes, type, status, user_id, creation_date "
                 f'FROM "{self.schema_name}".t_platform_image '
                 "WHERE platform = :platform_id AND id = :image_id"
             ),
@@ -279,7 +340,8 @@ class SqlAlchemyPlatformImageRepository:
                 f'UPDATE "{self.schema_name}".t_platform_image '
                 "SET status = :status "
                 "WHERE platform = :platform_id AND id = :image_id "
-                "RETURNING id, platform, path, type, status, user_id, creation_date"
+                "RETURNING id, platform, path, file_size_bytes, type, status, "
+                "user_id, creation_date"
             ),
             {"platform_id": platform_id, "image_id": image_id, "status": status},
         ).mappings().first()
@@ -339,7 +401,8 @@ class SqlAlchemyPlatformImageRepository:
                 f'UPDATE "{self.schema_name}".t_platform_image '
                 "SET type = :image_type "
                 "WHERE platform = :platform_id AND id = :image_id "
-                "RETURNING id, platform, path, type, status, user_id, creation_date"
+                "RETURNING id, platform, path, file_size_bytes, type, status, "
+                "user_id, creation_date"
             ),
             {
                 "platform_id": platform_id,

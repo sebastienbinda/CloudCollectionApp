@@ -76,7 +76,13 @@ class DatabaseConfigurationTest(unittest.TestCase):
         self.assertFalse(table.columns["path"].nullable)
         self.assertFalse(table.columns["type"].nullable)
         self.assertFalse(table.columns["status"].nullable)
+        self.assertFalse(table.columns["file_size_bytes"].nullable)
         self.assertFalse(table.columns["creation_date"].nullable)
+        self.assertIsNone(table.columns["file_size_bytes"].server_default)
+        self.assertIn(
+            "ck_t_platform_image_file_size_bytes",
+            {constraint.name for constraint in table.constraints},
+        )
         self.assertIn("ix_t_platform_image_user_id", {index.name for index in table.indexes})
         self.assertIn(
             "uq_t_platform_image_single_main",

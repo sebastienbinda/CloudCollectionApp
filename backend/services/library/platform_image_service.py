@@ -32,6 +32,11 @@ from services.library.library_query_contract import LibraryPageRequest
 from .platform_image_moderation_query import PlatformImageModerationQueryParser
 from .platform_image_admin_notifier import PlatformImageAdminNotifier
 from .platform_image_configuration import PlatformImageConfiguration
+from .platform_image_storage_guard import (
+    PlatformImageStorageGuard,
+    PlatformImageStorageLimitExceededError,
+    PlatformImageStorageUsage,
+)
 
 
 class PlatformImageValidationError(ValueError):
@@ -125,6 +130,7 @@ class PlatformImageService:
         self.moderation_query_parser = (
             moderation_query_parser or PlatformImageModerationQueryParser()
         )
+        self.storage_guard = PlatformImageStorageGuard(image_configuration)
 
     @classmethod
     def from_environment(cls) -> "PlatformImageService":
@@ -160,6 +166,7 @@ class PlatformImageService:
 
         Raises:
             PlatformImageValidationError: Si le fichier est absent ou invalide.
+            PlatformImageStorageLimitExceededError: Si les limites disque sont depassees.
             PlatformImagePlatformNotFoundError: Si la plateforme est inconnue.
             PlatformImageUserNotFoundError: Si l'utilisateur du token est inconnu.
             OSError: Si la copie disque echoue.
@@ -174,12 +181,33 @@ class PlatformImageService:
             platform_name = self.image_repository.find_platform_name(connection, platform_id)
             if platform_name is None:
                 raise PlatformImagePlatformNotFoundError("Plateforme inconnue.")
-            target_path = self._copy_file(platform_id, platform_name, original_filename, uploaded_file)
+            storage_root = self.image_configuration.ensure_image_directory()
+            storage_usage = self.storage_guard.usage_from_mapping(
+                self.image_repository.get_storage_usage(connection, user_id)
+            )
+            try:
+                self.storage_guard.validate_existing_usage(storage_usage)
+                target_path, file_size_bytes = self._copy_file(
+                    platform_id,
+                    platform_name,
+                    original_filename,
+                    uploaded_file,
+                    storage_root,
+                    storage_usage,
+                )
+            except PlatformImageStorageLimitExceededError as exc:
+                self.notifier.notify_upload_disabled(
+                    normalized_user_email,
+                    exc.reason,
+                    exc.metrics,
+                )
+                raise
             try:
                 image = self.image_repository.create_waiting_image(
                     connection,
                     platform_id,
                     str(target_path),
+                    file_size_bytes,
                     user_id,
                     datetime.now(timezone.utc).replace(tzinfo=None),
                 )
@@ -213,6 +241,30 @@ class PlatformImageService:
         mimetype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         return PlatformImageFile(path=str(path), mimetype=mimetype)
 
+    def get_moderation_image_file(self, platform_id: int, image_id: int) -> PlatformImageFile:
+        """Retourne le fichier d'une image pour la moderation admin.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+
+        Returns:
+            PlatformImageFile: Fichier protege a servir.
+
+        Raises:
+            PlatformImageNotFoundError: Si l'image est absente ou illisible.
+        """
+
+        with self.engine.connect() as connection:
+            image = self.image_repository.find_image(connection, platform_id, image_id)
+        if image is None:
+            raise PlatformImageNotFoundError("Image de plateforme introuvable.")
+        path = Path(str(image["path"]))
+        if not path.is_file():
+            raise PlatformImageNotFoundError("Image de plateforme inaccessible.")
+        mimetype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        return PlatformImageFile(path=str(path), mimetype=mimetype)
+
     def list_moderation_images(
         self,
         query_parameters: Mapping[str, Any],
@@ -223,7 +275,7 @@ class PlatformImageService:
             query_parameters (Mapping[str, Any]): Parametres HTTP de pagination et filtres.
 
         Returns:
-            dict[str, object]: Payload pagine contenant `images` et `page`.
+            dict[str, object]: Payload pagine contenant `images`, `page` et le stockage.
         """
 
         criteria = self.moderation_query_parser.parse(query_parameters)
@@ -240,9 +292,14 @@ class PlatformImageService:
                 criteria.page_request,
                 criteria.sort_rules,
             )
+            storage_summary = self.image_repository.get_global_storage_summary(connection)
         return {
             "images": [self._moderation_image_payload(row) for row in rows],
             "page": self._page_payload(criteria.page_request, total_elements),
+            "storage_summary": {
+                "total_images": int(storage_summary.get("total_images") or 0),
+                "total_size_bytes": int(storage_summary.get("total_size_bytes") or 0),
+            },
         }
 
     def update_image_status(
@@ -334,8 +391,9 @@ class PlatformImageService:
         platform_name: str,
         original_filename: str,
         uploaded_file: FileStorage,
-    ) -> Path:
-        storage_root = self.image_configuration.ensure_image_directory()
+        storage_root: Path,
+        storage_usage: PlatformImageStorageUsage,
+    ) -> tuple[Path, int]:
         platform_directory = storage_root / "platforms" / self._slugify(platform_name, platform_id)
         platform_directory.mkdir(parents=True, exist_ok=True)
         target_path = self._resolve_available_path(platform_directory, original_filename)
@@ -350,11 +408,17 @@ class PlatformImageService:
                     target_file.close()
                     target_path.unlink(missing_ok=True)
                     raise PlatformImageValidationError("Image trop volumineuse.")
+                try:
+                    self.storage_guard.validate_uploaded_bytes(bytes_written, storage_usage)
+                except PlatformImageStorageLimitExceededError:
+                    target_file.close()
+                    target_path.unlink(missing_ok=True)
+                    raise
                 target_file.write(chunk)
         if bytes_written == 0:
             target_path.unlink(missing_ok=True)
             raise PlatformImageValidationError("Image vide.")
-        return target_path
+        return target_path, bytes_written
 
     def _resolve_available_path(self, directory: Path, original_filename: str) -> Path:
         candidate = directory / original_filename
@@ -405,6 +469,7 @@ class PlatformImageService:
         return {
             "id": int(image["id"]),
             "platform_id": int(image["platform"]),
+            "file_size_bytes": int(image.get("file_size_bytes") or 0),
             "type": str(image["type"]),
             "status": str(image["status"]),
             "user_id": int(image["user_id"]),
@@ -419,6 +484,10 @@ class PlatformImageService:
                 "creation_date": self._date_value(image.get("creation_date")),
                 "image_url": (
                     f"/api/library/platforms/{int(image['platform'])}/image/{int(image['id'])}"
+                ),
+                "moderation_image_url": (
+                    f"/api/library/platforms/{int(image['platform'])}/image/"
+                    f"{int(image['id'])}/moderation"
                 ),
             }
         )

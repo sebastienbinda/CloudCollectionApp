@@ -23,13 +23,22 @@ class PlatformImageConfiguration:
     Attributes:
         image_directory_path (str): Chemin conteneur du repertoire d'images.
         max_upload_bytes (int): Taille maximale acceptee pour une image uploadee.
+        max_pending_images_per_user (int): Nombre maximal d'images en attente par utilisateur.
+        max_pending_bytes_per_user (int): Taille maximale en attente par utilisateur.
+        max_total_bytes (int): Taille maximale totale des images stockees.
     """
 
     image_directory_path: str
     max_upload_bytes: int
+    max_pending_images_per_user: int = 20
+    max_pending_bytes_per_user: int = 52428800
+    max_total_bytes: int = 1073741824
 
     DEFAULT_IMAGE_DIRECTORY_PATH = "/images"
     DEFAULT_MAX_UPLOAD_BYTES = 10485760
+    DEFAULT_MAX_PENDING_IMAGES_PER_USER = 20
+    DEFAULT_MAX_PENDING_BYTES_PER_USER = 52428800
+    DEFAULT_MAX_TOTAL_BYTES = 1073741824
 
     @classmethod
     def from_environment(cls) -> "PlatformImageConfiguration":
@@ -54,6 +63,18 @@ class PlatformImageConfiguration:
                 "PLATFORM_IMAGE_MAX_UPLOAD_BYTES",
                 cls.DEFAULT_MAX_UPLOAD_BYTES,
             ),
+            max_pending_images_per_user=cls._read_positive_int(
+                "PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER",
+                cls.DEFAULT_MAX_PENDING_IMAGES_PER_USER,
+            ),
+            max_pending_bytes_per_user=cls._read_positive_int(
+                "PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER",
+                cls.DEFAULT_MAX_PENDING_BYTES_PER_USER,
+            ),
+            max_total_bytes=cls._read_positive_int(
+                "PLATFORM_IMAGE_MAX_TOTAL_BYTES",
+                cls.DEFAULT_MAX_TOTAL_BYTES,
+            ),
         )
         configuration.validate()
         return configuration
@@ -75,6 +96,16 @@ class PlatformImageConfiguration:
             raise ValueError("BACKEND_IMG_DIR est requis pour stocker les images.")
         if self.max_upload_bytes <= 0:
             raise ValueError("PLATFORM_IMAGE_MAX_UPLOAD_BYTES doit etre un entier positif.")
+        if self.max_pending_images_per_user <= 0:
+            raise ValueError(
+                "PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER doit etre un entier positif."
+            )
+        if self.max_pending_bytes_per_user <= 0:
+            raise ValueError(
+                "PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER doit etre un entier positif."
+            )
+        if self.max_total_bytes <= 0:
+            raise ValueError("PLATFORM_IMAGE_MAX_TOTAL_BYTES doit etre un entier positif.")
 
     def ensure_image_directory(self) -> Path:
         """Cree le repertoire de stockage des images si necessaire.

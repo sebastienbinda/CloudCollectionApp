@@ -131,7 +131,7 @@ function useCloudCollectionViewModel() {
   const platformCatalogSyncAction = usePlatformCatalogSyncAction();
   const platformImageModeration = usePlatformImageModeration({
     enabled: (
-      navigation.currentView === "configuration" &&
+      navigation.currentView === "platformImageModeration" &&
       session.authenticatedProfile === "ADMIN" &&
       session.actionPermissions.canModeratePlatformImages
     ),
@@ -223,6 +223,7 @@ function useCloudCollectionViewModel() {
       openWishlist: navigation.openWishlist,
       openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,
+      openPlatformImageModeration: navigation.openPlatformImageModeration,
       openAbout: navigation.openAbout,
       openAuth: navigation.openAuth,
       openPlatform: navigation.openPlatform,

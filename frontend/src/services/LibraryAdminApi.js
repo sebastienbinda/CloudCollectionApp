@@ -66,6 +66,30 @@ class LibraryAdminApi {
   }
 
   /**
+   * Charge un fichier image de moderation protege.
+   *
+   * @param {string} imageUrl - URL protegee de l'image de moderation.
+   * @returns {Promise<Blob>} Contenu binaire de l'image.
+   * @throws {LibraryAdminApiError} Si le fichier est refuse ou indisponible.
+   */
+  static async fetchPlatformImageBlob(imageUrl) {
+    const requestOptions = {
+      method: "GET",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const response = await BackendAvailabilityGuard.fetch(imageUrl, requestOptions);
+    if (!response.ok) {
+      throw this.createErrorFromResponse(
+        response,
+        {},
+        "Impossible de charger l'image de plateforme.",
+        requestOptions
+      );
+    }
+    return response.blob();
+  }
+
+  /**
    * Lance un reset asynchrone de la Bibliotheque globale.
    *
    * @returns {Promise<Object>} Payload de job retourne par le backend.

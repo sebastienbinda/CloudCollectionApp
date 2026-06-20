@@ -45,6 +45,7 @@ class FakeModerationPlatformImageRepository:
                 "platform": 1,
                 "platform_name": "Switch",
                 "path": image_path,
+                "file_size_bytes": 262144,
                 "type": "MAIN",
                 "status": "WAITING_VALIDATION",
                 "user_id": 7,
@@ -56,6 +57,7 @@ class FakeModerationPlatformImageRepository:
                 "platform": 1,
                 "platform_name": "Switch",
                 "path": image_path,
+                "file_size_bytes": 131072,
                 "type": "OTHER",
                 "status": "WAITING_VALIDATION",
                 "user_id": 8,
@@ -104,6 +106,23 @@ class FakeModerationPlatformImageRepository:
 
         self.last_list_filters = (status, platform_filter, page_request, sort_rules)
         return [self.images[12]]
+
+    def get_global_storage_summary(self, connection):
+        """Retourne un resume de stockage factice.
+
+        Args:
+            connection (object): Connexion ignoree.
+
+        Returns:
+            dict[str, int]: Nombre et taille totale des images.
+        """
+
+        return {
+            "total_images": len(self.images),
+            "total_size_bytes": sum(
+                int(image.get("file_size_bytes") or 0) for image in self.images.values()
+            ),
+        }
 
     def update_image_status(self, connection, platform_id, image_id, status):
         """Modifie le statut d'une image factice.
@@ -243,7 +262,14 @@ class PlatformImageModerationServiceTest(unittest.TestCase):
         self.assertEqual(2, page_request.page)
         self.assertEqual(25, page_request.size)
         self.assertEqual(7, payload["images"][0]["user_id"])
+        self.assertEqual(262144, payload["images"][0]["file_size_bytes"])
+        self.assertEqual(2, payload["storage_summary"]["total_images"])
+        self.assertEqual(393216, payload["storage_summary"]["total_size_bytes"])
         self.assertEqual("/api/library/platforms/1/image/12", payload["images"][0]["image_url"])
+        self.assertEqual(
+            "/api/library/platforms/1/image/12/moderation",
+            payload["images"][0]["moderation_image_url"],
+        )
 
     def test_update_status_accepts_image(self):
         """Verifie l'acceptation d'une image.

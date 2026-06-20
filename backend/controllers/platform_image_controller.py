@@ -21,6 +21,7 @@ from services.library.platform_image_service import (
     PlatformImageNotFoundError,
     PlatformImagePlatformNotFoundError,
     PlatformImageService,
+    PlatformImageStorageLimitExceededError,
     PlatformImageUserNotFoundError,
     PlatformImageValidationError,
 )
@@ -80,6 +81,14 @@ class PlatformImageController:
             methods=["GET"],
         )
         flask_app.add_url_rule(
+            "/api/library/platforms/<int:platform_id>/image/<int:image_id>/moderation",
+            endpoint="get_library_platform_moderation_image",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self._as_view(self.get_moderation_platform_image)
+            ),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
             "/api/library/platforms/<int:platform_id>/image/<int:image_id>/type/<image_type>",
             endpoint="update_library_platform_image_type",
             view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
@@ -130,6 +139,8 @@ class PlatformImageController:
             return jsonify({"error": str(exc)}), 404
         except PlatformImageUserNotFoundError as exc:
             return jsonify({"error": str(exc)}), 403
+        except PlatformImageStorageLimitExceededError as exc:
+            return jsonify({"error": str(exc)}), 503
         except PlatformImageValidationError as exc:
             return jsonify({"error": str(exc)}), 422
 
@@ -158,6 +169,26 @@ class PlatformImageController:
 
         try:
             image_file = self.platform_image_service_factory().get_accepted_image_file(
+                platform_id,
+                image_id,
+            )
+            return send_file(image_file.path, mimetype=image_file.mimetype, max_age=0)
+        except PlatformImageNotFoundError:
+            return jsonify({"error": "Library platform image not found."}), 404
+
+    def get_moderation_platform_image(self, platform_id: int, image_id: int):
+        """Retourne le contenu protege d'une image a moderer.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+
+        Returns:
+            flask.Response | tuple[flask.Response, int]: Image ou erreur JSON.
+        """
+
+        try:
+            image_file = self.platform_image_service_factory().get_moderation_image_file(
                 platform_id,
                 image_id,
             )

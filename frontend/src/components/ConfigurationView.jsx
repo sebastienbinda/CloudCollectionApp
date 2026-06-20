@@ -14,7 +14,6 @@
  */
 import ProgressBar from "./ProgressBar";
 import PageLayout from "./PageLayout";
-import PlatformImageModerationSection from "./PlatformImageModerationSection";
 
 /**
  * Page dediee aux actions protegees de l'application.
@@ -44,7 +43,6 @@ function ConfigurationView({
   platformCatalogSyncError,
   platformCatalogSyncMessage,
   isSyncingPlatformCatalog,
-  platformImageModeration,
   reinitializationError,
   isReinitializingCollection,
   onOpenAbout,
@@ -54,6 +52,7 @@ function ConfigurationView({
   onOpenWishlist,
   onAddGame,
   onOpenUsers,
+  onOpenPlatformImageModeration,
   onOpenConfiguration,
   onOpenCollectionOnboarding,
   onDownloadOds,
@@ -213,11 +212,23 @@ function ConfigurationView({
             </button>
           </article>
         ) : null}
-      </section>
 
-      {isAdmin && canModeratePlatformImages ? (
-        <PlatformImageModerationSection moderation={platformImageModeration} />
-      ) : null}
+        {isAdmin ? (
+          <article className="adminActionCard">
+            <span>Images</span>
+            <h2>Images de plateformes</h2>
+            <p>Ouvre la page de moderation des images proposees par les utilisateurs.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onOpenPlatformImageModeration}
+              disabled={!canModeratePlatformImages}
+            >
+              Moderer les images
+            </button>
+          </article>
+        ) : null}
+      </section>
     </PageLayout>
   );
 }

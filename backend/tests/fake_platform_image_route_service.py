@@ -17,9 +17,11 @@ class FakePlatformImageRouteService:
 
     next_upload_error = None
     next_public_error = None
+    next_admin_file_error = None
     next_moderation_error = None
     last_upload_call = None
     last_public_call = None
+    last_admin_file_call = None
     last_list_query = None
     last_type_call = None
     last_status_call = None
@@ -65,6 +67,24 @@ class FakePlatformImageRouteService:
             raise self.next_public_error
         return PlatformImageFile(path=__file__, mimetype="image/png")
 
+    def get_moderation_image_file(self, platform_id, image_id):
+        """Retourne une image admin ou leve l'erreur configuree.
+
+        Args:
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+
+        Returns:
+            PlatformImageFile: Fichier protege factice.
+        """
+
+        from services.library import PlatformImageFile
+
+        self.__class__.last_admin_file_call = (platform_id, image_id)
+        if self.next_admin_file_error:
+            raise self.next_admin_file_error
+        return PlatformImageFile(path=__file__, mimetype="image/png")
+
     def list_moderation_images(self, query_parameters):
         """Retourne une liste de moderation factice.
 
@@ -84,13 +104,16 @@ class FakePlatformImageRouteService:
                     "platform_name": "Switch",
                     "type": "OTHER",
                     "status": "WAITING_VALIDATION",
+                    "file_size_bytes": 262144,
                     "user_id": 7,
                     "user_email": "user@example.com",
                     "creation_date": "2026-06-19T08:00:00",
                     "image_url": "/api/library/platforms/1/image/12",
+                    "moderation_image_url": "/api/library/platforms/1/image/12/moderation",
                 }
             ],
             "page": {"page": 2, "size": 25, "totalElements": 1, "totalPages": 1},
+            "storage_summary": {"total_images": 3, "total_size_bytes": 786432},
         }
 
     def update_image_type(self, platform_id, image_id, image_type):

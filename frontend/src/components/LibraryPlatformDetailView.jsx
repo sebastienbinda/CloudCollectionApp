@@ -45,14 +45,15 @@ function LibraryPlatformDetailView({
   const platform = platformDetailPage?.platformDetail;
   const title = platform?.name || "Plateforme";
   const aliases = platform?.aliases || [];
-  const fields = buildPlatformFields(platform);
+  const primaryFields = buildPlatformPrimaryFields(platform);
+  const description = formatDescription(platform?.description);
   const imageDisplay = buildImageDisplay(platform, platformDetailPage?.imageCacheVersion);
   const canUploadImage = isAuthenticated && authenticatedProfile !== "ADMIN";
   const imageInputRef = useRef(null);
 
   return (
     <PageLayout
-      shellClassName="appShell gameDetailShell"
+      shellClassName="appShell gameDetailShell libraryPlatformDetailShell"
       eyebrow="Bibliotheque"
       title={title}
       subtitle="Detail de la plateforme"
@@ -76,7 +77,12 @@ function LibraryPlatformDetailView({
       {platformDetailPage?.platformDetailError ? <p className="error">{platformDetailPage.platformDetailError}</p> : null}
 
       {!platformDetailPage?.isLoadingPlatformDetail && platform ? (
-        <section className="gameDetailContent" aria-label="Informations de la plateforme">
+        <section
+          className={`gameDetailContent libraryPlatformDetailContent ${
+            imageDisplay.featuredImage ? "libraryPlatformDetailContentWithImage" : ""
+          }`}
+          aria-label="Informations de la plateforme"
+        >
           {imageDisplay.featuredImage ? (
             <section className="platformImagesSection" aria-label="Images de la plateforme">
               <figure className="platformFeaturedImage">
@@ -106,6 +112,39 @@ function LibraryPlatformDetailView({
             <strong>{title}</strong>
           </div>
 
+          <dl className="gameDetailGrid platformPrimaryDetailGrid">
+            {primaryFields.map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value || EMPTY_VALUE}</dd>
+              </div>
+            ))}
+          </dl>
+          <dl className="gameDetailGrid platformDescriptionGrid">
+            <div>
+              <dt>Description</dt>
+              <dd>{description || EMPTY_VALUE}</dd>
+            </div>
+          </dl>
+          <section className="platformAliasesSection" aria-label="Alias de la plateforme">
+            <h2>Alias</h2>
+            {aliases.length ? (
+              <ul className="platformAliasList">
+                {aliases.map((alias) => (
+                  <li key={`${alias.name}-${alias.usage_region}`} className="platformAliasItem">
+                    <strong>{alias.name || EMPTY_VALUE}</strong>
+                    <span className={getAliasRegionClassName(alias.usage_region)}>
+                      {alias.usage_region || "Region non precisee"}
+                    </span>
+                    {alias.category ? <small>{alias.category}</small> : null}
+                    {alias.comment ? <p>{alias.comment}</p> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="platformAliasEmpty">Aucun alias reference.</p>
+            )}
+          </section>
           {canUploadImage ? (
             <form
               className="platformImageUploadForm"
@@ -142,34 +181,6 @@ function LibraryPlatformDetailView({
               ) : null}
             </form>
           ) : null}
-
-          <dl className="gameDetailGrid">
-            {fields.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value || EMPTY_VALUE}</dd>
-              </div>
-            ))}
-          </dl>
-          <section className="platformAliasesSection" aria-label="Alias de la plateforme">
-            <h2>Alias</h2>
-            {aliases.length ? (
-              <ul className="platformAliasList">
-                {aliases.map((alias) => (
-                  <li key={`${alias.name}-${alias.usage_region}`} className="platformAliasItem">
-                    <strong>{alias.name || EMPTY_VALUE}</strong>
-                    <span className={getAliasRegionClassName(alias.usage_region)}>
-                      {alias.usage_region || "Region non precisee"}
-                    </span>
-                    {alias.category ? <small>{alias.category}</small> : null}
-                    {alias.comment ? <p>{alias.comment}</p> : null}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="platformAliasEmpty">Aucun alias reference.</p>
-            )}
-          </section>
         </section>
       ) : null}
     </PageLayout>
@@ -194,7 +205,7 @@ function buildImageDisplay(platform, cacheVersion) {
   return { featuredImage, carouselImages };
 }
 
-function buildPlatformFields(platform) {
+function buildPlatformPrimaryFields(platform) {
   if (!platform) {
     return [];
   }
@@ -203,7 +214,6 @@ function buildPlatformFields(platform) {
     ["Date de sortie", formatCellValue("Date", platform.release_date)],
     ["Date de fin", formatCellValue("Date", platform.end_date)],
     ["Jeux associes", formatCellValue("Nombre", platform.total_games)],
-    ["Description", formatDescription(platform.description)],
   ];
 }
 

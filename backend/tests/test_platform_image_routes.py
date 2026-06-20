@@ -17,6 +17,7 @@ from services.library import (
     PlatformImageModerationError,
     PlatformImageNotFoundError,
     PlatformImagePlatformNotFoundError,
+    PlatformImageStorageLimitExceededError,
     PlatformImageValidationError,
 )
 
@@ -106,6 +107,31 @@ class PlatformImageRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(422, response.status_code)
 
+    def test_upload_returns_503_when_storage_limits_are_exceeded(self):
+        """Verifie le statut temporaire quand les quotas disque bloquent l'upload.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le message.
+        """
+
+        FakePlatformImageRouteService.next_upload_error = PlatformImageStorageLimitExceededError(
+            "total_bytes",
+            {"total_image_bytes": 42},
+        )
+
+        response = self.client.post(
+            "/api/library/platforms/1/image",
+            data={"image": (BytesIO(b"img"), "console.png")},
+            content_type="multipart/form-data",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(503, response.status_code)
+        self.assertIn("temporairement desactivee", response.get_json()["error"])
+
     def test_public_image_route_serves_accepted_file(self):
         """Verifie la lecture publique d'une image acceptee.
 
@@ -134,6 +160,57 @@ class PlatformImageRoutesTest(BaseAppRoutesTest):
         FakePlatformImageRouteService.next_public_error = PlatformImageNotFoundError()
 
         response = self.client.get("/api/library/platforms/1/image/12")
+
+        self.assertEqual(404, response.status_code)
+
+    def test_admin_image_file_rejects_missing_token(self):
+        """Verifie le refus de lecture admin sans token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut.
+        """
+
+        response = self.client.get("/api/library/platforms/1/image/12/moderation")
+
+        self.assertEqual(403, response.status_code)
+
+    def test_admin_image_file_accepts_admin(self):
+        """Verifie la lecture admin d'une image en attente.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'appel service.
+        """
+
+        response = self.client.get(
+            "/api/library/platforms/1/image/12/moderation",
+            headers=self.get_admin_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual((1, 12), FakePlatformImageRouteService.last_admin_file_call)
+
+    def test_admin_image_file_returns_404_for_unknown_image(self):
+        """Verifie le statut 404 pour une image admin inconnue.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut.
+        """
+
+        FakePlatformImageRouteService.next_admin_file_error = PlatformImageNotFoundError()
+
+        response = self.client.get(
+            "/api/library/platforms/1/image/12/moderation",
+            headers=self.get_admin_auth_headers(),
+        )
 
         self.assertEqual(404, response.status_code)
 
@@ -187,7 +264,14 @@ class PlatformImageRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(7, payload["images"][0]["user_id"])
+        self.assertEqual(262144, payload["images"][0]["file_size_bytes"])
+        self.assertEqual(3, payload["storage_summary"]["total_images"])
+        self.assertEqual(786432, payload["storage_summary"]["total_size_bytes"])
         self.assertEqual("/api/library/platforms/1/image/12", payload["images"][0]["image_url"])
+        self.assertEqual(
+            "/api/library/platforms/1/image/12/moderation",
+            payload["images"][0]["moderation_image_url"],
+        )
         self.assertEqual("2", query.get("page"))
         self.assertEqual("WAITING_VALIDATION", query.get("status"))
         self.assertEqual("Switch", query.get("platform"))
@@ -301,6 +385,14 @@ class PlatformImageRoutesTest(BaseAppRoutesTest):
         }
 
         self.assertTrue(routes_by_key[("/api/library/platforms/images", ("GET",))]["requires_auth"])
+        self.assertTrue(
+            routes_by_key[
+                (
+                    "/api/library/platforms/<int:platform_id>/image/<int:image_id>/moderation",
+                    ("GET",),
+                )
+            ]["requires_auth"]
+        )
         self.assertEqual(
             ["ADMIN"],
             routes_by_key[("/api/library/platforms/images", ("GET",))]["required_profiles"],

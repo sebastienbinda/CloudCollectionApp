@@ -20,6 +20,7 @@ const COLUMNS = [
   "status",
   "type",
   "thumbnail",
+  "file_size_bytes",
   "user_id",
   "user_email",
   "creation_date",
@@ -29,6 +30,7 @@ const COLUMN_LABELS = {
   status: "Statut",
   type: "Type",
   thumbnail: "Miniature",
+  file_size_bytes: "Taille",
   user_id: "User ID",
   user_email: "Utilisateur",
   creation_date: "Creation",
@@ -93,6 +95,17 @@ function PlatformImageModerationSection({ moderation }) {
         </label>
       </form>
 
+      <div className="platformImageStorageSummary" aria-label="Stockage des images">
+        <div>
+          <span>Images totales</span>
+          <strong>{formatInteger(moderation.storageSummary.totalImages)}</strong>
+        </div>
+        <div>
+          <span>Taille totale</span>
+          <strong>{formatMegabytes(moderation.storageSummary.totalSizeBytes)}</strong>
+        </div>
+      </div>
+
       {moderation.isLoading ? <ProgressBar label="Chargement des images a moderer" /> : null}
       {moderation.error ? <p className="error">{moderation.error}</p> : null}
       {moderation.message ? <p className="success">{moderation.message}</p> : null}
@@ -110,10 +123,12 @@ function PlatformImageModerationSection({ moderation }) {
           sortConfig={moderation.sortConfig}
           onToggleSort={moderation.toggleSort}
           tableClassName="platformImageModerationTable"
-          mobileVisibleColumns={["platform_name", "thumbnail", "status"]}
+          mobileVisibleColumns={["platform_name", "thumbnail", "file_size_bytes", "status"]}
           getRowKey={(image) => image.id}
           getCellValue={(image, column) => image[column]}
-          formatCellValue={(column, value, image) => formatCellValue(column, value, image, moderation)}
+          formatCellValue={(column, value, image) =>
+            formatCellValue(column, value, image, moderation)
+          }
           renderRowActions={(image) => renderRowActions(image, moderation)}
           pagination={{
             page: moderation.pageInfo.page,
@@ -150,6 +165,9 @@ function PlatformImageModerationSection({ moderation }) {
  */
 function formatCellValue(column, value, image, moderation) {
   if (column === "thumbnail") {
+    if (!image.moderation_preview_url) {
+      return <span className="platformImageThumbnailUnavailable">Miniature indisponible</span>;
+    }
     return (
       <button
         type="button"
@@ -157,7 +175,7 @@ function formatCellValue(column, value, image, moderation) {
         onClick={() => moderation.openPreview(image)}
         aria-label={`Voir l'image ${image.id} en grand`}
       >
-        <img src={buildImageUrl(image)} alt="" loading="lazy" />
+        <img src={image.moderation_preview_url} alt="" loading="lazy" />
       </button>
     );
   }
@@ -171,7 +189,36 @@ function formatCellValue(column, value, image, moderation) {
   if (column === "creation_date") {
     return formatDate(value);
   }
+  if (column === "file_size_bytes") {
+    return formatMegabytes(value);
+  }
   return value || "-";
+}
+
+/**
+ * Formate un nombre entier avec la locale francaise.
+ *
+ * @param {number|string} value - Valeur numerique a formater.
+ * @returns {string} Entier formate.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatInteger(value) {
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(value || 0));
+}
+
+/**
+ * Formate une taille en octets vers des Mo avec deux decimales.
+ *
+ * @param {number|string} value - Taille en octets.
+ * @returns {string} Taille formatee en Mo.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatMegabytes(value) {
+  const megabytes = Number(value || 0) / (1024 * 1024);
+  return `${new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(megabytes)}Mo`;
 }
 
 /**
@@ -250,8 +297,7 @@ function ImagePreviewDialog({ image, onClose }) {
  * @throws {void} Ne leve pas d'exception.
  */
 function buildImageUrl(image) {
-  const separator = String(image.image_url || "").includes("?") ? "&" : "?";
-  return `${image.image_url || ""}${separator}v=${encodeURIComponent(image.id)}`;
+  return image.moderation_preview_url || image.image_url || "";
 }
 
 /**

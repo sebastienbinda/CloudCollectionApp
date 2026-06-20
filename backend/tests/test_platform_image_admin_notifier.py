@@ -89,6 +89,32 @@ class PlatformImageAdminNotifierTest(unittest.TestCase):
 
         self.assertIn("ADMIN_NOTIFICATION_EMAIL", logs.output[0])
 
+    def test_notifier_sends_email_when_upload_is_disabled_by_quota(self):
+        """Verifie l'envoi d'email quand un quota bloque les uploads.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le message.
+        """
+
+        email_sender = FakeEmailSender()
+        notifier = PlatformImageAdminNotifier(
+            email_sender=email_sender,
+            admin_notification_email="admin@example.com",
+        )
+
+        notifier.notify_upload_disabled(
+            "user@example.com",
+            "total_bytes",
+            {"total_image_bytes": 42, "max_total_bytes": 40},
+        )
+
+        self.assertEqual("admin@example.com", email_sender.sent[0][0])
+        self.assertIn("total_bytes", email_sender.sent[0][2])
+        self.assertIn("user@example.com", email_sender.sent[0][2])
+
 
 if __name__ == "__main__":
     unittest.main()

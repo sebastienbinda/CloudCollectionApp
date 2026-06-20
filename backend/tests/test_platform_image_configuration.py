@@ -38,6 +38,9 @@ class PlatformImageConfigurationTest(unittest.TestCase):
 
         self.assertEqual("/images", configuration.image_directory_path)
         self.assertEqual(10485760, configuration.max_upload_bytes)
+        self.assertEqual(20, configuration.max_pending_images_per_user)
+        self.assertEqual(52428800, configuration.max_pending_bytes_per_user)
+        self.assertEqual(1073741824, configuration.max_total_bytes)
 
     def test_from_environment_reads_image_settings(self):
         """Verifie la lecture des variables d'environnement d'images.
@@ -54,6 +57,9 @@ class PlatformImageConfigurationTest(unittest.TestCase):
             {
                 "BACKEND_IMG_DIR": "/custom/images",
                 "PLATFORM_IMAGE_MAX_UPLOAD_BYTES": "2048",
+                "PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER": "3",
+                "PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER": "4096",
+                "PLATFORM_IMAGE_MAX_TOTAL_BYTES": "8192",
             },
             clear=True,
         ):
@@ -61,6 +67,9 @@ class PlatformImageConfigurationTest(unittest.TestCase):
 
         self.assertEqual("/custom/images", configuration.image_directory_path)
         self.assertEqual(2048, configuration.max_upload_bytes)
+        self.assertEqual(3, configuration.max_pending_images_per_user)
+        self.assertEqual(4096, configuration.max_pending_bytes_per_user)
+        self.assertEqual(8192, configuration.max_total_bytes)
 
     def test_from_environment_rejects_empty_image_directory(self):
         """Verifie le refus d'un repertoire image vide.
@@ -93,6 +102,22 @@ class PlatformImageConfigurationTest(unittest.TestCase):
                 PlatformImageConfiguration.from_environment()
 
         self.assertIn("PLATFORM_IMAGE_MAX_UPLOAD_BYTES", str(context.exception))
+
+    def test_from_environment_rejects_invalid_storage_limits(self):
+        """Verifie le refus des limites de stockage invalides.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur de configuration.
+        """
+
+        with patch.dict(os.environ, {"PLATFORM_IMAGE_MAX_TOTAL_BYTES": "0"}, clear=True):
+            with self.assertRaises(ValueError) as context:
+                PlatformImageConfiguration.from_environment()
+
+        self.assertIn("PLATFORM_IMAGE_MAX_TOTAL_BYTES", str(context.exception))
 
     def test_ensure_image_directory_creates_target_directory(self):
         """Verifie la creation du repertoire cible par le runtime backend.

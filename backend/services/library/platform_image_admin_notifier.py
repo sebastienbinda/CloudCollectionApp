@@ -89,3 +89,46 @@ class PlatformImageAdminNotifier:
                 f"Utilisateur: {user_email}\n"
             ),
         )
+
+    def notify_upload_disabled(
+        self,
+        user_email: str,
+        reason: str,
+        metrics: dict[str, int],
+    ) -> None:
+        """Envoie une notification quand les quotas disque bloquent l'upload.
+
+        Args:
+            user_email (str): Email de l'utilisateur ayant tente l'upload.
+            reason (str): Limite ayant provoque le blocage.
+            metrics (dict[str, int]): Valeurs de quotas et d'usage.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        if not self.admin_notification_email:
+            self.logger.warning(
+                "ADMIN_NOTIFICATION_EMAIL absent: alerte quota image plateforme ignoree."
+            )
+            return
+        sender = self.email_sender or EmailSenderFactory.create(
+            EmailConfiguration.from_environment()
+        )
+        metric_lines = "\n".join(
+            f"{metric_name}: {metric_value}"
+            for metric_name, metric_value in sorted(metrics.items())
+        )
+        try:
+            sender.send_email(
+                recipient_email=self.admin_notification_email,
+                subject="Uploads d'images de plateformes temporairement bloques",
+                body=(
+                    "Une limite de stockage des images de plateformes a ete atteinte.\n\n"
+                    f"Utilisateur: {user_email}\n"
+                    f"Limite: {reason}\n"
+                    f"{metric_lines}\n"
+                ),
+            )
+        except Exception:
+            self.logger.exception("Impossible d'envoyer l'alerte quota image plateforme.")

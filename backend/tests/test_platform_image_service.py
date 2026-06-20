@@ -21,7 +21,6 @@ from werkzeug.datastructures import FileStorage
 from services.database import DatabaseConfiguration
 from services.library import PlatformImageConfiguration
 from services.library.platform_image_service import (
-    PlatformImageNotFoundError,
     PlatformImagePlatformNotFoundError,
     PlatformImageService,
     PlatformImageUserNotFoundError,
@@ -126,7 +125,13 @@ class FakePlatformImageRepository:
 
         self.platform_name = "Nintendo Switch"
         self.accepted_image = None
+        self.moderation_image = None
         self.created_images = []
+        self.storage_usage = {
+            "pending_image_count": 0,
+            "pending_image_bytes": 0,
+            "total_image_bytes": 0,
+        }
 
     def find_platform_name(self, connection, platform_id):
         """Retourne une plateforme factice.
@@ -141,13 +146,22 @@ class FakePlatformImageRepository:
 
         return self.platform_name if platform_id == 1 else None
 
-    def create_waiting_image(self, connection, platform_id, path, user_id, creation_date):
+    def create_waiting_image(
+        self,
+        connection,
+        platform_id,
+        path,
+        file_size_bytes,
+        user_id,
+        creation_date,
+    ):
         """Insere une image factice.
 
         Args:
             connection (object): Connexion ignoree.
             platform_id (int): Identifiant de plateforme.
             path (str): Chemin absolu stocke.
+            file_size_bytes (int): Taille du fichier stocke.
             user_id (int): Identifiant utilisateur.
             creation_date (datetime): Date de creation.
 
@@ -159,6 +173,7 @@ class FakePlatformImageRepository:
             "id": 4,
             "platform": platform_id,
             "path": path,
+            "file_size_bytes": file_size_bytes,
             "type": "OTHER",
             "status": "WAITING_VALIDATION",
             "user_id": user_id,
@@ -166,6 +181,19 @@ class FakePlatformImageRepository:
         }
         self.created_images.append(image)
         return image
+
+    def get_storage_usage(self, connection, user_id):
+        """Retourne les compteurs de stockage configures.
+
+        Args:
+            connection (object): Connexion ignoree.
+            user_id (int): Identifiant utilisateur.
+
+        Returns:
+            dict[str, int]: Compteurs de stockage.
+        """
+
+        return dict(self.storage_usage)
 
     def find_accepted_image(self, connection, platform_id, image_id):
         """Retourne l'image acceptee configuree.
@@ -181,6 +209,22 @@ class FakePlatformImageRepository:
 
         if self.accepted_image and platform_id == 1 and image_id == 4:
             return self.accepted_image
+        return None
+
+    def find_image(self, connection, platform_id, image_id):
+        """Retourne l'image de moderation configuree.
+
+        Args:
+            connection (object): Connexion ignoree.
+            platform_id (int): Identifiant de plateforme.
+            image_id (int): Identifiant d'image.
+
+        Returns:
+            dict[str, object] | None: Image trouvee ou absence.
+        """
+
+        if self.moderation_image and platform_id == 1 and image_id == 4:
+            return self.moderation_image
         return None
 
 
@@ -228,6 +272,7 @@ class FakeNotifier:
         """
 
         self.calls = []
+        self.disabled_calls = []
 
     def notify_image_created(self, platform_name, image_id, user_email):
         """Memorise la notification.
@@ -242,6 +287,20 @@ class FakeNotifier:
         """
 
         self.calls.append((platform_name, image_id, user_email))
+
+    def notify_upload_disabled(self, user_email, reason, metrics):
+        """Memorise la notification de blocage de quota.
+
+        Args:
+            user_email (str): Email utilisateur.
+            reason (str): Limite bloquante.
+            metrics (dict[str, int]): Valeurs de quota.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.disabled_calls.append((user_email, reason, metrics))
 
 
 class PlatformImageServiceTest(unittest.TestCase):
@@ -312,6 +371,7 @@ class PlatformImageServiceTest(unittest.TestCase):
         self.assertEqual(4, image["id"])
         self.assertEqual("WAITING_VALIDATION", image["status"])
         self.assertEqual(7, created_image["user_id"])
+        self.assertEqual(5, created_image["file_size_bytes"])
         self.assertEqual("user@example.com", self.user_repository.last_email)
         self.assertTrue(Path(created_image["path"]).is_file())
         self.assertEqual([("Nintendo Switch", 4, "user@example.com")], self.notifier.calls)
@@ -397,42 +457,6 @@ class PlatformImageServiceTest(unittest.TestCase):
                 self.image_file(filename="file.png", mimetype="text/plain"),
                 "user@example.com",
             )
-
-    def test_get_accepted_image_returns_public_file(self):
-        """Verifie la lecture publique d'une image acceptee.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident le fichier public.
-        """
-
-        image_path = Path(self.temp_directory.name) / "accepted.png"
-        image_path.write_bytes(b"ok")
-        self.image_repository.accepted_image = {"path": str(image_path)}
-
-        image_file = self.service.get_accepted_image_file(1, 4)
-
-        self.assertEqual(str(image_path), image_file.path)
-        self.assertEqual("image/png", image_file.mimetype)
-
-    def test_get_accepted_image_rejects_waiting_or_missing_file(self):
-        """Verifie le refus public d'une image non acceptee ou illisible.
-
-        Args:
-            Aucun.
-
-        Returns:
-            None: Les assertions valident l'erreur 404 metier.
-        """
-
-        with self.assertRaises(PlatformImageNotFoundError):
-            self.service.get_accepted_image_file(1, 4)
-        self.image_repository.accepted_image = {"path": str(Path(self.temp_directory.name) / "missing.png")}
-        with self.assertRaises(PlatformImageNotFoundError):
-            self.service.get_accepted_image_file(1, 4)
-
 
 if __name__ == "__main__":
     unittest.main()

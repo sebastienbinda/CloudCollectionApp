@@ -33,6 +33,7 @@ from .platform_image_service import (
     PlatformImageUserNotFoundError,
     PlatformImageValidationError,
 )
+from .platform_image_storage_guard import PlatformImageStorageLimitExceededError
 
 __all__ = [
     "LibraryPageRequest",
@@ -49,6 +50,7 @@ __all__ = [
     "PlatformImageNotFoundError",
     "PlatformImagePlatformNotFoundError",
     "PlatformImageService",
+    "PlatformImageStorageLimitExceededError",
     "PlatformImageUserNotFoundError",
     "PlatformImageValidationError",
 ]

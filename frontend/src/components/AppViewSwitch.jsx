@@ -23,6 +23,7 @@ import LibraryEntityListView from "./LibraryEntityListView";
 import LibraryHomeView from "./LibraryHomeView";
 import LibraryPlatformDetailView from "./LibraryPlatformDetailView";
 import PlatformDetailView from "./PlatformDetailView";
+import renderPlatformImageModerationView from "./appViewSwitchPlatformImageModerationRenderer";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
@@ -44,7 +45,7 @@ class AppViewSwitch {
     if (props.currentView === "about") {
       return "about";
     }
-    if (["configuration", "users"].includes(props.currentView)) {
+    if (["configuration", "platformImageModeration", "users"].includes(props.currentView)) {
       return "configuration";
     }
     if (props.currentView === "wishlist") {
@@ -122,6 +123,10 @@ class AppViewSwitch {
 
     if (props.currentView === "users") {
       return this.renderUsers(props);
+    }
+
+    if (props.currentView === "platformImageModeration") {
+      return renderPlatformImageModerationView(props, this.buildPageLayoutProps(props));
     }
 
     if (props.currentView === "collectionOnboarding") {
@@ -227,11 +232,11 @@ class AppViewSwitch {
         platformCatalogSyncError={props.platformCatalogSyncError}
         platformCatalogSyncMessage={props.platformCatalogSyncMessage}
         isSyncingPlatformCatalog={props.isSyncingPlatformCatalog}
-        platformImageModeration={props.platformImageModeration}
         reinitializationError={props.reinitializationError}
         isReinitializingCollection={props.isReinitializingCollection}
         onAddGame={props.openAddGamePage}
         onOpenUsers={props.openUsersPage}
+        onOpenPlatformImageModeration={props.openPlatformImageModeration}
         onOpenCollectionOnboarding={props.openCollectionOnboarding}
         onDownloadOds={props.downloadOdsFile}
         onResetLibrary={props.resetLibrary}
