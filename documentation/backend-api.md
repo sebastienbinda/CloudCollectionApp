@@ -132,6 +132,7 @@ user data, imported collection file paths or `t_user_collection` associations.
 | `GET` | `/api/library/entities` | Counts global reference platforms, studios and games. |
 | `GET` | `/api/library/platforms` | Lists global reference platforms. |
 | `GET` | `/api/library/platforms/<platform_id>` | Returns one global reference platform with aliases. |
+| `GET` | `/api/library/platforms/<platform_id>/image/<image_id>` | Returns one accepted platform image file. |
 | `GET` | `/api/library/studios` | Lists global reference studios. |
 | `GET` | `/api/library/games` | Lists global reference games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
@@ -235,10 +236,39 @@ Invalid page, size or sort values fall back to the default page, default size or
         "usage_region": "Japon",
         "comment": "Nom japonais"
       }
+    ],
+    "images": [
+      {
+        "id": 12,
+        "platform_id": 1,
+        "type": "MAIN",
+        "status": "ACCEPTED",
+        "user_id": 4
+      }
     ]
   }
 }
 ```
+
+The `images` array contains only accepted images. Public platform detail pages
+build image URLs with
+`/api/library/platforms/<platform_id>/image/<image_id>` and may add a
+cache-busting query parameter.
+
+### Library Platform Image File
+
+```http
+GET /api/library/platforms/<platform_id>/image/<image_id>
+```
+
+This route is public but only serves images whose persisted status is
+`ACCEPTED`. It returns the raw image file with its detected MIME type and
+`Cache-Control` disabled by `max_age=0`.
+
+Image file errors use:
+
+- `404` when the platform image is unknown, not accepted, missing on disk or
+  unreadable.
 
 ### Library Game List Response
 
@@ -285,6 +315,54 @@ Library errors use:
 - `503` when database configuration is missing or invalid;
 - `500` when a read fails unexpectedly.
 
+## Protected Library Image Routes
+
+The upload route requires a Bearer token with at least profile `USER`. The
+connected user is derived from the token subject; the client must not send a
+user id.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/library/platforms/<platform_id>/image` | Uploads a proposed image for one platform. |
+
+### Upload Platform Image
+
+```http
+POST /api/library/platforms/<platform_id>/image
+Authorization: Bearer <user-token>
+Content-Type: multipart/form-data
+```
+
+The multipart field name is `image`. Accepted MIME types are JPEG, PNG, WebP
+and GIF. The backend stores the file under `BACKEND_IMG_DIR`, creates a
+`t_platform_image` row with `type = OTHER`, `status = WAITING_VALIDATION` and
+`user_id` resolved from the Bearer token subject, then notifies
+`ADMIN_NOTIFICATION_EMAIL` when configured.
+
+Successful response:
+
+```json
+{
+  "image": {
+    "id": 12,
+    "platform_id": 1,
+    "type": "OTHER",
+    "status": "WAITING_VALIDATION",
+    "user_id": 4
+  }
+}
+```
+
+with status `201`.
+
+Access and error status:
+
+- `403` when the Bearer token is missing or the token subject cannot be mapped
+  to a known user;
+- `404` when the platform is unknown;
+- `422` when the multipart field is missing, the extension or MIME type is not
+  allowed, or the file exceeds `PLATFORM_IMAGE_MAX_UPLOAD_BYTES`.
+
 ## Protected Library Administration Routes
 
 The routes in this section require a Bearer token with profile `ADMIN`. They
@@ -294,6 +372,9 @@ are separate from the public read-only Library consultation endpoints.
 | --- | --- | --- |
 | `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
 | `POST` | `/api/library/platform-catalog/sync` | Adds missing platforms and aliases from backend CSV resources. |
+| `GET` | `/api/library/platforms/images` | Lists platform images for moderation. |
+| `PUT` | `/api/library/platforms/<platform_id>/image/<image_id>/status/<status>` | Accepts or refuses one platform image. |
+| `PUT` | `/api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>` | Changes one platform image type. |
 
 ### Reset Library
 
@@ -368,6 +449,88 @@ Access and error status:
 
 - `403` when the Bearer token is missing or does not carry profile `ADMIN`;
 - `500` when the CSV read or SQL update fails unexpectedly.
+
+### List Platform Images For Moderation
+
+```http
+GET /api/library/platforms/images
+Authorization: Bearer <admin-token>
+```
+
+Supported query parameters:
+
+- `status`: optional status filter. `waiting_validation` and `accepted` aliases
+  are normalized to `WAITING_VALIDATION` and `ACCEPTED`;
+- `platform`: optional platform name filter;
+- `page`: zero-based page index, default `0`;
+- `size`: page size, default `500`, maximum `500`;
+- `sort`: repeatable `column,direction` rule.
+
+Allowed sort columns are `creation_date`, `platform`, `status` and `type`.
+Invalid values fall back to `creation_date,desc`.
+
+Response:
+
+```json
+{
+  "images": [
+    {
+      "id": 12,
+      "platform_id": 1,
+      "type": "OTHER",
+      "status": "WAITING_VALIDATION",
+      "user_id": 4,
+      "platform_name": "Super NES",
+      "user_email": "user@example.com",
+      "creation_date": "2026-06-19T10:30:00",
+      "image_url": "/api/library/platforms/1/image/12"
+    }
+  ],
+  "page": {
+    "page": 0,
+    "size": 500,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### Moderate Platform Image Status
+
+```http
+PUT /api/library/platforms/<platform_id>/image/<image_id>/status/<status>
+Authorization: Bearer <admin-token>
+```
+
+Accepted status values are `accepted` and `refused`. `accepted` persists
+`status = ACCEPTED`. `refused` deletes the database row and removes the stored
+file from disk.
+
+Successful response status is `200`. For refused images, the response includes
+`deleted: true` with the deleted image payload.
+
+Access and error status:
+
+- `403` when the Bearer token is missing or does not carry profile `ADMIN`;
+- `404` when the platform, image or status is unknown or invalid.
+
+### Moderate Platform Image Type
+
+```http
+PUT /api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>
+Authorization: Bearer <admin-token>
+```
+
+Accepted type values are `MAIN` and `OTHER`. Setting one image to `MAIN`
+automatically switches previous `MAIN` images for the same platform back to
+`OTHER`.
+
+Successful response status is `200` with the updated `image` payload.
+
+Access and error status:
+
+- `403` when the Bearer token is missing or does not carry profile `ADMIN`;
+- `404` when the platform, image or type is unknown or invalid.
 
 ## Game Collection Routes
 

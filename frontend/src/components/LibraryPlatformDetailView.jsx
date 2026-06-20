@@ -12,7 +12,10 @@
  *
  * Description : page React de detail d'une plateforme publique.
  */
+import { useRef } from "react";
+
 import { formatCellValue } from "../collectionUtils";
+import LibraryApi from "../services/LibraryApi";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
 
@@ -42,11 +45,15 @@ function LibraryPlatformDetailView({
   const platform = platformDetailPage?.platformDetail;
   const title = platform?.name || "Plateforme";
   const aliases = platform?.aliases || [];
-  const fields = buildPlatformFields(platform);
+  const primaryFields = buildPlatformPrimaryFields(platform);
+  const description = formatDescription(platform?.description);
+  const imageDisplay = buildImageDisplay(platform, platformDetailPage?.imageCacheVersion);
+  const canUploadImage = isAuthenticated && authenticatedProfile !== "ADMIN";
+  const imageInputRef = useRef(null);
 
   return (
     <PageLayout
-      shellClassName="appShell gameDetailShell"
+      shellClassName="appShell gameDetailShell libraryPlatformDetailShell"
       eyebrow="Bibliotheque"
       title={title}
       subtitle="Detail de la plateforme"
@@ -70,18 +77,54 @@ function LibraryPlatformDetailView({
       {platformDetailPage?.platformDetailError ? <p className="error">{platformDetailPage.platformDetailError}</p> : null}
 
       {!platformDetailPage?.isLoadingPlatformDetail && platform ? (
-        <section className="gameDetailContent" aria-label="Informations de la plateforme">
+        <section
+          className={`gameDetailContent libraryPlatformDetailContent ${
+            imageDisplay.featuredImage ? "libraryPlatformDetailContentWithImage" : ""
+          }`}
+          aria-label="Informations de la plateforme"
+        >
+          {imageDisplay.featuredImage ? (
+            <section className="platformImagesSection" aria-label="Images de la plateforme">
+              <figure className="platformFeaturedImage">
+                <img
+                  src={imageDisplay.featuredImage.url}
+                  alt={`${title} - image principale`}
+                  loading="eager"
+                />
+              </figure>
+              {imageDisplay.carouselImages.length ? (
+                <div className="platformImageCarousel" aria-label="Images complementaires">
+                  {imageDisplay.carouselImages.map((image, index) => (
+                    <img
+                      key={image.id}
+                      src={image.url}
+                      alt={`${title} - image ${index + 2}`}
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
           <div className="gameDetailSummary">
             <span>{platform.manufacturer || EMPTY_VALUE}</span>
             <strong>{title}</strong>
           </div>
-          <dl className="gameDetailGrid">
-            {fields.map(([label, value]) => (
+
+          <dl className="gameDetailGrid platformPrimaryDetailGrid">
+            {primaryFields.map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>
                 <dd>{value || EMPTY_VALUE}</dd>
               </div>
             ))}
+          </dl>
+          <dl className="gameDetailGrid platformDescriptionGrid">
+            <div>
+              <dt>Description</dt>
+              <dd>{description || EMPTY_VALUE}</dd>
+            </div>
           </dl>
           <section className="platformAliasesSection" aria-label="Alias de la plateforme">
             <h2>Alias</h2>
@@ -102,13 +145,67 @@ function LibraryPlatformDetailView({
               <p className="platformAliasEmpty">Aucun alias reference.</p>
             )}
           </section>
+          {canUploadImage ? (
+            <form
+              className="platformImageUploadForm"
+              onSubmit={(event) => event.preventDefault()}
+            >
+              <button
+                type="button"
+                disabled={platformDetailPage?.isUploadingPlatformImage}
+                onClick={() => imageInputRef.current?.click()}
+              >
+                Ajouter une image
+              </button>
+              <input
+                ref={imageInputRef}
+                id="platform-image-upload"
+                className="platformImageFileInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                disabled={platformDetailPage?.isUploadingPlatformImage}
+                onChange={(event) => {
+                  const imageFile = event.target.files?.[0] || null;
+                  if (imageFile) {
+                    platformDetailPage?.uploadPlatformImage(imageFile);
+                    event.target.value = "";
+                  }
+                }}
+              />
+              {platformDetailPage?.isUploadingPlatformImage ? <ProgressBar label="Envoi de l'image" /> : null}
+              {platformDetailPage?.platformImageUploadError ? (
+                <p className="error">{platformDetailPage.platformImageUploadError}</p>
+              ) : null}
+              {platformDetailPage?.platformImageUploadMessage ? (
+                <p className="success">{platformDetailPage.platformImageUploadMessage}</p>
+              ) : null}
+            </form>
+          ) : null}
         </section>
       ) : null}
     </PageLayout>
   );
 }
 
-function buildPlatformFields(platform) {
+function buildImageDisplay(platform, cacheVersion) {
+  const images = Array.isArray(platform?.images) ? platform.images : [];
+  const imagesWithUrls = images
+    .filter((image) => image?.id)
+    .map((image) => ({
+      ...image,
+      url: LibraryApi.buildPlatformImageUrl(platform.id, image.id, cacheVersion),
+    }));
+  const featuredImage =
+    imagesWithUrls.find((image) => image.type === "MAIN") ||
+    imagesWithUrls.find((image) => image.type === "OTHER") ||
+    null;
+  const carouselImages = imagesWithUrls
+    .filter((image) => image.id !== featuredImage?.id)
+    .slice(0, 5);
+  return { featuredImage, carouselImages };
+}
+
+function buildPlatformPrimaryFields(platform) {
   if (!platform) {
     return [];
   }
@@ -117,7 +214,6 @@ function buildPlatformFields(platform) {
     ["Date de sortie", formatCellValue("Date", platform.release_date)],
     ["Date de fin", formatCellValue("Date", platform.end_date)],
     ["Jeux associes", formatCellValue("Nombre", platform.total_games)],
-    ["Description", formatDescription(platform.description)],
   ];
 }
 

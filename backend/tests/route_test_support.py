@@ -37,11 +37,13 @@ try:
         FakeLibraryService,
         FakeUserCollectionQueryService,
     )
+    from tests.fake_platform_image_route_service import FakePlatformImageRouteService
 except ModuleNotFoundError:
     from route_test_fakes import (
         FakeLibraryService,
         FakeUserCollectionQueryService,
     )
+    from fake_platform_image_route_service import FakePlatformImageRouteService
 
 
 class FakeSqlAlchemyUserRepository:
@@ -540,6 +542,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         self.original_registration_service = app_module.authentication_controller.user_registration_service_class
         self.original_database_configuration = app_module.authentication_controller.database_configuration_class
         self.original_platform_library_service_factory = app_module.platform_controller.library_service_factory
+        self.original_platform_image_service_factory = app_module.platform_image_controller.platform_image_service_factory
         self.original_studio_library_service_factory = app_module.studio_controller.library_service_factory
         self.original_game_library_service_factory = app_module.game_controller.library_service_factory
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
@@ -558,6 +561,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.authentication_controller.user_registration_service_class = FakeUserRegistrationService
         app_module.authentication_controller.database_configuration_class = FakeDatabaseConfiguration
         app_module.platform_controller.library_service_factory = FakeLibraryService
+        app_module.platform_image_controller.platform_image_service_factory = FakePlatformImageRouteService
         app_module.studio_controller.library_service_factory = FakeLibraryService
         app_module.game_controller.library_service_factory = FakeLibraryService
         FakeUserCollectionImportRepository.has_collection = False
@@ -569,6 +573,16 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeLibraryService.last_platforms_criteria = None
         FakeLibraryService.last_studios_criteria = None
         FakeLibraryService.last_games_criteria = None
+        FakePlatformImageRouteService.next_upload_error = None
+        FakePlatformImageRouteService.next_public_error = None
+        FakePlatformImageRouteService.next_admin_file_error = None
+        FakePlatformImageRouteService.next_moderation_error = None
+        FakePlatformImageRouteService.last_upload_call = None
+        FakePlatformImageRouteService.last_public_call = None
+        FakePlatformImageRouteService.last_admin_file_call = None
+        FakePlatformImageRouteService.last_list_query = None
+        FakePlatformImageRouteService.last_type_call = None
+        FakePlatformImageRouteService.last_status_call = None
         FakeUserCollectionQueryService.last_platforms_criteria = None
         FakeUserCollectionQueryService.last_games_criteria = None
         FakeUserCollectionQueryService.collection_file_path = __file__
@@ -602,6 +616,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.authentication_controller.user_registration_service_class = self.original_registration_service
         app_module.authentication_controller.database_configuration_class = self.original_database_configuration
         app_module.platform_controller.library_service_factory = self.original_platform_library_service_factory
+        app_module.platform_image_controller.platform_image_service_factory = self.original_platform_image_service_factory
         app_module.studio_controller.library_service_factory = self.original_studio_library_service_factory
         app_module.game_controller.library_service_factory = self.original_game_library_service_factory
 

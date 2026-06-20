@@ -147,6 +147,7 @@ function useAppNavigation(options) {
         "/wishlist": "wishlist",
         "/add-game": "addGame",
         "/configuration": "configuration",
+        "/configuration/images-plateformes": "platformImageModeration",
         "/users": "users",
         "/collection/import": "collectionOnboarding",
       }[pathname];
@@ -179,7 +180,7 @@ function useAppNavigation(options) {
   }, [currentView, options.hasAccessToken]);
 
   useEffect(() => {
-    if (currentView !== "users" || options.authenticatedProfile === "ADMIN") return;
+    if (!["platformImageModeration", "users"].includes(currentView) || options.authenticatedProfile === "ADMIN") return;
     setCurrentView("home");
     window.history.replaceState({}, "", "/collection");
   }, [options.authenticatedProfile, currentView]);
@@ -244,6 +245,10 @@ function useAppNavigation(options) {
     },
     openAddGamePage,
     openConfiguration: () => openView("configuration", "/configuration"),
+    openPlatformImageModeration: () => openView(
+      "platformImageModeration",
+      "/configuration/images-plateformes"
+    ),
     openUsersPage: () => openView("users", "/users"),
     openCollectionOnboarding: () => {
       if (!options.canUseCollectionViews) {

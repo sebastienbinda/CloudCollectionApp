@@ -35,6 +35,8 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 
 - Tableau de bord de collection avec statistiques par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
+- Images publiques acceptees sur les fiches plateformes de la Bibliotheque,
+  avec proposition d'image par utilisateur connecte.
 - Referentiel de plateformes et alias fourni par defaut depuis les CSV backend.
 - Navigation par plateforme, detail de jeu, detail de plateforme et consultation de la collection personnelle.
 - Page Liste de souhaits pour consulter les jeux importes avec
@@ -45,6 +47,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 - Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur optionnelle.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
+- Moderation administrateur des images de plateformes proposees.
 - Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
 
 ## Architecture Globale
@@ -128,13 +131,30 @@ Variables principales :
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
+- `BACKEND_IMG_DIR` : repertoire conteneur utilise par le backend pour stocker
+  les images de plateformes. Valeur par defaut : `/images`.
+- `PLATFORM_IMAGE_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une image de
+  plateforme. Valeur par defaut : `10485760`.
+- `PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER` : nombre maximal d'images de
+  plateformes en attente par utilisateur. Valeur par defaut : `20`.
+- `PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER` : taille maximale cumulee des
+  images de plateformes en attente par utilisateur. Valeur par defaut :
+  `52428800`.
+- `PLATFORM_IMAGE_MAX_TOTAL_BYTES` : taille maximale totale des images de
+  plateformes stockees sur disque. Valeur par defaut : `1073741824`.
+  Les quotas utilisent la colonne `t_platform_image.file_size_bytes`, renseignee
+  lors de l'ajout d'une image, afin d'eviter un recalcul disque a chaque upload.
+- `BACKEND_IMG_HOST_DIR` : repertoire hote monte par Docker Compose dans
+  `BACKEND_IMG_DIR` pour persister les images de plateformes. En production, le
+  chemin doit etre absolu, exister et etre sauvegardable.
 - `MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
   avec verification administrateur. Valeur par defaut : `25`.
 - `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
   l'import est accepte sans warning de verification. Valeur par defaut : `75`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur, des rapports de fin d'import utilisateur
-  et des rapports de reset Bibliotheque.
+  des rapports de reset Bibliotheque et des propositions d'images de
+  plateformes.
 - `ADMIN_ACCOUNT_VALIDATION_ENABLED` : active la validation administrateur apres
   validation email utilisateur. Valeur par defaut : `true`.
 - `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
@@ -175,6 +195,9 @@ Structure fonctionnelle attendue pour l'import :
   puis envoie le rapport final a `ADMIN_NOTIFICATION_EMAIL`.
 - depuis Configuration, un utilisateur `ADMIN` peut mettre a jour le catalogue
   plateformes et alias en ajoutant en base les entrees absentes des CSV backend.
+- depuis Configuration, un utilisateur `ADMIN` peut ouvrir la page dediee
+  `/configuration/images-plateformes` pour moderer les images de plateformes
+  proposees, les accepter, les refuser ou definir l'image principale.
 
 ## Lancement Local
 
@@ -201,6 +224,8 @@ docker compose -f docker-compose.local.yml up --build
 En production, `docker/docker-compose.online.yml` exige
 `POSTGRES_DATA_HOST_DIR` avec un chemin absolu existant et sauvegardable pour
 monter les donnees PostgreSQL dans `/var/lib/postgresql/data`.
+Il exige aussi `BACKEND_IMG_HOST_DIR` avec un chemin absolu existant et
+sauvegardable pour persister les images de plateformes.
 
 Services locaux :
 

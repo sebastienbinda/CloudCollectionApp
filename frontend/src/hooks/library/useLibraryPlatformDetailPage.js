@@ -24,13 +24,19 @@ import LibraryApi from "../../services/LibraryApi";
 function useLibraryPlatformDetailPage(options) {
   const [platformDetail, setPlatformDetail] = useState(null);
   const [platformDetailError, setPlatformDetailError] = useState("");
+  const [platformImageUploadError, setPlatformImageUploadError] = useState("");
+  const [platformImageUploadMessage, setPlatformImageUploadMessage] = useState("");
+  const [imageCacheVersion, setImageCacheVersion] = useState(Date.now());
   const [isLoadingPlatformDetail, setIsLoadingPlatformDetail] = useState(false);
+  const [isUploadingPlatformImage, setIsUploadingPlatformImage] = useState(false);
 
   useEffect(() => {
     const loadPlatformDetail = async () => {
       if (options.currentView !== "libraryPlatformDetail" || !options.platformId) {
         setPlatformDetail(null);
         setPlatformDetailError("");
+        setPlatformImageUploadError("");
+        setPlatformImageUploadMessage("");
         setIsLoadingPlatformDetail(false);
         return;
       }
@@ -40,6 +46,7 @@ function useLibraryPlatformDetailPage(options) {
         setPlatformDetailError("");
         const data = await LibraryApi.fetchPlatform(options.platformId);
         setPlatformDetail(data.platform || null);
+        setImageCacheVersion(Date.now());
       } catch (error) {
         setPlatformDetail(null);
         setPlatformDetailError(error.message || "Impossible de charger le detail de la plateforme.");
@@ -51,10 +58,38 @@ function useLibraryPlatformDetailPage(options) {
     loadPlatformDetail();
   }, [options.currentView, options.platformId]);
 
+  const uploadPlatformImage = async (imageFile) => {
+    if (!options.platformId || !imageFile) {
+      setPlatformImageUploadError("Selectionnez une image a envoyer.");
+      setPlatformImageUploadMessage("");
+      return;
+    }
+
+    try {
+      setIsUploadingPlatformImage(true);
+      setPlatformImageUploadError("");
+      setPlatformImageUploadMessage("");
+      await LibraryApi.uploadPlatformImage(options.platformId, imageFile);
+      setPlatformImageUploadMessage("Image envoyee. Elle sera visible apres validation.");
+      const data = await LibraryApi.fetchPlatform(options.platformId);
+      setPlatformDetail(data.platform || null);
+      setImageCacheVersion(Date.now());
+    } catch (error) {
+      setPlatformImageUploadError(error.message || "Impossible d'envoyer l'image.");
+    } finally {
+      setIsUploadingPlatformImage(false);
+    }
+  };
+
   return {
     platformDetail,
     platformDetailError,
+    platformImageUploadError,
+    platformImageUploadMessage,
+    imageCacheVersion,
     isLoadingPlatformDetail,
+    isUploadingPlatformImage,
+    uploadPlatformImage,
   };
 }
 

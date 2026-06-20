@@ -83,74 +83,6 @@
   outline-offset: 2px;
 }
 
-.platformAliasesSection {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.platformAliasesSection h2 {
-  color: #111827;
-  font-size: 1rem;
-  margin: 0;
-}
-
-.platformAliasList {
-  display: grid;
-  gap: 0.65rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.platformAliasItem {
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  display: grid;
-  gap: 0.35rem;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  padding: 0.8rem;
-}
-
-.platformAliasItem strong {
-  color: #111827;
-  overflow-wrap: anywhere;
-}
-
-.platformAliasItem small {
-  color: #64748b;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.platformAliasItem p {
-  color: #475569;
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-.platformAliasRegion {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  color: #334155;
-  font-size: 0.78rem;
-  font-weight: 800;
-  padding: 0.22rem 0.55rem;
-}
-
-.platformAliasRegionHighlighted {
-  background: #fef3c7;
-  border-color: #f59e0b;
-  color: #92400e;
-}
-
-.platformAliasEmpty {
-  color: #64748b;
-  margin: 0;
-}
-
 @media (max-width: 620px) {
   .gameDetailContent {
     gap: 0.65rem;
@@ -181,13 +113,4 @@
     font-size: 0.85rem;
   }
 
-  .platformAliasItem {
-    align-items: start;
-    grid-template-columns: 1fr;
-    padding: 0.65rem;
-  }
-
-  .platformAliasRegion {
-    justify-self: start;
-  }
 }

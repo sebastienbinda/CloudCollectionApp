@@ -31,6 +31,7 @@ function ConfigurationView({
   canDownloadOds,
   canResetLibrary,
   canSyncPlatformCatalog,
+  canModeratePlatformImages,
   canReinitializeCollection,
   canSearchUsers,
   canUseCollectionViews,
@@ -51,6 +52,7 @@ function ConfigurationView({
   onOpenWishlist,
   onAddGame,
   onOpenUsers,
+  onOpenPlatformImageModeration,
   onOpenConfiguration,
   onOpenCollectionOnboarding,
   onDownloadOds,
@@ -207,6 +209,22 @@ function ConfigurationView({
               disabled={!canSearchUsers}
             >
               Gerer les utilisateurs
+            </button>
+          </article>
+        ) : null}
+
+        {isAdmin ? (
+          <article className="adminActionCard">
+            <span>Images</span>
+            <h2>Images de plateformes</h2>
+            <p>Ouvre la page de moderation des images proposees par les utilisateurs.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onOpenPlatformImageModeration}
+              disabled={!canModeratePlatformImages}
+            >
+              Moderer les images
             </button>
           </article>
         ) : null}

@@ -13,6 +13,7 @@
  * Description : client frontend dedie aux endpoints publics Bibliotheque.
  */
 import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
+import AuthApi from "./AuthApi";
 
 /**
  * Regroupe les appels publics de consultation de la Bibliotheque.
@@ -51,6 +52,50 @@ class LibraryApi {
       `/api/library/platforms/${encodeURIComponent(platformId)}`,
       "Impossible de charger la plateforme Bibliotheque."
     );
+  }
+
+  /**
+   * Depose une image proposee pour une plateforme.
+   *
+   * @param {string|number} platformId - Identifiant de la plateforme cible.
+   * @param {File} imageFile - Fichier image selectionne.
+   * @returns {Promise<Object>} Objet contenant l'image creee.
+   */
+  static async uploadPlatformImage(platformId, imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    const requestOptions = {
+      method: "POST",
+      headers: AuthApi.getAuthorizationHeaders(),
+      body: formData,
+    };
+    const fallbackMessage = "Impossible d'envoyer l'image de plateforme.";
+    const response = await BackendAvailabilityGuard.fetch(
+      `/api/library/platforms/${encodeURIComponent(platformId)}/image`,
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
+        AuthApi.handleExpiredSession();
+      }
+      throw new Error(data.error || fallbackMessage);
+    }
+    return data;
+  }
+
+  /**
+   * Construit l'URL publique d'une image acceptee.
+   *
+   * @param {string|number} platformId - Identifiant de plateforme.
+   * @param {string|number} imageId - Identifiant d'image.
+   * @param {string|number} cacheVersion - Version de cache-busting.
+   * @returns {string} URL publique de l'image.
+   */
+  static buildPlatformImageUrl(platformId, imageId, cacheVersion = "") {
+    const baseUrl = `/api/library/platforms/${encodeURIComponent(platformId)}/image/${encodeURIComponent(imageId)}`;
+    const version = String(cacheVersion || "").trim();
+    return version ? `${baseUrl}?v=${encodeURIComponent(version)}` : baseUrl;
   }
 
   /**

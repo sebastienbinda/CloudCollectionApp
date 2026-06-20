@@ -29,6 +29,8 @@ from .platform_catalog_update_service import PlatformCatalogUpdateService
 from .platform_matching_admin_notifier import PlatformMatchingAdminNotifier
 from .platform_matching_configuration import PlatformMatchingConfiguration
 from .platform_matching_service import PlatformMatchingService
+from .platform_image import PlatformImage
+from .platform_image_repository import SqlAlchemyPlatformImageRepository
 from .platform_repository import SqlAlchemyPlatformRepository
 from .schema_version import SchemaVersion
 from .studio import Studio
@@ -53,8 +55,10 @@ __all__ = [
     "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
     "SqlAlchemyLibraryResetRepository",
+    "SqlAlchemyPlatformImageRepository",
     "Platform",
     "PlatformAlias",
+    "PlatformImage",
     "PlatformAliasCatalogCsvReader",
     "PlatformAliasCatalogEntry",
     "PlatformCatalogCache",

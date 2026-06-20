@@ -18,9 +18,11 @@ import "./styles/platform-cards.css";
 import "./styles/table-components.css";
 import "./styles/library.css";
 import "./styles/admin.css";
+import "./styles/platform-image-moderation.css";
 import "./styles/editorial-views.css";
 import "./styles/collection-onboarding.css";
 import "./styles/game-detail.css";
+import "./styles/platform-detail.css";
 import "./styles/mobile-fixes.css";
 
 /**

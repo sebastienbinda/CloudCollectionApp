@@ -191,6 +191,49 @@ class FakePlatformRepository:
         }
 
 
+class FakePlatformImageRepository:
+    """Repository images factice pour la Bibliotheque."""
+
+    def __init__(self):
+        """Initialise le repository images factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.calls = []
+
+    def list_accepted_images(self, connection, platform_id):
+        """Liste les images acceptees factices.
+
+        Args:
+            connection (object): Connexion recue.
+            platform_id (int): Identifiant de plateforme.
+
+        Returns:
+            list[dict]: Images acceptees.
+        """
+
+        self.calls.append(("list_accepted", connection, platform_id))
+        return [
+            {
+                "id": 41,
+                "type": "MAIN",
+                "status": "ACCEPTED",
+                "path": "/images/platforms/switch/main.png",
+            },
+            {
+                "id": 42,
+                "type": "OTHER",
+                "status": "ACCEPTED",
+                "path": "/images/platforms/switch/other.png",
+            },
+        ]
+
+
 class FakeStudioRepository:
     """Repository studios factice pour la Bibliotheque."""
 
@@ -332,11 +375,13 @@ class LibraryServiceTest(unittest.TestCase):
 
         self.engine = FakeEngine()
         self.platform_repository = FakePlatformRepository()
+        self.platform_image_repository = FakePlatformImageRepository()
         self.studio_repository = FakeStudioRepository()
         self.game_repository = FakeGameRepository()
         self.service = LibraryService(
             DatabaseConfiguration(None, "collection", "0.1"),
             platform_repository=self.platform_repository,
+            platform_image_repository=self.platform_image_repository,
             studio_repository=self.studio_repository,
             game_repository=self.game_repository,
             engine=self.engine,
@@ -531,6 +576,10 @@ class LibraryServiceTest(unittest.TestCase):
         self.assertEqual("2017-03-03", platform["release_date"])
         self.assertEqual("Japon", platform["aliases"][0]["usage_region"])
         self.assertEqual("", platform["aliases"][0]["comment"])
+        self.assertEqual(
+            [{"id": 41, "type": "MAIN"}, {"id": 42, "type": "OTHER"}],
+            platform["images"],
+        )
 
     def test_get_platform_returns_none_for_unknown_platform(self):
         """Verifie l'absence de plateforme publique.

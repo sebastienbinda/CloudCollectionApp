@@ -28,6 +28,9 @@ class BackendRouteAccessService {
       canDownloadOds: false,
       canResetLibrary: false,
       canSyncPlatformCatalog: false,
+      canModeratePlatformImages: false,
+      canUpdatePlatformImageStatus: false,
+      canUpdatePlatformImageType: false,
       canReinitializeCollection: false,
       canSearchUsers: false,
       canDeleteUser: false,
@@ -162,6 +165,15 @@ class BackendRouteAccessService {
       canDownloadOds: this.canAccess("GET", "/collections/videogames/download"),
       canResetLibrary: this.canAccess("POST", "/api/library/reset"),
       canSyncPlatformCatalog: this.canAccess("POST", "/api/library/platform-catalog/sync"),
+      canModeratePlatformImages: this.canAccess("GET", "/api/library/platforms/images"),
+      canUpdatePlatformImageStatus: this.canAccess(
+        "PUT",
+        "/api/library/platforms/<int:platform_id>/image/<int:image_id>/status/<status>"
+      ),
+      canUpdatePlatformImageType: this.canAccess(
+        "PUT",
+        "/api/library/platforms/<int:platform_id>/image/<int:image_id>/type/<image_type>"
+      ),
       canReinitializeCollection: this.canAccess("POST", "/api/users/collection/reinit"),
       canSearchUsers: this.canAccess("GET", "/api/users"),
       canDeleteUser: this.canAccess("DELETE", "/api/users/<int:user_id>"),

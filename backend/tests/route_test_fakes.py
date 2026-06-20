@@ -87,6 +87,7 @@ class FakeLibraryService:
                     "comment": "",
                 }
             ],
+            "images": [{"id": 41, "type": "MAIN"}],
         }
 
     def list_studios(self, criteria):

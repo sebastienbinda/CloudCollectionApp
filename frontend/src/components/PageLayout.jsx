@@ -35,7 +35,11 @@ function resolveActiveNavigationKeyFromLocation() {
   if (pathname === "/about") {
     return "about";
   }
-  if (pathname === "/configuration" || pathname === "/users") {
+  if (
+    pathname === "/configuration" ||
+    pathname === "/configuration/images-plateformes" ||
+    pathname === "/users"
+  ) {
     return "configuration";
   }
   if (pathname === "/wishlist") {

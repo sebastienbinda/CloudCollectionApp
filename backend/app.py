@@ -22,6 +22,7 @@ from controllers import (
     GameController,
     LibraryController,
     PlatformController,
+    PlatformImageController,
     RouteController,
     StudioController,
     UserCollectionImportController,
@@ -34,6 +35,7 @@ from services import (
     DatabaseSchemaService,
     LibraryResetJobCoordinator,
     LibraryServiceProvider,
+    PlatformImageConfiguration,
     UserCollectionImportConfiguration,
 )
 
@@ -44,7 +46,15 @@ BackendLoggingService.configure_from_environment()
 app = Flask(__name__)
 CORS(app)
 user_collection_import_configuration = UserCollectionImportConfiguration.from_environment()
-app.config["MAX_CONTENT_LENGTH"] = user_collection_import_configuration.max_upload_bytes
+platform_image_configuration = PlatformImageConfiguration.from_environment()
+try:
+    platform_image_configuration.ensure_image_directory()
+except OSError as exc:
+    app.logger.warning("Repertoire d'images de plateformes indisponible au demarrage: %s", exc)
+app.config["MAX_CONTENT_LENGTH"] = max(
+    user_collection_import_configuration.max_upload_bytes,
+    platform_image_configuration.max_upload_bytes,
+)
 app.config["USER_COLLECTION_WORKSPACE_PATH"] = (
     user_collection_import_configuration.workspace_path
 )
@@ -71,6 +81,7 @@ library_controller = LibraryController(
     library_service_provider=library_service_provider,
 )
 platform_controller = PlatformController(library_service_factory=library_service_provider)
+platform_image_controller = PlatformImageController(auth_guard)
 studio_controller = StudioController(library_service_factory=library_service_provider)
 game_controller = GameController(library_service_factory=library_service_provider)
 
@@ -82,6 +93,7 @@ user_collection_import_controller.register_routes(app)
 collection_controller.register_routes(app)
 library_controller.register_routes(app)
 platform_controller.register_routes(app)
+platform_image_controller.register_routes(app)
 studio_controller.register_routes(app)
 game_controller.register_routes(app)
 
@@ -91,6 +103,7 @@ auth_guard.protect_all_routes(
     exempt_endpoints=(
         authentication_controller.get_public_endpoint_names()
         | platform_controller.get_public_endpoint_names()
+        | platform_image_controller.get_public_endpoint_names()
         | studio_controller.get_public_endpoint_names()
         | game_controller.get_public_endpoint_names()
     ),
