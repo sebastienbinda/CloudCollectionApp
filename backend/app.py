@@ -45,6 +45,7 @@ BackendLoggingService.configure_from_environment()
 # 2. Cree l'application HTTP et active les preflights CORS.
 app = Flask(__name__)
 CORS(app)
+BackendLoggingService.register_http_request_logging(app)
 user_collection_import_configuration = UserCollectionImportConfiguration.from_environment()
 platform_image_configuration = PlatformImageConfiguration.from_environment()
 try:

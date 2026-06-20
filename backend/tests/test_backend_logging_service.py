@@ -16,8 +16,81 @@ import logging
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from services.logging import DailySizeRotatingFileHandler
+from flask import Flask, jsonify
+
+from services.logging import BackendLoggingService, DailySizeRotatingFileHandler
+
+
+class BackendHttpLoggingServiceTest(unittest.TestCase):
+    """Verifie la journalisation transversale des appels REST backend."""
+
+    def setUp(self):
+        """Construit une application Flask instrumentee pour chaque test.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Initialise le client HTTP de test.
+        """
+
+        self.flask_app = Flask(__name__)
+        BackendLoggingService.register_http_request_logging(self.flask_app)
+        self.http_logger = logging.getLogger(BackendLoggingService.HTTP_LOGGER_NAME)
+        self.flask_app.add_url_rule(
+            "/success",
+            endpoint="http_logging_success",
+            view_func=lambda: jsonify({"ok": True}),
+        )
+        self.flask_app.add_url_rule(
+            "/bad-request",
+            endpoint="http_logging_bad_request",
+            view_func=lambda: (jsonify({"error": "Utilisateur connecte introuvable."}), 400),
+        )
+        self.client = self.flask_app.test_client()
+
+    def test_successful_rest_call_is_logged_at_info_level(self):
+        """Verifie qu'un appel REST reussi est journalise au niveau information.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la trace HTTP.
+        """
+
+        with patch.object(self.http_logger, "log") as log:
+            response = self.client.get("/success")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(logging.INFO, log.call_args.args[0])
+        self.assertIn("REST method=%s", log.call_args.args[1])
+        self.assertIn("GET", log.call_args.args)
+        self.assertIn("/success", log.call_args.args)
+
+    def test_bad_request_is_logged_at_error_level_with_functional_message(self):
+        """Verifie qu'une reponse 400 est journalisee en erreur avec son motif.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le niveau et le message fonctionnel.
+        """
+
+        with patch.object(self.http_logger, "log") as log:
+            response = self.client.get("/bad-request")
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(logging.ERROR, log.call_args.args[0])
+        self.assertIn("status=%s", log.call_args.args[1])
+        self.assertIn(400, log.call_args.args)
+        self.assertEqual(
+            " error='Utilisateur connecte introuvable.'",
+            log.call_args.args[-1],
+        )
 
 
 class MutableDateProvider:

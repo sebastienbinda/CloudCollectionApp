@@ -15,6 +15,9 @@ import logging
 import os
 from logging.config import dictConfig
 from pathlib import Path
+from time import perf_counter
+
+from flask import Flask, Response, g, request
 
 from .daily_size_rotating_file_handler import DailySizeRotatingFileHandler
 
@@ -32,6 +35,8 @@ class BackendLoggingService:
     DEFAULT_LOG_FILE_MAX_BYTES = 10 * 1024 * 1024
     DEFAULT_LOG_FILE_BACKUP_COUNT = 30
     ALLOWED_LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+    HTTP_LOGGER_NAME = "backend.http"
+    MAX_ERROR_MESSAGE_LENGTH = 500
 
     @classmethod
     def configure_from_environment(cls) -> None:
@@ -78,6 +83,101 @@ class BackendLoggingService:
         if cls._is_file_logging_enabled():
             cls._add_file_handler(log_level)
         logging.getLogger(__name__).debug("Configuration des journaux backend chargee.")
+
+    @classmethod
+    def register_http_request_logging(cls, flask_app: Flask) -> None:
+        """Enregistre la journalisation de toutes les requetes HTTP Flask.
+
+        Args:
+            flask_app (Flask): Application dont les appels REST doivent etre traces.
+
+        Returns:
+            None: Enregistre les traitements avant et apres requete.
+
+        Raises:
+            RuntimeError: Si Flask refuse l'enregistrement apres la premiere requete.
+        """
+
+        http_logger = logging.getLogger(cls.HTTP_LOGGER_NAME)
+
+        @flask_app.before_request
+        def record_http_request_start_time() -> None:
+            """Memorise l'instant de reception de la requete courante.
+
+            Args:
+                Aucun.
+
+            Returns:
+                None: Stocke l'instant dans le contexte Flask.
+            """
+
+            g.http_request_started_at = perf_counter()
+
+        @flask_app.after_request
+        def log_http_response(response: Response) -> Response:
+            """Trace la reponse HTTP avec un niveau adapte au statut.
+
+            Args:
+                response (Response): Reponse Flask produite par l'application.
+
+            Returns:
+                Response: Reponse originale sans modification.
+            """
+
+            started_at = getattr(g, "http_request_started_at", perf_counter())
+            duration_ms = round(max(0.0, perf_counter() - started_at) * 1000, 3)
+            log_level = logging.ERROR if response.status_code >= 400 else logging.INFO
+            http_logger.log(
+                log_level,
+                "REST method=%s path=%s endpoint=%s status=%s duration_ms=%s remote_addr=%s%s",
+                request.method,
+                request.path,
+                request.endpoint or "unmatched",
+                response.status_code,
+                duration_ms,
+                request.remote_addr or "unknown",
+                cls._format_http_error(response),
+            )
+            return response
+
+        @flask_app.teardown_request
+        def log_unhandled_http_exception(exception: BaseException | None) -> None:
+            """Trace une exception HTTP non convertie en reponse Flask.
+
+            Args:
+                exception (BaseException | None): Exception levee pendant la requete.
+
+            Returns:
+                None: Ecrit uniquement dans le journal.
+            """
+
+            if exception is not None:
+                http_logger.error(
+                    "REST exception method=%s path=%s endpoint=%s",
+                    request.method,
+                    request.path,
+                    request.endpoint or "unmatched",
+                    exc_info=(type(exception), exception, exception.__traceback__),
+                )
+
+    @classmethod
+    def _format_http_error(cls, response: Response) -> str:
+        """Extrait un message JSON borne pour une reponse HTTP en erreur.
+
+        Args:
+            response (Response): Reponse Flask a inspecter.
+
+        Returns:
+            str: Suffixe de log vide ou contenant le message fonctionnel.
+        """
+
+        if response.status_code < 400 or not response.is_json:
+            return ""
+        payload = response.get_json(silent=True)
+        if not isinstance(payload, dict) or not payload.get("error"):
+            return ""
+        error_message = str(payload["error"]).replace("\n", " ").replace("\r", " ")
+        return f" error={error_message[:cls.MAX_ERROR_MESSAGE_LENGTH]!r}"
 
     @classmethod
     def _add_file_handler(cls, log_level: str) -> None:
