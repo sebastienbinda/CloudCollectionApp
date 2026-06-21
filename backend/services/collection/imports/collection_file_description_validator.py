@@ -25,6 +25,7 @@ from .collection_file_description import (
 )
 from .wishlist_import_configuration_validator import WishlistImportConfigurationValidator
 from .spreadsheet_cell_reference import SpreadsheetCellReferenceParser
+from .collection_private_information_contract import ALLOWED_PRICE_UNITS
 
 
 class CollectionFileDescriptionValidationError(ValueError):
@@ -50,8 +51,6 @@ class CollectionFileDescriptionValidator:
     REQUIRED_FIELDS = {
         CollectionImportField.NAME,
         CollectionImportField.PLATFORM,
-        CollectionImportField.STUDIO,
-        CollectionImportField.RELEASE_DATE,
     }
 
     def __init__(
@@ -157,6 +156,9 @@ class CollectionFileDescriptionValidator:
             multiple_sheets,
             errors,
         )
+        price_unit = self._parse_price_unit(payload.get("price_unit"), errors)
+        if self._uses_purchase_price(single_sheet, multiple_sheets) and price_unit is None:
+            errors.append("price_unit est requis quand purchase_price est configure.")
 
         if errors:
             raise CollectionFileDescriptionValidationError(errors)
@@ -165,6 +167,51 @@ class CollectionFileDescriptionValidator:
             wishlist=wishlist_configuration or WishlistImportConfiguration.none(),
             single_sheet_conf=single_sheet,
             multiple_sheets_conf=multiple_sheets,
+            price_unit=price_unit,
+        )
+
+    def _parse_price_unit(self, value: Any, errors: list[str]) -> Optional[str]:
+        """Valide l'unite monetaire globale optionnelle.
+
+        Args:
+            value (Any): Valeur brute du payload.
+            errors (list[str]): Erreurs a enrichir.
+
+        Returns:
+            Optional[str]: Code ISO valide ou absence.
+        """
+
+        if value is None or not str(value).strip():
+            return None
+        price_unit = str(value).strip().upper()
+        if price_unit not in ALLOWED_PRICE_UNITS:
+            errors.append("price_unit inconnu.")
+            return None
+        return price_unit
+
+    def _uses_purchase_price(
+        self,
+        single_sheet: Optional[CollectionSheetLayout],
+        multiple_sheets: Optional[CollectionMultipleSheetsConfiguration],
+    ) -> bool:
+        """Indique si un layout configure une colonne de prix.
+
+        Args:
+            single_sheet (Optional[CollectionSheetLayout]): Layout simple.
+            multiple_sheets (Optional[CollectionMultipleSheetsConfiguration]): Layouts multiples.
+
+        Returns:
+            bool: `True` lorsqu'un prix doit etre importe.
+        """
+
+        layouts = [single_sheet]
+        if multiple_sheets is not None:
+            layouts.append(multiple_sheets.shared_layout)
+            layouts.extend(sheet.layout for sheet in multiple_sheets.sheets or [])
+        return any(
+            layout is not None
+            and CollectionImportField.PURCHASE_PRICE in layout.column_information
+            for layout in layouts
         )
 
     def _parse_file_type(

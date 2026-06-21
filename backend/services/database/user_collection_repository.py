@@ -12,6 +12,8 @@
 # Description : repository SQL des associations utilisateur-collection.
 
 from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
@@ -24,10 +26,23 @@ class UserGameAssociation:
     Attributes:
         game_id (int): Identifiant du jeu rattache.
         wishlist (bool): Indique si le jeu est un souhait.
+        purchase_price (Decimal | None): Prix d'achat decimal optionnel.
     """
 
     game_id: int
     wishlist: bool = False
+    purchase_price: Decimal | None = None
+    price_unit: str | None = None
+    buy_location: str | None = None
+    buy_date: date | None = None
+    grade: str | None = None
+    condition: int | None = None
+    has_manual: bool | None = None
+    is_collector: bool | None = None
+    has_steelbook: bool | None = None
+    is_digital: bool | None = None
+    region: str | None = None
+    description: str | None = None
 
 
 class SqlAlchemyUserCollectionRepository:
@@ -93,21 +108,91 @@ class SqlAlchemyUserCollectionRepository:
         existing_game_ids = set(existing_wishlist_values.keys())
         for association in normalized_associations:
             if association.game_id in existing_game_ids:
+                self._update_private_information(connection, user_id, association)
                 continue
             connection.execute(
                 text(
                     f'INSERT INTO "{self.schema_name}".t_user_collection '
-                    "(user_id, game_id, game_additional_name, wishlist) "
-                    "VALUES (:user_id, :game_id, NULL, :wishlist)"
+                    "(user_id, game_id, game_additional_name, wishlist, purchase_price, "
+                    "price_unit, buy_location, buy_date, grade, condition, has_manual, "
+                    "is_collector, has_steelbook, is_digital, region, description) "
+                    "VALUES (:user_id, :game_id, NULL, :wishlist, :purchase_price, "
+                    ":price_unit, :buy_location, :buy_date, :grade, :condition, :has_manual, "
+                    ":is_collector, :has_steelbook, :is_digital, :region, :description)"
                 ),
-                {
-                    "user_id": user_id,
-                    "game_id": association.game_id,
-                    "wishlist": association.wishlist,
-                },
+                self._association_parameters(user_id, association),
             )
             existing_game_ids.add(association.game_id)
         return len(normalized_associations)
+
+    def _update_private_information(
+        self,
+        connection: Connection,
+        user_id: int,
+        association: UserGameAssociation,
+    ) -> None:
+        """Met a jour uniquement les informations privees non nulles.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+            association (UserGameAssociation): Valeurs importees.
+
+        Returns:
+            None: Met a jour l'association existante.
+        """
+
+        assignments = ", ".join(
+            f"{field} = COALESCE(:{field}, {field})"
+            for field in self._private_field_names()
+        )
+        connection.execute(
+            text(
+                f'UPDATE "{self.schema_name}".t_user_collection SET {assignments} '
+                "WHERE user_id = :user_id AND game_id = :game_id"
+            ),
+            self._association_parameters(user_id, association),
+        )
+
+    def _association_parameters(
+        self,
+        user_id: int,
+        association: UserGameAssociation,
+    ) -> dict[str, object]:
+        """Construit les parametres SQL d'une association.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            association (UserGameAssociation): Association importee.
+
+        Returns:
+            dict[str, object]: Parametres SQL nommes.
+        """
+
+        parameters = {
+            "user_id": user_id,
+            "game_id": association.game_id,
+            "wishlist": association.wishlist,
+        }
+        parameters.update({field: getattr(association, field) for field in self._private_field_names()})
+        return parameters
+
+    @staticmethod
+    def _private_field_names() -> tuple[str, ...]:
+        """Retourne les noms persistants des informations privees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[str, ...]: Noms de colonnes SQL.
+        """
+
+        return (
+            "purchase_price", "price_unit", "buy_location", "buy_date", "grade",
+            "condition", "has_manual", "is_collector", "has_steelbook",
+            "is_digital", "region", "description",
+        )
 
     def count_user_game_associations(self, connection: Connection, user_id: int) -> int:
         """Compte les associations de collection d'un utilisateur.

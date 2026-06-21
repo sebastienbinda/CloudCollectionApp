@@ -217,8 +217,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260620_0010"], script_directory.get_heads())
-        self.assertEqual(7, len(revisions))
+        self.assertEqual(["20260621_0012"], script_directory.get_heads())
+        self.assertEqual(9, len(revisions))
+        self.assertEqual("20260620_0010", revisions_by_id["20260620_0011"].down_revision)
         self.assertEqual("20260614_0008", revisions_by_id["20260618_0009"].down_revision)
         self.assertEqual("20260605_0007", revisions_by_id["20260614_0008"].down_revision)
         self.assertEqual("20260603_0006", revisions_by_id["20260605_0007"].down_revision)
@@ -357,6 +358,28 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn("server_default=sa.text(\"0\")", migration_source)
         self.assertIn("ck_t_platform_image_file_size_bytes", migration_source)
         self.assertIn("file_size_bytes >= 0", migration_source)
+
+    def test_decimal_purchase_price_migration_preserves_existing_values(self):
+        """Verifie la migration du prix d'achat vers deux decimales.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le type et la conversion PostgreSQL.
+        """
+
+        migration_path = (
+            Path(__file__).resolve().parents[1]
+            / "migrations"
+            / "versions"
+            / "20260621_0012_decimal_purchase_price.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn('down_revision: Union[str, None] = "20260620_0011"', migration_source)
+        self.assertIn("sa.Numeric(precision=12, scale=2)", migration_source)
+        self.assertIn('postgresql_using="purchase_price::numeric(12,2)"', migration_source)
 
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.

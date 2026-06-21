@@ -25,16 +25,15 @@ from services.collection.imports import (
     CollectionImportPlatform,
     CollectionImportStudio,
     CollectionImportWarnings,
+    CollectionImportValueMapper,
     CollectionMultipleSheetsConfiguration,
     CollectionSheetLayout,
     WishlistDuplicatePolicy,
     WishlistImportMode,
-    WishlistValueParser,
 )
 from services.collection.imports.spreadsheet_cell_reference import (
     SpreadsheetCellReferenceParser,
 )
-from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
 from .ods_cache import OdsCache
 from .ods_collection_import_game_builder import OdsCollectionImportGameBuilder
@@ -56,42 +55,38 @@ class OdsCollectionImportReader:
     def __init__(
         self,
         reader_factory: Optional[Callable[[str], OdsReader]] = None,
-        name_normalizer: Optional[UserCollectionNameNormalizer] = None,
         cell_reference_parser: Optional[SpreadsheetCellReferenceParser] = None,
         error_context: Optional[OdsImportErrorContext] = None,
         logger: Optional[logging.Logger] = None,
-        wishlist_value_parser: Optional[WishlistValueParser] = None,
         wishlist_duplicate_policy: Optional[WishlistDuplicatePolicy] = None,
+        value_mapper: Optional[CollectionImportValueMapper] = None,
     ):
         """Initialise le lecteur d'import de collection ODS.
 
         Args:
             reader_factory (Optional[Callable[[str], OdsReader]]): Fabrique de lecteur ODS.
-            name_normalizer (Optional[UserCollectionNameNormalizer]): Normaliseur metier.
             cell_reference_parser (Optional[SpreadsheetCellReferenceParser]): Parser tableur.
             error_context (Optional[OdsImportErrorContext]): Contexte d'erreurs.
             logger (Optional[logging.Logger]): Logger utilise pour les avertissements.
-            wishlist_value_parser (Optional[WishlistValueParser]): Parser des valeurs wishlist.
             wishlist_duplicate_policy (Optional[WishlistDuplicatePolicy]): Politique doublons.
+            value_mapper (Optional[CollectionImportValueMapper]): Mapper generique injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.reader_factory = reader_factory or self._create_ods_reader
-        self.name_normalizer = name_normalizer or UserCollectionNameNormalizer()
         self.cell_reference_parser = cell_reference_parser or SpreadsheetCellReferenceParser()
         self.error_context = error_context or OdsImportErrorContext()
         self.logger = logger or logging.getLogger(__name__)
-        self.wishlist_value_parser = wishlist_value_parser or WishlistValueParser()
         self.wishlist_duplicate_policy = wishlist_duplicate_policy or WishlistDuplicatePolicy()
+        self.value_mapper = value_mapper or CollectionImportValueMapper(logger=self.logger)
         self.game_builder = OdsCollectionImportGameBuilder(
-            self.name_normalizer,
             self.cell_reference_parser,
             self.error_context,
             self.logger,
-            self.wishlist_value_parser,
             self.wishlist_duplicate_policy,
+            self.value_mapper,
         )
 
     @property
@@ -194,6 +189,7 @@ class OdsCollectionImportReader:
                     None,
                     description.wishlist.mode,
                     warnings,
+                    price_unit=description.price_unit,
                 ),
                 description.wishlist.mode,
             )
@@ -207,6 +203,7 @@ class OdsCollectionImportReader:
                     sheet_names,
                     description.wishlist.mode,
                     warnings,
+                    description.price_unit,
                 ),
                 description.wishlist.mode,
             )
@@ -223,6 +220,7 @@ class OdsCollectionImportReader:
                     description.wishlist.mode,
                     warnings,
                     forced_wishlist=True,
+                    price_unit=description.price_unit,
                 ),
                 description.wishlist.mode,
             )
@@ -239,6 +237,7 @@ class OdsCollectionImportReader:
         available_sheet_names: list[str],
         wishlist_mode: WishlistImportMode,
         warnings: dict[str, Any],
+        price_unit: str | None,
     ) -> list[CollectionImportGame]:
         games: list[CollectionImportGame] = []
         if configuration.shared_layout is not None:
@@ -255,6 +254,7 @@ class OdsCollectionImportReader:
                         configuration.sheet_information,
                         wishlist_mode,
                         warnings,
+                        price_unit=price_unit,
                     )
                 )
             return games
@@ -268,6 +268,7 @@ class OdsCollectionImportReader:
                     sheet_configuration.sheet_information,
                     wishlist_mode,
                     warnings,
+                    price_unit=price_unit,
                 )
             )
         return games
@@ -293,6 +294,7 @@ class OdsCollectionImportReader:
         wishlist_mode: WishlistImportMode,
         warnings: dict[str, Any],
         forced_wishlist: Optional[bool] = None,
+        price_unit: str | None = None,
     ) -> list[CollectionImportGame]:
         try:
             dataframe = reader.read_sheet_dataframe(
@@ -317,6 +319,7 @@ class OdsCollectionImportReader:
             wishlist_mode,
             warnings,
             forced_wishlist,
+            price_unit,
         )
 
     def _configured_columns(self, layout: CollectionSheetLayout) -> str:
@@ -344,7 +347,7 @@ class OdsCollectionImportReader:
         studios: list[CollectionImportStudio] = []
         seen_studio_keys: set[str] = set()
         for game in games:
-            studio_key = self.name_normalizer.comparison_key(game.studio_name)
+            studio_key = self.value_mapper.comparison_key(game.studio_name)
             if game.studio_name is None or studio_key is None:
                 continue
             if studio_key in seen_studio_keys:
@@ -361,7 +364,7 @@ class OdsCollectionImportReader:
         platforms: list[CollectionImportPlatform] = []
         seen_platform_keys: set[str] = set()
         for game in games:
-            platform_key = self.name_normalizer.comparison_key(game.platform_name)
+            platform_key = self.value_mapper.comparison_key(game.platform_name)
             if platform_key is None or platform_key in seen_platform_keys:
                 continue
             seen_platform_keys.add(platform_key)

@@ -11,7 +11,7 @@
 #
 # Description : matching des plateformes importees avec le referentiel.
 
-from difflib import SequenceMatcher
+from dataclasses import replace
 
 from services.collection.imports import (
     CollectionImportData,
@@ -20,6 +20,7 @@ from services.collection.imports import (
     CollectionImportWarnings,
 )
 from services.users import UserCollectionNameNormalizer
+from services.matching import matching_score
 
 from .platform_matching_configuration import PlatformMatchingConfiguration
 
@@ -214,11 +215,7 @@ class PlatformMatchingService:
         ]
 
     def _matching_score(self, imported_key: str, candidate_key: str) -> int:
-        if imported_key == candidate_key:
-            return 100
-        if not imported_key or not candidate_key:
-            return 0
-        return int(round(SequenceMatcher(None, imported_key, candidate_key).ratio() * 100))
+        return matching_score(imported_key, candidate_key)
 
     def _compact_key(self, value: object) -> str:
         comparison_key = self.name_normalizer.comparison_key(value) or ""
@@ -235,13 +232,7 @@ class PlatformMatchingService:
         )
 
     def _matched_game(self, game: CollectionImportGame, platform_name: str) -> CollectionImportGame:
-        return CollectionImportGame(
-            name=game.name,
-            platform_name=platform_name,
-            studio_name=game.studio_name,
-            release_date=game.release_date,
-            wishlist=game.wishlist,
-        )
+        return replace(game, platform_name=platform_name)
 
     def _matched_platform_names(self, games: list[CollectionImportGame]) -> list[str]:
         names_by_key = {}

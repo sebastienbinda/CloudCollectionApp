@@ -319,8 +319,16 @@ class VideoGamesApi {
       "Date d'achat": game.buy_date || "",
       "Lieu d'achat": game.buy_location || "",
       Note: game.grade || "",
-      "Prix d'achat": "",
-      Version: game.version || "",
+      "Prix d'achat": game.purchase_price,
+      priceUnit: game.price_unit || "",
+      Version: game.region || game.version || "",
+      Etat: game.condition,
+      Notice: game.has_manual,
+      Collector: game.is_collector,
+      Steelbook: game.has_steelbook,
+      "Version digitale": game.is_digital,
+      Region: game.region || "",
+      Description: game.description || "",
     }));
   }
 

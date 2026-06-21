@@ -13,6 +13,7 @@
 # Description : tests du repository d'associations utilisateur-collection.
 
 import unittest
+from decimal import Decimal
 
 from services.database import SqlAlchemyUserCollectionRepository, UserGameAssociation
 
@@ -131,7 +132,10 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         insert_sql, parameters = connection.executed_statements[1]
         self.assertEqual(1, count)
         self.assertIn("wishlist", insert_sql)
-        self.assertEqual({"user_id": 7, "game_id": 42, "wishlist": False}, parameters)
+        self.assertEqual(7, parameters["user_id"])
+        self.assertEqual(42, parameters["game_id"])
+        self.assertFalse(parameters["wishlist"])
+        self.assertIsNone(parameters["purchase_price"])
 
     def test_reads_existing_wishlist_values(self):
         """Verifie la lecture des valeurs wishlist existantes."""
@@ -158,7 +162,9 @@ class UserCollectionRepositoryTest(unittest.TestCase):
 
         _, parameters = connection.executed_statements[1]
         self.assertEqual(1, count)
-        self.assertEqual({"user_id": 7, "game_id": 42, "wishlist": True}, parameters)
+        self.assertEqual(7, parameters["user_id"])
+        self.assertEqual(42, parameters["game_id"])
+        self.assertTrue(parameters["wishlist"])
 
     def test_does_not_duplicate_existing_user_game_association(self):
         """Verifie qu'une association existante n'est pas reinseree."""
@@ -172,8 +178,38 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         )
 
         self.assertEqual(1, count)
-        self.assertEqual(1, len(connection.executed_statements))
+        self.assertEqual(2, len(connection.executed_statements))
         self.assertIn("SELECT game_id, wishlist", connection.executed_statements[0][0])
+        self.assertIn("UPDATE", connection.executed_statements[1][0])
+
+    def test_updates_only_non_null_private_information_for_existing_association(self):
+        """Verifie l'upsert non destructif des informations privees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident SQL et parametres.
+        """
+
+        connection = FakeRepositoryConnection(existing_wishlist_values={42: False})
+        association = UserGameAssociation(
+            game_id=42,
+            purchase_price=Decimal("120.25"),
+            price_unit="EUR",
+            region="EU-FR",
+            has_manual=False,
+        )
+
+        self.repository.ensure_user_game_associations(connection, 7, [association])
+
+        sql, parameters = connection.executed_statements[1]
+        self.assertIn("purchase_price = COALESCE(:purchase_price, purchase_price)", sql)
+        self.assertEqual(Decimal("120.25"), parameters["purchase_price"])
+        self.assertEqual("EUR", parameters["price_unit"])
+        self.assertEqual("EU-FR", parameters["region"])
+        self.assertFalse(parameters["has_manual"])
+        self.assertIsNone(parameters["description"])
 
     def test_counts_user_game_associations(self):
         """Verifie le comptage des associations utilisateur."""

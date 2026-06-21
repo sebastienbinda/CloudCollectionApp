@@ -13,6 +13,7 @@
  * Description : page React de detail d'un jeu.
  */
 import { formatCellValue } from "../collectionUtils";
+import TableColumnFormatService from "../services/TableColumnFormatService.jsx";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
 
@@ -108,11 +109,18 @@ function buildGameFields(game, isCollectionSource) {
       ["Plateforme", formatCellValue("Plateforme", game.Plateforme)],
       ["Studio", formatCellValue("Studio", game.Studio)],
       ["Date de sortie", formatCellValue("Date", game["Date de sortie"])],
-      ["Version", formatCellValue("Version", game.Version)],
+      ["Prix d'achat", formatPurchasePrice(game["Prix d'achat"], game.priceUnit)],
       ["Date d'achat", formatCellValue("Date", game["Date d'achat"])],
       ["Lieu d'achat", formatCellValue("Texte", game["Lieu d'achat"])],
       ["Note", formatCellValue("Note", game.Note)],
-    ];
+      ["Etat", formatCondition(game.Etat)],
+      ["Notice", formatBoolean(game.Notice)],
+      ["Collector", formatBoolean(game.Collector)],
+      ["Steelbook", formatBoolean(game.Steelbook)],
+      ["Version digitale", formatBoolean(game["Version digitale"])],
+      ["Region", TableColumnFormatService.formatVersionValue(game.Region)],
+      ["Description", game.Description],
+    ].filter(([, value]) => value !== null && value !== undefined && value !== "");
   }
   return [
     ["Plateforme", formatCellValue("Plateforme", game.platform)],
@@ -121,6 +129,31 @@ function buildGameFields(game, isCollectionSource) {
     ["Date de sortie", formatCellValue("Date", game.release_date)],
     ["Statut", formatCellValue("Statut", game.status)],
   ];
+}
+
+function formatPurchasePrice(value, priceUnit) {
+  if (value === null || value === undefined || value === "" || !priceUnit) {
+    return null;
+  }
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: priceUnit,
+    maximumFractionDigits: 2,
+  }).format(Number(value));
+}
+
+function formatCondition(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  return ["Mauvais", "Correct", "Bon", "Très bon", "Neuf"][Number(value)] || null;
+}
+
+function formatBoolean(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return value ? "Oui" : "Non";
 }
 
 export default GameDetailView;

@@ -24,6 +24,17 @@ class CollectionImportField(str, Enum):
     STUDIO = "studio"
     RELEASE_DATE = "release_date"
     WISHLIST = "wishlist"
+    PURCHASE_PRICE = "purchase_price"
+    BUY_LOCATION = "buy_location"
+    BUY_DATE = "buy_date"
+    GRADE = "grade"
+    CONDITION = "condition"
+    HAS_MANUAL = "has_manual"
+    IS_COLLECTOR = "is_collector"
+    HAS_STEELBOOK = "has_steelbook"
+    IS_DIGITAL = "is_digital"
+    REGION = "region"
+    DESCRIPTION = "description"
 
 
 class WishlistImportMode(str, Enum):
@@ -202,12 +213,14 @@ class CollectionFileDescription:
         wishlist (WishlistImportConfiguration): Configuration wishlist valide.
         single_sheet_conf (Optional[CollectionSheetLayout]): Configuration feuille unique.
         multiple_sheets_conf (Optional[CollectionMultipleSheetsConfiguration]): Configuration multi-onglets.
+        price_unit (Optional[str]): Unite globale des prix du fichier.
     """
 
     file_type: CollectionFileType
     wishlist: WishlistImportConfiguration = field(default_factory=WishlistImportConfiguration.none)
     single_sheet_conf: Optional[CollectionSheetLayout] = None
     multiple_sheets_conf: Optional[CollectionMultipleSheetsConfiguration] = None
+    price_unit: Optional[str] = None
 
     def to_dict(self) -> dict:
         """Convertit la description en dictionnaire serialisable.
@@ -221,6 +234,8 @@ class CollectionFileDescription:
 
         payload = {"file_type": self.file_type.value}
         payload["wishlist"] = self.wishlist.to_dict()
+        if self.price_unit is not None:
+            payload["price_unit"] = self.price_unit
         if self.single_sheet_conf is not None:
             payload["single_sheet_conf"] = self.single_sheet_conf.to_dict(
                 include_included_sheets=False

@@ -9,12 +9,12 @@
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : validation metier des dates issues d'un import de collection.
+# Description : validation generique des dates issues d'un import de collection.
 
 from dataclasses import replace
 from datetime import date, datetime
 
-from services.collection.imports import CollectionImportData
+from .collection_import_models import CollectionImportData
 
 
 class CollectionImportDateValidator:

@@ -41,6 +41,19 @@ function ImportConfigurationFields({
   return (
     <fieldset className="importConfiguration" disabled={disabled}>
       <legend>Configuration du fichier</legend>
+      <p>* Champs obligatoires</p>
+
+      <label>
+        Unite des prix
+        <select
+          value={configuration.priceUnit}
+          onChange={(event) => onConfigurationChange("priceUnit", event.target.value)}
+        >
+          {["EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "KRW"].map(
+            (priceUnit) => <option key={priceUnit} value={priceUnit}>{priceUnit}</option>
+          )}
+        </select>
+      </label>
 
       <WishlistFields
         configuration={configuration}
@@ -76,6 +89,7 @@ function ImportConfigurationFields({
         <ImportLayoutFields
           layout={configuration.singleSheetLayout}
           columnFields={columnFields}
+          requiredFields={["name", "platform"]}
           onLayoutChange={(fieldName, value) => onLayoutChange(
             "singleSheetLayout",
             fieldName,
@@ -137,7 +151,7 @@ function WishlistFields({
       {configuration.wishlist.mode === "sheet" ? (
         <>
           <label>
-            Onglet wishlist
+            Onglet wishlist *
             <SheetNameField
               value={configuration.wishlist.sheetName}
               availableSheetNames={availableSheetNames}
@@ -147,6 +161,7 @@ function WishlistFields({
           <ImportLayoutFields
             layout={configuration.wishlist.layout}
             columnFields={["name", "platform", "studio", "release_date"]}
+            requiredFields={["name", "platform"]}
             onLayoutChange={onWishlistLayoutChange}
             onLayoutColumnChange={onWishlistLayoutColumnChange}
           />
@@ -176,6 +191,10 @@ function collectionColumnFields(configuration, includePlatformColumn) {
   if (configuration.wishlist.mode === "column") {
     fields.push("wishlist");
   }
+  fields.push(
+    "purchase_price", "buy_location", "buy_date", "grade", "condition",
+    "has_manual", "is_collector", "has_steelbook", "is_digital", "region", "description"
+  );
   return fields;
 }
 
@@ -188,7 +207,7 @@ function collectionColumnFields(configuration, includePlatformColumn) {
 function SheetNameField({ value, availableSheetNames, onChange }) {
   if (availableSheetNames.length) {
     return (
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <select required value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">Selectionner un onglet</option>
         {availableSheetNames.map((sheetName) => (
           <option key={sheetName} value={sheetName}>{sheetName}</option>
@@ -196,7 +215,14 @@ function SheetNameField({ value, availableSheetNames, onChange }) {
       </select>
     );
   }
-  return <input type="text" value={value} onChange={(event) => onChange(event.target.value)} />;
+  return (
+    <input
+      type="text"
+      required
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
 }
 
 /**
@@ -220,7 +246,7 @@ function MultipleSheetsFields({
   return (
     <>
       <label>
-        Information portee par l'onglet
+        Information portee par l'onglet *
         <select value={configuration.sheetInformation} disabled>
           <option value="platform">Plateforme</option>
         </select>
@@ -290,6 +316,7 @@ function MultipleSheetsFields({
           <ImportLayoutFields
             layout={configuration.sharedSheetLayout}
             columnFields={collectionColumnFields(configuration, false)}
+            requiredFields={["name"]}
             onLayoutChange={(fieldName, value) => onLayoutChange(
               "sharedSheetLayout",
               fieldName,
@@ -401,9 +428,10 @@ function PerSheetFields({
             </button>
           </div>
           <label>
-            Nom de l'onglet
+            Nom de l'onglet *
             <input
               type="text"
+              required
               value={sheet.sheetName}
               onChange={(event) => onSheetChange(index, "sheetName", event.target.value)}
             />
@@ -411,6 +439,7 @@ function PerSheetFields({
           <ImportLayoutFields
             layout={sheet.layout}
             columnFields={collectionColumnFields(configuration, false)}
+            requiredFields={["name"]}
             onLayoutChange={(fieldName, value) => onSheetLayoutChange(index, fieldName, value)}
             onLayoutColumnChange={(fieldName, value) => onSheetColumnChange(index, fieldName, value)}
           />

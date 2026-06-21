@@ -33,7 +33,7 @@ from services.database.user_collection_import_repository import (
 )
 
 from .user_collection_import_admin_notifier import UserCollectionImportAdminNotifier
-from .collection_import_date_validator import CollectionImportDateValidator
+from services.collection.imports import CollectionImportDateValidator
 from .user_collection_import_configuration import UserCollectionImportConfiguration
 from .user_collection_import_report_notifier import UserCollectionImportReportNotifier
 from .user_collection_import_repository_protocol import UserCollectionImportRepository

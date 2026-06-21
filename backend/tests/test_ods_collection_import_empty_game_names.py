@@ -71,6 +71,41 @@ class OdsCollectionImportEmptyGameNamesTest(unittest.TestCase):
         self.assertEqual(["Tomb Raider"], [game.name for game in import_data.games])
         self.assertIsNone(import_data.games[0].release_date)
 
+    def test_read_accepts_configured_optional_columns_with_empty_cells(self):
+        """Verifie que les cellules optionnelles vides ne bloquent pas l'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le jeu importe sans information optionnelle.
+        """
+
+        helper = OdsCollectionImportReaderTest()
+        service = helper._service_for_reader(
+            FakeOdsReader(
+                ["Switch"],
+                {
+                    "Switch": helper._dataframe(
+                        [
+                            {
+                                "Nom du jeu": "Tomb Raider",
+                                "Studio": "",
+                                "Date de sortie": pd.NaT,
+                            }
+                        ]
+                    )
+                },
+            )
+        )
+
+        import_data = service.read("/tmp/empty-optionals.ods", helper._single_sheet_description())
+
+        self.assertEqual(1, len(import_data.games))
+        self.assertIsNone(import_data.games[0].studio_name)
+        self.assertIsNone(import_data.games[0].release_date)
+        self.assertEqual([], import_data.warnings.invalid_games)
+
 
 if __name__ == "__main__":
     unittest.main()

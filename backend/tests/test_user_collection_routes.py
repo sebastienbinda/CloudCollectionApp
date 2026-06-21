@@ -353,6 +353,31 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(422, response.status_code)
         self.assertEqual(["JSON invalide."], response.get_json()["details"])
 
+    def test_import_current_user_collection_rejects_missing_required_platform(self):
+        """Verifie le refus backend d'une configuration sans plateforme.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le detail de validation.
+        """
+
+        description = self._valid_description()
+        del description["single_sheet_conf"]["column_information"]["platform"]
+
+        response = self.client.post(
+            "/api/users/import",
+            headers=self.get_user_auth_headers(),
+            json=description,
+        )
+
+        self.assertEqual(422, response.status_code)
+        self.assertIn(
+            "colonne obligatoire manquante: platform.",
+            response.get_json()["details"],
+        )
+
     def test_import_current_user_collection_maps_validation_error(self):
         """Verifie le mapping 422 d'une erreur de validation de configuration.
 

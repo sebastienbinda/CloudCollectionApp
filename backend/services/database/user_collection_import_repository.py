@@ -382,6 +382,21 @@ class SqlAlchemyUserCollectionImportRepository:
                 )
                 created_count += 1
             game_associations.append(
-                UserGameAssociation(existing_game_ids[game_key], game.wishlist)
+                UserGameAssociation(
+                    game_id=existing_game_ids[game_key],
+                    wishlist=game.wishlist,
+                    purchase_price=game.purchase_price,
+                    price_unit=game.price_unit,
+                    buy_location=game.buy_location,
+                    buy_date=game.buy_date,
+                    grade=game.grade,
+                    condition=game.condition,
+                    has_manual=game.has_manual,
+                    is_collector=game.is_collector,
+                    has_steelbook=game.has_steelbook,
+                    is_digital=game.is_digital,
+                    region=game.region,
+                    description=game.description,
+                )
             )
         return game_associations, created_count

@@ -239,7 +239,7 @@ export const formatCurrency = (value) => {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(numericValue);
 };
 

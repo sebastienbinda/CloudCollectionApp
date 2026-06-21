@@ -38,6 +38,10 @@ from .collection_import_models import (
     CollectionImportStudio,
     CollectionImportWarnings,
 )
+from .collection_import_date_validator import CollectionImportDateValidator
+from .collection_import_value_mapper import CollectionImportValueMapper
+from .condition_matching_configuration import ConditionMatchingConfiguration
+from .region_matching_configuration import RegionMatchingConfiguration
 from .wishlist_duplicate_policy import WishlistDuplicatePolicy
 from .wishlist_value_parser import WishlistValueParseResult, WishlistValueParser
 
@@ -51,16 +55,20 @@ __all__ = [
     "CollectionFileValidationError",
     "CollectionFileType",
     "CollectionImportData",
+    "CollectionImportDateValidator",
     "CollectionImportField",
     "CollectionImportGame",
     "CollectionImportPlatform",
     "CollectionImportStudio",
     "CollectionImportWarnings",
+    "CollectionImportValueMapper",
+    "ConditionMatchingConfiguration",
     "CollectionMultipleSheetsConfiguration",
     "CollectionPerSheetConfiguration",
     "CollectionSheetLayout",
     "WishlistImportConfiguration",
     "WishlistImportMode",
+    "RegionMatchingConfiguration",
     "WishlistDuplicatePolicy",
     "WishlistValueParseResult",
     "WishlistValueParser",

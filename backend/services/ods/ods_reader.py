@@ -105,15 +105,79 @@ class OdsReader:
             pandas.DataFrame: Donnees lues depuis l'onglet.
         """
 
-        dataframe = pd.read_excel(
-            self.ods_path,
-            sheet_name=sheet_name,
-            engine="odf",
-            header=header_row - 1,
-            usecols=selected_columns or self._usecols_from_range(data_range),
-            nrows=self._data_row_count(data_range, header_row),
-        )
+        read_options = {
+            "sheet_name": sheet_name,
+            "engine": "odf",
+            "header": header_row - 1,
+            "usecols": selected_columns or self._usecols_from_range(data_range),
+            "nrows": self._data_row_count(data_range, header_row),
+        }
+        try:
+            dataframe = pd.read_excel(self.ods_path, **read_options)
+        except ValueError as exc:
+            if selected_columns is None or not self._is_out_of_bounds_usecols_error(exc):
+                raise
+            read_options.pop("usecols")
+            complete_dataframe = pd.read_excel(self.ods_path, **read_options)
+            dataframe = self._select_columns_with_empty_fallback(
+                complete_dataframe,
+                selected_columns,
+            )
         return dataframe.where(pd.notna(dataframe), None)
+
+    def _is_out_of_bounds_usecols_error(self, error: ValueError) -> bool:
+        """Detecte l'erreur pandas produite par des colonnes terminales absentes.
+
+        Args:
+            error (ValueError): Erreur de lecture pandas recue.
+
+        Returns:
+            bool: `True` lorsque les indices `usecols` depassent les colonnes materialisees.
+        """
+
+        return "out-of-bounds" in str(error).lower() and "usecols" in str(error).lower()
+
+    def _select_columns_with_empty_fallback(
+        self,
+        dataframe: pd.DataFrame,
+        selected_columns: str,
+    ) -> pd.DataFrame:
+        """Selectionne les colonnes demandees et complete celles absentes par `None`.
+
+        Args:
+            dataframe (pandas.DataFrame): Onglet complet lu sans filtre de colonnes.
+            selected_columns (str): Colonnes tableur separees par des virgules.
+
+        Returns:
+            pandas.DataFrame: Colonnes demandees dans leur ordre, y compris les colonnes vides.
+        """
+
+        columns = [column.strip().upper() for column in selected_columns.split(",")]
+        selected_series = []
+        for column in columns:
+            column_index = self._column_to_index(column)
+            if column_index < len(dataframe.columns):
+                selected_series.append(dataframe.iloc[:, column_index])
+            else:
+                selected_series.append(pd.Series(None, index=dataframe.index, dtype=object))
+        selected_dataframe = pd.concat(selected_series, axis=1)
+        selected_dataframe.columns = columns
+        return selected_dataframe
+
+    def _column_to_index(self, column: str) -> int:
+        """Convertit une reference de colonne tableur en index base zero.
+
+        Args:
+            column (str): Reference alphabetique, par exemple `O`.
+
+        Returns:
+            int: Index de colonne base zero.
+        """
+
+        return sum(
+            (ord(character) - ord("A") + 1) * (26 ** position)
+            for position, character in enumerate(reversed(column))
+        ) - 1
 
     def _usecols_from_range(self, data_range: str) -> str:
         """Extrait les colonnes utilisables par pandas depuis une plage.

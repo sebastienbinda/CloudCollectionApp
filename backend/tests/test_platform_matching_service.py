@@ -42,7 +42,10 @@ class PlatformMatchingServiceTest(unittest.TestCase):
             ],
             studios=[],
             games=[
-                CollectionImportGame("Zelda", "switch", "", None),
+                CollectionImportGame(
+                    "Zelda", "switch", "", None,
+                    purchase_price=59, price_unit="EUR", region="EU-FR",
+                ),
                 CollectionImportGame("Sonic", "Mega  Drive", "", None),
                 CollectionImportGame("Ridge Racer", "Playstation", "", None),
             ],
@@ -56,6 +59,9 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         ])
         self.assertEqual([], matched_data.warnings.platform_matches)
         self.assertEqual([], matched_data.warnings.skipped_games)
+        self.assertEqual(59, matched_data.games[0].purchase_price)
+        self.assertEqual("EUR", matched_data.games[0].price_unit)
+        self.assertEqual("EU-FR", matched_data.games[0].region)
 
     def test_match_import_data_accepts_low_score_with_warning(self):
         """Verifie un score faible importe avec warning.

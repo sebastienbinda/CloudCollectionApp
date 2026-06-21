@@ -59,11 +59,18 @@ available, remain separate controls and must not trigger detail navigation.
 On mobile, collection and wishlist game tables are rendered as compact game
 entries instead of dense tabular rows. The first line displays the game name.
 The second line displays the release date and platform when those values are
-available. This mobile presentation must keep the same row-click detail
-navigation as desktop.
+available. The region flag is displayed in both desktop and mobile lists. This
+mobile presentation must keep the same row-click detail navigation as desktop.
 
 The frontend must accept `wishlist` in game rows returned by the backend, but it
 must not display that technical value in the collection table.
+
+The authenticated collection game detail displays private purchase and copy
+information only when it is not null. Purchase price uses its persisted ISO
+unit without conversion. Condition integers are mapped in the frontend from
+`Mauvais` to `Neuf`; region codes are displayed with their corresponding flag,
+using a globe for `ASIA`. Public Library game detail must never expose these
+user-specific fields.
 
 Platforms that only contain wishlist games must not appear in Ma collection.
 

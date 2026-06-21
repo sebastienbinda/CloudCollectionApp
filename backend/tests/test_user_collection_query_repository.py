@@ -321,7 +321,12 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertIn("game.release_date <= :release_date_to", sql)
         self.assertIn("user_collection.wishlist", sql)
         self.assertIn("user_collection.wishlist = :wishlist", sql)
-        self.assertIn("ORDER BY studio.name DESC, NULL ASC, game.name ASC", sql)
+        self.assertIn(
+            "ORDER BY studio.name DESC, user_collection.grade ASC, game.name ASC",
+            sql,
+        )
+        self.assertIn("user_collection.purchase_price", sql)
+        self.assertIn("user_collection.price_unit", sql)
         self.assertEqual(12, parameters["user_id"])
         self.assertEqual(5, parameters["platform_id"])
         self.assertEqual("%zelda%", parameters["name_pattern"])
