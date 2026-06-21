@@ -20,3 +20,4 @@ La page Configuration n'est pas accessible ni aucune des sous pages.
 Les pages de la collection et liste de souhaits ont un sous titre visible en desktop et mobile indiquant "
  "Collection de XXXXX" ou "Liste de souhaits de XXXX".
 Lors de l'affichage des jeux d'une plateforme de la collection le sous titre est également modifié pour "Collection de XXXXX".
+Avec XXXX est le pseudonyme de l'utilisateur qui partage sa collection.
