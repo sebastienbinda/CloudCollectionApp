@@ -14,7 +14,6 @@
 
 import logging
 from dataclasses import replace
-from datetime import date, datetime
 from typing import Any, Optional
 
 import pandas as pd
@@ -22,18 +21,14 @@ import pandas as pd
 from services.collection.imports import (
     CollectionImportField,
     CollectionImportGame,
+    CollectionImportValueMapper,
     CollectionSheetLayout,
     WishlistDuplicatePolicy,
     WishlistImportMode,
-    WishlistValueParser,
 )
 from services.collection.imports.spreadsheet_cell_reference import (
     SpreadsheetCellReferenceParser,
 )
-from services.formatting import SheetValueFormatter
-from services.users.collection_import_date_validator import CollectionImportDateValidator
-from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
-
 from .ods_import_error_context import OdsImportErrorContext
 
 
@@ -42,34 +37,30 @@ class OdsCollectionImportGameBuilder:
 
     def __init__(
         self,
-        name_normalizer: UserCollectionNameNormalizer,
         cell_reference_parser: SpreadsheetCellReferenceParser,
         error_context: OdsImportErrorContext,
         logger: logging.Logger,
-        wishlist_value_parser: WishlistValueParser,
         wishlist_duplicate_policy: WishlistDuplicatePolicy,
+        value_mapper: CollectionImportValueMapper | None = None,
     ):
         """Initialise le constructeur de jeux importes.
 
         Args:
-            name_normalizer (UserCollectionNameNormalizer): Normaliseur de noms.
             cell_reference_parser (SpreadsheetCellReferenceParser): Parser tableur.
             error_context (OdsImportErrorContext): Contexte d'erreurs ODS.
             logger (logging.Logger): Logger applicatif.
-            wishlist_value_parser (WishlistValueParser): Parser wishlist.
             wishlist_duplicate_policy (WishlistDuplicatePolicy): Politique doublons.
+            value_mapper (CollectionImportValueMapper | None): Mapper de valeurs generique.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
-        self.name_normalizer = name_normalizer
         self.cell_reference_parser = cell_reference_parser
         self.error_context = error_context
         self.logger = logger
-        self.wishlist_value_parser = wishlist_value_parser
         self.wishlist_duplicate_policy = wishlist_duplicate_policy
-        self.date_validator = CollectionImportDateValidator()
+        self.value_mapper = value_mapper or CollectionImportValueMapper(logger=self.logger)
 
     def build_games(
         self,
@@ -80,6 +71,7 @@ class OdsCollectionImportGameBuilder:
         wishlist_mode: WishlistImportMode,
         warnings: dict[str, Any],
         forced_wishlist: Optional[bool],
+        price_unit: str | None = None,
     ) -> list[CollectionImportGame]:
         """Construit les jeux valides d'une feuille.
 
@@ -91,6 +83,7 @@ class OdsCollectionImportGameBuilder:
             wishlist_mode (WishlistImportMode): Mode wishlist courant.
             warnings (dict[str, Any]): Warnings a enrichir.
             forced_wishlist (Optional[bool]): Valeur wishlist forcee.
+            price_unit (str | None): Unite globale du prix d'achat.
 
         Returns:
             list[CollectionImportGame]: Jeux importables.
@@ -110,6 +103,7 @@ class OdsCollectionImportGameBuilder:
                     wishlist_mode,
                     warnings,
                     forced_wishlist,
+                    price_unit,
                 )
                 if game is not None:
                     games.append(game)
@@ -141,8 +135,8 @@ class OdsCollectionImportGameBuilder:
         """
 
         for candidate in candidates:
-            game_key = self.name_normalizer.comparison_key(candidate.name)
-            platform_key = self.name_normalizer.comparison_key(candidate.platform_name)
+            game_key = self.value_mapper.comparison_key(candidate.name)
+            platform_key = self.value_mapper.comparison_key(candidate.platform_name)
             if game_key is None or platform_key is None:
                 continue
             deduplication_key = (platform_key, game_key)
@@ -174,11 +168,12 @@ class OdsCollectionImportGameBuilder:
         wishlist_mode: WishlistImportMode,
         warnings: dict[str, Any],
         forced_wishlist: Optional[bool],
+        price_unit: str | None,
     ) -> Optional[CollectionImportGame]:
-        game_name = self.name_normalizer.stored_value(
+        game_name = self.value_mapper.map_name(
             self._field_value(row, column_positions, CollectionImportField.NAME)
         )
-        game_key = self.name_normalizer.comparison_key(game_name)
+        game_key = self.value_mapper.comparison_key(game_name)
         if not game_name or game_key is None:
             return None
         platform_name = self._normalized_field_value(
@@ -190,18 +185,20 @@ class OdsCollectionImportGameBuilder:
         )
         if platform_name is None:
             return None
-        wishlist = self._row_wishlist_value(
-            row,
-            column_positions,
+        wishlist = self.value_mapper.map_wishlist(
+            self._field_value(row, column_positions, CollectionImportField.WISHLIST),
             wishlist_mode,
             forced_wishlist,
-            sheet_name,
             game_name,
-            row_number,
             warnings,
+            source_context=f"onglet={sheet_name}, ligne={row_number}",
         )
         if wishlist is None:
             return None
+        private_values = {
+            field: self._field_value(row, column_positions, field)
+            for field in CollectionImportField
+        }
         return CollectionImportGame(
             name=game_name,
             platform_name=platform_name,
@@ -212,47 +209,20 @@ class OdsCollectionImportGameBuilder:
                 sheet_information,
                 sheet_name,
             ),
-            release_date=self._parse_release_date(
-                platform_name,
-                game_name,
+            release_date=self.value_mapper.map_release_date(
                 self._field_value(row, column_positions, CollectionImportField.RELEASE_DATE),
-                row_number,
+                game_name,
                 warnings,
+                source_context=f"plateforme={platform_name}, ligne={row_number}",
             ),
             wishlist=wishlist,
+            **self.value_mapper.map_private_values(
+                private_values,
+                game_name,
+                warnings,
+                price_unit,
+            ),
         )
-
-    def _row_wishlist_value(
-        self,
-        row,
-        column_positions: dict[CollectionImportField, int],
-        wishlist_mode: WishlistImportMode,
-        forced_wishlist: Optional[bool],
-        sheet_name: str,
-        game_name: str,
-        row_number: int,
-        warnings: dict[str, Any],
-    ) -> Optional[bool]:
-        if forced_wishlist is not None:
-            return forced_wishlist
-        if wishlist_mode != WishlistImportMode.COLUMN:
-            return False
-        result = self.wishlist_value_parser.parse(
-            self._field_value(row, column_positions, CollectionImportField.WISHLIST)
-        )
-        if result.is_valid:
-            return result.value
-        warnings["invalid_wishlist"] += 1
-        if result.invalid_value not in warnings["invalid_values"]:
-            warnings["invalid_values"].append(result.invalid_value)
-        self.logger.warning(
-            "Valeur wishlist invalide ignoree: onglet=%s, jeu=%s, ligne=%s, valeur=%s",
-            sheet_name,
-            game_name,
-            row_number,
-            result.invalid_value,
-        )
-        return None
 
     def _column_positions(self, layout: CollectionSheetLayout) -> dict[CollectionImportField, int]:
         selected_columns = self._selected_columns(layout)
@@ -291,115 +261,4 @@ class OdsCollectionImportGameBuilder:
             column_positions,
             field,
         )
-        return self.name_normalizer.stored_value(value)
-
-    def _parse_release_date(
-        self,
-        platform_name: str,
-        game_name: str,
-        value: Any,
-        row_number: int,
-        warnings: dict[str, Any],
-    ) -> Optional[date]:
-        if value is None or SheetValueFormatter.clean_text(value) is None:
-            return None
-        if isinstance(value, datetime):
-            return self._validated_parsed_release_date(
-                platform_name,
-                game_name,
-                row_number,
-                value,
-                value,
-                warnings,
-            )
-        if isinstance(value, date):
-            return self._validated_parsed_release_date(
-                platform_name,
-                game_name,
-                row_number,
-                value,
-                value,
-                warnings,
-            )
-        try:
-            parsed_value = pd.to_datetime(value, errors="coerce")
-        except (OverflowError, ValueError, TypeError):
-            self._warn_invalid_release_date(platform_name, game_name, row_number, value)
-            self._record_invalid_game_information(game_name, "release_date", value, warnings)
-            return None
-        if pd.isna(parsed_value):
-            self._warn_invalid_release_date(platform_name, game_name, row_number, value)
-            self._record_invalid_game_information(game_name, "release_date", value, warnings)
-            return None
-        try:
-            return self._validated_parsed_release_date(
-                platform_name,
-                game_name,
-                row_number,
-                parsed_value.date(),
-                value,
-                warnings,
-            )
-        except (OverflowError, ValueError, AttributeError):
-            self._warn_invalid_release_date(platform_name, game_name, row_number, value)
-            self._record_invalid_game_information(game_name, "release_date", value, warnings)
-            return None
-
-    def _validated_parsed_release_date(
-        self,
-        platform_name: str,
-        game_name: str,
-        row_number: int,
-        parsed_value: date,
-        original_value: Any,
-        warnings: dict[str, Any],
-    ) -> Optional[date]:
-        valid_date = self.date_validator.validate_release_date(parsed_value)
-        if valid_date is not None:
-            return valid_date
-        self._warn_invalid_release_date(platform_name, game_name, row_number, original_value)
-        self._record_invalid_game_information(
-            game_name,
-            "release_date",
-            original_value,
-            warnings,
-        )
-        return None
-
-    def _record_invalid_game_information(
-        self,
-        game_name: str,
-        field_name: str,
-        value: Any,
-        warnings: dict[str, Any],
-    ) -> None:
-        invalid_games = warnings.setdefault("invalid_games", [])
-        invalid_field = {
-            "field": field_name,
-            "value": str(value).strip(),
-        }
-        for invalid_game in invalid_games:
-            if invalid_game.get("name") == game_name:
-                invalid_game.setdefault("invalid_fields", []).append(invalid_field)
-                return
-        invalid_games.append(
-            {
-                "name": game_name,
-                "invalid_fields": [invalid_field],
-            }
-        )
-
-    def _warn_invalid_release_date(
-        self,
-        platform_name: str,
-        game_name: str,
-        row_number: int,
-        value: Any,
-    ) -> None:
-        self.logger.warning(
-            "Date de sortie invalide ignoree: plateforme=%s, jeu=%s, ligne=%s, valeur=%s",
-            platform_name,
-            game_name,
-            row_number,
-            value,
-        )
+        return self.value_mapper.map_name(value)

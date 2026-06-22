@@ -11,9 +11,11 @@
 #
 # Description : modele ORM des jeux rattaches aux utilisateurs.
 
+from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import Boolean, ForeignKey, String, text
+from sqlalchemy import Boolean, ForeignKey, Numeric, SmallInteger, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database_model_base import DatabaseModelBase
@@ -28,6 +30,8 @@ class UserCollection(DatabaseModelBase):
         game_additional_name (Optional[str]): Nom complementaire du jeu dans la
             collection utilisateur.
         wishlist (bool): Indique si l'association represente un souhait.
+        purchase_price (Optional[Decimal]): Prix d'achat decimal a deux chiffres.
+        price_unit (Optional[str]): Unite monetaire ISO du prix d'achat.
     """
 
     __tablename__ = "t_user_collection"
@@ -40,3 +44,18 @@ class UserCollection(DatabaseModelBase):
         nullable=False,
         server_default=text("false"),
     )
+    purchase_price: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(precision=12, scale=2),
+        nullable=True,
+    )
+    price_unit: Mapped[Optional[str]] = mapped_column(String(3), nullable=True)
+    buy_location: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    buy_date: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    grade: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    condition: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    has_manual: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    is_collector: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    has_steelbook: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    is_digital: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    region: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

@@ -201,12 +201,27 @@ cleanup.
 | `game_id` | `BIGINT` | No | Game attached to the user. |
 | `game_additional_name` | `VARCHAR(256)` | Yes | Additional game name in the user collection. |
 | `wishlist` | `BOOLEAN` | No | Indicates whether the attached game is a wishlist entry instead of an owned collection entry. |
+| `purchase_price` | `NUMERIC(12,2)` | Yes | Non-negative purchase price with at most two decimals. |
+| `price_unit` | `VARCHAR(3)` | Yes | ISO 4217 unit selected globally for the imported file. |
+| `buy_location` | `VARCHAR(256)` | Yes | Private purchase location. |
+| `buy_date` | `TIMESTAMP` | Yes | Private purchase date. |
+| `grade` | `VARCHAR(256)` | Yes | Private user note. |
+| `condition` | `SMALLINT` | Yes | Condition from `0` (bad) to `4` (new). |
+| `has_manual` | `BOOLEAN` | Yes | Whether the owned copy includes its manual. |
+| `is_collector` | `BOOLEAN` | Yes | Whether the owned copy is a collector edition. |
+| `has_steelbook` | `BOOLEAN` | Yes | Whether the owned copy includes a steelbook. |
+| `is_digital` | `BOOLEAN` | Yes | Whether the owned copy is digital. |
+| `region` | `VARCHAR(8)` | Yes | Controlled private region code. |
+| `description` | `TEXT` | Yes | Free private description. |
 
 Constraints:
 
 - Primary key: `user_id`, `game_id`
 - Foreign key: `user_id` -> `t_user.id`
 - Foreign key: `game_id` -> `t_game.id`
+- Check: `condition` is null or between `0` and `4`.
+- Check: `price_unit` is null or one of `EUR`, `USD`, `GBP`, `JPY`, `AUD`, `CAD`, `CHF`, `CNY`, `KRW`.
+- Check: `region` is null or one of `JAP`, `US`, `EU-FR`, `EU-UK`, `EU-DE`, `EU-ES`, `EU-IT`, `AU`, `ASIA`, `KOR`, `TWN`, `HK`, `CHN`.
 
 Indexes:
 
@@ -217,6 +232,10 @@ attached to the connected user. Existing `(user_id, game_id)` rows are reused an
 must not be treated as errors. `game_additional_name` remains nullable and is not
 filled by the current import workflow. `wishlist` defaults to `false`; existing
 rows are backfilled to `false` by the schema migration.
+Private information remains nullable. A later import updates only non-null
+private values and never clears an existing value because the new file omitted
+its optional column. The file-level `price_unit` is copied to each association
+that has a valid `purchase_price`.
 
 Collection reinitialization deletes rows from `t_user_collection` only for the
 connected user being reinitialized. It must not delete global `t_platform`,

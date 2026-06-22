@@ -1,0 +1,1 @@
+il faut rajouter un alias a la région US : "NTSC - US" ou "US - NTSC", il faut ajouter un alias a chaque pays EUR avec "PAL - XX", la valeur "PAL - EUR" ou "EUR - PAL"  doit être associé a "EUR - FR".

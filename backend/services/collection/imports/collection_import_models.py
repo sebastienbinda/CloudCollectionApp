@@ -13,6 +13,7 @@
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 
@@ -48,6 +49,8 @@ class CollectionImportGame:
         studio_name (Optional[str]): Nom du studio developpeur si renseigne.
         release_date (Optional[date]): Date de sortie valide ou `None`.
         wishlist (bool): Indique si le jeu est un souhait.
+        purchase_price (Optional[Decimal]): Prix d'achat decimal a deux chiffres.
+        price_unit (Optional[str]): Unite monetaire du prix.
     """
 
     name: str
@@ -55,6 +58,18 @@ class CollectionImportGame:
     studio_name: Optional[str]
     release_date: Optional[date]
     wishlist: bool = False
+    purchase_price: Optional[Decimal] = None
+    price_unit: Optional[str] = None
+    buy_location: Optional[str] = None
+    buy_date: Optional[date] = None
+    grade: Optional[str] = None
+    condition: Optional[int] = None
+    has_manual: Optional[bool] = None
+    is_collector: Optional[bool] = None
+    has_steelbook: Optional[bool] = None
+    is_digital: Optional[bool] = None
+    region: Optional[str] = None
+    description: Optional[str] = None
 
 
 @dataclass(frozen=True)

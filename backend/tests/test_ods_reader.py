@@ -69,6 +69,62 @@ class OdsReaderImportTest(unittest.TestCase):
         self.assertEqual("A,C", read_excel.call_args.kwargs["usecols"])
         self.assertEqual(199, read_excel.call_args.kwargs["nrows"])
 
+    def test_read_sheet_dataframe_fills_selected_trailing_empty_columns(self):
+        """Verifie la lecture de colonnes configurees mais entierement vides.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le repli et les valeurs absentes.
+        """
+
+        complete_dataframe = pd.DataFrame(
+            [[None] * 5 + ["Zelda", "Nintendo", "2000-01-01", None, "Paris", "A", 20]],
+            columns=[f"column-{index}" for index in range(12)],
+        )
+        out_of_bounds_error = ValueError(
+            "Defining usecols with out-of-bounds indices is not allowed. "
+            "[13, 14] are out-of-bounds."
+        )
+        with patch(
+            "services.ods.ods_reader.pd.read_excel",
+            side_effect=[out_of_bounds_error, complete_dataframe],
+        ) as read_excel:
+            sheet = self.reader.read_sheet_dataframe(
+                "Playstation2",
+                "F6:O700",
+                6,
+                "F,G,H,I,J,K,L,M,N,O",
+            )
+
+        self.assertEqual(2, read_excel.call_count)
+        self.assertNotIn("usecols", read_excel.call_args_list[1].kwargs)
+        self.assertEqual("Zelda", sheet.iloc[0, 0])
+        self.assertEqual(20, sheet.iloc[0, 6])
+        self.assertIsNone(sheet.iloc[0, 7])
+        self.assertIsNone(sheet.iloc[0, 8])
+        self.assertIsNone(sheet.iloc[0, 9])
+
+    def test_read_sheet_dataframe_does_not_hide_other_value_errors(self):
+        """Verifie que les erreurs sans rapport avec `usecols` restent bloquantes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la propagation de l'erreur.
+        """
+
+        with patch(
+            "services.ods.ods_reader.pd.read_excel",
+            side_effect=ValueError("ODS corrompu"),
+        ) as read_excel:
+            with self.assertRaisesRegex(ValueError, "ODS corrompu"):
+                self.reader.read_sheet_dataframe("Playstation2", "F6:O700", 6, "F,O")
+
+        read_excel.assert_called_once()
+
     def test_xml_reader_returns_none_for_formula_float_without_cached_value(self):
         """Verifie la lecture d'une formule sans resultat calcule en cache.
 

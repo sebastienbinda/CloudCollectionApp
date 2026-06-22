@@ -25,6 +25,22 @@ const statusLabels = {
   LOCKED: "Bloque",
 };
 
+const regionFlags = {
+  JAP: "🇯🇵",
+  US: "🇺🇸",
+  "EU-FR": "🇫🇷",
+  "EU-UK": "🇬🇧",
+  "EU-DE": "🇩🇪",
+  "EU-ES": "🇪🇸",
+  "EU-IT": "🇮🇹",
+  AU: "🇦🇺",
+  ASIA: "🌏",
+  KOR: "🇰🇷",
+  TWN: "🇹🇼",
+  HK: "🇭🇰",
+  CHN: "🇨🇳",
+};
+
 /**
  * Centralise le formatage des valeurs affichees dans les tableaux.
  */
@@ -113,7 +129,21 @@ class TableColumnFormatService {
       return "-";
     }
 
-    const versionText = String(value);
+    const versionText = String(value).trim();
+    const regionFlag = regionFlags[versionText.toUpperCase()];
+    if (regionFlag) {
+      return (
+        <span
+          className="versionIcons"
+          aria-label={`Region ${versionText}`}
+          title={`Region ${versionText}`}
+          role="img"
+        >
+          {regionFlag}
+        </span>
+      );
+    }
+
     const normalized = versionText.toLowerCase();
     const icons = [];
 
@@ -137,7 +167,16 @@ class TableColumnFormatService {
       return "-";
     }
 
-    return <span className="versionIcons">{icons.join(" ")}</span>;
+    return (
+      <span
+        className="versionIcons"
+        aria-label={`Region ${versionText}`}
+        title={`Region ${versionText}`}
+        role="img"
+      >
+        {icons.join(" ")}
+      </span>
+    );
   }
 
   /**

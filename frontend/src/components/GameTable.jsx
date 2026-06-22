@@ -21,6 +21,7 @@ import {
   isSelectFilterColumn,
 } from "../collectionUtils";
 import SortIcon from "./SortIcon";
+import TableColumnFormatService from "../services/TableColumnFormatService.jsx";
 
 /**
  * Tableau generique des jeux avec filtres par colonne.
@@ -33,35 +34,7 @@ class GameTable extends Component {
    * @returns {string|import("react").JSX.Element} Tiret si vide, sinon span avec les pictogrammes.
    */
   renderVersionValue(value) {
-    if (value === null || value === undefined || value === "") {
-      return "-";
-    }
-
-    const versionText = String(value);
-    const normalized = versionText.toLowerCase();
-    const icons = [];
-
-    if (normalized.includes("pal")) {
-      icons.push("🌍");
-    }
-    if (normalized.includes("ntsc")) {
-      icons.push("📺");
-    }
-    if (normalized.includes("jap")) {
-      icons.push("🇯🇵");
-    }
-    if (normalized.includes("us")) {
-      icons.push("🇺🇸");
-    }
-    if (normalized.includes("fr")) {
-      icons.push("🇫🇷");
-    }
-
-    if (icons.length === 0) {
-      return "-";
-    }
-
-    return <span className="versionIcons">{icons.join(" ")}</span>;
+    return TableColumnFormatService.formatVersionValue(value);
   }
 
   /**

@@ -12,6 +12,7 @@
 # Description : service metier de consultation SQL de collection utilisateur.
 
 from datetime import date, datetime
+from decimal import Decimal
 from math import ceil
 from typing import Any, Callable, Protocol
 
@@ -399,12 +400,27 @@ class UserCollectionQueryService:
             "release_date": self._date_value(row.get("release_date")),
             "studio_name": self._text_value(row.get("studio_name")),
             "studio_id": self._optional_integer_value(row.get("studio_id")),
-            "version": "",
-            "buy_date": "",
-            "buy_location": "",
-            "grade": "",
+            "version": self._text_value(row.get("region")),
+            "purchase_price": self._optional_decimal_value(row.get("purchase_price")),
+            "price_unit": self._nullable_text_value(row.get("price_unit")),
+            "buy_date": self._nullable_date_value(row.get("buy_date")),
+            "buy_location": self._nullable_text_value(row.get("buy_location")),
+            "grade": self._nullable_text_value(row.get("grade")),
+            "condition": self._optional_integer_value(row.get("condition")),
+            "has_manual": row.get("has_manual"),
+            "is_collector": row.get("is_collector"),
+            "has_steelbook": row.get("has_steelbook"),
+            "is_digital": row.get("is_digital"),
+            "region": self._nullable_text_value(row.get("region")),
+            "description": self._nullable_text_value(row.get("description")),
             "wishlist": bool(row.get("wishlist")),
         }
+
+    def _nullable_date_value(self, value: Any) -> str | None:
+        return None if value is None else self._date_value(value)
+
+    def _nullable_text_value(self, value: Any) -> str | None:
+        return None if value is None else str(value)
 
     def _date_value(self, value: Any) -> str:
         if isinstance(value, datetime):
@@ -424,3 +440,15 @@ class UserCollectionQueryService:
 
     def _optional_integer_value(self, value: Any) -> int | None:
         return None if value is None else int(value)
+
+    def _optional_decimal_value(self, value: Any) -> float | None:
+        """Convertit un montant SQL decimal en nombre JSON.
+
+        Args:
+            value (Any): Valeur numerique retournee par le repository.
+
+        Returns:
+            float | None: Montant serialisable ou absence.
+        """
+
+        return None if value is None else float(Decimal(str(value)))

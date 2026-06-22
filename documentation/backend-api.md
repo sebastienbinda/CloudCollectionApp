@@ -704,10 +704,19 @@ Response:
       "release_date": "1986-02-21",
       "studio_name": "Nintendo",
       "studio_id": 10,
-      "version": "",
-      "buy_date": "",
-      "buy_location": "",
-      "grade": "",
+      "version": "EU-FR",
+      "purchase_price": 59.99,
+      "price_unit": "EUR",
+      "buy_date": "2026-06-01",
+      "buy_location": "Paris",
+      "grade": "Rare",
+      "condition": 3,
+      "has_manual": true,
+      "is_collector": false,
+      "has_steelbook": true,
+      "is_digital": false,
+      "region": "EU-FR",
+      "description": "Edition complete",
       "wishlist": false
     }
   ]
@@ -743,14 +752,30 @@ attached to the connected user's `t_user_collection` rows.
     "release_date": "1986-02-21",
     "studio_name": "Nintendo",
     "studio_id": 10,
-    "version": "",
-    "buy_date": "",
-    "buy_location": "",
-    "grade": "",
+    "version": "EU-FR",
+    "purchase_price": 59.99,
+    "price_unit": "EUR",
+    "buy_date": "2026-06-01",
+    "buy_location": "Paris",
+    "grade": "Rare",
+    "condition": 3,
+    "has_manual": true,
+    "is_collector": false,
+    "has_steelbook": true,
+    "is_digital": false,
+    "region": "EU-FR",
+    "description": "Edition complete",
     "wishlist": false
   }
 }
 ```
+
+Private collection fields are nullable and hidden from the visual detail when
+their value is null. `purchase_price` is a non-negative decimal number stored
+with two fractional digits; additional imported digits are truncated toward the
+lower value. `price_unit` carries its
+ISO unit and the API performs no conversion. Condition values map from `0`
+(`Mauvais`) through `4` (`Neuf`).
 
 ### Collection ODS Download
 
@@ -917,12 +942,34 @@ Body:
 The JSON configuration supports:
 
 - a mandatory top-level `wishlist` section;
+- an optional top-level `price_unit` selected globally for the file; it becomes
+  mandatory when any layout maps `purchase_price` and accepts `EUR`, `USD`,
+  `GBP`, `JPY`, `AUD`, `CAD`, `CHF`, `CNY` or `KRW`;
 - `single_sheet_conf` for a single imported sheet;
 - `multiple_sheets_conf.shared_layout.included_sheets` to import only selected
   sheets;
 - `multiple_sheets_conf.shared_layout.excluded_sheets` to import every sheet
   except selected sheets;
 - `multiple_sheets_conf.sheets` for per-sheet layouts.
+
+Every collection layout may map the nullable private fields `purchase_price`,
+`buy_location`, `buy_date`, `grade`, `condition`, `has_manual`, `is_collector`,
+`has_steelbook`, `is_digital`, `region` and `description`. Invalid non-empty
+values are ignored and reported in `warnings.invalid_games` without rejecting
+the complete import.
+Region values are fuzzy-matched against the controlled codes. The unique best
+match must reach `REGION_MATCH_LIMIT` (default `60`); otherwise the imported
+region is stored as null and reported as invalid.
+Condition values must be strings and are fuzzy-matched against the French state
+labels and supported English aliases. The unique best match must reach
+`ETAT_MATCH_LIMIT` (default `60`); otherwise `condition` is null and the warning
+is returned without rejecting the game.
+The four nullable boolean fields accept native booleans and normalized
+French/English values (`oui/non`, `yes/no`, `true/false`, `1/0`, `x`, `✓`,
+`present/absent`, `avec/sans`). Spaces are ignored and a unique fuzzy match with
+a score of at least `75` is accepted. Ambiguous or unknown non-empty values are
+returned through `warnings.invalid_games` and stored as null without rejecting
+the game.
 
 `included_sheets` and `excluded_sheets` are exclusive. Invalid JSON or
 configuration returns `422` with `error` and `details`.

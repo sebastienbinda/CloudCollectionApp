@@ -17,7 +17,7 @@ from sqlalchemy.engine import Connection
 from services.library.library_query_contract import LibraryQueryCriteria
 from services.collection.imports import CollectionImportGame
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
-from services.users.collection_import_date_validator import CollectionImportDateValidator
+from services.collection.imports import CollectionImportDateValidator
 
 from .library_query_sql_builder import LibraryQuerySqlBuilder
 

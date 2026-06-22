@@ -41,7 +41,9 @@ public pages.
 - `/collection?platform_id=<platform_id>`: authenticated platform detail for a
   non-`ADMIN` user's collection, listing games attached to that platform.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
-  attached to the connected user's collection.
+  attached to the connected user's collection. Nullable private purchase and
+  copy information is shown only when available, including region flag and
+  purchase-price unit.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data.
@@ -65,7 +67,9 @@ backend counters and offers an explicit action to open `/collection`.
 The import onboarding page lets non-`ADMIN` users configure single-sheet import,
 shared-layout multi-sheet import with included or excluded sheets, per-sheet
 layouts, and optional wishlist extraction from no source, a dedicated sheet, or
-a dedicated column. Backend validation and persistence remain authoritative.
+a dedicated column. It also lets the user select one global ISO price unit and
+map optional private game-information columns. Backend validation and
+persistence remain authoritative.
 
 The `ADMIN` profile keeps backend access through the route catalog and Bearer
 token hierarchy, but the frontend must not offer collection ownership screens to

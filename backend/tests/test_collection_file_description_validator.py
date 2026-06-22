@@ -61,6 +61,28 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
         )
         self.assertEqual(self._single_sheet_payload(), description.to_dict())
 
+    def test_purchase_price_requires_and_keeps_valid_price_unit(self):
+        """Verifie le contrat d'unite globale pour une colonne de prix.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contrat de prix.
+        """
+
+        payload = self._single_sheet_payload()
+        payload["single_sheet_conf"]["column_information"]["purchase_price"] = "E"
+        with self.assertRaises(CollectionFileDescriptionValidationError) as context:
+            self.validator.validate(payload)
+        self.assertIn("price_unit est requis", " ".join(context.exception.details))
+
+        payload["price_unit"] = "eur"
+        description = self.validator.validate(payload)
+
+        self.assertEqual("EUR", description.price_unit)
+        self.assertEqual("EUR", description.to_dict()["price_unit"])
+
     def test_valid_shared_layout_configuration(self):
         """Verifie une configuration multi-onglets avec layout partage.
 
@@ -236,6 +258,45 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
         del payload["single_sheet_conf"]["column_information"]["name"]
 
         self._assert_errors(payload, ["colonne obligatoire manquante: name."])
+
+    def test_accepts_missing_optional_columns(self):
+        """Verifie que studio et date de sortie ne sont pas obligatoires.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la configuration minimale.
+        """
+
+        payload = self._single_sheet_payload()
+        del payload["single_sheet_conf"]["column_information"]["studio"]
+        del payload["single_sheet_conf"]["column_information"]["release_date"]
+
+        description = self.validator.validate(payload)
+
+        self.assertEqual(
+            {
+                CollectionImportField.NAME: "A",
+                CollectionImportField.PLATFORM: "B",
+            },
+            description.single_sheet_conf.column_information,
+        )
+
+    def test_rejects_missing_platform_column(self):
+        """Verifie que la plateforme reste obligatoire hors information d'onglet.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur de configuration.
+        """
+
+        payload = self._single_sheet_payload()
+        del payload["single_sheet_conf"]["column_information"]["platform"]
+
+        self._assert_errors(payload, ["colonne obligatoire manquante: platform."])
 
     def test_rejects_column_out_of_range(self):
         """Verifie le refus d'une colonne hors plage.

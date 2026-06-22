@@ -54,6 +54,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   `404` when none exists.
 - `POST /api/users/import` must use `application/json` and receives only the
   import configuration, including a mandatory top-level `wishlist` section.
+- The import configuration may contain a global `price_unit`. It is mandatory
+  when a layout configures `purchase_price` and accepts `EUR`, `USD`, `GBP`,
+  `JPY`, `AUD`, `CAD`, `CHF`, `CNY` or `KRW`.
 - `POST /api/users/collection/reinit` reinitializes only the connected user's
   collection and returns `{"reinitialized": true}` on success.
 - Both routes require a Bearer token with at least profile `USER`.
@@ -96,6 +99,17 @@ database structure in `documentation/database.md`, and frontend navigation in
 - The copied file must be read-only for user and group: `0440`.
 - Existing platforms, studios, games and user-game associations must be reused,
   not overwritten.
+- Reused user-game associations update only private values that are non-null in
+  the new import. Missing optional columns never erase previously stored data.
+- Each configured private field is optional: `purchase_price`, `buy_location`,
+  `buy_date`, `grade`, `condition`, `has_manual`, `is_collector`,
+  `has_steelbook`, `is_digital`, `region` and `description`.
+- A purchase price must be non-negative. Both decimal separators `,` and `.`
+  are accepted. Values with more than two decimal digits are truncated toward
+  the lower value to two digits. A negative value or invalid number becomes
+  `NULL` with an `invalid_games` warning and does not reject the game.
+- The global `price_unit` is stored on each imported association with a valid
+  purchase price; no price conversion is performed.
 - `t_user_collection` rows are inserted only when missing. Existing
   `(user_id, game_id)` rows are not errors.
 - `game_additional_name` is not filled by the current import workflow.
@@ -149,6 +163,24 @@ database structure in `documentation/database.md`, and frontend navigation in
   later duplicates with warning-level logging.
 - Empty or invalid game release dates must be persisted as `NULL`, not as
   invalid text values.
+- Imported regions use the same normalized `SequenceMatcher` score as platform
+  matching. A unique best region is accepted at or above `REGION_MATCH_LIMIT`
+  (default `60`); lower scores and ambiguous ties become `NULL` and are reported
+  in `warnings.invalid_games`.
+- Imported condition values must be strings. They use the shared normalized
+  similarity score against French labels and English aliases. A unique state is
+  accepted at or above `ETAT_MATCH_LIMIT` (default `60`); lower scores,
+  ambiguous ties and non-string values become `NULL` and are reported in
+  `warnings.invalid_games` without rejecting the game.
+- Condition aliases include the confirmed French and English physical-state
+  vocabulary. `used` and `occasion` map to `Correct`. Content descriptions
+  such as `complet`, `complete`, `loose`, `loos` and `CIB` are explicitly
+  excluded from condition matching.
+- Manual, collector, steelbook and digital columns share the documented
+  French/English boolean mapping. Spaces are ignored and a unique fuzzy match
+  with a score of at least `75` is accepted. Empty cells remain `NULL` silently;
+  ambiguous or unknown non-empty values remain `NULL` and add an
+  `invalid_games` warning without rejecting the game.
 - The editor field remains empty until a dedicated rule is specified.
 
 ## Wishlist Import Rules
@@ -185,6 +217,18 @@ database structure in `documentation/database.md`, and frontend navigation in
 
 ## Configuration Rules
 
+- Every collection or dedicated-wishlist layout must provide the game name and
+  platform information. These are the only mandatory imported game fields.
+- The platform may be mapped through the `platform` entry in
+  `column_information` or supplied by `sheet_information = "platform"` in a
+  multi-sheet layout.
+- `studio`, `release_date` and every private game-information mapping are
+  optional. When one of these columns is configured, an empty cell must be
+  imported as `NULL` or the field's safe empty value without rejecting the row
+  or the complete import.
+- The frontend must identify the mandatory fields and reject an incomplete
+  configuration before submission. The backend remains authoritative and must
+  validate the same mandatory fields before accepting the configuration.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` is the single upload size setting.
 - The same value must configure Flask request size handling and the Nginx
   `client_max_body_size` used by the `web` service.
@@ -192,6 +236,10 @@ database structure in `documentation/database.md`, and frontend navigation in
   import with administrator verification. Default: `25`.
 - `MATCHING_HIGH_LEVEL_RATING` configures the platform score accepted without
   manual-verification warning. Default: `75`.
+- `REGION_MATCH_LIMIT` configures the minimum region matching score. It must be
+  an integer between `0` and `100`; its default is `60`.
+- `ETAT_MATCH_LIMIT` configures the minimum condition matching score. It must
+  be an integer between `0` and `100`; its default is `60`.
 - Matching ratings must be numeric integers between `0` and `100`, and
   `MATCHING_LOW_LVL_RATING` must be strictly lower than
   `MATCHING_HIGH_LEVEL_RATING`.
@@ -222,8 +270,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Keep an import action in the Configuration page for non-`ADMIN` collection
   users so they can open `/collection/import` and add games from a new file
   without reinitialization.
-- The import view must not duplicate backend validation rules beyond basic file
-  selection UX.
+- The import view may validate mandatory configuration fields for immediate UX
+  feedback, but backend validation remains authoritative.
 - Automatic backend calls must use the shared backend availability guard so a
   stopped backend cannot trigger unbounded request loops.
 

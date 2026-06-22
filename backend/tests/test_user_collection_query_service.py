@@ -12,6 +12,7 @@
 # Description : tests unitaires du service de consultation collection utilisateur.
 
 from datetime import datetime
+from decimal import Decimal
 import unittest
 
 from services.collection import UserCollectionQueryParser
@@ -229,6 +230,18 @@ class FakeUserCollectionQueryRepository:
                 "studio_name": None,
                 "studio_id": None,
                 "wishlist": True,
+                "purchase_price": Decimal("2.25"),
+                "price_unit": "EUR",
+                "buy_location": "Paris",
+                "buy_date": datetime(2026, 6, 1),
+                "grade": "Rare",
+                "condition": 3,
+                "has_manual": True,
+                "is_collector": False,
+                "has_steelbook": True,
+                "is_digital": False,
+                "region": "EU-FR",
+                "description": "Edition francaise",
             }
         ]
 
@@ -504,10 +517,19 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                     "release_date": "1987-12-18",
                     "studio_name": "",
                     "studio_id": None,
-                    "version": "",
-                    "buy_date": "",
-                    "buy_location": "",
-                    "grade": "",
+                    "version": "EU-FR",
+                    "purchase_price": 2.25,
+                    "price_unit": "EUR",
+                    "buy_date": "2026-06-01",
+                    "buy_location": "Paris",
+                    "grade": "Rare",
+                    "condition": 3,
+                    "has_manual": True,
+                    "is_collector": False,
+                    "has_steelbook": True,
+                    "is_digital": False,
+                    "region": "EU-FR",
+                    "description": "Edition francaise",
                     "wishlist": True,
                 }
             ],

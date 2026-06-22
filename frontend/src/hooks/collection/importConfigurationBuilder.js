@@ -13,7 +13,12 @@
  * Description : construction frontend de la description d'import de collection.
  */
 
-const REQUIRED_FIELDS = Object.freeze(["name", "platform", "studio", "release_date"]);
+const REQUIRED_FIELDS = Object.freeze(["name", "platform"]);
+const OPTIONAL_FIELDS = Object.freeze([
+  "studio", "release_date",
+  "purchase_price", "buy_location", "buy_date", "grade", "condition",
+  "has_manual", "is_collector", "has_steelbook", "is_digital", "region", "description",
+]);
 const SHEET_INFORMATION = "platform";
 
 /**
@@ -31,6 +36,7 @@ function createDefaultLayout(includePlatformColumn = true) {
       platform: includePlatformColumn ? "B" : "",
       studio: includePlatformColumn ? "C" : "B",
       release_date: includePlatformColumn ? "D" : "C",
+      ...Object.fromEntries(OPTIONAL_FIELDS.map((field) => [field, ""])),
     },
   };
 }
@@ -43,6 +49,7 @@ function createDefaultLayout(includePlatformColumn = true) {
 function createDefaultImportConfiguration() {
   return {
     fileType: "libreoffice_ods",
+    priceUnit: "EUR",
     multipleSheets: false,
     sharedLayout: true,
     sheetInformation: SHEET_INFORMATION,
@@ -88,6 +95,7 @@ function createImportConfigurationFromDescription(description) {
     return {
       ...defaultConfiguration,
       fileType: description.file_type || defaultConfiguration.fileType,
+      priceUnit: description.price_unit || defaultConfiguration.priceUnit,
       multipleSheets: false,
       wishlist,
       singleSheetLayout: buildFrontendLayout(
@@ -102,6 +110,7 @@ function createImportConfigurationFromDescription(description) {
     return {
       ...defaultConfiguration,
       fileType: description.file_type || defaultConfiguration.fileType,
+      priceUnit: description.price_unit || defaultConfiguration.priceUnit,
       multipleSheets: true,
       sharedLayout: true,
       sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
@@ -120,6 +129,7 @@ function createImportConfigurationFromDescription(description) {
     return {
       ...defaultConfiguration,
       fileType: description.file_type || defaultConfiguration.fileType,
+      priceUnit: description.price_unit || defaultConfiguration.priceUnit,
       multipleSheets: true,
       sharedLayout: false,
       sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
@@ -135,6 +145,7 @@ function createImportConfigurationFromDescription(description) {
   return {
     ...defaultConfiguration,
     fileType: description.file_type || defaultConfiguration.fileType,
+    priceUnit: description.price_unit || defaultConfiguration.priceUnit,
     wishlist,
   };
 }
@@ -233,6 +244,7 @@ function buildImportConfigurationDescription(configuration) {
     return {
       description: errors.length ? null : {
         file_type: fileType,
+        price_unit: configuration.priceUnit,
         wishlist,
         single_sheet_conf: layout,
       },
@@ -257,6 +269,7 @@ function buildImportConfigurationDescription(configuration) {
     return {
       description: errors.length ? null : {
         file_type: fileType,
+        price_unit: configuration.priceUnit,
         wishlist,
         multiple_sheets_conf: {
           sheet_information: SHEET_INFORMATION,
@@ -281,6 +294,7 @@ function buildImportConfigurationDescription(configuration) {
   return {
     description: errors.length ? null : {
       file_type: fileType,
+      price_unit: configuration.priceUnit,
       wishlist,
       multiple_sheets_conf: { sheets },
     },
@@ -357,6 +371,12 @@ function buildLayout(layout, requiredFields, errors) {
       return;
     }
     columnInformation[field] = column;
+  });
+  OPTIONAL_FIELDS.forEach((field) => {
+    const column = String(layout.columns?.[field] || "").trim().toUpperCase();
+    if (column) {
+      columnInformation[field] = column;
+    }
   });
   return {
     data_range: dataRange,

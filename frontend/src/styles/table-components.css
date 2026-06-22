@@ -92,7 +92,7 @@
     box-shadow: 0 3px 9px rgba(15, 23, 42, 0.05);
     display: grid;
     gap: 0.1rem 0.5rem;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
     padding: 0.38rem 0.5rem;
   }
 
@@ -160,15 +160,22 @@
 
   .tableWrapper table:has(.clickableTableRow) .clickableTableRow td[data-column="developer"],
   .tableWrapper table:has(.clickableTableRow) .clickableTableRow td[data-column="Studio"],
-  .tableWrapper table:has(.clickableTableRow) .clickableTableRow td[data-column="status"],
-  .tableWrapper table:has(.clickableTableRow) .clickableTableRow td[data-column="Version"] {
+  .tableWrapper table:has(.clickableTableRow) .clickableTableRow td[data-column="status"] {
     display: none;
+  }
+
+  .tableWrapper table:has(.clickableTableRow) .clickableTableRow td[data-column="Version"] {
+    align-self: center;
+    display: block;
+    font-size: 1rem;
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
 
   .tableWrapper table:has(.clickableTableRow) .clickableTableRow .actionColumn {
     align-self: center;
     display: flex;
-    grid-column: 3;
+    grid-column: 4;
     grid-row: 1 / span 2;
     justify-content: flex-end;
     width: auto;

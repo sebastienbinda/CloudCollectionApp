@@ -25,6 +25,9 @@ Required behavior:
   for structurally invalid content;
 - stay format-specific: parsing belongs in the reader, persistence and user
   workflow orchestration do not.
+- limit format-specific readers to file extraction and row/column addressing;
+  delegate reusable value conversion to `CollectionImportValueMapper` from
+  `backend/services/collection/imports/`.
 
 Register new readers through `CollectionFileReaderFactory`. Do not add reader
 selection logic to controllers or persistence repositories.
@@ -49,6 +52,31 @@ Game rows follow these rules:
 - invalid optional information must be converted to `None` or a safe default
   before persistence;
 - invalid or empty release dates must be returned as `None`;
+- optional private fields may map purchase price, location/date, note,
+  condition, manual, collector, steelbook, digital version, region and
+  description into `CollectionImportGame`;
+- purchase price must be non-negative, accepts `,` or `.` as decimal separator,
+  truncates additional decimal digits toward the lower value to two digits, and
+  keeps the file-level ISO `price_unit` without conversion; a negative or
+  non-numeric value is invalid;
+- condition accepts `Mauvais`, `Correct`, `Bon`, `Très bon`, `Neuf` and maps
+  them to integers `0` through `4`;
+- invalid non-empty private values become `None` and are reported through
+  `warnings.invalid_games`;
+- region values are normalized and scored against the controlled region codes
+  with `SequenceMatcher`; a unique score at or above `REGION_MATCH_LIMIT` is
+  accepted, otherwise the value is invalid;
+- condition values must be text and are scored against the confirmed French
+  and English aliases for `Mauvais`, `Correct`, `Bon`, `Très bon` and `Neuf`;
+  `used` and `occasion` map to `Correct`; `complet`, `complete`, `loose`,
+  `loos`, `CIB` and `complete in box` are explicitly excluded; a unique score
+  at or above `ETAT_MATCH_LIMIT` is accepted;
+- the four private boolean fields share a normalized mapping: true for
+  `oui`, `o`, `yes`, `y`, `true`, `vrai`, `1`, `x`, `✓`, `present`, `avec`;
+  false for `non`, `n`, `no`, `false`, `faux`, `0`, `absent`, `sans`;
+  spaces are ignored and a unique fuzzy match at or above `75` is accepted;
+  native ODS booleans are accepted, empty cells stay null without warning, and
+  ambiguous or unknown non-empty values stay null with an `invalid_games` warning;
 - game release dates before 1950 are invalid because they are not plausible
   video game release dates;
 - duplicate games after normalized `(platform, name)` matching keep the first

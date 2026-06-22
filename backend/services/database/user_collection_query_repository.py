@@ -39,8 +39,8 @@ class SqlAlchemyUserCollectionQueryRepository:
         "platform_name": "platform.name",
         "release_date": "game.release_date",
         "studio_name": "studio.name",
-        "buy_date": "NULL",
-        "grade": "NULL",
+        "buy_date": "user_collection.buy_date",
+        "grade": "user_collection.grade",
     }
 
     def __init__(self, schema_name: str):
@@ -291,7 +291,13 @@ class SqlAlchemyUserCollectionQueryRepository:
                 "game.id, game.name, game.release_date::text AS release_date, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
                 "studio.id AS studio_id, studio.name AS studio_name, "
-                "user_collection.wishlist "
+                "user_collection.wishlist, user_collection.purchase_price, "
+                "user_collection.price_unit, user_collection.buy_location, "
+                "user_collection.buy_date::text AS buy_date, user_collection.grade, "
+                "user_collection.condition, user_collection.has_manual, "
+                "user_collection.is_collector, user_collection.has_steelbook, "
+                "user_collection.is_digital, user_collection.region, "
+                "user_collection.description "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
@@ -330,7 +336,13 @@ class SqlAlchemyUserCollectionQueryRepository:
                 "game.id, game.name, game.release_date::text AS release_date, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
                 "studio.id AS studio_id, studio.name AS studio_name, "
-                "user_collection.wishlist "
+                "user_collection.wishlist, user_collection.purchase_price, "
+                "user_collection.price_unit, user_collection.buy_location, "
+                "user_collection.buy_date::text AS buy_date, user_collection.grade, "
+                "user_collection.condition, user_collection.has_manual, "
+                "user_collection.is_collector, user_collection.has_steelbook, "
+                "user_collection.is_digital, user_collection.region, "
+                "user_collection.description "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '

@@ -19,6 +19,17 @@ const FIELD_LABELS = Object.freeze({
   studio: "Studio",
   release_date: "Date de sortie",
   wishlist: "Wishlist",
+  purchase_price: "Prix d'achat",
+  buy_location: "Lieu d'achat",
+  buy_date: "Date d'achat",
+  grade: "Note",
+  condition: "Etat",
+  has_manual: "Notice",
+  is_collector: "Collector",
+  has_steelbook: "Steelbook",
+  is_digital: "Version digitale",
+  region: "Region",
+  description: "Description",
 });
 
 /**
@@ -31,6 +42,7 @@ const FIELD_LABELS = Object.freeze({
 function ImportLayoutFields({
   layout,
   columnFields,
+  requiredFields = [],
   onLayoutChange,
   onLayoutColumnChange,
 }) {
@@ -56,9 +68,10 @@ function ImportLayoutFields({
       <div className="columnGrid">
         {columnFields.map((fieldName) => (
           <label key={fieldName}>
-            {FIELD_LABELS[fieldName]}
+            {FIELD_LABELS[fieldName]}{requiredFields.includes(fieldName) ? " *" : ""}
             <input
               type="text"
+              required={requiredFields.includes(fieldName)}
               value={layout.columns[fieldName] || ""}
               onChange={(event) => onLayoutColumnChange(fieldName, event.target.value)}
             />

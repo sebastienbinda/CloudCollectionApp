@@ -77,6 +77,7 @@ Organisation :
 - `backend/controllers/` : endpoints HTTP et mapping des reponses.
 - `backend/services/` : services metier et infrastructure organises par domaine.
 - `backend/services/ods/` : lecture d'import ODS utilisateur, archive, cache et secours XML.
+- `backend/services/collection/imports/` : contrats et mapping de valeurs reutilisables par tous les formats d'import.
 - `backend/services/database/` : configuration SQLAlchemy, ORM, repositories et schema.
 - `backend/tests/` : tests backend par couche.
 
@@ -151,6 +152,10 @@ Variables principales :
   avec verification administrateur. Valeur par defaut : `25`.
 - `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
   l'import est accepte sans warning de verification. Valeur par defaut : `75`.
+- `REGION_MATCH_LIMIT` : score minimal de similarite pour rattacher une region
+  importee a un code autorise. Valeur par defaut : `60`.
+- `ETAT_MATCH_LIMIT` : score minimal de similarite pour rattacher un etat
+  importe a un libelle francais ou anglais. Valeur par defaut : `60`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur, des rapports de fin d'import utilisateur
   des rapports de reset Bibliotheque et des propositions d'images de
@@ -189,6 +194,12 @@ Structure fonctionnelle attendue pour l'import :
   une colonne dediee ;
 - apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
   collection.
+- l'import peut associer des informations privees optionnelles a chaque jeu
+  (prix positif ou nul tronque a deux decimales et unite ISO, achat, note, etat,
+  contenu, region et description),
+  visibles uniquement dans le detail de la collection connectee ;
+- les listes collection et wishlist affichent le drapeau de region sur desktop
+  et mobile lorsqu'une region est renseignee ;
 - si `ADMIN_NOTIFICATION_EMAIL` est configure, le backend notifie
   l'administrateur apres chaque validation email utilisateur et envoie un seul
   rapport administrateur en fin d'import avec le contexte, les compteurs, la
@@ -342,6 +353,7 @@ Documents fonctionnels et techniques principaux :
 - `documentation/bibliotheque.md` : consultation publique du referentiel commun et reset administrateur.
 - `documentation/collection.md` : consultation SQL de la collection utilisateur.
 - `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
+- `documentation/import-mapping.md` : mapping synthetique des valeurs importees vers les valeurs persistees.
 - `documentation/register.md` : inscription utilisateur et validation email.
 - `documentation/users.md` : administration des utilisateurs.
 - `documentation/site-plan.md` : navigation et redirections frontend.

@@ -99,7 +99,8 @@ Use domain folders under `backend/services/`:
 - `email/`: email configuration and sending;
 - `formatting/`: value formatting helpers;
 - `collection/`: connected-user SQL collection consultation and query
-  contracts;
+  contracts; `collection/imports/` also owns format-independent import
+  contracts, value mapping, matching configuration and shared validators;
 - `library/`: public read-only consultation of global reference games,
   platforms and studios, plus platform image upload/public read/moderation
   business services;
@@ -141,6 +142,9 @@ ODS code is limited to user import parsing. SQL is the source of truth for
 collection consultation after import.
 
 - Import readers parse ODS content and expose normalized data to services.
+- ODS readers own only format-specific extraction, sheet/range addressing and
+  row traversal. They delegate reusable value conversion to services under
+  `backend/services/collection/imports/`.
 - The raw user ODS download sends `t_user.collection_file_path` without parsing.
 - No collection consultation route may depend on a global ODS path, ODS writer,
   embedded image extraction or spreadsheet formula recalculation.
