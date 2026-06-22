@@ -46,6 +46,10 @@ Response:
 }
 ```
 
+Registered-user tokens keep the verified email in `sub` and expose the public
+pseudonym in the signed `display_name` claim. The configured administrator uses
+its configured username as both values.
+
 Supported identities:
 
 - configured technical account from `AUTH_USERNAME` and encrypted password,
@@ -68,6 +72,7 @@ Request:
 ```json
 {
   "email": "user@example.com",
+  "pseudonym": "Player_One",
   "password": "VeryStrongPassword123!"
 }
 ```
@@ -76,6 +81,27 @@ This route is public because the user does not yet own a Bearer token. The
 password is stored as a non-reversible hash. The created user remains unusable
 until email verification succeeds. When `ADMIN_ACCOUNT_VALIDATION_ENABLED=true`,
 the account also remains unusable until an administrator validates it.
+The pseudonym must contain 3 to 32 letters, digits, `_` or `-`. Its uniqueness
+is case-insensitive. A duplicate email or pseudonym returns `409`.
+
+### Check Pseudonym Availability
+
+```http
+GET /api/auth/pseudonym-availability?pseudonym=Player_One
+```
+
+Response:
+
+```json
+{
+  "pseudonym": "Player_One",
+  "available": true
+}
+```
+
+This route is public and applies the same format rules as registration. An
+invalid format returns `400`. Availability does not replace the authoritative
+unique constraint checked again during registration.
 
 ### Verify Email
 

@@ -44,7 +44,8 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
 - Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
-- Page About publique, authentification Bearer et creation de compte avec validation email puis validation administrateur optionnelle.
+- Page About publique, authentification Bearer et creation de compte avec
+  pseudonyme unique, validation email puis validation administrateur optionnelle.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
 - Moderation administrateur des images de plateformes proposees.

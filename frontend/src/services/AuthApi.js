@@ -48,17 +48,32 @@ class AuthApi {
    * Cree un utilisateur applicatif sans token Bearer.
    *
    * @param {string} email - Adresse email du compte a creer.
+   * @param {string} pseudonym - Pseudonyme public unique du compte.
    * @param {string} password - Mot de passe brut transmis au backend.
    * @returns {Promise<Object>} Donnees publiques de l'utilisateur cree.
    */
-  static async registerUser(email, password) {
+  static async registerUser(email, pseudonym, password) {
     return this.fetchJson("/api/auth/register", "Inscription impossible.", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, pseudonym, password }),
     });
+  }
+
+  /**
+   * Verifie publiquement la disponibilite d'un pseudonyme.
+   *
+   * @param {string} pseudonym - Pseudonyme a valider.
+   * @returns {Promise<Object>} Pseudonyme normalise et indicateur de disponibilite.
+   */
+  static async checkPseudonymAvailability(pseudonym) {
+    const parameters = new URLSearchParams({ pseudonym });
+    return this.fetchJson(
+      `/api/auth/pseudonym-availability?${parameters.toString()}`,
+      "Verification du pseudonyme impossible.",
+    );
   }
 
   /**
@@ -102,10 +117,21 @@ class AuthApi {
   /**
    * Retourne le nom de l'utilisateur authentifie depuis le token.
    *
-   * @param {void} Aucun - Lit le champ `sub` du token courant.
+   * @param {void} Aucun - Lit le nom d'affichage puis le sujet du token courant.
    * @returns {string} Nom utilisateur connecte ou chaine vide.
    */
   static getAuthenticatedUsername() {
+    const payload = this.getAccessTokenPayload();
+    return String(payload.display_name || payload.sub || "");
+  }
+
+  /**
+   * Retourne le sujet technique de l'utilisateur authentifie.
+   *
+   * @param {void} Aucun - Lit le champ `sub` du token courant.
+   * @returns {string} Email technique ou identifiant administrateur.
+   */
+  static getAuthenticatedSubject() {
     return String(this.getAccessTokenPayload().sub || "");
   }
 

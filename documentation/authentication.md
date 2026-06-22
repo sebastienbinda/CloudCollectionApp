@@ -31,6 +31,8 @@ avoid unnecessary calls, but all real protection must remain on the backend side
   - `POST /auth/token`, used to obtain a token.
   - `POST /api/auth/register`, used to create an account before the user can
     own a Bearer token.
+  - `GET /api/auth/pseudonym-availability`, used to validate a registration
+    pseudonym before account creation.
   - `GET /api/auth/verify-email` and `POST /api/auth/verify-email`, used from
     an email verification link before sign-in.
   - `GET /api/library/entities`, used to expose public reference entity counts.
@@ -151,6 +153,7 @@ The Bearer token payload must contain:
 
 - `sub`: authenticated subject;
 - `profile`: `USER` or `ADMIN`;
+- `display_name`: registered-user pseudonym, or configured administrator name;
 - `iat`: issue timestamp;
 - `exp`: expiration timestamp.
 
@@ -167,6 +170,9 @@ before the user can authenticate.
   link. With `ADMIN_ACCOUNT_VALIDATION_ENABLED=true`, the user status is
   `WAITING_VALIDATION`; with it disabled, the status is `ACTIVE` but the user
   still cannot sign in before email verification.
+- Registration requires a case-insensitively unique pseudonym. The public
+  availability endpoint supports the frontend blur check, while registration
+  and the database unique index remain authoritative.
 - `GET /api/auth/verify-email?token=<token>` validates an email from a browser
   link and redirects to the public frontend page `/auth/verify-email` with a
   stable result status. The frontend page tells the user whether the account is
@@ -252,6 +258,9 @@ tests, documentation, or scripts.
   consistent with the locally stored token, even if route discovery temporarily
   fails after a local restart. Action buttons must remain disabled until the
   backend route catalog confirms their availability.
+- The connected-user indicator reads `display_name` from the token and therefore
+  shows the pseudonym instead of the email. The token `sub` remains the email
+  used by backend repositories to resolve the connected user.
 - If a sent token is rejected (`401` or `403`), the frontend must clear the local
   session and open the sign-in flow again.
 - Public accepted platform images may be used directly in `<img>` tags because

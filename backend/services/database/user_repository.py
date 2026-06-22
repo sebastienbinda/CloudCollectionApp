@@ -22,7 +22,11 @@ from services.auth.email_verification_service import (
     InvalidEmailVerificationTokenError,
     VerifiedUser,
 )
-from services.auth.user_registration_service import DuplicateUserEmailError, RegisteredUser
+from services.auth.user_registration_service import (
+    DuplicateUserEmailError,
+    DuplicateUserPseudonymError,
+    RegisteredUser,
+)
 from services.auth.user_profile import UserProfile
 from services.users import UserSearchCriteria, UserStatus, UserSummary
 
@@ -87,9 +91,31 @@ class SqlAlchemyUserRepository:
             ).scalar_one_or_none()
         return int(user_id) if user_id is not None else None
 
+    def pseudonym_exists(self, pseudonym: str) -> bool:
+        """Indique si un pseudonyme existe sans tenir compte de la casse.
+
+        Args:
+            pseudonym (str): Pseudonyme nettoye a rechercher.
+
+        Returns:
+            bool: `True` si le pseudonyme est deja present en base.
+        """
+
+        schema_name = self.configuration.schema_name
+        with self.engine.connect() as connection:
+            existing_count = connection.execute(
+                text(
+                    f'SELECT COUNT(*) FROM "{schema_name}".t_user '
+                    "WHERE LOWER(pseudonym) = LOWER(:pseudonym)"
+                ),
+                {"pseudonym": pseudonym},
+            ).scalar_one()
+        return int(existing_count) > 0
+
     def create_user(
         self,
         email: str,
+        pseudonym: str,
         password_hash: str,
         creation_date: datetime,
         verification_token: EmailVerificationToken,
@@ -100,6 +126,7 @@ class SqlAlchemyUserRepository:
 
         Args:
             email (str): Adresse email normalisee.
+            pseudonym (str): Pseudonyme public valide.
             password_hash (str): Empreinte non reversible du mot de passe.
             creation_date (datetime): Date de creation du compte.
             verification_token (EmailVerificationToken): Token de validation email a stocker.
@@ -111,6 +138,7 @@ class SqlAlchemyUserRepository:
 
         Raises:
             DuplicateUserEmailError: Si la contrainte unique email est violee.
+            DuplicateUserPseudonymError: Si la contrainte unique pseudonyme est violee.
         """
 
         schema_name = self.configuration.schema_name
@@ -119,15 +147,16 @@ class SqlAlchemyUserRepository:
                 row = connection.execute(
                     text(
                         f'INSERT INTO "{schema_name}".t_user '
-                        "(email, password_hash, profile, status, is_email_verified, "
+                        "(email, pseudonym, password_hash, profile, status, is_email_verified, "
                         "email_verification_token_hash, email_verification_expires_at, "
                         "creation_date) "
-                        "VALUES (:email, :password_hash, :profile, :status, false, :token_hash, "
+                        "VALUES (:email, :pseudonym, :password_hash, :profile, :status, false, :token_hash, "
                         ":token_expires_at, :creation_date) "
-                        "RETURNING id, email, creation_date, is_email_verified, profile, status"
+                        "RETURNING id, email, pseudonym, creation_date, is_email_verified, profile, status"
                     ),
                     {
                         "email": email,
+                        "pseudonym": pseudonym,
                         "password_hash": password_hash,
                         "profile": UserProfile.normalize(profile).value,
                         "status": UserStatus.normalize(status).value,
@@ -137,11 +166,15 @@ class SqlAlchemyUserRepository:
                     },
                 ).mappings().one()
         except IntegrityError as exc:
+            constraint_name = getattr(getattr(exc, "orig", None), "diag", None)
+            if getattr(constraint_name, "constraint_name", "") == "uq_t_user_pseudonym_lower":
+                raise DuplicateUserPseudonymError("Ce pseudonyme est deja utilise.") from exc
             raise DuplicateUserEmailError("Un compte existe deja pour cet email.") from exc
 
         return RegisteredUser(
             id=int(row["id"]),
             email=str(row["email"]),
+            pseudonym=str(row["pseudonym"]),
             creation_date=row["creation_date"],
             is_email_verified=bool(row["is_email_verified"]),
             profile=str(row["profile"]),
@@ -165,7 +198,7 @@ class SqlAlchemyUserRepository:
         with self.engine.connect() as connection:
             row = connection.execute(
                 text(
-                    f'SELECT id, email, password_hash, profile, status FROM "{schema_name}".t_user '
+                    f'SELECT id, email, pseudonym, password_hash, profile, status FROM "{schema_name}".t_user '
                     "WHERE email = :email AND is_email_verified = true"
                 ),
                 {"email": email},
@@ -177,6 +210,7 @@ class SqlAlchemyUserRepository:
         return AuthenticatedUserCredentials(
             id=int(row["id"]),
             email=str(row["email"]),
+            pseudonym=str(row["pseudonym"]),
             password_hash=str(row["password_hash"]),
             profile=str(row["profile"]),
             status=str(row["status"]),

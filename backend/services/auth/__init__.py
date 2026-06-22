@@ -23,6 +23,7 @@ from .email_verification_service import (
     InvalidEmailVerificationTokenError,
     VerifiedUser,
 )
+from .duplicate_user_pseudonym_error import DuplicateUserPseudonymError
 from .password_hash_service import PasswordHashService
 from .user_registration_service import (
     DuplicateUserEmailError,
@@ -39,6 +40,7 @@ __all__ = [
     "AuthenticatedUserCredentials",
     "AuthTokenService",
     "DuplicateUserEmailError",
+    "DuplicateUserPseudonymError",
     "EmailVerificationService",
     "EmailVerificationToken",
     "InvalidEmailVerificationTokenError",

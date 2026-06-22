@@ -9,6 +9,8 @@ email verification.
 
 - `POST /api/auth/register` must remain public: the user does not have an
   account yet and cannot have a Bearer token.
+- `GET /api/auth/pseudonym-availability` must remain public so the registration
+  form can validate a pseudonym when its field loses focus.
 - `GET /api/auth/verify-email` and `POST /api/auth/verify-email` must remain
   public: the user validates the account from an email link before signing in.
 - `GET /api/auth/verify-email` is used by browser email links and returns an
@@ -43,6 +45,15 @@ email verification.
   `/users?status=WAITING_VALIDATION`.
 - Treat duplicate email, invalid password and invalid verification token as
   controlled business errors.
+- Registration requires a pseudonym from 3 to 32 characters containing only
+  letters, digits, `_` or `-`. It is trimmed, preserved for display and unique
+  case-insensitively. Duplicate pseudonyms return `409` during registration.
+- The availability route validates the same format and returns `available`.
+  This early check is advisory: the database unique index and registration
+  transaction remain authoritative against concurrent registrations.
+- The frontend disables account creation until the current pseudonym has been
+  checked after blur and confirmed available. It explains that the pseudonym is
+  the connected-user display name and will identify future shared collections.
 - Do not hardcode SMTP secrets, passwords, tokens or signing keys.
 
 ## Local Email Testing
@@ -76,6 +87,8 @@ When modifying registration or email verification, update backend tests for:
 
 - public registration without Bearer token;
 - duplicate email rejection;
+- invalid and duplicate pseudonym rejection;
+- public pseudonym availability checks without a Bearer token;
 - password policy rejection;
 - public email verification without Bearer token;
 - browser email verification redirect from `GET /api/auth/verify-email`;

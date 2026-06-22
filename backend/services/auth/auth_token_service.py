@@ -35,6 +35,7 @@ class AuthenticatedUserCredentials:
     Attributes:
         id (int): Identifiant technique de l'utilisateur.
         email (str): Email normalise utilise comme sujet du token.
+        pseudonym (str): Pseudonyme utilise comme nom d'affichage.
         password_hash (str): Empreinte non reversible du mot de passe.
         profile (str): Profil applicatif associe a l'utilisateur.
         status (str): Statut fonctionnel du compte.
@@ -42,6 +43,7 @@ class AuthenticatedUserCredentials:
 
     id: int
     email: str
+    pseudonym: str
     password_hash: str
     profile: str = UserProfile.USER.value
     status: str = UserStatus.ACTIVE.value
@@ -54,10 +56,12 @@ class AuthenticatedTokenIdentity:
     Attributes:
         subject (str): Sujet place dans le token.
         profile (str): Profil applicatif place dans le token.
+        display_name (str): Nom affiche dans l'interface utilisateur.
     """
 
     subject: str
     profile: str
+    display_name: str
 
 
 class AuthTokenService:
@@ -129,6 +133,7 @@ class AuthTokenService:
             "access_token": self.create_access_token(
                 authenticated_identity.subject,
                 authenticated_identity.profile,
+                authenticated_identity.display_name,
             ),
             "token_type": "Bearer",
             "expires_in": self.token_ttl_seconds,
@@ -165,7 +170,11 @@ class AuthTokenService:
         """
 
         if self.validate_credentials(username, password):
-            return AuthenticatedTokenIdentity(subject=username, profile=UserProfile.ADMIN.value)
+            return AuthenticatedTokenIdentity(
+                subject=username,
+                profile=UserProfile.ADMIN.value,
+                display_name=username,
+            )
         database_user = None
         if user_repository:
             database_user = self.validate_registered_user_credentials(
@@ -177,6 +186,7 @@ class AuthTokenService:
             return AuthenticatedTokenIdentity(
                 subject=database_user.email,
                 profile=UserProfile.normalize(database_user.profile).value,
+                display_name=database_user.pseudonym,
             )
         return None
 
@@ -232,12 +242,18 @@ class AuthTokenService:
         )
         return database_user
 
-    def create_access_token(self, subject: str, profile: str | None = None) -> str:
+    def create_access_token(
+        self,
+        subject: str,
+        profile: str | None = None,
+        display_name: str | None = None,
+    ) -> str:
         """Cree un token Bearer signe et limite dans le temps.
 
         Args:
             subject (str): Sujet du token, generalement l'identifiant utilisateur.
             profile (str | None): Profil applicatif a inclure dans le token.
+            display_name (str | None): Pseudonyme affiche, ou sujet par defaut.
 
         Returns:
             str: Token signe au format `payload.signature`.
@@ -246,6 +262,7 @@ class AuthTokenService:
         issued_at = int(time.time())
         payload = {
             "sub": subject,
+            "display_name": display_name or subject,
             "profile": UserProfile.normalize(profile).value,
             "iat": issued_at,
             "exp": issued_at + self.token_ttl_seconds,

@@ -12,7 +12,7 @@
  *
  * Description : page React d'authentification et de gestion du token Bearer.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AuthApi from "../services/AuthApi";
 import PageLayout from "./PageLayout";
 
@@ -41,6 +41,9 @@ function AuthView({
   const [username, setUsername] = useState(requestedLoginEmail);
   const [password, setPassword] = useState("");
   const [registrationEmail, setRegistrationEmail] = useState("");
+  const [registrationPseudonym, setRegistrationPseudonym] = useState("");
+  const [pseudonymAvailability, setPseudonymAvailability] = useState("idle");
+  const [pseudonymAvailabilityMessage, setPseudonymAvailabilityMessage] = useState("");
   const [registrationPassword, setRegistrationPassword] = useState("");
   const [registrationPasswordConfirmation, setRegistrationPasswordConfirmation] = useState("");
   const [message, setMessage] = useState("");
@@ -52,12 +55,13 @@ function AuthView({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const pseudonymCheckSequence = useRef(0);
   const normalizedRequestedLoginEmail = requestedLoginEmail.trim().toLowerCase();
-  const normalizedAuthenticatedUsername = String(authenticatedUsername || "").trim().toLowerCase();
+  const normalizedAuthenticatedSubject = AuthApi.getAuthenticatedSubject().trim().toLowerCase();
   const isRequestedUserAlreadyConnected = Boolean(
     isAuthenticated
     && normalizedRequestedLoginEmail
-    && normalizedRequestedLoginEmail === normalizedAuthenticatedUsername
+    && normalizedRequestedLoginEmail === normalizedAuthenticatedSubject
   );
 
   useEffect(() => {
@@ -108,9 +112,20 @@ function AuthView({
 
     try {
       setIsRegistering(true);
-      const data = await AuthApi.registerUser(registrationEmail, registrationPassword);
+      if (pseudonymAvailability !== "available") {
+        setError("Veuillez choisir et valider un pseudonyme disponible.");
+        return;
+      }
+      const data = await AuthApi.registerUser(
+        registrationEmail,
+        registrationPseudonym,
+        registrationPassword,
+      );
       const createdEmail = data.user?.email || registrationEmail;
       setRegistrationEmail("");
+      setRegistrationPseudonym("");
+      setPseudonymAvailability("idle");
+      setPseudonymAvailabilityMessage("");
       setRegistrationPassword("");
       setRegistrationPasswordConfirmation("");
       setActiveMode("login");
@@ -119,9 +134,64 @@ function AuthView({
         "Compte cree. Consultez votre email pour valider votre adresse avant connexion."
       );
     } catch (e) {
+      if (String(e.message || "").toLowerCase().includes("pseudonyme")) {
+        setPseudonymAvailability("unavailable");
+        setPseudonymAvailabilityMessage(e.message);
+      }
       setError(e.message || "Inscription impossible.");
     } finally {
       setIsRegistering(false);
+    }
+  };
+
+  /**
+   * Invalide le controle precedent lorsqu'un pseudonyme est modifie.
+   *
+   * @param {string} value - Nouvelle valeur saisie.
+   * @returns {void} Replace la disponibilite dans son etat initial.
+   */
+  const updateRegistrationPseudonym = (value) => {
+    pseudonymCheckSequence.current += 1;
+    setRegistrationPseudonym(value);
+    setPseudonymAvailability("idle");
+    setPseudonymAvailabilityMessage("");
+  };
+
+  /**
+   * Verifie la disponibilite du pseudonyme a la perte de focus.
+   *
+   * @returns {Promise<void>} Met a jour l'etat de validation du formulaire.
+   */
+  const checkRegistrationPseudonym = async () => {
+    const pseudonym = registrationPseudonym.trim();
+    if (!pseudonym) {
+      setPseudonymAvailability("invalid");
+      setPseudonymAvailabilityMessage("Le pseudonyme est obligatoire.");
+      return;
+    }
+
+    const checkSequence = pseudonymCheckSequence.current + 1;
+    pseudonymCheckSequence.current = checkSequence;
+    setPseudonymAvailability("checking");
+    setPseudonymAvailabilityMessage("Verification du pseudonyme...");
+    try {
+      const result = await AuthApi.checkPseudonymAvailability(pseudonym);
+      if (pseudonymCheckSequence.current !== checkSequence) {
+        return;
+      }
+      setRegistrationPseudonym(result.pseudonym || pseudonym);
+      setPseudonymAvailability(result.available ? "available" : "unavailable");
+      setPseudonymAvailabilityMessage(
+        result.available ? "Pseudonyme disponible." : "Ce pseudonyme est deja utilise."
+      );
+    } catch (availabilityError) {
+      if (pseudonymCheckSequence.current !== checkSequence) {
+        return;
+      }
+      setPseudonymAvailability("invalid");
+      setPseudonymAvailabilityMessage(
+        availabilityError.message || "Verification du pseudonyme impossible."
+      );
     }
   };
 
@@ -300,6 +370,33 @@ function AuthView({
       ) : (
         <form className="authForm" onSubmit={submitRegistrationForm}>
           <label>
+            Pseudonyme
+            <input
+              autoComplete="nickname"
+              type="text"
+              value={registrationPseudonym}
+              onChange={(event) => updateRegistrationPseudonym(event.target.value)}
+              onBlur={checkRegistrationPseudonym}
+              minLength={3}
+              maxLength={32}
+              pattern="[A-Za-z0-9_-]{3,32}"
+              aria-describedby="registration-pseudonym-description registration-pseudonym-status"
+              required
+            />
+            <small id="registration-pseudonym-description">
+              Ce nom identifiera votre session et votre collection lors du futur partage.
+            </small>
+            {pseudonymAvailabilityMessage ? (
+              <small
+                id="registration-pseudonym-status"
+                className={pseudonymAvailability === "available" ? "success" : "error"}
+                aria-live="polite"
+              >
+                {pseudonymAvailabilityMessage}
+              </small>
+            ) : null}
+          </label>
+          <label>
             Email
             <input
               autoComplete="email"
@@ -330,7 +427,10 @@ function AuthView({
             />
           </label>
           <div className="formActions">
-            <button type="submit" disabled={isRegistering}>
+            <button
+              type="submit"
+              disabled={isRegistering || pseudonymAvailability !== "available"}
+            >
               {isRegistering ? "Creation..." : "Creer le compte"}
             </button>
           </div>

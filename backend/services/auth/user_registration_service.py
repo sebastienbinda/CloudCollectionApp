@@ -17,6 +17,7 @@ import re
 from typing import Protocol
 
 from .email_verification_service import EmailVerificationService, EmailVerificationToken
+from .duplicate_user_pseudonym_error import DuplicateUserPseudonymError
 from .password_hash_service import PasswordHashService
 from .user_profile import UserProfile
 from services.users import UserStatus
@@ -29,6 +30,7 @@ class RegisteredUser:
     Attributes:
         id (int): Identifiant technique de l'utilisateur.
         email (str): Adresse email normalisee.
+        pseudonym (str): Pseudonyme public unique de l'utilisateur.
         creation_date (datetime): Date de creation du compte.
         is_email_verified (bool): Indique si l'adresse email a ete validee.
         profile (str): Profil applicatif attribue au compte.
@@ -37,6 +39,7 @@ class RegisteredUser:
 
     id: int
     email: str
+    pseudonym: str
     creation_date: datetime
     is_email_verified: bool
     profile: str = UserProfile.USER.value
@@ -55,6 +58,7 @@ class RegisteredUser:
         return {
             "id": self.id,
             "email": self.email,
+            "pseudonym": self.pseudonym,
             "creation_date": self.creation_date.isoformat(),
             "is_email_verified": self.is_email_verified,
             "profile": self.profile,
@@ -79,9 +83,20 @@ class UserRepository(Protocol):
             bool: `True` si l'email existe deja en base.
         """
 
+    def pseudonym_exists(self, pseudonym: str) -> bool:
+        """Indique si un pseudonyme est deja utilise sans tenir compte de la casse.
+
+        Args:
+            pseudonym (str): Pseudonyme normalise a rechercher.
+
+        Returns:
+            bool: `True` si le pseudonyme existe deja en base.
+        """
+
     def create_user(
         self,
         email: str,
+        pseudonym: str,
         password_hash: str,
         creation_date: datetime,
         verification_token: EmailVerificationToken,
@@ -92,6 +107,7 @@ class UserRepository(Protocol):
 
         Args:
             email (str): Adresse email normalisee.
+            pseudonym (str): Pseudonyme public valide.
             password_hash (str): Empreinte non reversible du mot de passe.
             creation_date (datetime): Date de creation du compte.
             verification_token (EmailVerificationToken): Token de validation email a stocker.
@@ -103,6 +119,7 @@ class UserRepository(Protocol):
 
         Raises:
             DuplicateUserEmailError: Si l'email existe deja.
+            DuplicateUserPseudonymError: Si le pseudonyme existe deja.
         """
 
 
@@ -118,6 +135,7 @@ class UserRegistrationService:
     """Orchestre la validation et la creation d'un compte utilisateur."""
 
     EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    PSEUDONYM_PATTERN = re.compile(r"^[A-Za-z0-9_-]{3,32}$")
     MIN_PASSWORD_LENGTH = 8
     PASSWORD_POLICY_MESSAGE = (
         "Le mot de passe doit contenir au moins 8 caracteres, au moins un chiffre, "
@@ -127,7 +145,7 @@ class UserRegistrationService:
     def __init__(
         self,
         user_repository: UserRepository,
-        email_verification_service: EmailVerificationService,
+        email_verification_service: EmailVerificationService | None,
         password_hash_service: PasswordHashService | None = None,
         admin_account_validation_enabled: bool = True,
     ):
@@ -135,7 +153,7 @@ class UserRegistrationService:
 
         Args:
             user_repository (UserRepository): Port de persistance utilisateur.
-            email_verification_service (EmailVerificationService): Service de validation email.
+            email_verification_service (EmailVerificationService | None): Service de validation email.
             password_hash_service (PasswordHashService | None): Service de hachage injectable.
             admin_account_validation_enabled (bool): Active la validation administrateur.
 
@@ -148,11 +166,12 @@ class UserRegistrationService:
         self.password_hash_service = password_hash_service or PasswordHashService()
         self.admin_account_validation_enabled = bool(admin_account_validation_enabled)
 
-    def register_user(self, email: str, password: str) -> RegisteredUser:
+    def register_user(self, email: str, pseudonym: str, password: str) -> RegisteredUser:
         """Cree un utilisateur apres validation des donnees d'inscription.
 
         Args:
             email (str): Adresse email fournie par le client.
+            pseudonym (str): Pseudonyme public fourni par le client.
             password (str): Mot de passe brut fourni par le client.
 
         Returns:
@@ -161,20 +180,28 @@ class UserRegistrationService:
         Raises:
             ValueError: Si l'email ou le mot de passe est invalide.
             DuplicateUserEmailError: Si l'email est deja utilise.
+            DuplicateUserPseudonymError: Si le pseudonyme est deja utilise.
         """
 
         normalized_email = self._normalize_email(email)
+        normalized_pseudonym = self.normalize_pseudonym(pseudonym)
         self._validate_email(normalized_email)
+        self.validate_pseudonym(normalized_pseudonym)
         self._validate_password(password)
 
         if self.user_repository.email_exists(normalized_email):
             raise DuplicateUserEmailError("Un compte existe deja pour cet email.")
+        if self.user_repository.pseudonym_exists(normalized_pseudonym):
+            raise DuplicateUserPseudonymError("Ce pseudonyme est deja utilise.")
 
         password_hash = self.password_hash_service.hash_password(password)
+        if self.email_verification_service is None:
+            raise ValueError("Le service de validation email est requis pour l'inscription.")
         creation_date = datetime.now(timezone.utc).replace(tzinfo=None)
         verification_token = self.email_verification_service.create_token()
         registered_user = self.user_repository.create_user(
             email=normalized_email,
+            pseudonym=normalized_pseudonym,
             password_hash=password_hash,
             creation_date=creation_date,
             verification_token=verification_token,
@@ -186,6 +213,56 @@ class UserRegistrationService:
             raw_token=verification_token.raw_token,
         )
         return registered_user
+
+    def is_pseudonym_available(self, pseudonym: str) -> bool:
+        """Verifie la validite et la disponibilite d'un pseudonyme.
+
+        Args:
+            pseudonym (str): Pseudonyme fourni par le client.
+
+        Returns:
+            bool: `True` si le pseudonyme valide est disponible.
+
+        Raises:
+            ValueError: Si le format du pseudonyme est invalide.
+        """
+
+        normalized_pseudonym = self.normalize_pseudonym(pseudonym)
+        self.validate_pseudonym(normalized_pseudonym)
+        return not self.user_repository.pseudonym_exists(normalized_pseudonym)
+
+    @classmethod
+    def normalize_pseudonym(cls, pseudonym: str) -> str:
+        """Nettoie un pseudonyme sans modifier sa casse d'affichage.
+
+        Args:
+            pseudonym (str): Pseudonyme brut.
+
+        Returns:
+            str: Pseudonyme sans espaces exterieurs.
+        """
+
+        return str(pseudonym or "").strip()
+
+    @classmethod
+    def validate_pseudonym(cls, pseudonym: str) -> None:
+        """Valide le format public d'un pseudonyme.
+
+        Args:
+            pseudonym (str): Pseudonyme nettoye.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            ValueError: Si le pseudonyme ne respecte pas le format autorise.
+        """
+
+        if not cls.PSEUDONYM_PATTERN.fullmatch(pseudonym):
+            raise ValueError(
+                "Le pseudonyme doit contenir entre 3 et 32 caracteres parmi les lettres, "
+                "les chiffres, le tiret et le tiret bas."
+            )
 
     def _initial_user_status(self) -> str:
         """Retourne le statut initial selon la validation administrateur.

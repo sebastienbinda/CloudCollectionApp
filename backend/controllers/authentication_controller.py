@@ -20,6 +20,7 @@ from services import (
     AuthTokenService,
     DatabaseConfiguration,
     DuplicateUserEmailError,
+    DuplicateUserPseudonymError,
     EmailConfiguration,
     EmailSenderFactory,
     EmailVerificationService,
@@ -37,6 +38,7 @@ class AuthenticationController:
         {
             "issue_auth_token",
             "register_user",
+            "check_pseudonym_availability",
             "verify_user_email",
         }
     )
@@ -97,6 +99,12 @@ class AuthenticationController:
             methods=["POST"],
         )
         flask_app.add_url_rule(
+            "/api/auth/pseudonym-availability",
+            endpoint="check_pseudonym_availability",
+            view_func=self.check_pseudonym_availability,
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
             "/api/auth/verify-email",
             endpoint="verify_user_email",
             view_func=self.verify_user_email,
@@ -154,6 +162,7 @@ class AuthenticationController:
 
         JSON Body:
             email (str): Adresse email du compte a creer.
+            pseudonym (str): Pseudonyme public unique du compte.
             password (str): Mot de passe brut a hacher avant stockage.
 
         Returns:
@@ -162,6 +171,7 @@ class AuthenticationController:
 
         payload = request.get_json(silent=True) or {}
         email = payload.get("email", "")
+        pseudonym = payload.get("pseudonym", "")
         password = payload.get("password", "")
         current_app.logger.info("Demande d'inscription utilisateur recue.")
         try:
@@ -172,11 +182,18 @@ class AuthenticationController:
                 email_verification_service,
                 admin_account_validation_enabled=self._is_admin_account_validation_enabled(),
             )
-            registered_user = registration_service.register_user(email=email, password=password)
+            registered_user = registration_service.register_user(
+                email=email,
+                pseudonym=pseudonym,
+                password=password,
+            )
             current_app.logger.info("Utilisateur inscrit avec succes: id=%s.", registered_user.id)
             return jsonify({"user": registered_user.to_public_dict()}), 201
         except DuplicateUserEmailError as exc:
             current_app.logger.warning("Inscription refusee: email deja utilise.")
+            return jsonify({"error": str(exc)}), 409
+        except DuplicateUserPseudonymError as exc:
+            current_app.logger.warning("Inscription refusee: pseudonyme deja utilise.")
             return jsonify({"error": str(exc)}), 409
         except PasswordPolicyError as exc:
             current_app.logger.warning("Inscription refusee: regles de mot de passe non respectees.")
@@ -189,6 +206,37 @@ class AuthenticationController:
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant l'inscription utilisateur.")
             return jsonify({"error": "Unable to register user."}), 500
+
+    def check_pseudonym_availability(self):
+        """Indique publiquement si un pseudonyme valide est disponible.
+
+        Args:
+            Aucun.
+
+        Query Args:
+            pseudonym (str): Pseudonyme a valider sans authentification.
+
+        Returns:
+            tuple[flask.Response, int] | flask.Response: Disponibilite ou erreur de format.
+        """
+
+        pseudonym = request.args.get("pseudonym", "")
+        try:
+            user_repository = self._create_user_repository()
+            registration_service = self.user_registration_service_class(
+                user_repository,
+                None,
+                admin_account_validation_enabled=self._is_admin_account_validation_enabled(),
+            )
+            normalized_pseudonym = registration_service.normalize_pseudonym(pseudonym)
+            return jsonify({
+                "pseudonym": normalized_pseudonym,
+                "available": registration_service.is_pseudonym_available(normalized_pseudonym),
+            })
+        except ValueError as exc:
+            if "DATABASE_URL" in str(exc):
+                return jsonify({"error": str(exc)}), 503
+            return jsonify({"error": str(exc)}), 400
 
     def verify_user_email(self):
         """Valide l'adresse email d'un utilisateur depuis un token applicatif.

@@ -16,6 +16,7 @@ from datetime import datetime
 
 from services.auth import (
     DuplicateUserEmailError,
+    DuplicateUserPseudonymError,
     EmailVerificationToken,
     PasswordPolicyError,
     PasswordHashService,
@@ -29,11 +30,12 @@ from services.auth import (
 class FakeUserRepository:
     """Repository utilisateur factice pour les tests d'inscription."""
 
-    def __init__(self, existing_emails=None, waiting_users_count=3):
+    def __init__(self, existing_emails=None, existing_pseudonyms=None, waiting_users_count=3):
         """Initialise le repository factice.
 
         Args:
             existing_emails (set[str] | None): Emails consideres comme deja existants.
+            existing_pseudonyms (set[str] | None): Pseudonymes deja existants en minuscules.
             waiting_users_count (int): Nombre d'utilisateurs en attente retourne.
 
         Returns:
@@ -41,7 +43,9 @@ class FakeUserRepository:
         """
 
         self.existing_emails = existing_emails or set()
+        self.existing_pseudonyms = existing_pseudonyms or set()
         self.created_email = None
+        self.created_pseudonym = None
         self.created_password_hash = None
         self.created_verification_token = None
         self.created_profile = None
@@ -60,11 +64,26 @@ class FakeUserRepository:
 
         return email in self.existing_emails
 
-    def create_user(self, email, password_hash, creation_date, verification_token, profile, status):
+    def pseudonym_exists(self, pseudonym):
+        """Indique si le pseudonyme existe sans tenir compte de la casse.
+
+        Args:
+            pseudonym (str): Pseudonyme a rechercher.
+
+        Returns:
+            bool: `True` si le pseudonyme est deja present.
+        """
+
+        return pseudonym.lower() in self.existing_pseudonyms
+
+    def create_user(
+        self, email, pseudonym, password_hash, creation_date, verification_token, profile, status
+    ):
         """Memorise la creation utilisateur factice.
 
         Args:
             email (str): Email normalise.
+            pseudonym (str): Pseudonyme public.
             password_hash (str): Empreinte du mot de passe.
             creation_date (datetime): Date de creation.
             verification_token (EmailVerificationToken): Token de validation email.
@@ -76,6 +95,7 @@ class FakeUserRepository:
         """
 
         self.created_email = email
+        self.created_pseudonym = pseudonym
         self.created_password_hash = password_hash
         self.created_verification_token = verification_token
         self.created_profile = profile
@@ -83,6 +103,7 @@ class FakeUserRepository:
         return RegisteredUser(
             id=42,
             email=email,
+            pseudonym=pseudonym,
             creation_date=creation_date,
             is_email_verified=False,
             profile=profile,
@@ -164,10 +185,14 @@ class UserRegistrationServiceTest(unittest.TestCase):
         email_verification_service = FakeEmailVerificationService()
         service = UserRegistrationService(repository, email_verification_service)
 
-        user = service.register_user(" USER@Example.COM ", "VeryStrongPassword123!")
+        user = service.register_user(
+            " USER@Example.COM ", " Player_One ", "VeryStrongPassword123!"
+        )
 
         self.assertEqual(42, user.id)
         self.assertEqual("user@example.com", repository.created_email)
+        self.assertEqual("Player_One", repository.created_pseudonym)
+        self.assertEqual("Player_One", user.pseudonym)
         self.assertFalse(user.is_email_verified)
         self.assertEqual(UserProfile.USER.value, user.profile)
         self.assertEqual(UserStatus.WAITING_VALIDATION.value, user.status)
@@ -198,7 +223,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
             admin_account_validation_enabled=False,
         )
 
-        user = service.register_user("user@example.com", "VeryStrongPassword123!")
+        user = service.register_user("user@example.com", "Player_One", "VeryStrongPassword123!")
 
         self.assertEqual(UserStatus.ACTIVE.value, user.status)
         self.assertEqual(UserStatus.ACTIVE.value, repository.created_status)
@@ -216,7 +241,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         service = UserRegistrationService(FakeUserRepository(), FakeEmailVerificationService())
 
         with self.assertRaises(ValueError):
-            service.register_user("invalid-email", "VeryStrongPassword123!")
+            service.register_user("invalid-email", "Player_One", "VeryStrongPassword123!")
 
     def test_register_user_rejects_short_password(self):
         """Verifie le refus d'un mot de passe trop court.
@@ -231,7 +256,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         service = UserRegistrationService(FakeUserRepository(), FakeEmailVerificationService())
 
         with self.assertRaises(PasswordPolicyError):
-            service.register_user("user@example.com", "short")
+            service.register_user("user@example.com", "Player_One", "short")
 
     def test_register_user_rejects_password_without_digit(self):
         """Verifie le refus d'un mot de passe sans chiffre.
@@ -246,7 +271,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         service = UserRegistrationService(FakeUserRepository(), FakeEmailVerificationService())
 
         with self.assertRaises(PasswordPolicyError):
-            service.register_user("user@example.com", "Password!")
+            service.register_user("user@example.com", "Player_One", "Password!")
 
     def test_register_user_rejects_password_without_special_character(self):
         """Verifie le refus d'un mot de passe sans caractere special.
@@ -261,7 +286,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         service = UserRegistrationService(FakeUserRepository(), FakeEmailVerificationService())
 
         with self.assertRaises(PasswordPolicyError):
-            service.register_user("user@example.com", "Password1")
+            service.register_user("user@example.com", "Player_One", "Password1")
 
     def test_register_user_rejects_password_without_lowercase(self):
         """Verifie le refus d'un mot de passe sans minuscule.
@@ -276,7 +301,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         service = UserRegistrationService(FakeUserRepository(), FakeEmailVerificationService())
 
         with self.assertRaises(PasswordPolicyError):
-            service.register_user("user@example.com", "PASSWORD1!")
+            service.register_user("user@example.com", "Player_One", "PASSWORD1!")
 
     def test_register_user_rejects_password_without_uppercase(self):
         """Verifie le refus d'un mot de passe sans majuscule.
@@ -291,7 +316,7 @@ class UserRegistrationServiceTest(unittest.TestCase):
         service = UserRegistrationService(FakeUserRepository(), FakeEmailVerificationService())
 
         with self.assertRaises(PasswordPolicyError):
-            service.register_user("user@example.com", "password1!")
+            service.register_user("user@example.com", "Player_One", "password1!")
 
     def test_register_user_rejects_duplicate_email(self):
         """Verifie le refus d'un email deja utilise.
@@ -309,7 +334,45 @@ class UserRegistrationServiceTest(unittest.TestCase):
         )
 
         with self.assertRaises(DuplicateUserEmailError):
-            service.register_user("user@example.com", "VeryStrongPassword123!")
+            service.register_user("user@example.com", "Player_One", "VeryStrongPassword123!")
+
+    def test_register_user_rejects_duplicate_pseudonym_without_case_sensitivity(self):
+        """Verifie le refus d'un pseudonyme deja utilise avec une autre casse.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur metier.
+        """
+
+        repository = FakeUserRepository(existing_pseudonyms={"player_one"})
+        service = UserRegistrationService(repository, FakeEmailVerificationService())
+
+        with self.assertRaises(DuplicateUserPseudonymError):
+            service.register_user(
+                "other@example.com", "Player_One", "VeryStrongPassword123!"
+            )
+
+    def test_pseudonym_availability_validates_format_and_case_insensitive_uniqueness(self):
+        """Verifie le format et la disponibilite publique d'un pseudonyme.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident disponibilite et refus.
+        """
+
+        repository = FakeUserRepository(existing_pseudonyms={"reserved"})
+        service = UserRegistrationService(repository, FakeEmailVerificationService())
+
+        self.assertTrue(service.is_pseudonym_available(" Player_One "))
+        self.assertFalse(service.is_pseudonym_available("Reserved"))
+        with self.assertRaises(ValueError):
+            service.is_pseudonym_available("ab")
+        with self.assertRaises(ValueError):
+            service.is_pseudonym_available("pseudo interdit")
 
 
 class PasswordHashServiceTest(unittest.TestCase):
