@@ -159,6 +159,16 @@ Variables principales :
   validation email utilisateur. Valeur par defaut : `true`.
 - `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
   production pour persister les donnees PostgreSQL du conteneur `database`.
+- `TRAEFIK_LETSENCRYPT_HOST_DIR` : chemin absolu du repertoire hote monte dans
+  `/letsencrypt` pour persister le compte ACME, les certificats TLS et leurs cles
+  entre les recreations du conteneur Traefik. Ce repertoire doit etre prive,
+  sauvegarde et ne doit jamais etre publie dans le depot.
+
+Le backend journalise chaque appel REST avec la methode, le chemin, l'endpoint,
+le statut HTTP, la duree et l'adresse cliente. Les reponses HTTP en erreur
+(`4xx` et `5xx`) sont emises au niveau `ERROR`; lorsqu'une reponse JSON contient
+un champ `error`, son message borne est inclus sans journaliser le corps de la
+requete ni ses parametres.
 
 Un fichier exemple versionnable est fourni :
 
@@ -224,6 +234,10 @@ docker compose -f docker-compose.local.yml up --build
 En production, `docker/docker-compose.online.yml` exige
 `POSTGRES_DATA_HOST_DIR` avec un chemin absolu existant et sauvegardable pour
 monter les donnees PostgreSQL dans `/var/lib/postgresql/data`.
+Il exige egalement `TRAEFIK_LETSENCRYPT_HOST_DIR` avec un chemin absolu prive et
+sauvegardable pour monter les donnees ACME dans `/letsencrypt`. Le fichier
+`acme.json` contient des cles privees et ne doit jamais etre affiche, partage ou
+versionne.
 Il exige aussi `BACKEND_IMG_HOST_DIR` avec un chemin absolu existant et
 sauvegardable pour persister les images de plateformes.
 

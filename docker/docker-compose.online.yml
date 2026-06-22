@@ -29,7 +29,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - traefik_letsencrypt:/letsencrypt
+      - ${TRAEFIK_LETSENCRYPT_HOST_DIR:?TRAEFIK_LETSENCRYPT_HOST_DIR doit etre defini avec un chemin absolu}:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - frontend
@@ -124,9 +124,6 @@ services:
     networks:
       - frontend
     restart: unless-stopped
-
-volumes:
-  traefik_letsencrypt:
 
 networks:
   frontend:
