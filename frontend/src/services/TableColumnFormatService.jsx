@@ -50,11 +50,28 @@ class TableColumnFormatService {
    *
    * @param {string} column - Nom de colonne a formater.
    * @param {unknown} value - Valeur brute de cellule.
+   * @param {Object|null} row - Ligne complete contenant les informations associees.
    * @returns {string|import("react").JSX.Element} Valeur prete a afficher.
    */
-  static formatGameValue(column, value) {
+  static formatGameValue(column, value, row = null) {
     if (column === "Version") {
       return this.formatVersionValue(value);
+    }
+
+    if (column === "Prix d'achat") {
+      if (this.isEmpty(value)) {
+        return "-";
+      }
+      const priceUnit = String(row?.priceUnit || "").trim();
+      const numericValue = Number.parseFloat(String(value).replace(",", "."));
+      if (!priceUnit || Number.isNaN(numericValue)) {
+        return String(value);
+      }
+      return new Intl.NumberFormat("fr-FR", {
+        style: "currency",
+        currency: priceUnit,
+        maximumFractionDigits: 2,
+      }).format(numericValue);
     }
 
     if (isDateColumn(column)) {

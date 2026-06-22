@@ -58,9 +58,15 @@ available, remain separate controls and must not trigger detail navigation.
 
 On mobile, collection and wishlist game tables are rendered as compact game
 entries instead of dense tabular rows. The first line displays the game name.
-The second line displays the release date and platform when those values are
-available. The region flag is displayed in both desktop and mobile lists. This
-mobile presentation must keep the same row-click detail navigation as desktop.
+For the collection platform page, the second line displays the release date,
+purchase price and grade when those values are available; it must not repeat
+the platform already selected by the page filter. Wishlist entries keep the
+release date and platform on their second line. The region flag is displayed in
+both desktop and mobile lists. This mobile presentation must keep the same
+row-click detail navigation as desktop.
+
+On desktop, the collection platform game table displays only the game name,
+region/version icon, release date, purchase date, grade and purchase price.
 
 The frontend must accept `wishlist` in game rows returned by the backend, but it
 must not display that technical value in the collection table.

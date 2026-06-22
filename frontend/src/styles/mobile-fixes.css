@@ -46,6 +46,26 @@
   outline-offset: 2px;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  input:not([type]),
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"],
+  input[type="time"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
+
 @media (max-width: 620px) {
   body {
     padding-bottom: 6.35rem;
