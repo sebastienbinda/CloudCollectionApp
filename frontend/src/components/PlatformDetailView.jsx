@@ -152,6 +152,8 @@ function PlatformDetailView({
         isLoadingGames={isLoadingGames}
         emptyMessage="Aucun jeu a afficher pour cette plateforme."
         sortableColumns={sortableColumns}
+        columnLabels={{ "Prix d'achat": "Prix" }}
+        tableClassName="collectionGamesTable"
         controlsContent={(
           <form className="librarySearchForm" onSubmit={(event) => event.preventDefault()}>
             <label htmlFor="collection-game-name-filter">Recherche par nom</label>

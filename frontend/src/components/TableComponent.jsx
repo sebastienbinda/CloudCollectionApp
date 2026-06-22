@@ -224,7 +224,7 @@ class TableComponent extends Component {
       return this.props.formatCellValue(column, value, row);
     }
 
-    return TableColumnFormatService.formatGameValue(column, value);
+    return TableColumnFormatService.formatGameValue(column, value, row);
   }
 
   /**

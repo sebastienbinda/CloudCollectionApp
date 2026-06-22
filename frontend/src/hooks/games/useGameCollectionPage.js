@@ -17,7 +17,14 @@ import { getStudioCount } from "../../collectionUtils";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import usePlatformGameMutations from "../usePlatformGameMutations";
 
-const hiddenGameColumns = new Set(["id", "platform_id"]);
+const collectionGameColumns = [
+  "Nom du jeu",
+  "Version",
+  "Date de sortie",
+  "Date d'achat",
+  "Note",
+  "Prix d'achat",
+];
 const sortableColumns = ["Nom du jeu", "Studio", "Date de sortie", "Date d'achat", "Note"];
 const backendSortColumns = {
   "Nom du jeu": "name",
@@ -98,14 +105,7 @@ function useGameCollectionPage(options) {
         String(game["Nom du jeu"] || "").toLowerCase().includes(normalizedGameNameFilter)
       )
     : namedGames;
-  const columns = namedGames.length > 0
-    ? [
-        "Nom du jeu",
-        ...Object.keys(namedGames[0]).filter(
-          (column) => column !== "Nom du jeu" && !hiddenGameColumns.has(column)
-        ),
-      ]
-    : [];
+  const columns = namedGames.length > 0 ? collectionGameColumns : [];
   const filteredGames = nameFilteredGames;
   const sortedGames = filteredGames;
   const toggleSort = (column) => {

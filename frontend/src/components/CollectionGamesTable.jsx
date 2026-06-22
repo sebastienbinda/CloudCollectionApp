@@ -34,6 +34,8 @@ import TableComponent from "./TableComponent";
  * @param {Function|null} props.getRowClassName - Callback de classe de ligne.
  * @param {Function|null} props.renderRowActions - Callback de rendu des actions.
  * @param {Function|null} props.onRowClick - Callback d'ouverture d'une ligne.
+ * @param {Object|null} props.columnLabels - Libelles visibles par colonne technique.
+ * @param {string|null} props.tableClassName - Classe CSS specifique du tableau.
  * @returns {import("react").JSX.Element} Tableau et etats associes.
  */
 function CollectionGamesTable({
@@ -52,6 +54,8 @@ function CollectionGamesTable({
   getRowClassName = null,
   renderRowActions = null,
   onRowClick = null,
+  columnLabels = null,
+  tableClassName = null,
 }) {
   return (
     <>
@@ -74,6 +78,8 @@ function CollectionGamesTable({
           getRowClassName={getRowClassName}
           renderRowActions={renderRowActions}
           onRowClick={onRowClick}
+          columnLabels={columnLabels}
+          tableClassName={tableClassName}
         />
       ) : null}
 

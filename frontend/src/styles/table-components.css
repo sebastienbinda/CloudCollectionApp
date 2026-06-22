@@ -181,6 +181,83 @@
     width: auto;
   }
 
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td {
+    display: none;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow .gameNameColumn {
+    display: block;
+    grid-column: 2 / 5;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Date de sortie"] {
+    display: block;
+    grid-column: 2;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Prix d'achat"],
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Note"] {
+    color: #475569;
+    display: block;
+    font-size: 0.68rem;
+    grid-row: 2;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Prix d'achat"] {
+    grid-column: 3;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Prix d'achat"]::before {
+    content: "Prix : ";
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Note"] {
+    grid-column: 4;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Note"]::before {
+    content: "Note : ";
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Version"] {
+    align-self: center;
+    align-items: center;
+    display: flex;
+    font-size: 0.86rem;
+    grid-column: 1;
+    grid-row: 1;
+    height: 1rem;
+    justify-content: center;
+    line-height: 1;
+    width: 1.2rem;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Version"] .versionIcons {
+    display: block;
+    line-height: 1;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow.topRatedGameRow td:first-child {
+    box-shadow: none;
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow.topRatedGameRow {
+    background: #fefce8;
+    border-color: #fde68a;
+    box-shadow: inset 4px 0 0 #eab308, 0 3px 9px rgba(15, 23, 42, 0.05);
+  }
+
+  .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow .actionColumn {
+    display: flex;
+    grid-column: 5;
+  }
+
   .tablePagination {
     align-items: stretch;
     flex-direction: column;
