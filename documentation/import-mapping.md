@@ -81,7 +81,9 @@ reader architecture rules in `documentation/reader.md`.
   `AU`, `ASIA`, `KOR`, `TWN`, `HK`, `CHN`.
 - Exact aliases run before fuzzy matching:
   `FR` → `EU-FR`, `UK` → `EU-UK`, `DE` → `EU-DE`, `ES` → `EU-ES`,
-  `IT` → `EU-IT`.
+  `IT` → `EU-IT`, `NTSC - US` and `US - NTSC` → `US`, and each
+  `PAL - XX` country alias maps to its corresponding European region.
+- `PAL - EUR` and `EUR - PAL` map to `EU-FR` as the default European region.
 - Otherwise the unique best normalized code is accepted at
   `REGION_MATCH_LIMIT` (default `60`).
 
