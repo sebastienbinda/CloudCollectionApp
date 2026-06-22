@@ -12,11 +12,12 @@ ALLOWED_REGIONS = frozenset({
     "AU", "ASIA", "KOR", "TWN", "HK", "CHN",
 })
 REGION_ALIASES_BY_VALUE = {
-    "EU-FR": frozenset({"FR"}),
-    "EU-UK": frozenset({"UK"}),
-    "EU-DE": frozenset({"DE"}),
-    "EU-ES": frozenset({"ES"}),
-    "EU-IT": frozenset({"IT"}),
+    "US": frozenset({"NTSC - US", "US - NTSC"}),
+    "EU-FR": frozenset({"FR", "PAL - FR", "PAL - EUR", "EUR - PAL"}),
+    "EU-UK": frozenset({"UK", "PAL - UK"}),
+    "EU-DE": frozenset({"DE", "PAL - DE"}),
+    "EU-ES": frozenset({"ES", "PAL - ES"}),
+    "EU-IT": frozenset({"IT", "PAL - IT"}),
 }
 CONDITION_LABELS_BY_VALUE = {
     0: (

@@ -16,7 +16,6 @@ from services.collection.imports.collection_private_information_contract import 
     CONDITION_LABELS_BY_VALUE,
     REGION_ALIASES_BY_VALUE,
 )
-from services.matching import matching_score
 from services.collection.imports import (
     CollectionImportValueMapper,
     ConditionMatchingConfiguration,
@@ -230,8 +229,8 @@ class CollectionImportValueMapperTest(unittest.TestCase):
         self.assertIsNone(rejected["region"])
         self.assertEqual("region", rejected_warnings["invalid_games"][0]["invalid_fields"][0]["field"])
 
-    def test_region_matching_maps_country_aliases_to_european_regions(self):
-        """Verifie les codes pays correspondant aux regions europeennes.
+    def test_region_matching_maps_exact_aliases_to_controlled_regions(self):
+        """Verifie les alias explicites correspondant aux regions controlees.
 
         Args:
             Aucun.
@@ -241,11 +240,20 @@ class CollectionImportValueMapperTest(unittest.TestCase):
         """
 
         expected_regions_by_alias = {
+            "NTSC - US": "US",
+            "US - NTSC": "US",
             "FR": "EU-FR",
+            "PAL - FR": "EU-FR",
+            "PAL - EUR": "EU-FR",
+            "EUR - PAL": "EU-FR",
             "UK": "EU-UK",
+            "PAL - UK": "EU-UK",
             "DE": "EU-DE",
+            "PAL - DE": "EU-DE",
             "ES": "EU-ES",
+            "PAL - ES": "EU-ES",
             "IT": "EU-IT",
+            "PAL - IT": "EU-IT",
         }
         mapper = CollectionImportValueMapper(RegionMatchingConfiguration(100))
 
@@ -262,40 +270,32 @@ class CollectionImportValueMapperTest(unittest.TestCase):
                 self.assertEqual(expected_region, result["region"])
                 self.assertEqual([], warnings["invalid_games"])
 
-    def test_european_region_alias_scores_have_no_close_competitor(self):
-        """Verifie que chaque alias europeen reste distinct des autres regions.
+    def test_every_declared_region_alias_maps_without_similarity_fallback(self):
+        """Verifie que chaque alias declare est resolu meme au seuil maximal.
 
         Args:
             Aucun.
 
         Returns:
-            None: Les assertions imposent un meilleur score unique avec une marge sure.
+            None: Les assertions valident tous les alias declares.
         """
 
-        european_regions = sorted(
-            region for region in ALLOWED_REGIONS if region.startswith("EU-")
-        )
-        minimum_safe_margin = 20
+        mapper = CollectionImportValueMapper(RegionMatchingConfiguration(100))
 
         for expected_region, aliases in REGION_ALIASES_BY_VALUE.items():
             for alias in aliases:
                 with self.subTest(expected_region=expected_region, alias=alias):
-                    scores_by_region = {
-                        region: matching_score(alias.lower(), region.lower())
-                        for region in european_regions
-                    }
-                    expected_score = scores_by_region[expected_region]
-                    best_competing_score = max(
-                        score
-                        for region, score in scores_by_region.items()
-                        if region != expected_region
+                    warnings = {"invalid_games": []}
+                    result = mapper.map_private_values(
+                        {CollectionImportField.REGION: alias},
+                        "Zelda",
+                        warnings,
+                        None,
                     )
 
-                    self.assertGreater(expected_score, best_competing_score)
-                    self.assertGreaterEqual(
-                        expected_score - best_competing_score,
-                        minimum_safe_margin,
-                    )
+                    self.assertIn(expected_region, ALLOWED_REGIONS)
+                    self.assertEqual(expected_region, result["region"])
+                    self.assertEqual([], warnings["invalid_games"])
 
     def test_condition_matching_supports_english_and_configurable_limit(self):
         """Verifie les alias anglais et le seuil configurable des etats.
