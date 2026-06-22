@@ -18,6 +18,7 @@ import app as app_module
 from services.auth import (
     AuthenticatedUserCredentials,
     DuplicateUserEmailError,
+    DuplicateUserPseudonymError,
     InvalidEmailVerificationTokenError,
     PasswordHashService,
     PasswordPolicyError,
@@ -78,6 +79,7 @@ class FakeSqlAlchemyUserRepository:
         return AuthenticatedUserCredentials(
             id=7,
             email=email,
+            pseudonym="Player_One",
             password_hash=self.user_password_hash,
             profile=UserProfile.USER.value,
             status=UserStatus.ACTIVE.value,
@@ -105,6 +107,18 @@ class FakeSqlAlchemyUserRepository:
         """
 
         return 7 if email == "user@example.com" else None
+
+    def pseudonym_exists(self, pseudonym):
+        """Indique si un pseudonyme factice est reserve.
+
+        Args:
+            pseudonym (str): Pseudonyme recherche.
+
+        Returns:
+            bool: `True` pour le pseudonyme reserve.
+        """
+
+        return str(pseudonym).lower() == "reserved"
 
     def search_users(self, criteria):
         """Retourne des utilisateurs factices filtres.
@@ -274,11 +288,14 @@ class FakeUserRegistrationService:
             None: Le constructeur ne retourne aucune valeur.
         """
 
-    def register_user(self, email, password):
+        self.user_repository = user_repository
+
+    def register_user(self, email, pseudonym, password):
         """Inscrit un utilisateur factice.
 
         Args:
             email (str): Email fourni.
+            pseudonym (str): Pseudonyme fourni.
             password (str): Mot de passe fourni.
 
         Returns:
@@ -286,24 +303,61 @@ class FakeUserRegistrationService:
 
         Raises:
             DuplicateUserEmailError: Si l'email est reserve.
+            DuplicateUserPseudonymError: Si le pseudonyme est reserve.
             PasswordPolicyError: Si le mot de passe est invalide.
             ValueError: Si l'email manque.
         """
 
         if email == "duplicate@example.com":
             raise DuplicateUserEmailError("Un compte existe deja pour cet email.")
+        if str(pseudonym).lower() == "reserved":
+            raise DuplicateUserPseudonymError("Ce pseudonyme est deja utilise.")
         if not email:
             raise ValueError("L'email est obligatoire.")
+        if len(str(pseudonym)) < 3:
+            raise ValueError("Le pseudonyme doit contenir entre 3 et 32 caracteres.")
         if password != "VeryStrongPassword123!":
             raise PasswordPolicyError("Le mot de passe doit contenir au moins 8 caracteres, au moins un chiffre, un caractere special, une minuscule et une majuscule.")
         return RegisteredUser(
             7,
             str(email).strip().lower(),
+            str(pseudonym).strip(),
             datetime(2026, 5, 13, 12),
             False,
             "USER",
             UserStatus.WAITING_VALIDATION.value,
         )
+
+    @staticmethod
+    def normalize_pseudonym(pseudonym):
+        """Nettoie le pseudonyme factice.
+
+        Args:
+            pseudonym (str): Valeur brute.
+
+        Returns:
+            str: Valeur sans espaces exterieurs.
+        """
+
+        return str(pseudonym or "").strip()
+
+    def is_pseudonym_available(self, pseudonym):
+        """Retourne la disponibilite factice du pseudonyme.
+
+        Args:
+            pseudonym (str): Pseudonyme a controler.
+
+        Returns:
+            bool: `False` uniquement pour `reserved`.
+
+        Raises:
+            ValueError: Si le pseudonyme est trop court.
+        """
+
+        normalized = self.normalize_pseudonym(pseudonym)
+        if len(normalized) < 3:
+            raise ValueError("Le pseudonyme doit contenir entre 3 et 32 caracteres.")
+        return not self.user_repository.pseudonym_exists(normalized)
 
 
 class FakeEmailSender:

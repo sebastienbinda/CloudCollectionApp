@@ -14,7 +14,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Sequence, String, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, Index, Sequence, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,6 +30,7 @@ class User(DatabaseModelBase):
     Attributes:
         id (int): Identifiant technique genere par la sequence `s_user`.
         email (str): Adresse email unique de l'utilisateur.
+        pseudonym (str): Pseudonyme public unique sans distinction de casse.
         password_hash (str): Empreinte non reversible du mot de passe.
         profile (str): Profil applicatif de l'utilisateur.
         status (str): Statut fonctionnel de l'utilisateur.
@@ -45,7 +46,10 @@ class User(DatabaseModelBase):
     """
 
     __tablename__ = "t_user"
-    __table_args__ = (UniqueConstraint("email", name="uq_t_user_email"),)
+    __table_args__ = (
+        UniqueConstraint("email", name="uq_t_user_email"),
+        Index("uq_t_user_pseudonym_lower", text("lower(pseudonym)"), unique=True),
+    )
 
     id: Mapped[int] = mapped_column(
         BigInteger,
@@ -53,6 +57,7 @@ class User(DatabaseModelBase):
         primary_key=True,
     )
     email: Mapped[str] = mapped_column(String(256), nullable=False)
+    pseudonym: Mapped[str] = mapped_column(String(32), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
     profile: Mapped[str] = mapped_column(String(16), nullable=False, default=UserProfile.USER.value)
     status: Mapped[str] = mapped_column(

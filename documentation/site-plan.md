@@ -11,7 +11,9 @@
 - `/auth`: sign-in page. When opened from an activation email with
   `email=<address>`, it redirects to `/about` if that account is already
   connected, or asks the connected user to sign out before reconnecting with
-  the requested account.
+  the requested account. Account creation requires a unique pseudonym, explains
+  its display and future sharing purpose, checks availability on blur and
+  disables submission until a valid available pseudonym is confirmed.
 - `/auth/verify-email`: public email verification result page opened after the
   backend validates a browser verification link.
 - `/bibliotheque`: public Library landing page with global entity counters and
@@ -76,6 +78,10 @@ token hierarchy, but the frontend must not offer collection ownership screens to
 that profile. `Ma collection`, wishlist, platform detail, add-game and
 collection import routes must be disabled or redirected to `/configuration` for
 `ADMIN`.
+
+Authenticated registered-user headers display the pseudonym from the signed
+token rather than the email. The configured technical administrator continues
+to display its configured username.
 
 The `/users` administration page lets an `ADMIN` validate users with status
 `WAITING_VALIDATION`. Validation activates the account on the backend and sends

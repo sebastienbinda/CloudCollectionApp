@@ -232,6 +232,9 @@ class LibraryRoutesTest(BaseAppRoutesTest):
 
         self.assertFalse(routes_by_key[("/auth/token", ("POST",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/auth/register", ("POST",))]["requires_auth"])
+        self.assertFalse(
+            routes_by_key[("/api/auth/pseudonym-availability", ("GET",))]["requires_auth"]
+        )
         self.assertFalse(routes_by_key[("/api/auth/verify-email", ("GET", "POST"))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/library/platforms/<int:platform_id>", ("GET",))]["requires_auth"])
         self.assertFalse(routes_by_key[("/api/library/games", ("GET",))]["requires_auth"])

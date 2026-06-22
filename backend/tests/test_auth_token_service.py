@@ -54,6 +54,7 @@ class FakeUserRepository:
         return AuthenticatedUserCredentials(
             id=7,
             email=email,
+            pseudonym="Player_One",
             password_hash=self.password_hash,
             profile=UserProfile.USER.value,
             status=self.status,
@@ -192,6 +193,7 @@ class AuthTokenServiceTest(unittest.TestCase):
         payload = self.service.validate_access_token(token_response["access_token"])
 
         self.assertEqual("user@example.com", payload["sub"])
+        self.assertEqual("Player_One", payload["display_name"])
         self.assertEqual(UserProfile.USER.value, payload["profile"])
         self.assertEqual(7, repository.last_connexion_user_id)
 
