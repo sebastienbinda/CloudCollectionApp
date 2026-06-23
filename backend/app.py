@@ -19,6 +19,7 @@ from flask_cors import CORS
 from controllers import (
     AuthenticationController,
     CollectionController,
+    CollectionShareController,
     GameController,
     LibraryController,
     PlatformController,
@@ -39,7 +40,11 @@ from services import (
     LibraryServiceProvider,
     PlatformImageConfiguration,
     SqlAlchemyCollectionShareRepository,
+    SqlAlchemyUserRepository,
     UserCollectionImportConfiguration,
+)
+from services.collection.collection_share_management_service import (
+    CollectionShareManagementService,
 )
 
 # 1. Configure les services transverses avant de creer l'application Flask.
@@ -83,6 +88,25 @@ authentication_controller = AuthenticationController(
     collection_share_authentication_service,
 )
 route_controller = RouteController(auth_guard)
+collection_share_user_repository = (
+    SqlAlchemyUserRepository(database_configuration)
+    if database_configuration.is_database_enabled()
+    else None
+)
+collection_share_management_service = CollectionShareManagementService(
+    database_configuration,
+    collection_share_repository,
+    collection_share_user_repository,
+    collection_share_authentication_service,
+    os.getenv(
+        "FRONTEND_PUBLIC_URL",
+        os.getenv("BACKEND_PUBLIC_URL", "http://localhost:7777"),
+    ),
+)
+collection_share_controller = CollectionShareController(
+    auth_guard,
+    collection_share_management_service,
+)
 user_controller = UserController(auth_guard)
 collection_controller = CollectionController(auth_guard)
 library_reset_job_coordinator = LibraryResetJobCoordinator()
@@ -104,6 +128,7 @@ game_controller = GameController(library_service_factory=library_service_provide
 # 5. Enregistre les routes avant de les marquer avec la protection globale.
 authentication_controller.register_routes(app)
 route_controller.register_routes(app)
+collection_share_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
 collection_controller.register_routes(app)

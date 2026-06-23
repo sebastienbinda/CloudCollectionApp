@@ -80,6 +80,8 @@ Use one controller per functional area when possible, for example:
   collection import routes and collection reinitialization;
 - `CollectionController` for connected-user SQL collection consultation,
   future game actions and raw user ODS download;
+- `CollectionShareController` for connected-owner share creation, listing and
+  revocation HTTP contracts;
 - `RouteController` for `/api/routes`;
 - `PlatformController`, `StudioController` and `GameController` for public
   Bibliotheque reads of global platforms, studios and games.

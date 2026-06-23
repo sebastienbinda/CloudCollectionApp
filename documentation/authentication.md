@@ -123,6 +123,9 @@ checking connected-user collection status.
 Connected-user collection routes are protected routes with the same minimum
 profile:
 
+- `POST /api/collection-shares`
+- `GET /api/collection-shares`
+- `DELETE /api/collection-shares/<share_id>`
 - `GET /api/users/me/collection`
 - `POST /api/users/import/file/<file_type>`
 - `POST /api/users/import/analyze/<file_type>`
@@ -140,6 +143,8 @@ profile:
 
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.
+Collection-share management resolves the owner from the Bearer subject and
+allows a user to list or revoke only shares attached to that owner.
 For platform image upload, the backend resolves `t_platform_image.user_id` from
 the token subject and stores proposed images with status `WAITING_VALIDATION`.
 

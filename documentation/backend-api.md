@@ -178,6 +178,57 @@ Returns the backend route catalog, including:
 
 This route is protected and explicitly accepts `GUEST`, `USER` and `ADMIN`.
 
+## Collection Share Management
+
+These routes require a Bearer profile with at least `USER`. The share owner is
+resolved from the token subject; no owner identifier is accepted from the
+client.
+
+### Create Share
+
+```http
+POST /api/collection-shares
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "duration_hours": 24,
+  "allow_collection": true,
+  "allow_wishlist": false,
+  "allow_prices": true
+}
+```
+
+`duration_hours` must be an integer from 1 to 240. All permissions must be JSON
+booleans, and at least collection or wishlist access must be enabled. Success
+returns `201` with a `share` containing dates, permissions, `ACTIVE` status and
+an absolute `/collection/share/<token>` frontend link.
+
+### List Shares
+
+```http
+GET /api/collection-shares
+Authorization: Bearer <access_token>
+```
+
+Returns `shares` owned by the connected user, including active, expired and
+revoked entries. Each entry contains `id`, `created_at`, `expires_at`, nullable
+`revoked_at`, `permissions`, `status` and a reconstructed signed `link`. Raw
+tokens are not stored in PostgreSQL.
+
+### Revoke Share
+
+```http
+DELETE /api/collection-shares/<share_id>
+Authorization: Bearer <access_token>
+```
+
+Revocation is idempotent for an existing owned share and returns the share with
+status `REVOKED`. An unknown share or a share owned by another user returns
+`404` without exposing its owner.
+
 ## Public Library Routes
 
 The routes in this section are public and read-only. They expose only global
