@@ -20,8 +20,12 @@ de l'URL avant d'afficher la collection.
   `history.replaceState` pour retirer immédiatement le token de l'URL.
 - Rediriger vers `/collection` si la collection est autorisée, sinon vers
   `/wishlist` si seule la wishlist est autorisée.
-- Si une session locale existe déjà, la remplacer uniquement après un échange
-  réussi afin de ne pas perdre une session valide sur un lien incorrect.
+- Si une session locale USER, ADMIN ou GUEST existe déjà à l'arrivée sur le
+  lien, déconnecter immédiatement cet utilisateur avant l'échange.
+- Après un échange réussi, stocker le nouveau token de session GUEST à la place
+  de l'ancien token. Si l'échange échoue, l'utilisateur précédent reste
+  déconnecté et le frontend redirige vers `/about` avec le message d'erreur
+  adapté.
 - Traiter HTTP `411` sur tout appel authentifié GUEST : effacer la session,
   rediriger vers `/about` et afficher un message de partage expiré ou révoqué.
 - Ne pas assimiler un `403` de permission GUEST à une révocation.
@@ -36,7 +40,10 @@ de l'URL avant d'afficher la collection.
 
 - Échange réussi et suppression du token dans l'URL.
 - Redirection selon les permissions collection et wishlist.
-- Lien invalide sans destruction préalable d'une session existante.
+- Déconnexion immédiate d'une session existante à l'ouverture du lien.
+- Remplacement de l'ancien token par le nouveau token GUEST après échange.
+- Lien invalide laissant l'utilisateur précédent déconnecté et redirigeant vers
+  About.
 - Déconnexion et retour à About après `411`.
 - Un `403` de permission GUEST ne déclenche pas la logique de révocation.
 
@@ -44,5 +51,7 @@ de l'URL avant d'afficher la collection.
 
 - Le token du lien ne reste ni dans l'adresse affichée ni dans l'historique de
   navigation après l'échange.
+- Une session existante n'est jamais restaurée après l'ouverture d'un lien de
+  partage, que l'échange réussisse ou échoue.
 - La session GUEST utilise les services et hooks de session existants.
 - Le build frontend passe.

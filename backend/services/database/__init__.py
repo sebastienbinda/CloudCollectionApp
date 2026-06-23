@@ -14,6 +14,8 @@
 from .database_configuration import DatabaseConfiguration
 from .database_model_base import DatabaseModelBase
 from .database_schema_service import DatabaseSchemaService
+from .collection_share import CollectionShare
+from .collection_share_repository import SqlAlchemyCollectionShareRepository
 from .game import Game
 from .game_repository import SqlAlchemyGameRepository
 from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
@@ -51,9 +53,11 @@ __all__ = [
     "DatabaseConfiguration",
     "DatabaseModelBase",
     "DatabaseSchemaService",
+    "CollectionShare",
     "Game",
     "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
+    "SqlAlchemyCollectionShareRepository",
     "SqlAlchemyLibraryResetRepository",
     "SqlAlchemyPlatformImageRepository",
     "Platform",

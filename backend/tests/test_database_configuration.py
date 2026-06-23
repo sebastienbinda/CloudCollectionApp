@@ -38,6 +38,7 @@ class DatabaseConfigurationTest(unittest.TestCase):
                 "t_user",
                 "t_game",
                 "t_user_collection",
+                "t_collection_share",
             },
             set(DatabaseModelBase.metadata.tables.keys()),
         )
