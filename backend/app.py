@@ -32,10 +32,13 @@ from services import (
     AuthGuard,
     AuthTokenService,
     BackendLoggingService,
+    CollectionShareGuestAuthenticationService,
+    DatabaseConfiguration,
     DatabaseSchemaService,
     LibraryResetJobCoordinator,
     LibraryServiceProvider,
     PlatformImageConfiguration,
+    SqlAlchemyCollectionShareRepository,
     UserCollectionImportConfiguration,
 )
 
@@ -65,9 +68,21 @@ DatabaseSchemaService.initialize_database_schema_on_startup(app.logger)
 
 # 4. Instancie les services et controleurs partages par les routes.
 auth_token_service = AuthTokenService()
-auth_guard = AuthGuard(auth_token_service)
-authentication_controller = AuthenticationController(auth_token_service)
-route_controller = RouteController()
+database_configuration = DatabaseConfiguration.from_environment()
+collection_share_repository = SqlAlchemyCollectionShareRepository(
+    database_configuration.schema_name,
+)
+collection_share_authentication_service = CollectionShareGuestAuthenticationService(
+    database_configuration,
+    auth_token_service,
+    collection_share_repository,
+)
+auth_guard = AuthGuard(auth_token_service, collection_share_authentication_service)
+authentication_controller = AuthenticationController(
+    auth_token_service,
+    collection_share_authentication_service,
+)
+route_controller = RouteController(auth_guard)
 user_controller = UserController(auth_guard)
 collection_controller = CollectionController(auth_guard)
 library_reset_job_coordinator = LibraryResetJobCoordinator()

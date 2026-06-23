@@ -248,6 +248,37 @@ class CollectionShareRepositoryTest(unittest.TestCase):
         self.assertIn("ORDER BY created_at DESC, id DESC", sql)
         self.assertEqual({"owner_user_id": 12, "current_time": self.created_at}, parameters)
 
+    def test_find_share_with_owner_reads_current_identity_and_status(self):
+        """Verifie la lecture jointe necessaire a la validation GUEST.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la jointure utilisateur.
+        """
+
+        row = {
+            **self._share_row(share_id=5),
+            "status": "ACTIVE",
+            "owner_pseudonym": "Player_One",
+            "owner_status": "ACTIVE",
+        }
+        connection = FakeCollectionShareConnection([row])
+
+        found_share = self.repository.find_share_with_owner(
+            connection,
+            5,
+            self.created_at,
+        )
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual(row, found_share)
+        self.assertIn("JOIN \"collection\".t_user app_user", sql)
+        self.assertIn("app_user.pseudonym AS owner_pseudonym", sql)
+        self.assertIn("app_user.status AS owner_status", sql)
+        self.assertEqual({"share_id": 5, "current_time": self.created_at}, parameters)
+
     def test_revoke_share_is_idempotent_and_owner_scoped(self):
         """Verifie la revocation idempotente reservee au proprietaire.
 

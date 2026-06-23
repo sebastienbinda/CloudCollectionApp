@@ -159,6 +159,80 @@ class AuthTokenServiceTest(unittest.TestCase):
         self.assertTrue(UserProfile.can_access(UserProfile.USER.value, user_route_profiles))
         self.assertFalse(UserProfile.can_access(UserProfile.USER.value, admin_route_profiles))
 
+    def test_guest_profile_has_no_user_or_admin_inheritance(self):
+        """Verifie l'isolation stricte du profil invite.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la hierarchie GUEST.
+        """
+
+        guest_profiles = UserProfile.expand_hierarchy(UserProfile.GUEST.value)
+        user_profiles = UserProfile.expand_hierarchy(UserProfile.USER.value)
+        admin_profiles = UserProfile.expand_hierarchy(UserProfile.ADMIN.value)
+
+        self.assertEqual([UserProfile.GUEST.value], guest_profiles)
+        self.assertTrue(UserProfile.can_access(UserProfile.GUEST.value, guest_profiles))
+        self.assertFalse(UserProfile.can_access(UserProfile.GUEST.value, user_profiles))
+        self.assertFalse(UserProfile.can_access(UserProfile.GUEST.value, admin_profiles))
+
+    def test_link_token_cannot_be_used_as_access_token(self):
+        """Verifie qu'un token de lien signe est refuse comme Bearer.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: L'assertion valide la separation des usages de token.
+        """
+
+        link_token = self.service.create_access_token(
+            "collection-share:8",
+            UserProfile.GUEST.value,
+            expires_at=4102444800,
+            additional_claims={
+                "token_kind": AuthTokenService.COLLECTION_SHARE_LINK_TOKEN_KIND,
+                "collection_share_id": 8,
+            },
+        )
+
+        decoded_payload = self.service.decode_signed_token(
+            link_token,
+            validate_expiration=False,
+        )
+
+        self.assertEqual(8, decoded_payload["collection_share_id"])
+        with self.assertRaises(ValueError):
+            self.service.validate_access_token(link_token)
+
+    def test_custom_access_token_preserves_guest_claims_and_expiration(self):
+        """Verifie les claims et l'expiration explicite d'une session GUEST.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload signe.
+        """
+
+        token = self.service.create_access_token(
+            "guest-share:8",
+            UserProfile.GUEST.value,
+            "Player_One",
+            expires_at=4102444800,
+            additional_claims={"collection_share_id": 8, "owner_user_id": 7},
+        )
+
+        payload = self.service.validate_access_token(token)
+
+        self.assertEqual(UserProfile.GUEST.value, payload["profile"])
+        self.assertEqual(AuthTokenService.ACCESS_TOKEN_KIND, payload["token_kind"])
+        self.assertEqual(4102444800, payload["exp"])
+        self.assertEqual(8, payload["collection_share_id"])
+        self.assertEqual(7, payload["owner_user_id"])
+
     def test_issue_token_rejects_invalid_credentials(self):
         """Verifie le refus d'identifiants invalides.
 

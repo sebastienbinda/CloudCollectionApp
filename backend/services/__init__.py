@@ -13,6 +13,8 @@
 from .auth import (
     AuthGuard,
     AuthTokenService,
+    CollectionShareGuestAuthenticationService,
+    CollectionShareUnavailableError,
     DuplicateUserEmailError,
     DuplicateUserPseudonymError,
     EmailVerificationService,
@@ -21,7 +23,12 @@ from .auth import (
     UserRegistrationService,
     UserProfile,
 )
-from .database import DatabaseConfiguration, DatabaseSchemaService, SqlAlchemyUserRepository
+from .database import (
+    DatabaseConfiguration,
+    DatabaseSchemaService,
+    SqlAlchemyCollectionShareRepository,
+    SqlAlchemyUserRepository,
+)
 from .email import EmailConfiguration, EmailSenderFactory
 from .library.library_query_contract import (
     LibraryPageRequest,
@@ -55,6 +62,8 @@ from .users import (
 __all__ = [
     "AuthGuard",
     "AuthTokenService",
+    "CollectionShareGuestAuthenticationService",
+    "CollectionShareUnavailableError",
     "BackendLoggingService",
     "DatabaseConfiguration",
     "DatabaseSchemaService",
@@ -77,6 +86,7 @@ __all__ = [
     "PlatformImageService",
     "PasswordPolicyError",
     "RouteDiscoveryService",
+    "SqlAlchemyCollectionShareRepository",
     "SqlAlchemyUserRepository",
     "UserRegistrationService",
     "UserProfile",

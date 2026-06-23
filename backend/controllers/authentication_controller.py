@@ -25,6 +25,7 @@ from services import (
     EmailSenderFactory,
     EmailVerificationService,
     InvalidEmailVerificationTokenError,
+    CollectionShareUnavailableError,
     PasswordPolicyError,
     SqlAlchemyUserRepository,
     UserRegistrationService,
@@ -37,6 +38,7 @@ class AuthenticationController:
     PUBLIC_ENDPOINTS = frozenset(
         {
             "issue_auth_token",
+            "exchange_collection_share_token",
             "register_user",
             "check_pseudonym_availability",
             "verify_user_email",
@@ -46,6 +48,7 @@ class AuthenticationController:
     def __init__(
         self,
         auth_token_service: AuthTokenService,
+        collection_share_authentication_service=None,
         user_repository_class=SqlAlchemyUserRepository,
         user_registration_service_class=UserRegistrationService,
         email_sender_factory=EmailSenderFactory,
@@ -57,6 +60,7 @@ class AuthenticationController:
 
         Args:
             auth_token_service (AuthTokenService): Service d'emission des tokens Bearer.
+            collection_share_authentication_service (object | None): Service des sessions GUEST.
             user_repository_class (type): Classe de persistance des utilisateurs.
             user_registration_service_class (type): Classe de service d'inscription.
             email_sender_factory (type): Fabrique d'expediteurs email.
@@ -69,6 +73,7 @@ class AuthenticationController:
         """
 
         self.auth_token_service = auth_token_service
+        self.collection_share_authentication_service = collection_share_authentication_service
         self.user_repository_class = user_repository_class
         self.user_registration_service_class = user_registration_service_class
         self.email_sender_factory = email_sender_factory
@@ -90,6 +95,12 @@ class AuthenticationController:
             "/auth/token",
             endpoint="issue_auth_token",
             view_func=self.issue_auth_token,
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/auth/collection-share/session",
+            endpoint="exchange_collection_share_token",
+            view_func=self.exchange_collection_share_token,
             methods=["POST"],
         )
         flask_app.add_url_rule(
@@ -206,6 +217,39 @@ class AuthenticationController:
         except Exception:
             current_app.logger.exception("Erreur inattendue pendant l'inscription utilisateur.")
             return jsonify({"error": "Unable to register user."}), 500
+
+    def exchange_collection_share_token(self):
+        """Echange publiquement un token de lien contre une session GUEST.
+
+        Args:
+            Aucun.
+
+        JSON Body:
+            token (str): Token signe present dans le lien de partage.
+
+        Returns:
+            tuple[flask.Response, int] | flask.Response: Session Bearer ou erreur.
+        """
+
+        raw_token = (request.get_json(silent=True) or {}).get("token", "")
+        if self.collection_share_authentication_service is None:
+            return jsonify({"error": "Partage de collection indisponible."}), 503
+        try:
+            return jsonify(
+                self.collection_share_authentication_service.exchange_share_link_token(raw_token)
+            )
+        except CollectionShareUnavailableError:
+            return jsonify({
+                "error": "Partage expire ou revoque.",
+                "error_code": "COLLECTION_SHARE_UNAVAILABLE",
+            }), 411
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 401
+        except RuntimeError as exc:
+            return jsonify({"error": str(exc)}), 503
+        except Exception:
+            current_app.logger.exception("Erreur pendant l'echange du partage de collection.")
+            return jsonify({"error": "Unable to exchange collection share token."}), 500
 
     def check_pseudonym_availability(self):
         """Indique publiquement si un pseudonyme valide est disponible.

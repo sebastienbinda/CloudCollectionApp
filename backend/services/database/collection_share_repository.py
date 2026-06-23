@@ -110,6 +110,41 @@ class SqlAlchemyCollectionShareRepository:
         ).mappings().first()
         return dict(row) if row else None
 
+    def find_share_with_owner(
+        self,
+        connection: Connection,
+        share_id: int,
+        current_time: datetime,
+    ) -> dict[str, object] | None:
+        """Recherche un partage avec le statut courant de son proprietaire.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            share_id (int): Identifiant du partage.
+            current_time (datetime): Date utilisee pour calculer le statut.
+
+        Returns:
+            dict[str, object] | None: Partage et proprietaire ou absence.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la lecture.
+        """
+
+        row = connection.execute(
+            text(
+                f"SELECT {self._qualified_share_columns()}, "
+                f"{self._qualified_status_expression()} AS status, "
+                "app_user.pseudonym AS owner_pseudonym, "
+                "app_user.status AS owner_status "
+                f'FROM "{self.schema_name}".t_collection_share collection_share '
+                f'JOIN "{self.schema_name}".t_user app_user '
+                "ON app_user.id = collection_share.owner_user_id "
+                "WHERE collection_share.id = :share_id"
+            ),
+            {"share_id": share_id, "current_time": current_time},
+        ).mappings().first()
+        return dict(row) if row else None
+
     def list_shares_by_owner(
         self,
         connection: Connection,
@@ -190,4 +225,28 @@ class SqlAlchemyCollectionShareRepository:
         return (
             "CASE WHEN revoked_at IS NOT NULL THEN 'REVOKED' "
             "WHEN expires_at <= :current_time THEN 'EXPIRED' ELSE 'ACTIVE' END"
+        )
+
+    @staticmethod
+    def _qualified_share_columns() -> str:
+        return ", ".join(
+            f"collection_share.{column_name}"
+            for column_name in (
+                "id",
+                "owner_user_id",
+                "created_at",
+                "expires_at",
+                "revoked_at",
+                "allow_collection",
+                "allow_wishlist",
+                "allow_prices",
+            )
+        )
+
+    @staticmethod
+    def _qualified_status_expression() -> str:
+        return (
+            "CASE WHEN collection_share.revoked_at IS NOT NULL THEN 'REVOKED' "
+            "WHEN collection_share.expires_at <= :current_time THEN 'EXPIRED' "
+            "ELSE 'ACTIVE' END"
         )

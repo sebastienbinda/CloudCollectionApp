@@ -20,6 +20,10 @@ administration, user status, search, deletion or lock behavior.
 
 The application supports these user profiles:
 
+- `GUEST`: temporary read-only profile issued from a persisted collection
+  share. It cannot access user administration and does not inherit `USER` or
+  `ADMIN` rights. Its access remains limited by the share permissions and is
+  invalidated when that share or its owner is no longer active.
 - `USER`: standard application profile for registered users. A `USER` can manage
   their own collection workflow after email verification and administrator
   validation. This role is intended for personal collection usage and must not

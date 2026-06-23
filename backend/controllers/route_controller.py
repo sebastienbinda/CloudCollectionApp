@@ -15,22 +15,28 @@ from functools import wraps
 
 from flask import Flask, current_app, jsonify
 
-from services import RouteDiscoveryService
+from services import AuthGuard, RouteDiscoveryService, UserProfile
 
 
 class RouteController:
     """Enregistre les routes HTTP de decouverte du backend."""
 
-    def __init__(self, route_discovery_service_class=RouteDiscoveryService):
+    def __init__(
+        self,
+        auth_guard: AuthGuard,
+        route_discovery_service_class=RouteDiscoveryService,
+    ):
         """Initialise le controleur de decouverte des routes.
 
         Args:
+            auth_guard (AuthGuard): Garde autorisant tous les profils authentifies.
             route_discovery_service_class (type): Classe de service listant les routes Flask.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
+        self.auth_guard = auth_guard
         self.route_discovery_service_class = route_discovery_service_class
 
     def register_routes(self, flask_app: Flask) -> None:
@@ -46,7 +52,11 @@ class RouteController:
         flask_app.add_url_rule(
             "/api/routes",
             endpoint="list_accessible_routes",
-            view_func=self._as_view(self.list_accessible_routes),
+            view_func=self.auth_guard.require_profiles((
+                UserProfile.GUEST.value,
+                UserProfile.USER.value,
+                UserProfile.ADMIN.value,
+            ))(self._as_view(self.list_accessible_routes)),
             methods=["GET"],
         )
 

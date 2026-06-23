@@ -29,6 +29,8 @@ avoid unnecessary calls, but all real protection must remain on the backend side
   they are explicitly listed as public below.
 - Public backend routes are:
   - `POST /auth/token`, used to obtain a token.
+  - `POST /api/auth/collection-share/session`, used to exchange a signed,
+    temporary collection-share link token for a revocable GUEST Bearer session.
   - `POST /api/auth/register`, used to create an account before the user can
     own a Bearer token.
   - `GET /api/auth/pseudonym-availability`, used to validate a registration
@@ -98,11 +100,16 @@ passwords return `401` with a `WWW-Authenticate: Bearer realm="CloudCollectionAp
 
 The supported user profiles are:
 
+- `GUEST`: read-only profile scoped to one persisted collection share. It does
+  not inherit `USER` or `ADMIN` rights.
 - `USER`: default profile for registered users.
 - `ADMIN`: profile reserved for the configured `AUTH_USERNAME` /
   `AUTH_PASSWORD_ENCRYPTED` account.
 
 Profiles are hierarchical. `ADMIN` inherits every route right granted to `USER`.
+`GUEST` remains outside this hierarchy and can call only routes that list it
+explicitly. `GET /api/routes` lists `GUEST`, `USER` and `ADMIN` because every
+authenticated frontend session needs route discovery.
 Protected user routes require at least `USER`, while administrative routes such
 as `POST /api/library/reset` and `POST /api/library/platform-catalog/sync`
 require `ADMIN`.
@@ -152,10 +159,16 @@ file; setting an image to `MAIN` switches any previous platform `MAIN` image to
 The Bearer token payload must contain:
 
 - `sub`: authenticated subject;
-- `profile`: `USER` or `ADMIN`;
+- `profile`: `GUEST`, `USER` or `ADMIN`;
 - `display_name`: registered-user pseudonym, or configured administrator name;
 - `iat`: issue timestamp;
 - `exp`: expiration timestamp.
+
+A GUEST Bearer additionally contains the collection-share identifier, owner
+identifier, current owner pseudonym and granted collection, wishlist and price
+permissions. The public link token has a distinct signed token kind and cannot
+be used directly as a Bearer token. The exchange endpoint reloads the share and
+owner from PostgreSQL before issuing the GUEST session.
 
 Route authorization must be enforced by `AuthGuard` from the token profile.
 Frontend route permissions may mirror the route catalog, but they must not be
@@ -202,6 +215,7 @@ Response codes to preserve:
 
 - `403` if no Bearer token is provided.
 - `401` if a token is provided but is invalid or expired.
+- `411` if a GUEST share is expired, revoked, or its owner is deleted or locked.
 - `200`, `201`, `400`, `404`, or `500` according to the route's business
   contract once the token has been validated.
 
@@ -215,6 +229,8 @@ The current message for a missing token is `Token Bearer manquant.`.
 - The signature uses HMAC SHA-256 with the application secret.
 - The default lifetime is 3600 seconds.
 - Validation must check the structure, signature, and expiration.
+- Every GUEST request must additionally reload the persisted share and owner;
+  no polling is required because invalidation is detected on the next call.
 - Never accept an unsigned token or a token whose expiration has passed.
 
 ## Environment Variables

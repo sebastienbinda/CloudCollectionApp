@@ -25,6 +25,7 @@ from services.security import EnvSecretCipher
 from services.users import UserStatus
 
 from .password_hash_service import PasswordHashService
+from .expired_access_token_error import ExpiredAccessTokenError
 from .user_profile import UserProfile
 
 
@@ -72,6 +73,8 @@ class AuthTokenService:
     """
 
     DEFAULT_TOKEN_TTL_SECONDS = 3600
+    ACCESS_TOKEN_KIND = "ACCESS"
+    COLLECTION_SHARE_LINK_TOKEN_KIND = "COLLECTION_SHARE_LINK"
     WAITING_VALIDATION_MESSAGE = (
         "Votre compte est en attente de validation par un administrateur."
     )
@@ -247,6 +250,8 @@ class AuthTokenService:
         subject: str,
         profile: str | None = None,
         display_name: str | None = None,
+        expires_at: int | None = None,
+        additional_claims: dict[str, Any] | None = None,
     ) -> str:
         """Cree un token Bearer signe et limite dans le temps.
 
@@ -254,18 +259,25 @@ class AuthTokenService:
             subject (str): Sujet du token, generalement l'identifiant utilisateur.
             profile (str | None): Profil applicatif a inclure dans le token.
             display_name (str | None): Pseudonyme affiche, ou sujet par defaut.
+            expires_at (int | None): Expiration Unix explicite ou duree standard.
+            additional_claims (dict[str, Any] | None): Claims metier supplementaires.
 
         Returns:
             str: Token signe au format `payload.signature`.
         """
 
         issued_at = int(time.time())
+        reserved_claims = {"sub", "display_name", "profile", "iat", "exp"}
+        if reserved_claims.intersection(additional_claims or {}):
+            raise ValueError("Les claims reserves du token ne peuvent pas etre remplaces.")
         payload = {
             "sub": subject,
             "display_name": display_name or subject,
             "profile": UserProfile.normalize(profile).value,
             "iat": issued_at,
-            "exp": issued_at + self.token_ttl_seconds,
+            "exp": expires_at if expires_at is not None else issued_at + self.token_ttl_seconds,
+            "token_kind": self.ACCESS_TOKEN_KIND,
+            **(additional_claims or {}),
         }
         payload_segment = self._encode_json(payload)
         signature_segment = self._sign(payload_segment)
@@ -281,18 +293,39 @@ class AuthTokenService:
             dict[str, Any]: Payload decode si le token est valide.
         """
 
+        payload = self.decode_signed_token(token)
+        if payload.get("token_kind", self.ACCESS_TOKEN_KIND) != self.ACCESS_TOKEN_KIND:
+            raise ValueError("Token invalide.")
+        return payload
+
+    def decode_signed_token(
+        self,
+        token: str,
+        validate_expiration: bool = True,
+    ) -> dict[str, Any]:
+        """Valide et decode un token signe, avec expiration optionnelle.
+
+        Args:
+            token (str): Token signe a decoder.
+            validate_expiration (bool): Verifie l'expiration lorsque vrai.
+
+        Returns:
+            dict[str, Any]: Payload signe decode.
+
+        Raises:
+            ValueError: Si la structure ou la signature est invalide.
+            ExpiredAccessTokenError: Si le token valide est expire.
+        """
+
         try:
             payload_segment, signature_segment = token.split(".", 1)
         except ValueError as exc:
             raise ValueError("Token invalide.") from exc
-
-        expected_signature = self._sign(payload_segment)
-        if not secrets_equal(signature_segment, expected_signature):
+        if not secrets_equal(signature_segment, self._sign(payload_segment)):
             raise ValueError("Token invalide.")
-
         payload = self._decode_json(payload_segment)
-        if int(payload.get("exp", 0)) < int(time.time()):
-            raise ValueError("Token expire.")
+        if validate_expiration and int(payload.get("exp", 0)) < int(time.time()):
+            raise ExpiredAccessTokenError(payload)
         return payload
 
     def _encode_json(self, payload: dict[str, Any]) -> str:

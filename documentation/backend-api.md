@@ -60,6 +60,37 @@ Supported identities:
 Users with status `WAITING_VALIDATION` receive `401` with a clear message
 indicating that administrator validation is still required.
 
+### Exchange Collection Share Token
+
+```http
+POST /api/auth/collection-share/session
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "token": "<signed-share-link-token>"
+}
+```
+
+This route is public because the caller owns only the temporary token embedded
+in `/collection/share/<token>`. A valid active share returns a Bearer session:
+
+```json
+{
+  "access_token": "...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+
+The GUEST session expires no later than the persisted share and contains the
+share identifier, owner identity and granted permissions. Invalid signatures
+return `401`. Expired or revoked shares and deleted or locked owners return
+`411` with `error_code: COLLECTION_SHARE_UNAVAILABLE`.
+
 ### Register User
 
 ```http
@@ -145,7 +176,7 @@ Returns the backend route catalog, including:
 - auth schemes;
 - authorized profiles.
 
-This route is protected.
+This route is protected and explicitly accepts `GUEST`, `USER` and `ADMIN`.
 
 ## Public Library Routes
 

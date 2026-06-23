@@ -12,7 +12,9 @@
 # Description : tests des routes publiques d'authentification.
 
 import app as app_module
-from services.auth import UserProfile
+from types import SimpleNamespace
+
+from services.auth import CollectionShareUnavailableError, UserProfile
 
 try:
     from tests.route_test_support import BaseAppRoutesTest
@@ -54,6 +56,190 @@ class AuthenticationRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(401, response.status_code)
         self.assertIn("invalides", response.get_json()["error"])
+
+    def test_collection_share_exchange_route_is_public(self):
+        """Verifie l'echange public d'un lien contre une session GUEST.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contrat HTTP public.
+        """
+
+        original_service = (
+            app_module.authentication_controller.collection_share_authentication_service
+        )
+        app_module.authentication_controller.collection_share_authentication_service = (
+            SimpleNamespace(exchange_share_link_token=lambda token: {
+                "access_token": f"guest-session-for-{token}",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+            })
+        )
+        try:
+            response = self.client.post(
+                "/api/auth/collection-share/session",
+                json={"token": "share-link"},
+            )
+        finally:
+            app_module.authentication_controller.collection_share_authentication_service = (
+                original_service
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("guest-session-for-share-link", response.get_json()["access_token"])
+
+    def test_collection_share_exchange_returns_411_when_unavailable(self):
+        """Verifie le statut specifique d'un partage expire ou revoque.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et le code metier.
+        """
+
+        def reject_exchange(_token):
+            raise CollectionShareUnavailableError("indisponible")
+
+        original_service = (
+            app_module.authentication_controller.collection_share_authentication_service
+        )
+        app_module.authentication_controller.collection_share_authentication_service = (
+            SimpleNamespace(exchange_share_link_token=reject_exchange)
+        )
+        try:
+            response = self.client.post(
+                "/api/auth/collection-share/session",
+                json={"token": "expired-link"},
+            )
+        finally:
+            app_module.authentication_controller.collection_share_authentication_service = (
+                original_service
+            )
+
+        self.assertEqual(411, response.status_code)
+        self.assertEqual(
+            "COLLECTION_SHARE_UNAVAILABLE",
+            response.get_json()["error_code"],
+        )
+
+    def test_guest_can_read_route_catalog_with_explicit_profile_metadata(self):
+        """Verifie l'acces GUEST au catalogue de routes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'acces et les profils annonces.
+        """
+
+        token = app_module.auth_token_service.create_access_token(
+            "guest-share:8",
+            UserProfile.GUEST.value,
+            expires_at=4102444800,
+            additional_claims={"collection_share_id": 8, "owner_user_id": 7},
+        )
+        original_validator = app_module.auth_guard.guest_session_validator
+        app_module.auth_guard.guest_session_validator = SimpleNamespace(
+            validate_guest_session=lambda payload: None,
+        )
+        try:
+            response = self.client.get(
+                "/api/routes",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        finally:
+            app_module.auth_guard.guest_session_validator = original_validator
+
+        self.assertEqual(200, response.status_code)
+        route = next(
+            item for item in response.get_json()["routes"]
+            if item["endpoint"] == "list_accessible_routes"
+        )
+        self.assertEqual(["GUEST", "USER", "ADMIN"], route["required_profiles"])
+
+    def test_expired_guest_session_returns_411(self):
+        """Verifie le statut 411 pour une session GUEST expiree.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'invalidation specifique.
+        """
+
+        token = app_module.auth_token_service.create_access_token(
+            "guest-share:8",
+            UserProfile.GUEST.value,
+            expires_at=1,
+            additional_claims={"collection_share_id": 8, "owner_user_id": 7},
+        )
+
+        response = self.client.get(
+            "/api/routes",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(411, response.status_code)
+        self.assertEqual("COLLECTION_SHARE_UNAVAILABLE", response.get_json()["error_code"])
+
+    def test_expired_user_session_keeps_standard_401(self):
+        """Verifie la non-regression du statut des sessions USER expirees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: L'assertion valide le contrat HTTP existant.
+        """
+
+        token = app_module.auth_token_service.create_access_token(
+            "user@example.com",
+            UserProfile.USER.value,
+            expires_at=1,
+        )
+
+        response = self.client.get(
+            "/api/routes",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(401, response.status_code)
+
+    def test_revoked_guest_session_returns_411_on_next_request(self):
+        """Verifie la revalidation serveur de chaque session GUEST.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'invalidation au prochain appel.
+        """
+
+        def reject_guest(_payload):
+            raise CollectionShareUnavailableError("revoque")
+
+        token = app_module.auth_token_service.create_access_token(
+            "guest-share:8",
+            UserProfile.GUEST.value,
+            expires_at=4102444800,
+            additional_claims={"collection_share_id": 8, "owner_user_id": 7},
+        )
+        original_validator = app_module.auth_guard.guest_session_validator
+        app_module.auth_guard.guest_session_validator = SimpleNamespace(
+            validate_guest_session=reject_guest,
+        )
+        try:
+            response = self.client.get(
+                "/api/routes",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        finally:
+            app_module.auth_guard.guest_session_validator = original_validator
+
+        self.assertEqual(411, response.status_code)
 
     def test_auth_token_route_accepts_verified_registered_user(self):
         """Verifie le token d'un utilisateur inscrit et verifie.
