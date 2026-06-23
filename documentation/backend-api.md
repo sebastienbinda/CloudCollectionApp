@@ -581,19 +581,19 @@ user identifier in the URL, query string or payload.
 ```json
 {
   "total": 420,
-  "total_value": 0,
-  "average_value": 0,
+  "total_value": 12550.75,
+  "average_value": 34.86,
   "max_platform": "Switch",
   "collection": {
     "total": 420,
-    "total_value": 0,
-    "average_value": 0,
+    "total_value": 12550.75,
+    "average_value": 34.86,
     "max_platform": "Switch"
   },
   "wishlist": {
     "total": 12,
-    "total_value": 0,
-    "average_value": 0,
+    "total_value": 359.88,
+    "average_value": 29.99,
     "max_platform": "NES"
   }
 }
@@ -602,6 +602,9 @@ user identifier in the URL, query string or payload.
 The root fields are kept for compatibility and mirror the `collection` section.
 Collection statistics are computed with `t_user_collection.wishlist = false`;
 wishlist statistics are computed with `wishlist = true`.
+`total_value` sums persisted purchase prices. `average_value` ignores null
+purchase prices and is rounded to two decimal places. Both values are zero when
+no purchase price is available.
 
 When the connected user has no game in `t_user_collection`, both sections are
 empty:
@@ -658,12 +661,16 @@ Response:
       "id": 1,
       "name": "Switch",
       "nb_games": 25,
-      "total_value": 0,
-      "average_value": 0
+      "total_value": 749.75,
+      "average_value": 34.08
     }
   ]
 }
 ```
+
+Platform `total_value` and `average_value` use the same null-price and rounding
+rules as global collection statistics and apply to the platform's filtered
+collection entries.
 
 Empty response:
 

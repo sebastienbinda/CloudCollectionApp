@@ -75,6 +75,26 @@ class UserCollectionQueryRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def find_price_statistics(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> dict[str, Any]:
+        """Calcule la somme et la moyenne des prix renseignes.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist optionnel.
+
+        Returns:
+            dict[str, Any]: Somme et moyenne des prix non nuls.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
     def find_collection_file_path(self, connection: Connection, user_id: int) -> str:
         """Retourne le chemin du fichier de collection utilisateur.
 
@@ -258,10 +278,15 @@ class UserCollectionQueryService:
             if total
             else ""
         )
+        price_statistics = (
+            self.repository.find_price_statistics(connection, user_id, wishlist)
+            if total
+            else {}
+        )
         return {
             "total": total,
-            "total_value": 0,
-            "average_value": 0,
+            "total_value": self._decimal_value(price_statistics.get("total_value")),
+            "average_value": self._decimal_value(price_statistics.get("average_value")),
             "max_platform": max_platform,
         }
 
@@ -387,8 +412,8 @@ class UserCollectionQueryService:
             "description": self._description_value(row.get("description")),
             "nb_games": self._integer_value(row.get("nb_games")),
             "total_games": self._integer_value(row.get("total_games")),
-            "total_value": 0,
-            "average_value": 0,
+            "total_value": self._decimal_value(row.get("total_value")),
+            "average_value": self._decimal_value(row.get("average_value")),
         }
 
     def _game_payload(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -452,3 +477,15 @@ class UserCollectionQueryService:
         """
 
         return None if value is None else float(Decimal(str(value)))
+
+    def _decimal_value(self, value: Any) -> float:
+        """Convertit et arrondit une statistique monetaire a deux decimales.
+
+        Args:
+            value (Any): Valeur numerique retournee par le repository.
+
+        Returns:
+            float: Montant serialisable arrondi a deux decimales.
+        """
+
+        return float(Decimal(str(value or 0)).quantize(Decimal("0.01")))

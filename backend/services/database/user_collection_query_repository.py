@@ -148,6 +148,40 @@ class SqlAlchemyUserCollectionQueryRepository:
         ).scalar_one_or_none()
         return "" if row is None else str(row)
 
+    def find_price_statistics(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> dict[str, Any]:
+        """Calcule les statistiques de prix de la collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant de l'utilisateur connecte.
+            wishlist (bool | None): Filtre wishlist optionnel.
+
+        Returns:
+            dict[str, Any]: Somme et moyenne des prix renseignes.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        parameters: dict[str, Any] = {"user_id": user_id}
+        where_clause = self._build_user_collection_where_clause(parameters, wishlist)
+        rows = connection.execute(
+            text(
+                "SELECT "
+                "COALESCE(SUM(user_collection.purchase_price), 0) AS total_value, "
+                "COALESCE(AVG(user_collection.purchase_price), 0) AS average_value "
+                f'FROM "{self.schema_name}".t_user_collection user_collection '
+                f"{where_clause}"
+            ),
+            parameters,
+        ).mappings()
+        return dict(next(iter(rows)))
+
     def count_platforms_by_criteria(
         self,
         connection: Connection,
@@ -211,7 +245,9 @@ class SqlAlchemyUserCollectionQueryRepository:
                 "SELECT "
                 "platform.id, platform.name, platform.release_date::text AS release_date, "
                 "platform.end_date::text AS end_date, platform.manufacturer, "
-                "platform.description, COUNT(game.id) AS nb_games, COUNT(game.id) AS total_games "
+                "platform.description, COUNT(game.id) AS nb_games, COUNT(game.id) AS total_games, "
+                "COALESCE(SUM(user_collection.purchase_price), 0) AS total_value, "
+                "COALESCE(AVG(user_collection.purchase_price), 0) AS average_value "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '

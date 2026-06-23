@@ -96,6 +96,11 @@ Root-level statistic fields are compatibility aliases for the `collection`
 section. Frontend collection statistics must prefer the `collection` section
 when present.
 
+For collection and platform statistics, `total_value` is the sum of persisted
+`purchase_price` values. `average_value` is calculated only from entries whose
+`purchase_price` is not null and is rounded to two decimal places. An empty set
+of prices returns zero for both values.
+
 ## Filtering
 
 Collection game and platform search endpoints support `wishlist=true` and

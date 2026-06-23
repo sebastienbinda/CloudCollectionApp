@@ -137,6 +137,23 @@ class FakeUserCollectionQueryRepository:
         self.calls.append(("find_max_platform_name", connection, user_id, wishlist))
         return "NES" if wishlist is True else "Switch"
 
+    def find_price_statistics(self, connection, user_id, wishlist=None):
+        """Retourne les statistiques de prix factices.
+
+        Args:
+            connection (object): Connexion recue.
+            user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist recu.
+
+        Returns:
+            dict: Somme et moyenne configurees.
+        """
+
+        self.calls.append(("find_price_statistics", connection, user_id, wishlist))
+        if wishlist is True:
+            return {"total_value": Decimal("19.99"), "average_value": Decimal("9.995")}
+        return {"total_value": Decimal("125.50"), "average_value": Decimal("41.8333")}
+
     def find_collection_file_path(self, connection, user_id):
         """Retourne un chemin de fichier factice.
 
@@ -189,6 +206,8 @@ class FakeUserCollectionQueryRepository:
                 "description": {"generation": "8"},
                 "nb_games": 25,
                 "total_games": 25,
+                "total_value": Decimal("120.75"),
+                "average_value": Decimal("6.355"),
             }
         ]
 
@@ -388,19 +407,19 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertEqual(
             {
                 "total": 42,
-                "total_value": 0,
-                "average_value": 0,
+                "total_value": 125.5,
+                "average_value": 41.83,
                 "max_platform": "Switch",
                 "collection": {
                     "total": 42,
-                    "total_value": 0,
-                    "average_value": 0,
+                    "total_value": 125.5,
+                    "average_value": 41.83,
                     "max_platform": "Switch",
                 },
                 "wishlist": {
                     "total": 3,
-                    "total_value": 0,
-                    "average_value": 0,
+                    "total_value": 19.99,
+                    "average_value": 10.0,
                     "max_platform": "NES",
                 },
             },
@@ -484,8 +503,8 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                     "description": {"generation": "8"},
                     "nb_games": 25,
                     "total_games": 25,
-                    "total_value": 0,
-                    "average_value": 0,
+                    "total_value": 120.75,
+                    "average_value": 6.36,
                 }
             ],
             payload["platforms"],
