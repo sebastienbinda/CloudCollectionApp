@@ -70,7 +70,6 @@ class FakeRepositoryResult:
 
         return self.rows
 
-
 class FakeRepositoryConnection:
     """Connexion SQLAlchemy factice capturant les requetes executees."""
 
@@ -169,6 +168,29 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertEqual({"user_id": 12, "wishlist": False}, count_parameters)
         self.assertEqual({"user_id": 12, "wishlist": True}, max_parameters)
 
+    def test_price_statistics_sum_and_average_ignore_null_prices(self):
+        """Verifie les agregats SQL et le filtrage collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la somme, la moyenne et le SQL.
+        """
+
+        connection = FakeRepositoryConnection(
+            rows=[{"total_value": 125.5, "average_value": 41.8333}],
+        )
+
+        statistics = self.repository.find_price_statistics(connection, 12, False)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual({"total_value": 125.5, "average_value": 41.8333}, statistics)
+        self.assertIn("SUM(user_collection.purchase_price)", sql)
+        self.assertIn("AVG(user_collection.purchase_price)", sql)
+        self.assertIn("user_collection.wishlist = :wishlist", sql)
+        self.assertEqual({"user_id": 12, "wishlist": False}, parameters)
+
     def test_find_collection_file_path_reads_user_table_by_id(self):
         """Verifie la lecture du chemin de fichier utilisateur.
 
@@ -244,6 +266,8 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         )
         self.assertIn("COUNT(game.id) AS nb_games", sql)
         self.assertIn("COUNT(game.id) AS total_games", sql)
+        self.assertIn("SUM(user_collection.purchase_price)", sql)
+        self.assertIn("AVG(user_collection.purchase_price)", sql)
         self.assertIn("platform.release_date", sql)
         self.assertIn("platform.end_date", sql)
         self.assertIn("platform.manufacturer", sql)

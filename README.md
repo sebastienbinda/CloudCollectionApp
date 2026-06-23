@@ -33,7 +33,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 
 ## Fonctionnalites
 
-- Tableau de bord de collection avec statistiques par plateforme.
+- Tableau de bord de collection avec somme et moyenne des prix, globalement et par plateforme.
 - Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
 - Images publiques acceptees sur les fiches plateformes de la Bibliotheque,
   avec proposition d'image par utilisateur connecte.
