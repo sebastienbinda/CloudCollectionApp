@@ -91,6 +91,35 @@ share identifier, owner identity and granted permissions. Invalid signatures
 return `401`. Expired or revoked shares and deleted or locked owners return
 `411` with `error_code: COLLECTION_SHARE_UNAVAILABLE`.
 
+Decoded GUEST claims have this functional shape:
+
+```json
+{
+  "sub": "guest-share:42",
+  "display_name": "Player_One",
+  "profile": "GUEST",
+  "collection_share_id": 42,
+  "owner_user_id": 7,
+  "owner_pseudonym": "Player_One",
+  "permissions": {
+    "collection": true,
+    "wishlist": false,
+    "prices": true
+  },
+  "iat": 1782288000,
+  "exp": 1782374400
+}
+```
+
+Exchange status contract:
+
+- `200`: GUEST Bearer issued;
+- `401`: missing, malformed, incorrectly signed or wrong-kind link token;
+- `411`: expired/revoked share or deleted/locked owner, with
+  `error_code: COLLECTION_SHARE_UNAVAILABLE`;
+- `503`: database or sharing service unavailable;
+- `500`: unexpected exchange failure.
+
 ### Register User
 
 ```http
@@ -206,6 +235,11 @@ booleans, and at least collection or wishlist access must be enabled. Success
 returns `201` with a `share` containing dates, permissions, `ACTIVE` status and
 an absolute `/collection/share/<token>` frontend link.
 
+Creation returns `400` for invalid duration/permissions, `404` when the Bearer
+subject no longer resolves to an owner, `503` when PostgreSQL is unavailable,
+and `500` for an unexpected failure. Missing authentication or insufficient
+profile follows the common `403` contract.
+
 ### List Shares
 
 ```http
@@ -218,6 +252,9 @@ revoked entries. Each entry contains `id`, `created_at`, `expires_at`, nullable
 `revoked_at`, `permissions`, `status` and a reconstructed signed `link`. Raw
 tokens are not stored in PostgreSQL.
 
+The list uses `200`, `404` for an unresolved owner, `503` for unavailable
+PostgreSQL and `500` for an unexpected failure.
+
 ### Revoke Share
 
 ```http
@@ -228,6 +265,9 @@ Authorization: Bearer <access_token>
 Revocation is idempotent for an existing owned share and returns the share with
 status `REVOKED`. An unknown share or a share owned by another user returns
 `404` without exposing its owner.
+
+Invalid identifiers return `400`; unavailable PostgreSQL returns `503`; an
+unexpected failure returns `500`.
 
 ## Public Library Routes
 
@@ -642,7 +682,11 @@ Access and error status:
 
 ## Game Collection Routes
 
-All routes in this section require a Bearer token with at least profile `USER`.
+The four read routes in this section explicitly accept `GUEST`, `USER` and
+`ADMIN`. For USER/ADMIN, the collection owner is resolved from the Bearer
+subject. For GUEST, it is resolved from the validated `owner_user_id` claim and
+the persisted share is revalidated before each request. Download and mutation
+routes require at least `USER`; GUEST receives `403`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -657,6 +701,20 @@ All routes in this section require a Bearer token with at least profile `USER`.
 
 The connected user is derived from the Bearer token. These routes never accept a
 user identifier in the URL, query string or payload.
+
+For GUEST reads:
+
+- `permissions.collection` controls requests scoped with `wishlist=false`;
+- `permissions.wishlist` controls requests scoped with `wishlist=true`;
+- an explicitly forbidden category returns `403`;
+- when `wishlist` is omitted and only one category is allowed, backend forces
+  that category; when both are allowed, the unscoped request may include both;
+- a detail request returns `403` when its game belongs to a forbidden category;
+- without `permissions.prices`, game responses omit `purchase_price` and
+  `price_unit`, while `total_value` and `average_value` are zero in root,
+  category and platform statistics;
+- an invalidated GUEST session returns `411` with
+  `error_code: COLLECTION_SHARE_UNAVAILABLE`.
 
 ### Collection Statistics Response
 

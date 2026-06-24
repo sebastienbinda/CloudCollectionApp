@@ -90,6 +90,7 @@ Organisation :
 
 Regles detaillees :
 
+- Partage de collection : `documentation/share.md`
 - Architecture backend : `documentation/backend-arch.md`
 - API backend : `documentation/backend-api.md`
 - Authentification : `documentation/authentication.md`
@@ -136,6 +137,8 @@ vues Ma collection et Liste de souhaits lisent PostgreSQL via les endpoints
 
 Variables principales :
 
+- `FRONTEND_PUBLIC_URL` : origine publique utilisee par le backend pour les
+  redirections et liens frontend, notamment `/collection/share/<token>`.
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
@@ -355,6 +358,7 @@ Documentation CI : `documentation/ci.md`.
 Documents fonctionnels et techniques principaux :
 
 - `documentation/backend-api.md` : routes et contrats API backend.
+- `documentation/share.md` : cycle de vie, permissions et securite du partage de collection.
 - `documentation/backend-arch.md` : architecture Flask/backend.
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.

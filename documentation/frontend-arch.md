@@ -67,6 +67,12 @@ Use the following domain folders for new or modified hooks:
 - Compose domain hooks.
 - Prepare props consumed by `AppViewSwitch`.
 - Centralize frontend session state with `useSessionState`.
+- Activate transient `/collection/share/<token>` links in
+  `useCollectionShareSession`: clear an existing local session, remove the raw
+  token from browser history, exchange it through the dedicated service, then
+  select the first permitted GUEST destination.
+- Derive GUEST display permissions and owner labels from signed claims through
+  `GuestSessionViewPolicy`; components must not decode or reinterpret claims.
 - Avoid direct API calls except through composed domain hooks.
 
 ### `hooks/navigation`
@@ -78,6 +84,9 @@ Use the following domain folders for new or modified hooks:
   `documentation/site-plan.md`: `ADMIN` keeps backend rights but must not open
   collection ownership views.
 - Do not fetch backend data.
+- Apply `GuestNavigationPolicy` for direct navigation and callbacks. A GUEST
+  cannot open Configuration or mutation/import views and is redirected to
+  Collection, then Wishlist, then About according to permissions.
 
 ### `hooks/collection`
 
@@ -105,6 +114,10 @@ Use the following domain folders for new or modified hooks:
   hook separate from onboarding. The hook calls
   `POST /api/users/collection/reinit`, refreshes collection signals and opens
   `/collection/import` after success.
+- Own collection-share management state in `useCollectionShareManagement`.
+  Keep form validation in `collectionShareForm.js`, HTTP details in
+  `CollectionSharesApi`, and clipboard/confirmation actions in the hook. The
+  routed owner page only renders this state.
 
 ### `hooks/home`
 
@@ -190,6 +203,12 @@ Use the following domain folders for new or modified hooks:
   automatic request loops.
 - Do not put React state in services.
 - Do not duplicate token logic outside existing auth/API services.
+- Keep public link exchange isolated in `CollectionShareSessionApi`: it must not
+  attach an existing Authorization header. Keep owner management HTTP calls in
+  `CollectionSharesApi` with normal Bearer headers.
+- Keep GUEST presentation and navigation decisions in the pure
+  `GuestSessionViewPolicy` and `GuestNavigationPolicy` classes so permission
+  combinations remain unit-testable without React.
 
 ### Page Components
 
@@ -201,6 +220,24 @@ Use the following domain folders for new or modified hooks:
   remains an implementation detail of `PageLayout`.
 - Dialogs, popovers and embedded widgets may use local headers when they are not
   full routed pages.
+- `CollectionShareManagementView` is routed at `/configuration/partages`, uses
+  `PageLayout`, and contains display and user interactions only. Creation,
+  listing, revocation, validation and permission decisions remain outside the
+  component.
+
+## GUEST Presentation
+
+- `MainMenu` receives separate `canViewCollection`, `canViewWishlist` and
+  `canAccessConfiguration` props. It omits non-shared category entries for
+  GUEST while preserving Library, About and Logout.
+- `PageLayout` carries the same access props to the shared desktop/mobile menu.
+- GUEST identity is `Invité de <pseudonyme>` with a yellow treatment in both
+  responsive variants. Shared collection and wishlist pages display their
+  owner-aware subtitle on desktop and mobile.
+- Components may hide mutation actions and missing price fields, but backend
+  authorization and response filtering remain authoritative.
+- Price normalization must preserve absence: `VideoGamesApi` must not create
+  `purchase_price` or `priceUnit` when the backend omitted the source fields.
 
 ## Architecture Decisions
 

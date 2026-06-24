@@ -11,7 +11,9 @@
 - Secondary mobile actions close on outside click, on the `Escape` key, after
   an action, and when the mouse cursor leaves the menu.
 - Closing when leaving the menu must not break touch usage.
-- Unavailable entries must be disabled rather than hidden.
+- Entries awaiting route discovery remain disabled. Entries forbidden by a
+  GUEST share category or by GUEST's Configuration exclusion are omitted so
+  the menu reflects the signed sharing scope exactly.
 
 ## Objective
 
@@ -59,6 +61,9 @@ session state received through props.
   secondary mobile action hidden behind it.
 - Menu icons are inline styled SVG icons. Do not replace them with letter-only
   shortcuts.
+- A GUEST sees only the permitted Collection/Wishlist primary entries, followed
+  by Bibliotheque and `Plus`; the dock grid adapts to the resulting item count.
+  `Plus` contains About and Logout, never Configuration.
 
 ## Access Constraints
 
@@ -68,13 +73,18 @@ session state received through props.
   and opens `/wishlist`.
 - `Ma collection` requires an active local non-`ADMIN` collection session and
   opens `/collection`.
+- For GUEST, Collection and Wishlist are independent: each entry is rendered
+  only when its corresponding signed permission is true. Configuration and all
+  Configuration subpages are never rendered.
 - Authenticated entries whose access is still being discovered must use
   `disabled`; entries reserved for authenticated users must not be rendered for
   anonymous visitors.
 - Session actions such as `Connexion`, `Configuration` and `Deconnexion` are
   managed inside `MainMenu`; do not reintroduce a separate session dropdown.
-- Once a user is connected, the desktop navigation area displays
-  `Utilisateur connecte : <email>` next to the session action.
+- Once a registered user is connected, the desktop/mobile navigation identity
+  displays the signed pseudonym. A GUEST displays exactly
+  `Invité de <pseudonyme>` with the yellow GUEST treatment on desktop and
+  mobile.
 - The Library entry opens `/bibliotheque` and must remain available for
   unauthenticated visitors.
 - The wishlist entry opens `/wishlist`, must be hidden from unauthenticated
@@ -91,6 +101,8 @@ session state received through props.
 - Do not rely only on hover: the menu must work with click/tap.
 - The mobile dock must keep a compact vertical footprint and must not overlap
   the common footer content.
+- The GUEST identity badge is positioned above the fixed mobile dock and must
+  remain readable without hiding a dock action.
 - The mobile secondary panel opens above the dock so it remains reachable
   without adding height to the page header.
 - The desktop menu must remain visually below the page header, not above it.

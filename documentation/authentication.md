@@ -120,8 +120,8 @@ be offered the `Ma collection`, platform detail, add-game or collection import
 screens. After sign-in, an `ADMIN` session opens `/configuration` instead of
 checking connected-user collection status.
 
-Connected-user collection routes are protected routes with the same minimum
-profile:
+Owner workflow routes require at least `USER` (`ADMIN` inherits the backend
+right even when its frontend does not expose collection ownership):
 
 - `POST /api/collection-shares`
 - `GET /api/collection-shares`
@@ -131,15 +131,19 @@ profile:
 - `POST /api/users/import/analyze/<file_type>`
 - `POST /api/users/import`
 - `POST /api/users/collection/reinit`
-- `GET /collections/videogames`
-- `GET /collections/videogames/platforms/search`
-- `GET /collections/videogames/games/search`
-- `GET /collections/videogames/games/<game_id>`
 - `GET /collections/videogames/download`
 - `POST /collections/videogames/games`
 - `PUT /collections/videogames/games`
 - `DELETE /collections/videogames/games`
 - `POST /api/library/platforms/<platform_id>/image`
+
+The collection read routes below explicitly accept `GUEST`, `USER` and
+`ADMIN`, then apply the validated identity and share scope:
+
+- `GET /collections/videogames`
+- `GET /collections/videogames/platforms/search`
+- `GET /collections/videogames/games/search`
+- `GET /collections/videogames/games/<game_id>`
 
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.
@@ -174,6 +178,38 @@ identifier, current owner pseudonym and granted collection, wishlist and price
 permissions. The public link token has a distinct signed token kind and cannot
 be used directly as a Bearer token. The exchange endpoint reloads the share and
 owner from PostgreSQL before issuing the GUEST session.
+
+## Collection Share Authentication
+
+Collection sharing uses two signed tokens with separate purposes:
+
+1. The link token is created after `t_collection_share` has been persisted. It
+   contains `token_kind=COLLECTION_SHARE_LINK` and `collection_share_id`, is
+   embedded in `/collection/share/<token>`, and cannot authorize protected
+   routes.
+2. `POST /api/auth/collection-share/session` validates the link token without
+   requiring Authorization, reloads the active share and active owner, and
+   returns a revocable GUEST Bearer whose expiration does not exceed
+   `t_collection_share.expires_at`.
+
+The GUEST Bearer claims are:
+
+- `sub`: `guest-share:<collection_share_id>`;
+- `display_name` and `owner_pseudonym`: current owner pseudonym;
+- `profile`: `GUEST`;
+- `collection_share_id` and `owner_user_id`;
+- `permissions.collection`, `permissions.wishlist`, `permissions.prices`;
+- `iat` and `exp`.
+
+Every GUEST backend request validates the signature and expiration, then loads
+the share joined with its owner. A missing share, elapsed expiration, non-null
+revocation date, deleted owner, or owner status other than `ACTIVE` produces
+HTTP `411` with `error_code: COLLECTION_SHARE_UNAVAILABLE`. An expired GUEST
+Bearer also maps to `411`; ordinary USER/ADMIN expiration remains `401`.
+
+The raw link token and GUEST Bearer are not stored in PostgreSQL or application
+logs. The frontend stores only the exchanged Bearer using the existing session
+mechanism and removes the link token from browser history immediately.
 
 Route authorization must be enforced by `AuthGuard` from the token profile.
 Frontend route permissions may mirror the route catalog, but they must not be
@@ -267,6 +303,10 @@ tests, documentation, or scripts.
   Library consultation pages under `/bibliotheque`, including public game
   detail pages, public platform detail pages and accepted platform images.
 - The authenticated Ma collection page is `HomeView` on `/collection`.
+- `/collection/share/<token>` is a transient public frontend route. It clears
+  any existing local USER, ADMIN or GUEST session, exchanges the link without
+  an Authorization header, replaces the URL with `/about`, then stores the new
+  GUEST Bearer and redirects according to its category permissions.
 - Authenticated game detail pages under `/collection/jeux/<game_id>` must remain
   unavailable without a non-`ADMIN` collection session.
 - The `/` route functionally redirects to `/about` without a token and to
@@ -284,6 +324,12 @@ tests, documentation, or scripts.
   used by backend repositories to resolve the connected user.
 - If a sent token is rejected (`401` or `403`), the frontend must clear the local
   session and open the sign-in flow again.
+- If a GUEST call returns `411`, the frontend must clear the local session,
+  dispatch the unavailable-share flow and replace the current route with
+  `/about`. It must not open the ordinary USER/ADMIN sign-in modal.
+- GUEST presentation reads `owner_pseudonym` and permissions from the signed
+  Bearer. It displays `Invité de <pseudonyme>` and must not expose
+  Configuration, mutations, import, reinitialization, download or image upload.
 - Public accepted platform images may be used directly in `<img>` tags because
   their file route is explicitly public. Pending images are moderated only from
   protected administrator API calls and must not be publicly visible before

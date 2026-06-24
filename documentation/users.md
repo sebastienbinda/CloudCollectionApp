@@ -38,6 +38,14 @@ Role rights must be described by functional intent, while exact route
 protection remains enforced by backend decorators and exposed through
 `/api/routes`.
 
+`GUEST` is a token-only profile and is never persisted in `t_user.profile`.
+It cannot authenticate with a password, own a collection, create or revoke a
+share, import or reinitialize data, download an ODS file, propose an image, or
+call any user-administration route. The protected routes a GUEST may call are
+limited to `/api/routes` and the four collection read routes that explicitly
+declare `GUEST`; public Library routes remain public. The backend then applies
+the persisted share permissions. See `documentation/share.md`.
+
 ## Backend Routes
 
 All user administration routes are protected backend routes and must require the
@@ -84,6 +92,11 @@ The frontend `/users` page lists the properties returned by `GET /api/users` in 
 table. The page must not add or display password fields. If the backend route
 catalog does not confirm access to `GET /api/users`, the page must not call the
 endpoint.
+
+A GUEST must never see Configuration or `/users`. Direct navigation to those
+frontend routes is redirected to the first shared category, or About when no
+category is available. This visual rule supplements, but never replaces, the
+backend `ADMIN` protection.
 
 The `/users` page must provide filters for:
 

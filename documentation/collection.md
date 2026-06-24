@@ -18,6 +18,12 @@ The connected user is always derived from the Bearer token. Collection
 consultation routes must not accept a user id in the URL, query string or
 payload.
 
+For a GUEST session, the same invariant applies with a different trusted
+source: the target collection is `owner_user_id` from the signed GUEST Bearer,
+whose share and owner have just been revalidated in PostgreSQL. The frontend
+must never choose or submit the owner identifier. Complete lifecycle rules are
+in `documentation/share.md`.
+
 ## Backend Routes
 
 The current collection consultation uses:
@@ -32,6 +38,35 @@ The current collection consultation uses:
 
 `POST`, `PUT` and `DELETE /collections/videogames/games` are reserved for
 future actions and currently return `501`.
+
+The four `GET` consultation routes except ODS download accept `GUEST`, `USER`
+and `ADMIN`. ODS download and every mutation remain restricted to at least
+`USER`; GUEST cannot import, reinitialize, download or modify collection data.
+
+## GUEST Consultation Scope
+
+The backend creates a collection-access context from the validated token:
+
+- USER/ADMIN: owner resolved from the Bearer `sub` email;
+- GUEST: owner resolved from signed `owner_user_id`, with
+  `permissions.collection`, `permissions.wishlist` and `permissions.prices`.
+
+An explicit `wishlist=false` request requires collection permission; an
+explicit `wishlist=true` request requires wishlist permission. A forbidden
+category returns `403`. When the criterion is absent, a GUEST with only one
+category is forced to that category; a GUEST with both permissions may query
+both. Game detail checks the persisted row category and returns `403` when that
+category is not shared.
+
+When prices are not shared, backend removes `purchase_price` and `price_unit`
+from every game list/detail payload and sets `total_value` and `average_value`
+to zero in root, collection, wishlist and platform statistics. Other code must
+not infer or recalculate these values. When prices are shared, persisted values
+and units are returned without conversion.
+
+The statistics response includes only permitted category counts for GUEST. A
+non-permitted collection or wishlist section is empty rather than leaking its
+game count.
 
 ## Wishlist Semantics
 
@@ -77,6 +112,10 @@ unit without conversion. Condition integers are mapped in the frontend from
 `Mauvais` to `Neuf`; region codes are displayed with their corresponding flag,
 using a globe for `ASIA`. Public Library game detail must never expose these
 user-specific fields.
+
+For GUEST, collection detail remains read-only. Frontend hides add, edit,
+delete, import, reinitialization, download and platform-image proposal actions.
+These visual restrictions supplement the backend profile checks.
 
 Platforms that only contain wishlist games must not appear in Ma collection.
 

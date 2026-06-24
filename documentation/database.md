@@ -278,6 +278,18 @@ Expired and revoked rows remain stored. Deleting the owner cascades deletion of
 their shares, making every associated token unresolvable. Raw share tokens are
 never stored in this table.
 
+Migration `20260623_0014` creates `s_collection_share`, the table, expiration
+check, owner foreign key with `ON DELETE CASCADE`, and owner-list index. The
+`GUEST` profile is not stored in `t_user`: it exists only in signed temporary
+sessions. Link tokens are reconstructed and signed from persisted share data
+when create/list responses are serialized; GUEST Bearers are issued only after
+the share and owner have been reloaded. Neither token is a database column.
+
+Revocation is idempotent and sets `revoked_at` only when it is null. No cleanup
+job deletes expired or revoked history. Runtime validation joins the share to
+`t_user` so owner pseudonym and status are current; owner deletion removes the
+share row and owner locking makes it unavailable without changing the row.
+
 ### Import Normalization Rules
 
 The user collection import workflow compares platform, studio and game names
