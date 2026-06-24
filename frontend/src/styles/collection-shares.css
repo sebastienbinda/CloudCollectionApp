@@ -1,0 +1,178 @@
+/*
+ * Projet : CloudCollectionApp
+ * Date de creation : 2026-06-24
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+ * Licence : Apache 2.0
+ * Description : styles desktop et mobile de la gestion des partages.
+ */
+.collectionShareFormSection,
+.collectionShareListSection {
+  background: #ffffff;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.collectionShareFormSection h2,
+.collectionShareListSection h2 {
+  color: #0f172a;
+  margin: 0 0 1rem;
+}
+
+.collectionShareForm {
+  align-items: end;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(12rem, 0.7fr) minmax(24rem, 2fr) auto;
+}
+
+.collectionShareForm > label,
+.collectionShareForm fieldset {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.collectionShareForm > label {
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collectionShareForm input[type="number"] {
+  min-height: 2.5rem;
+}
+
+.collectionShareForm fieldset {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.7rem;
+}
+
+.collectionShareForm legend {
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.collectionShareForm fieldset label {
+  align-items: center;
+  display: flex;
+  font-size: 0.88rem;
+  gap: 0.4rem;
+}
+
+.collectionShareList {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.collectionShareCard {
+  background: #f8fafc;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+
+.collectionShareCardEXPIRED {
+  background: #fff1f2;
+  border-color: #dc2626;
+}
+
+.collectionShareCardREVOKED {
+  background: #f1f5f9;
+  opacity: 0.82;
+}
+
+.collectionShareCardHeader,
+.collectionShareActions {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.collectionShareCardHeader h3 {
+  margin: 0;
+}
+
+.collectionShareStatus {
+  background: #dcfce7;
+  border-radius: 999px;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0.25rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.collectionShareStatusEXPIRED {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.collectionShareStatusREVOKED {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.collectionShareCard dl {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0.9rem 0;
+}
+
+.collectionShareCard dl div {
+  min-width: 0;
+}
+
+.collectionShareCard dt {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collectionShareCard dd {
+  color: #1e293b;
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.collectionShareActions {
+  justify-content: flex-end;
+}
+
+.collectionShareEmptyState {
+  color: #64748b;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .collectionShareForm {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .collectionShareForm fieldset {
+    grid-template-columns: 1fr;
+  }
+
+  .collectionShareCard dl {
+    grid-template-columns: 1fr;
+  }
+
+  .collectionShareActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collectionShareActions button {
+    width: 100%;
+  }
+}

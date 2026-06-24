@@ -166,6 +166,7 @@ function useAppNavigation(options) {
         "/wishlist": "wishlist",
         "/add-game": "addGame",
         "/configuration": "configuration",
+        "/configuration/partages": "collectionShares",
         "/configuration/images-plateformes": "platformImageModeration",
         "/users": "users",
         "/collection/import": "collectionOnboarding",
@@ -197,6 +198,13 @@ function useAppNavigation(options) {
     setCurrentView("about");
     window.history.replaceState({}, "", "/about");
   }, [currentView, options.hasAccessToken]);
+
+  useEffect(() => {
+    if (currentView !== "collectionShares" || options.authenticatedProfile === "USER") return;
+    const isAdmin = options.authenticatedProfile === "ADMIN";
+    setCurrentView(isAdmin ? "configuration" : "about");
+    window.history.replaceState({}, "", isAdmin ? "/configuration" : "/about");
+  }, [currentView, options.authenticatedProfile]);
 
   useEffect(() => {
     if (!["platformImageModeration", "users"].includes(currentView) || options.authenticatedProfile === "ADMIN") return;
@@ -264,6 +272,13 @@ function useAppNavigation(options) {
     },
     openAddGamePage,
     openConfiguration: () => openView("configuration", "/configuration"),
+    openCollectionShares: () => {
+      if (options.authenticatedProfile !== "USER") {
+        openView("about", "/about");
+        return;
+      }
+      openView("collectionShares", "/configuration/partages");
+    },
     openPlatformImageModeration: () => openView(
       "platformImageModeration",
       "/configuration/images-plateformes"

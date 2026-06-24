@@ -34,6 +34,7 @@ function ConfigurationView({
   canModeratePlatformImages,
   canReinitializeCollection,
   canSearchUsers,
+  canManageCollectionShares,
   canUseCollectionViews,
   downloadError,
   isDownloadingOds,
@@ -55,6 +56,7 @@ function ConfigurationView({
   onOpenPlatformImageModeration,
   onOpenConfiguration,
   onOpenCollectionOnboarding,
+  onOpenCollectionShares,
   onDownloadOds,
   onResetLibrary,
   onSyncPlatformCatalog,
@@ -100,6 +102,21 @@ function ConfigurationView({
               disabled={!canAddGame || platforms.length === 0}
             >
               Ajouter un jeu
+            </button>
+          </article>
+        ) : null}
+
+        {canManageCollectionShares ? (
+          <article className="adminActionCard">
+            <span>Partage</span>
+            <h2>Partager</h2>
+            <p>Cree et revoque les liens temporaires donnant acces a votre collection.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onOpenCollectionShares}
+            >
+              Gerer les partages
             </button>
           </article>
         ) : null}

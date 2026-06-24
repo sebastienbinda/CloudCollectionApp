@@ -13,7 +13,6 @@
  * Description : routeur de vues React pour l'application jeux video.
  */
 import AddGameView from "./AddGameView";
-import ConfigurationView from "./ConfigurationView";
 import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import EmailVerificationResultView from "./EmailVerificationResultView";
@@ -24,6 +23,8 @@ import LibraryHomeView from "./LibraryHomeView";
 import LibraryPlatformDetailView from "./LibraryPlatformDetailView";
 import PlatformDetailView from "./PlatformDetailView";
 import renderPlatformImageModerationView from "./appViewSwitchPlatformImageModerationRenderer";
+import renderConfigurationView from "./appViewSwitchConfigurationRenderer";
+import renderCollectionShareManagementView from "./appViewSwitchCollectionShareRenderer";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
@@ -45,7 +46,7 @@ class AppViewSwitch {
     if (props.currentView === "about") {
       return "about";
     }
-    if (["configuration", "platformImageModeration", "users"].includes(props.currentView)) {
+    if (["configuration", "collectionShares", "platformImageModeration", "users"].includes(props.currentView)) {
       return "configuration";
     }
     if (props.currentView === "wishlist") {
@@ -118,7 +119,11 @@ class AppViewSwitch {
     }
 
     if (props.currentView === "configuration") {
-      return this.renderConfiguration(props);
+      return renderConfigurationView(props, this.buildPageLayoutProps(props));
+    }
+
+    if (props.currentView === "collectionShares") {
+      return renderCollectionShareManagementView(props, this.buildPageLayoutProps(props));
     }
 
     if (props.currentView === "users") {
@@ -202,47 +207,6 @@ class AppViewSwitch {
         onSearchSubmit={props.searchGamesByName}
         onCloseSearch={props.closeHomeSearch}
         onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
-      />
-    );
-  }
-
-  /**
-   * Rend la page Configuration.
-   *
-   * @param {Object} props - Etat et callbacks de configuration.
-   * @returns {import("react").JSX.Element} Vue Configuration.
-   */
-  static renderConfiguration(props) {
-    return (
-      <ConfigurationView
-        {...this.buildPageLayoutProps(props)}
-        username={props.authenticatedUsername}
-        platforms={props.platforms}
-        canAddGame={props.actionPermissions.canAddGame}
-        canDownloadOds={props.actionPermissions.canDownloadOds}
-        canResetLibrary={props.actionPermissions.canResetLibrary}
-        canSyncPlatformCatalog={props.actionPermissions.canSyncPlatformCatalog}
-        canModeratePlatformImages={props.actionPermissions.canModeratePlatformImages}
-        canReinitializeCollection={props.actionPermissions.canReinitializeCollection}
-        canSearchUsers={props.actionPermissions.canSearchUsers}
-        downloadError={props.downloadError}
-        isDownloadingOds={props.isDownloadingOds}
-        libraryResetError={props.libraryResetError}
-        libraryResetMessage={props.libraryResetMessage}
-        isResettingLibrary={props.isResettingLibrary}
-        platformCatalogSyncError={props.platformCatalogSyncError}
-        platformCatalogSyncMessage={props.platformCatalogSyncMessage}
-        isSyncingPlatformCatalog={props.isSyncingPlatformCatalog}
-        reinitializationError={props.reinitializationError}
-        isReinitializingCollection={props.isReinitializingCollection}
-        onAddGame={props.openAddGamePage}
-        onOpenUsers={props.openUsersPage}
-        onOpenPlatformImageModeration={props.openPlatformImageModeration}
-        onOpenCollectionOnboarding={props.openCollectionOnboarding}
-        onDownloadOds={props.downloadOdsFile}
-        onResetLibrary={props.resetLibrary}
-        onSyncPlatformCatalog={props.syncPlatformCatalog}
-        onReinitializeCollection={props.reinitializeCollection}
       />
     );
   }

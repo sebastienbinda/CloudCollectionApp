@@ -195,6 +195,9 @@ class AppRouting {
     if (window.location.pathname === "/configuration") {
       return "configuration";
     }
+    if (window.location.pathname === "/configuration/partages") {
+      return "collectionShares";
+    }
     if (window.location.pathname === "/configuration/images-plateformes") {
       return "platformImageModeration";
     }

@@ -37,6 +37,7 @@ class BackendRouteAccessService {
       canLockUser: false,
       canUnlockUser: false,
       canValidateUser: false,
+      canManageCollectionShares: false,
       isAuthenticated,
     };
   }
@@ -180,6 +181,11 @@ class BackendRouteAccessService {
       canLockUser: this.canAccess("POST", "/api/users/<int:user_id>/lock"),
       canUnlockUser: this.canAccess("POST", "/api/users/<int:user_id>/unlock"),
       canValidateUser: this.canAccess("POST", "/api/users/<int:user_id>/validate"),
+      canManageCollectionShares: (
+        this.canAccess("GET", "/api/collection-shares") &&
+        this.canAccess("POST", "/api/collection-shares") &&
+        this.canAccess("DELETE", "/api/collection-shares/<int:share_id>")
+      ),
     };
   }
 }

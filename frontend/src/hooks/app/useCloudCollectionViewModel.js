@@ -35,6 +35,7 @@ import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
 import useOdsDownload from "../useOdsDownload";
 import useSessionState from "./useSessionState";
 import useCollectionShareSession from "./useCollectionShareSession";
+import useCollectionShareManagement from "../collection/useCollectionShareManagement";
 
 /**
  * Assemble les hooks metier en proprietes directement consommables par les vues.
@@ -162,6 +163,14 @@ function useCloudCollectionViewModel() {
     onCollectionReinitialized: userCollectionOnboarding.markCollectionMissingAfterReinitialization,
     openCollectionOnboarding: navigation.openCollectionOnboarding,
   });
+  const canManageCollectionShares = (
+    session.authenticatedProfile === "USER" &&
+    userCollectionOnboarding.hasCollection === true &&
+    session.actionPermissions.canManageCollectionShares
+  );
+  const collectionShareManagement = useCollectionShareManagement({
+    enabled: navigation.currentView === "collectionShares" && canManageCollectionShares,
+  });
 
   clearDeleteGameFeedbackRef.current = gameCollection.clearDeleteGameFeedback;
 
@@ -193,6 +202,7 @@ function useCloudCollectionViewModel() {
       isLoadingPlatforms: platformsCatalog.isLoadingPlatforms,
       actionPermissions: session.actionPermissions,
       canUseCollectionViews,
+      canManageCollectionShares,
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,
       selectedPlatformStats: homePage.selectedPlatformStats || platformsCatalog.platforms.find(
@@ -220,6 +230,7 @@ function useCloudCollectionViewModel() {
       isImportingCollection: userCollectionOnboarding.isImportingCollection,
       openAddGamePage: navigation.openAddGamePage,
       openConfiguration: navigation.openConfiguration,
+      openCollectionShares: navigation.openCollectionShares,
       openLibrary: navigation.openLibrary,
       openLibraryPlatforms: navigation.openLibraryPlatforms,
       openLibraryStudios: navigation.openLibraryStudios,
@@ -263,6 +274,7 @@ function useCloudCollectionViewModel() {
       libraryPlatforms,
       libraryStudios,
       libraryGames,
+      collectionShareManagement,
     },
     authModalProps: session.authModalProps,
   };
