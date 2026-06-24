@@ -16,7 +16,7 @@ from pathlib import Path
 from flask import Flask, current_app, jsonify, request, send_file
 
 from services import AuthGuard, DatabaseConfiguration, SqlAlchemyUserRepository, UserProfile
-from services.collection import UserCollectionQueryParser
+from services.collection import GuestCollectionAccessPolicy, UserCollectionQueryParser
 from services.collection.user_collection_query_service import UserCollectionQueryService
 
 
@@ -30,6 +30,7 @@ class CollectionController:
         collection_query_parser=None,
         user_repository_class=SqlAlchemyUserRepository,
         database_configuration_class=DatabaseConfiguration,
+        guest_access_policy=None,
     ):
         """Initialise le controleur de collection.
 
@@ -39,6 +40,7 @@ class CollectionController:
             collection_query_parser (UserCollectionQueryParser | None): Parseur des criteres.
             user_repository_class (type): Classe de repository utilisateur.
             database_configuration_class (type): Classe de configuration base.
+            guest_access_policy (GuestCollectionAccessPolicy | None): Politique des lectures GUEST.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -51,6 +53,7 @@ class CollectionController:
         self.collection_query_parser = collection_query_parser or UserCollectionQueryParser()
         self.user_repository_class = user_repository_class
         self.database_configuration_class = database_configuration_class
+        self.guest_access_policy = guest_access_policy or GuestCollectionAccessPolicy()
 
     def register_routes(self, flask_app: Flask) -> None:
         """Enregistre les routes de collection dans l'application Flask.
@@ -62,53 +65,56 @@ class CollectionController:
             None: La methode ne retourne aucune valeur.
         """
 
-        protected_view = self.auth_guard.require_profile(UserProfile.USER.value)
+        read_view = self.auth_guard.require_profiles(
+            [UserProfile.GUEST.value, UserProfile.USER.value, UserProfile.ADMIN.value]
+        )
+        write_view = self.auth_guard.require_profile(UserProfile.USER.value)
         flask_app.add_url_rule(
             "/collections/videogames",
             endpoint="get_collection_video_games_statistics",
-            view_func=protected_view(self.get_video_games_statistics),
+            view_func=read_view(self.get_video_games_statistics),
             methods=["GET"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/platforms/search",
             endpoint="search_collection_video_game_platforms",
-            view_func=protected_view(self.search_video_game_platforms),
+            view_func=read_view(self.search_video_game_platforms),
             methods=["GET"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/games/search",
             endpoint="search_collection_video_games",
-            view_func=protected_view(self.search_video_games),
+            view_func=read_view(self.search_video_games),
             methods=["GET"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/games/<int:game_id>",
             endpoint="get_collection_video_game",
-            view_func=protected_view(self.get_video_game),
+            view_func=read_view(self.get_video_game),
             methods=["GET"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/download",
             endpoint="download_collection_video_games_ods",
-            view_func=protected_view(self.download_video_games_ods),
+            view_func=write_view(self.download_video_games_ods),
             methods=["GET"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/games",
             endpoint="add_collection_video_game",
-            view_func=protected_view(self.not_implemented_game_action),
+            view_func=write_view(self.not_implemented_game_action),
             methods=["POST"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/games",
             endpoint="delete_collection_video_game",
-            view_func=protected_view(self.not_implemented_game_action),
+            view_func=write_view(self.not_implemented_game_action),
             methods=["DELETE"],
         )
         flask_app.add_url_rule(
             "/collections/videogames/games",
             endpoint="update_collection_video_game",
-            view_func=protected_view(self.not_implemented_game_action),
+            view_func=write_view(self.not_implemented_game_action),
             methods=["PUT"],
         )
 
@@ -123,9 +129,13 @@ class CollectionController:
         """
 
         try:
-            return jsonify(self._create_collection_query_service().get_statistics(
-                self._current_user_id()
-            ))
+            context = self._current_access_context()
+            statistics = self._create_collection_query_service().get_statistics(
+                context.user_id,
+                include_collection=context.allow_collection,
+                include_wishlist=context.allow_wishlist,
+            )
+            return jsonify(self.guest_access_policy.filter_statistics(context, statistics))
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
@@ -143,11 +153,18 @@ class CollectionController:
         """
 
         try:
-            criteria = self.collection_query_parser.parse_platforms(request.args)
-            return jsonify(self._create_collection_query_service().list_platforms(
-                self._current_user_id(),
+            context = self._current_access_context()
+            criteria = self.guest_access_policy.scope_criteria(
+                context,
+                self.collection_query_parser.parse_platforms(request.args),
+            )
+            platforms = self._create_collection_query_service().list_platforms(
+                context.user_id,
                 criteria,
-            ))
+            )
+            return jsonify(self.guest_access_policy.filter_platforms(context, platforms))
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
@@ -165,11 +182,18 @@ class CollectionController:
         """
 
         try:
-            criteria = self.collection_query_parser.parse_games(request.args)
-            return jsonify(self._create_collection_query_service().list_games(
-                self._current_user_id(),
+            context = self._current_access_context()
+            criteria = self.guest_access_policy.scope_criteria(
+                context,
+                self.collection_query_parser.parse_games(request.args),
+            )
+            games = self._create_collection_query_service().list_games(
+                context.user_id,
                 criteria,
-            ))
+            )
+            return jsonify(self.guest_access_policy.filter_games(context, games))
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
@@ -187,13 +211,20 @@ class CollectionController:
         """
 
         try:
+            context = self._current_access_context()
             game = self._create_collection_query_service().get_game(
-                self._current_user_id(),
+                context.user_id,
                 game_id,
             )
             if game is None:
                 return jsonify({"error": "Collection game not found."}), 404
-            return jsonify({"game": game})
+            self.guest_access_policy.ensure_category_allowed(
+                context,
+                bool(game.get("wishlist")),
+            )
+            return jsonify({"game": self.guest_access_policy.filter_game(context, game)})
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
@@ -243,6 +274,25 @@ class CollectionController:
 
         return jsonify({"error": "Not implemented."}), 501
 
+    def _current_access_context(self):
+        """Retourne la collection cible et les permissions courantes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            CollectionAccessContext: Contexte de lecture securise.
+
+        Raises:
+            ValueError: Si le token ne correspond pas a un utilisateur en base.
+        """
+
+        payload = self.auth_guard.get_current_token_payload()
+        return self.guest_access_policy.create_context(
+            payload,
+            self._create_user_repository().find_user_id_by_email,
+        )
+
     def _current_user_id(self) -> int:
         """Retourne l'identifiant base de l'utilisateur connecte.
 
@@ -256,14 +306,7 @@ class CollectionController:
             ValueError: Si le token ne correspond pas a un utilisateur en base.
         """
 
-        payload = self.auth_guard.get_current_token_payload()
-        subject = str(payload.get("sub") or "").strip().lower()
-        if not subject:
-            raise ValueError("Utilisateur connecte invalide.")
-        user_id = self._create_user_repository().find_user_id_by_email(subject)
-        if user_id is None:
-            raise ValueError("Utilisateur connecte introuvable.")
-        return user_id
+        return self._current_access_context().user_id
 
     def _create_collection_query_service(self):
         """Construit le service de consultation de collection.

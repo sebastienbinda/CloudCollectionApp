@@ -18,7 +18,6 @@ except ModuleNotFoundError:
     from route_test_support import BaseAppRoutesTest
     from route_test_fakes import FakeUserCollectionQueryService
 
-
 class CollectionRoutesTest(BaseAppRoutesTest):
     """Valide les routes protegees de lecture et outils collection."""
 
