@@ -352,7 +352,7 @@ class VideoGamesApi {
         "Impossible de telecharger le fichier de collection."
       );
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || "Impossible de telecharger le fichier de collection.");
     }
@@ -375,7 +375,7 @@ class VideoGamesApi {
     if (!response.ok) {
       const data = await this.parseJsonResponse(response, "Impossible de recuperer l'image.");
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || "Impossible de recuperer l'image.");
     }
@@ -427,7 +427,7 @@ class VideoGamesApi {
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       if (AuthApi.isExpiredAuthenticatedResponse(response, options)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || fallbackMessage);
     }

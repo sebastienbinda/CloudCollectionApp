@@ -34,6 +34,7 @@ import useAppNavigation from "../navigation/useAppNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
 import useOdsDownload from "../useOdsDownload";
 import useSessionState from "./useSessionState";
+import useCollectionShareSession from "./useCollectionShareSession";
 
 /**
  * Assemble les hooks metier en proprietes directement consommables par les vues.
@@ -54,6 +55,11 @@ function useCloudCollectionViewModel() {
     canUseCollectionViews,
     clearDeleteGameFeedback: () => clearDeleteGameFeedbackRef.current(),
     prepareAddGameForm: (selectedPlatform) => prepareAddGameFormRef.current(selectedPlatform),
+    setGlobalError: setError,
+  });
+  useCollectionShareSession({
+    setCurrentView: navigation.setCurrentView,
+    setError,
   });
   const addGamePage = useAddGamePage({
     currentView: navigation.currentView,
@@ -140,7 +146,7 @@ function useCloudCollectionViewModel() {
   });
   const odsDownload = useOdsDownload();
   const userCollectionOnboarding = useUserCollectionOnboarding({
-    hasAccessToken: canUseCollectionViews,
+    hasAccessToken: canUseCollectionViews && session.authenticatedProfile !== "GUEST",
     authenticatedUsername: session.authenticatedUsername,
     currentView: navigation.currentView,
     canUseCollectionViews,

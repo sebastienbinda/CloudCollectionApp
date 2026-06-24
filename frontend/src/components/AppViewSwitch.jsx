@@ -174,6 +174,7 @@ class AppViewSwitch {
     return (
       <AboutView
         {...this.buildPageLayoutProps(props)}
+        error={props.error}
       />
     );
   }

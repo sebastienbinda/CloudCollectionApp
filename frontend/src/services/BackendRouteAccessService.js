@@ -133,7 +133,7 @@ class BackendRouteAccessService {
    */
   normalizeProfile(profile) {
     const normalizedProfile = String(profile || "USER").trim().toUpperCase();
-    return ["USER", "ADMIN"].includes(normalizedProfile) ? normalizedProfile : "USER";
+    return ["GUEST", "USER", "ADMIN"].includes(normalizedProfile) ? normalizedProfile : "USER";
   }
 
   /**

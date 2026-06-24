@@ -77,7 +77,7 @@ class LibraryApi {
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || fallbackMessage);
     }

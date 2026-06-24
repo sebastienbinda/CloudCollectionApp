@@ -12,7 +12,7 @@
  *
  * Description : client frontend dedie a l'authentification et a l'inscription.
  */
-import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard.js";
 
 /**
  * Regroupe les appels et l'etat frontend lies a l'authentification.
@@ -22,6 +22,7 @@ class AuthApi {
   static authTokenExpiresAtStorageKey = "cloudCollectionAccessTokenExpiresAt";
   static authChangeEventName = "cloudcollectionauthchange";
   static sessionExpiredEventName = "cloudcollectionsessionexpired";
+  static guestShareUnavailableEventName = "cloudcollectionguestshareunavailable";
   static expiredSessionQuery = "session-expired";
   static hasNotifiedExpiredSession = false;
 
@@ -256,7 +257,14 @@ class AuthApi {
    * @returns {boolean} `true` si le backend refuse un token Bearer envoye.
    */
   static isExpiredAuthenticatedResponse(response, options = {}) {
-    return [401, 403].includes(response.status) && this.hasBearerAuthorization(options);
+    if (!this.hasBearerAuthorization(options)) {
+      return false;
+    }
+    const profile = String(this.getAccessTokenPayload().profile || "USER").trim().toUpperCase();
+    if (profile === "GUEST") {
+      return [401, 411].includes(response.status);
+    }
+    return [401, 403].includes(response.status);
   }
 
   /**
@@ -265,12 +273,18 @@ class AuthApi {
    * @param {void} Aucun - Utilise `localStorage` et les evenements navigateur.
    * @returns {void} Declenche l'affichage global de reconnexion.
    */
-  static handleExpiredSession() {
+  static handleExpiredSession(response = null) {
     if (this.hasNotifiedExpiredSession) {
       return;
     }
+    const profile = String(this.getAccessTokenPayload().profile || "USER").trim().toUpperCase();
+    const isUnavailableGuestShare = profile === "GUEST" && response?.status === 411;
     this.hasNotifiedExpiredSession = true;
     this.clearAccessToken();
+    if (isUnavailableGuestShare) {
+      window.dispatchEvent(new Event(this.guestShareUnavailableEventName));
+      return;
+    }
     window.dispatchEvent(new Event(this.sessionExpiredEventName));
   }
 

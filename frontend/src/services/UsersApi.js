@@ -61,7 +61,7 @@ class UsersApi {
         "Impossible de supprimer l'utilisateur."
       );
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || "Impossible de supprimer l'utilisateur.");
     }

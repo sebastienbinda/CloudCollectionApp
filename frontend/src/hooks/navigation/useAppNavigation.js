@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
+import AuthApi from "../../services/AuthApi";
 
 /**
  * Gere la vue courante, la plateforme selectionnee et l'historique navigateur.
@@ -110,6 +111,24 @@ function useAppNavigation(options) {
     setCurrentView("libraryPlatformDetail");
     window.history.pushState({}, "", `/bibliotheque/plateformes/${encodeURIComponent(platformId)}`);
   };
+
+  useEffect(() => {
+    const handleGuestShareUnavailable = () => {
+      options.clearDeleteGameFeedback();
+      options.setGlobalError("Ce partage a expire ou a ete revoque.");
+      setSelectedPlatform("");
+      setSelectedGameId("");
+      setSelectedGameSource("library");
+      setCurrentView("about");
+      window.history.replaceState({}, "", "/about");
+    };
+
+    window.addEventListener(AuthApi.guestShareUnavailableEventName, handleGuestShareUnavailable);
+    return () => window.removeEventListener(
+      AuthApi.guestShareUnavailableEventName,
+      handleGuestShareUnavailable
+    );
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {

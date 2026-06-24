@@ -76,6 +76,24 @@ class AppRouting {
   }
 
   /**
+   * Extrait le token de la route publique de partage de collection.
+   *
+   * @param {void} Aucun - Utilise `window.location.pathname`.
+   * @returns {string} Token de lien decode, ou chaine vide hors route de partage.
+   */
+  static getCollectionShareTokenFromUrl() {
+    const match = window.location.pathname.match(/^\/collection\/share\/([^/]+)$/);
+    if (!match) {
+      return "";
+    }
+    try {
+      return decodeURIComponent(match[1]);
+    } catch (error) {
+      return "";
+    }
+  }
+
+  /**
    * Lit la plateforme presente dans l'URL courante.
    *
    * @param {void} Aucun - Utilise `window.location.search`.
@@ -105,6 +123,9 @@ class AppRouting {
    * @returns {boolean} `true` si le chemin est public.
    */
   static isPublicPath(pathname) {
+    if (/^\/collection\/share\/[^/]+$/.test(pathname)) {
+      return true;
+    }
     if (/^\/bibliotheque\/plateformes\/\d+$/.test(pathname)) {
       return true;
     }
@@ -129,6 +150,9 @@ class AppRouting {
    * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"platformImageModeration"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
    */
   static getViewFromUrl() {
+    if (/^\/collection\/share\/[^/]+$/.test(window.location.pathname)) {
+      return "about";
+    }
     if (/^\/bibliotheque\/plateformes\/\d+$/.test(window.location.pathname)) {
       return "libraryPlatformDetail";
     }
