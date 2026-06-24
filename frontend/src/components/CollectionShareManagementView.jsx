@@ -68,6 +68,9 @@ function CollectionShareManagementView(props) {
     >
       {management.error ? <p className="error" role="alert">{management.error}</p> : null}
       {management.message ? <p className="success" role="status">{management.message}</p> : null}
+      {!props.isManagementAllowed ? (
+        <ProgressBar label="Verification de votre collection et de vos droits de partage" />
+      ) : null}
 
       <section className="collectionShareFormSection" aria-labelledby="collection-share-form-title">
         <h2 id="collection-share-form-title">Nouveau partage</h2>
@@ -81,6 +84,7 @@ function CollectionShareManagementView(props) {
               max="240"
               step="1"
               required
+              disabled={!props.isManagementAllowed}
               value={management.form.durationHours}
               onChange={(event) => management.updateForm("durationHours", event.target.value)}
             />
@@ -90,6 +94,7 @@ function CollectionShareManagementView(props) {
             <label>
               <input
                 type="checkbox"
+                disabled={!props.isManagementAllowed}
                 checked={management.form.allowCollection}
                 onChange={(event) => management.updateForm("allowCollection", event.target.checked)}
               />
@@ -98,6 +103,7 @@ function CollectionShareManagementView(props) {
             <label>
               <input
                 type="checkbox"
+                disabled={!props.isManagementAllowed}
                 checked={management.form.allowWishlist}
                 onChange={(event) => management.updateForm("allowWishlist", event.target.checked)}
               />
@@ -106,6 +112,7 @@ function CollectionShareManagementView(props) {
             <label>
               <input
                 type="checkbox"
+                disabled={!props.isManagementAllowed}
                 checked={management.form.allowPrices}
                 onChange={(event) => management.updateForm("allowPrices", event.target.checked)}
               />
@@ -116,6 +123,7 @@ function CollectionShareManagementView(props) {
             type="submit"
             disabled={
               management.isCreating ||
+              !props.isManagementAllowed ||
               (!management.form.allowCollection && !management.form.allowWishlist)
             }
           >

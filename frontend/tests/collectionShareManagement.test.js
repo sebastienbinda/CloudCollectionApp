@@ -12,6 +12,7 @@ import {
   validateCollectionShareForm,
 } from "../src/hooks/collection/collectionShareForm.js";
 import {
+  confirmCollectionShareRevocation,
   copyCollectionShareLink,
 } from "../src/hooks/collection/useCollectionShareManagement.js";
 import AuthApi from "../src/services/AuthApi.js";
@@ -117,4 +118,14 @@ test("copie le lien avec le presse-papiers injecte", async () => {
   );
   assert.equal(copiedValue, "https://example.test/collection/share/token");
   await assert.rejects(() => copyCollectionShareLink({ link: "x" }, null));
+});
+
+test("demande confirmation avant la revocation", () => {
+  let confirmationMessage = "";
+  const confirmed = confirmCollectionShareRevocation((message) => {
+    confirmationMessage = message;
+    return true;
+  });
+  assert.equal(confirmed, true);
+  assert.match(confirmationMessage, /revocation/i);
 });

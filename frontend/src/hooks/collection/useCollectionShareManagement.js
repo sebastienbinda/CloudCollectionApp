@@ -32,6 +32,17 @@ async function copyCollectionShareLink(share, clipboard = navigator.clipboard) {
 }
 
 /**
+ * Demande la confirmation de revocation d'un partage.
+ *
+ * @param {Function} confirmAction - Fonction de confirmation injectable.
+ * @returns {boolean} `true` lorsque le proprietaire confirme.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function confirmCollectionShareRevocation(confirmAction = window.confirm) {
+  return confirmAction("Confirmer la revocation de ce partage ?");
+}
+
+/**
  * Orchestre la creation, la liste, la copie et la revocation des partages.
  *
  * @param {Object} options - Etat d'activation de la page proprietaire.
@@ -104,7 +115,7 @@ function useCollectionShareManagement(options) {
   };
 
   const revokeShare = async (share) => {
-    if (!window.confirm("Confirmer la revocation de ce partage ?")) {
+    if (!confirmCollectionShareRevocation()) {
       return;
     }
     setRevokingShareId(share.id);
@@ -138,5 +149,9 @@ function useCollectionShareManagement(options) {
   };
 }
 
-export { INITIAL_SHARE_FORM, copyCollectionShareLink };
+export {
+  INITIAL_SHARE_FORM,
+  confirmCollectionShareRevocation,
+  copyCollectionShareLink,
+};
 export default useCollectionShareManagement;

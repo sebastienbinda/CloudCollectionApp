@@ -123,7 +123,12 @@ class AppViewSwitch {
     }
 
     if (props.currentView === "collectionShares") {
-      return renderCollectionShareManagementView(props, this.buildPageLayoutProps(props));
+      if (props.authenticatedProfile === "USER") {
+        return renderCollectionShareManagementView(props, this.buildPageLayoutProps(props));
+      }
+      return props.authenticatedProfile === "ADMIN"
+        ? renderConfigurationView(props, this.buildPageLayoutProps(props))
+        : this.renderAbout(props);
     }
 
     if (props.currentView === "users") {

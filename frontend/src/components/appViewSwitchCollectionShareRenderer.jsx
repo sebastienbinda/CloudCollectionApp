@@ -19,6 +19,7 @@ function renderCollectionShareManagementView(props, pageLayoutProps) {
   return (
     <CollectionShareManagementView
       {...pageLayoutProps}
+      isManagementAllowed={props.canManageCollectionShares}
       collectionShareManagement={props.collectionShareManagement}
     />
   );
