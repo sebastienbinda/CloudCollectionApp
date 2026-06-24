@@ -45,7 +45,10 @@ import useCollectionShareManagement from "../collection/useCollectionShareManage
 function useCloudCollectionViewModel() {
   const [error, setError] = useState("");
   const session = useSessionState();
-  const canUseCollectionViews = session.hasAccessToken && session.authenticatedProfile !== "ADMIN";
+  const isCollectionProfile = session.hasAccessToken && session.authenticatedProfile !== "ADMIN";
+  const canViewCollection = isCollectionProfile && session.viewAccess.canViewCollection;
+  const canViewWishlist = isCollectionProfile && session.viewAccess.canViewWishlist;
+  const canUseCollectionViews = canViewCollection || canViewWishlist;
   const refresh = useCollectionRefresh();
   const clearDeleteGameFeedbackRef = useRef(() => {});
   const prepareAddGameFormRef = useRef(() => {});
@@ -54,6 +57,10 @@ function useCloudCollectionViewModel() {
     hasAccessToken: session.hasAccessToken,
     authenticatedProfile: session.authenticatedProfile,
     canUseCollectionViews,
+    canViewCollection,
+    canViewWishlist,
+    canAccessConfiguration: session.viewAccess.canAccessConfiguration,
+    isGuest: session.viewAccess.isGuest,
     clearDeleteGameFeedback: () => clearDeleteGameFeedbackRef.current(),
     prepareAddGameForm: (selectedPlatform) => prepareAddGameFormRef.current(selectedPlatform),
     setGlobalError: setError,
@@ -64,7 +71,7 @@ function useCloudCollectionViewModel() {
   });
   const addGamePage = useAddGamePage({
     currentView: navigation.currentView,
-    hasAccessToken: canUseCollectionViews,
+    hasAccessToken: canViewCollection && session.viewAccess.canMutate,
     odsReloadKey: refresh.odsReloadKey,
     actionPermissions: session.actionPermissions,
     reloadOds: refresh.reloadOds,
@@ -75,8 +82,8 @@ function useCloudCollectionViewModel() {
   const platformsCatalog = usePlatformsCatalog({
     currentView: navigation.currentView,
     odsReloadKey: refresh.odsReloadKey,
-    isAuthenticated: canUseCollectionViews,
-    hasAccessToken: canUseCollectionViews,
+    isAuthenticated: canViewCollection,
+    hasAccessToken: canViewCollection,
     setSelectedPlatform: navigation.setSelectedPlatform,
     setCurrentView: navigation.setCurrentView,
     setGameForm: addGamePage.setGameForm,
@@ -91,22 +98,24 @@ function useCloudCollectionViewModel() {
     currentView: navigation.currentView,
     selectedPlatform: navigation.selectedPlatform,
     odsReloadKey: refresh.odsReloadKey,
-    isAuthenticated: canUseCollectionViews,
-    hasAccessToken: canUseCollectionViews,
+    isAuthenticated: canViewCollection,
+    hasAccessToken: canViewCollection,
     setError,
+    canViewPrices: session.viewAccess.canViewPrices,
   });
   const gameCollection = useGameCollectionPage({
     selectedPlatform: navigation.selectedPlatform,
     gamesReloadKey: refresh.gamesReloadKey,
-    isAuthenticated: canUseCollectionViews,
-    hasAccessToken: canUseCollectionViews,
+    isAuthenticated: canViewCollection,
+    hasAccessToken: canViewCollection,
+    canViewPrices: session.viewAccess.canViewPrices,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
     setError,
   });
   const wishlistPage = useWishlistPage({
     currentView: navigation.currentView,
-    hasAccessToken: canUseCollectionViews,
+    hasAccessToken: canViewWishlist,
     gamesReloadKey: refresh.gamesReloadKey,
   });
   const gameDetailPage = useGameDetailPage({
@@ -202,6 +211,14 @@ function useCloudCollectionViewModel() {
       isLoadingPlatforms: platformsCatalog.isLoadingPlatforms,
       actionPermissions: session.actionPermissions,
       canUseCollectionViews,
+      canViewCollection,
+      canViewWishlist,
+      canViewPrices: session.viewAccess.canViewPrices,
+      canAccessConfiguration: session.viewAccess.canAccessConfiguration,
+      isGuest: session.viewAccess.isGuest,
+      guestOwnerPseudonym: session.viewAccess.ownerPseudonym,
+      guestCollectionLabel: session.viewAccess.collectionLabel,
+      guestWishlistLabel: session.viewAccess.wishlistLabel,
       canManageCollectionShares,
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,

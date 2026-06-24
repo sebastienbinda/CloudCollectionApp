@@ -24,6 +24,11 @@ import PageLayout from "./PageLayout";
 function WishlistView({
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
+  isGuest = false,
+  guestWishlistLabel = "",
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -50,9 +55,13 @@ function WishlistView({
       shellClassName="container"
       eyebrow="Collection"
       title="Liste de souhaits"
-      subtitle="Jeux souhaites"
+      subtitle={isGuest ? guestWishlistLabel : "Jeux souhaites"}
+      headerClassName={`pageHeader${isGuest ? " guestSessionPageHeader" : ""}`}
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

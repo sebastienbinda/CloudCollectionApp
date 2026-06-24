@@ -48,7 +48,8 @@ function LibraryPlatformDetailView({
   const primaryFields = buildPlatformPrimaryFields(platform);
   const description = formatDescription(platform?.description);
   const imageDisplay = buildImageDisplay(platform, platformDetailPage?.imageCacheVersion);
-  const canUploadImage = isAuthenticated && authenticatedProfile !== "ADMIN";
+  const normalizedProfile = String(authenticatedProfile || "").trim().toUpperCase();
+  const canUploadImage = isAuthenticated && !["ADMIN", "GUEST"].includes(normalizedProfile);
   const imageInputRef = useRef(null);
 
   return (

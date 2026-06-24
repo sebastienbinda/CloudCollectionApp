@@ -50,6 +50,8 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
   avec retrait immediat du token de l'URL et redirection selon les permissions.
 - Gestion proprietaire des liens temporaires depuis `/configuration/partages`,
   avec permissions collection, liste de souhaits et prix.
+- Navigation GUEST adaptee au partage : identite proprietaire, categories et
+  prix conditionnels, sans acces aux actions de modification ni a Configuration.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
 - Moderation administrateur des images de plateformes proposees.

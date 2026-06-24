@@ -105,7 +105,10 @@ function useGameCollectionPage(options) {
         String(game["Nom du jeu"] || "").toLowerCase().includes(normalizedGameNameFilter)
       )
     : namedGames;
-  const columns = namedGames.length > 0 ? collectionGameColumns : [];
+  const visibleCollectionGameColumns = options.canViewPrices === false
+    ? collectionGameColumns.filter((column) => column !== "Prix d'achat")
+    : collectionGameColumns;
+  const columns = namedGames.length > 0 ? visibleCollectionGameColumns : [];
   const filteredGames = nameFilteredGames;
   const sortedGames = filteredGames;
   const toggleSort = (column) => {

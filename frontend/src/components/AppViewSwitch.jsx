@@ -28,6 +28,7 @@ import renderCollectionShareManagementView from "./appViewSwitchCollectionShareR
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
+import GuestNavigationPolicy from "../services/GuestNavigationPolicy";
 
 /**
  * Selectionne la vue React a afficher selon l'etat applicatif courant.
@@ -78,6 +79,13 @@ class AppViewSwitch {
     return {
       isAuthenticated: props.actionPermissions.isAuthenticated,
       canUseCollectionViews: props.canUseCollectionViews,
+      canViewCollection: props.canViewCollection,
+      canViewWishlist: props.canViewWishlist,
+      canAccessConfiguration: props.canAccessConfiguration,
+      canViewPrices: props.canViewPrices,
+      isGuest: props.isGuest,
+      guestCollectionLabel: props.guestCollectionLabel,
+      guestWishlistLabel: props.guestWishlistLabel,
       authenticatedUsername: props.authenticatedUsername,
       authenticatedProfile: props.authenticatedProfile,
       onOpenAbout: props.openAbout,
@@ -98,6 +106,10 @@ class AppViewSwitch {
    * @returns {import("react").JSX.Element} Vue active.
    */
   static render(props) {
+    const guestPolicy = new GuestNavigationPolicy(props);
+    if (props.isGuest && guestPolicy.isViewBlocked(props.currentView)) {
+      return this.renderAbout(props);
+    }
     if (props.currentView === "home") {
       return this.renderHome(props);
     }
@@ -449,8 +461,8 @@ class AppViewSwitch {
         isLoadingPlatforms={props.isLoadingPlatforms}
         isLoadingGames={props.isLoadingGames}
         isSavingGame={props.isSavingGame}
-        canEditGame={props.actionPermissions.canEditGame}
-        canDeleteGame={props.actionPermissions.canDeleteGame}
+        canEditGame={props.actionPermissions.canEditGame && !props.isGuest}
+        canDeleteGame={props.actionPermissions.canDeleteGame && !props.isGuest}
         editingGame={props.editingGame}
         onOpenPlatform={props.openPlatform}
         onGameNameFilterChange={props.setGameNameFilter}

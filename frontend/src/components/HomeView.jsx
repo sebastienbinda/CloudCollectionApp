@@ -23,6 +23,12 @@ function HomeView({
   homeSearchError,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
+  canViewPrices = true,
+  isGuest = false,
+  guestCollectionLabel = "",
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -55,7 +61,8 @@ function HomeView({
     <PageLayout
       eyebrow="Collection personnelle"
       title={homeStats?.title || "Ma collection"}
-      subtitle="Jeux, plateformes et statistiques essentielles."
+      subtitle={isGuest ? guestCollectionLabel : "Jeux, plateformes et statistiques essentielles."}
+      headerClassName={`pageHeader${isGuest ? " guestSessionPageHeader" : ""}`}
       headerExtraContent={(
         <p className="pageHeaderDateSummary">
           <span>
@@ -71,6 +78,9 @@ function HomeView({
       )}
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}
@@ -172,7 +182,7 @@ function HomeView({
                         <dt>Note</dt>
                         <dd>{formatCellValue("Note", game.Note)}</dd>
                       </div>
-                      {isAuthenticated ? (
+                      {isAuthenticated && canViewPrices ? (
                         <div>
                           <dt>Prix</dt>
                           <dd>{formatCurrency(game["Prix d'achat"])}</dd>
@@ -199,14 +209,14 @@ function HomeView({
           </section>
 
           <section
-            className={`statsGrid ${isAuthenticated ? "statsGridAuthenticated" : "statsGridPublic"}`}
+            className={`statsGrid ${isAuthenticated && canViewPrices ? "statsGridAuthenticated" : "statsGridPublic"}`}
             aria-label="Statistiques principales"
           >
             <article className="statCard">
               <span>Total jeux</span>
               <strong>{formatNumber(homeStats.totals?.games_count)}</strong>
             </article>
-            {isAuthenticated ? (
+            {isAuthenticated && canViewPrices ? (
               <>
                 <article className="statCard">
                   <span>Valeur totale</span>
@@ -249,7 +259,7 @@ function HomeView({
                   <p className="platformLifecycle">
                     {formatPlatformLifecycle(platform)}
                   </p>
-                  {isAuthenticated ? (
+                  {isAuthenticated && canViewPrices ? (
                     <dl>
                       <div>
                         <dt>Prix</dt>
