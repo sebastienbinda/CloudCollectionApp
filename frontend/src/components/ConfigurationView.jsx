@@ -36,6 +36,9 @@ function ConfigurationView({
   canSearchUsers,
   canManageCollectionShares,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   downloadError,
   isDownloadingOds,
   libraryResetError,
@@ -73,6 +76,9 @@ function ConfigurationView({
       subtitle="Accedez aux actions d'administration disponibles pour votre profil."
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={username}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

@@ -30,6 +30,9 @@ function GameDetailView({
   selectedGameSource,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -55,6 +58,9 @@ function GameDetailView({
       subtitle={platformName ? `Plateforme : ${platformName}` : "Detail du jeu"}
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

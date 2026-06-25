@@ -55,6 +55,9 @@ function UsersView({
   canValidateUser,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -231,6 +234,9 @@ function UsersView({
       title="Utilisateurs"
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

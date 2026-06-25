@@ -31,6 +31,9 @@ function LibraryPlatformDetailView({
   platformDetailPage,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -60,6 +63,9 @@ function LibraryPlatformDetailView({
       subtitle="Detail de la plateforme"
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

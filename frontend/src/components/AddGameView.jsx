@@ -28,6 +28,9 @@ function AddGameView({
   canAddGame,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -53,6 +56,9 @@ function AddGameView({
       subtitle="Le jeu sera ajoute dans la collection en conservant la presentation de votre fichier."
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

@@ -56,6 +56,9 @@ function CollectionShareManagementView(props) {
       subtitle="Creez des acces temporaires et revoquez-les a tout moment."
       isAuthenticated={props.isAuthenticated}
       canUseCollectionViews={props.canUseCollectionViews}
+      canViewCollection={props.canViewCollection}
+      canViewWishlist={props.canViewWishlist}
+      canAccessConfiguration={props.canAccessConfiguration}
       authenticatedUsername={props.authenticatedUsername}
       authenticatedProfile={props.authenticatedProfile}
       onOpenAbout={props.onOpenAbout}

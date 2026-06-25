@@ -13,6 +13,7 @@
  * Description : menu principal React partage par les pages A propos et Ma collection.
  */
 import { useEffect, useRef, useState } from "react";
+import resolveMainMenuAccess from "../services/MainMenuAccessPolicy";
 
 const MENU_ICON_PATHS = {
   about: (
@@ -173,11 +174,15 @@ function MainMenu({
   };
 
   const normalizedProfile = String(profile || "").trim().toUpperCase();
-  const canOpenConfiguration =
-    isAuthenticated && canAccessConfiguration && typeof onOpenConfiguration === "function";
-  const canOpenWishlist =
-    isAuthenticated && canViewWishlist && typeof onOpenWishlist === "function";
-  const canOpenHome = isAuthenticated && canViewCollection && typeof onOpenHome === "function";
+  const { canOpenConfiguration, canOpenWishlist, canOpenHome } = resolveMainMenuAccess({
+    isAuthenticated,
+    canAccessConfiguration,
+    canViewWishlist,
+    canViewCollection,
+    onOpenConfiguration,
+    onOpenWishlist,
+    onOpenHome,
+  });
   const aboutItem = {
     key: "about",
     label: "A propos",

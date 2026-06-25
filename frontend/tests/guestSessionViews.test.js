@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import GuestNavigationPolicy from "../src/services/GuestNavigationPolicy.js";
 import GuestSessionViewPolicy from "../src/services/GuestSessionViewPolicy.js";
+import resolveMainMenuAccess from "../src/services/MainMenuAccessPolicy.js";
 import VideoGamesApi from "../src/services/VideoGamesApi.js";
 
 test("derive l'identite et les sous-titres GUEST avec le pseudonyme proprietaire", () => {
@@ -38,6 +39,22 @@ test("reproduit exactement les combinaisons de menus collection et wishlist", ()
     const policy = new GuestSessionViewPolicy({ profile: "GUEST", permissions }).toViewModel();
     assert.deepEqual([policy.canViewCollection, policy.canViewWishlist], expected);
   });
+});
+
+test("masque l'entree wishlist du menu quand le partage GUEST ne l'autorise pas", () => {
+  const menuAccess = resolveMainMenuAccess({
+    isAuthenticated: true,
+    canViewCollection: true,
+    canViewWishlist: false,
+    canAccessConfiguration: false,
+    onOpenHome: () => {},
+    onOpenWishlist: () => {},
+    onOpenConfiguration: () => {},
+  });
+
+  assert.equal(menuAccess.canOpenHome, true);
+  assert.equal(menuAccess.canOpenWishlist, false);
+  assert.equal(menuAccess.canOpenConfiguration, false);
 });
 
 test("redirige les routes interdites vers la premiere categorie partagee", () => {

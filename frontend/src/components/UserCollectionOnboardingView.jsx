@@ -37,6 +37,9 @@ function UserCollectionOnboardingView({
   isImportingCollection,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
@@ -89,6 +92,9 @@ function UserCollectionOnboardingView({
       subtitle="Ajoutez votre collection pour initialiser vos plateformes, studios et jeux."
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

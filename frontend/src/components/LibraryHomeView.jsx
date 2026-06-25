@@ -33,6 +33,9 @@ function LibraryHomeView({
   librarySearch,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -79,6 +82,9 @@ function LibraryHomeView({
       subtitle="Consultez les plateformes, studios et jeux du referentiel commun."
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}
