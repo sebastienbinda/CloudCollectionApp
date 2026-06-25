@@ -78,6 +78,18 @@ function CollectionShareManagementView(props) {
       <section className="collectionShareFormSection" aria-labelledby="collection-share-form-title">
         <h2 id="collection-share-form-title">Nouveau partage</h2>
         <form className="collectionShareForm" onSubmit={management.createShare}>
+          <label htmlFor="share-recipient">
+            Destinataire
+            <input
+              id="share-recipient"
+              type="text"
+              maxLength="256"
+              disabled={!props.isManagementAllowed}
+              value={management.form.recipient}
+              onChange={(event) => management.updateForm("recipient", event.target.value)}
+              placeholder="Nom ou contexte du partage"
+            />
+          </label>
           <label htmlFor="share-duration-hours">
             Duree de validite en heures
             <input
@@ -157,6 +169,7 @@ function CollectionShareManagementView(props) {
                   </span>
                 </div>
                 <dl>
+                  <div><dt>Destinataire</dt><dd>{share.recipient || "-"}</dd></div>
                   <div><dt>Cree le</dt><dd>{formatShareDate(share.created_at)}</dd></div>
                   <div><dt>Expire le</dt><dd>{formatShareDate(share.expires_at)}</dd></div>
                   <div><dt>Permissions</dt><dd>{formatSharePermissions(share.permissions)}</dd></div>

@@ -8,6 +8,7 @@
 
 const MINIMUM_DURATION_HOURS = 1;
 const MAXIMUM_DURATION_HOURS = 240;
+const MAXIMUM_RECIPIENT_LENGTH = 256;
 
 /**
  * Valide et transforme le formulaire frontend en payload backend.
@@ -34,9 +35,17 @@ function validateCollectionShareForm(form) {
       error: "Autorisez au moins la collection ou la liste de souhaits.",
     };
   }
+  const recipient = String(form.recipient || "").trim();
+  if (recipient.length > MAXIMUM_RECIPIENT_LENGTH) {
+    return {
+      payload: null,
+      error: "Le destinataire doit contenir 256 caracteres maximum.",
+    };
+  }
   return {
     error: "",
     payload: {
+      recipient: recipient || null,
       duration_hours: durationHours,
       allow_collection: form.allowCollection === true,
       allow_wishlist: form.allowWishlist === true,
@@ -47,6 +56,7 @@ function validateCollectionShareForm(form) {
 
 export {
   MAXIMUM_DURATION_HOURS,
+  MAXIMUM_RECIPIENT_LENGTH,
   MINIMUM_DURATION_HOURS,
   validateCollectionShareForm,
 };

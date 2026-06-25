@@ -15,16 +15,17 @@ rules in `documentation/authentication.md`, collection filtering in
 - A share must allow the owned collection, the wishlist, or both. Price access
   is independent and never grants access to a category by itself.
 - Share duration is an integer from 1 to 240 hours.
-- PostgreSQL stores the share identifier, owner, dates and permissions, never a
-  raw link token or GUEST Bearer token.
+- PostgreSQL stores the share identifier, owner, dates, optional recipient and
+  permissions, never a raw link token or GUEST Bearer token.
 - Backend checks remain authoritative. Frontend menu and page restrictions are
   presentation rules, not a security boundary.
 
 ## Lifecycle
 
 1. The owner creates a share with `POST /api/collection-shares`.
-2. Backend persists `t_collection_share`, signs a link token and returns an
-   absolute `<FRONTEND_PUBLIC_URL>/collection/share/<token>` link.
+2. Backend persists `t_collection_share`, including the optional recipient
+   label used for owner display and access logs, signs a link token and returns
+   an absolute `<FRONTEND_PUBLIC_URL>/collection/share/<token>` link.
 3. The visitor opens the transient public frontend route. Any existing local
    session is cleared and the link token is exchanged without Authorization at
    `POST /api/auth/collection-share/session`.
@@ -55,6 +56,8 @@ The link token and the GUEST Bearer are distinct signed credentials:
 
 The GUEST Bearer expires no later than the persisted share. Link and Bearer
 signatures use the existing `AuthTokenService`; neither credential is logged.
+When a link token is exchanged for a GUEST Bearer, backend logs the share id,
+owner id and stored recipient label, but never logs the raw token.
 
 ## Permissions And Data Filtering
 
@@ -92,6 +95,8 @@ upload remain unavailable to GUEST.
 
 - Owner management is routed at `/configuration/partages` and is shown only to
   a `USER` with an imported collection and discovered share-management rights.
+- Owner management lets the owner set an optional recipient label when creating
+  a share and displays that label in the existing-share list.
 - GUEST identity is `Invité de <pseudonyme>` with the yellow desktop/mobile
   treatment.
 - Collection and Wishlist menu entries are omitted when their respective claim

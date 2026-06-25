@@ -41,6 +41,7 @@ class FakeCollectionShareManagementRouteService:
         allow_collection,
         allow_wishlist,
         allow_prices,
+        recipient=None,
     ):
         """Retourne un partage cree factice.
 
@@ -50,6 +51,7 @@ class FakeCollectionShareManagementRouteService:
             allow_collection (bool): Permission collection.
             allow_wishlist (bool): Permission wishlist.
             allow_prices (bool): Permission prix.
+            recipient (str | None): Destinataire du partage.
 
         Returns:
             dict: Partage serialisable.
@@ -62,6 +64,7 @@ class FakeCollectionShareManagementRouteService:
             allow_collection,
             allow_wishlist,
             allow_prices,
+            recipient,
         ))
         if type(duration_hours) is not int:
             raise ValueError("duration_hours invalide.")
@@ -107,6 +110,7 @@ class FakeCollectionShareManagementRouteService:
             "expires_at": "2030-01-02T10:00:00",
             "revoked_at": "2030-01-01T11:00:00" if status == "REVOKED" else None,
             "permissions": {"collection": True, "wishlist": False, "prices": True},
+            "recipient": "Alice",
             "status": status,
             "link": f"https://collection.example/collection/share/token-{share_id}",
         }
@@ -161,11 +165,14 @@ class CollectionShareRoutesTest(BaseAppRoutesTest):
                 "allow_collection": True,
                 "allow_wishlist": False,
                 "allow_prices": True,
+                "recipient": "Alice",
             },
         )
 
         self.assertEqual(201, response.status_code)
         self.assertEqual("user@example.com", self.service.calls[0][1])
+        self.assertEqual("Alice", self.service.calls[0][6])
+        self.assertEqual("Alice", response.get_json()["share"]["recipient"])
         self.assertIn("/collection/share/", response.get_json()["share"]["link"])
 
     def test_list_and_revoke_share_use_connected_owner(self):

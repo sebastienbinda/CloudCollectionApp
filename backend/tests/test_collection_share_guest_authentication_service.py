@@ -144,6 +144,7 @@ class CollectionShareGuestAuthenticationServiceTest(unittest.TestCase):
             "allow_collection": True,
             "allow_wishlist": False,
             "allow_prices": True,
+            "recipient": "Alice",
             "status": "ACTIVE",
             "owner_pseudonym": "Player_One",
             "owner_status": "ACTIVE",
@@ -189,6 +190,25 @@ class CollectionShareGuestAuthenticationServiceTest(unittest.TestCase):
         )
         expected_expiration = int(self.expires_at.replace(tzinfo=timezone.utc).timestamp())
         self.assertEqual(expected_expiration, payload["exp"])
+
+    def test_exchange_logs_recipient_for_guest_access(self):
+        """Verifie le journal de l'acces invite avec le destinataire.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contenu du log.
+        """
+
+        link_token = self.service.create_share_link_token(8, self.expires_at)
+
+        with self.assertLogs("services.auth.collection_share_guest_authentication_service", level="INFO") as logs:
+            self.service.exchange_share_link_token(link_token)
+
+        self.assertIn("share_id=8", logs.output[0])
+        self.assertIn("owner_user_id=7", logs.output[0])
+        self.assertIn("recipient=Alice", logs.output[0])
 
     def test_link_token_is_not_accepted_as_bearer(self):
         """Verifie la separation entre lien et session Bearer.

@@ -14,7 +14,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Sequence
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database_model_base import DatabaseModelBase
@@ -29,6 +29,7 @@ class CollectionShare(DatabaseModelBase):
         created_at (datetime): Date de creation du partage.
         expires_at (datetime): Date d'expiration du partage.
         revoked_at (Optional[datetime]): Date de revocation ou absence.
+        recipient (Optional[str]): Destinataire lisible du partage.
         allow_collection (bool): Autorisation de consulter la collection.
         allow_wishlist (bool): Autorisation de consulter la liste de souhaits.
         allow_prices (bool): Autorisation de consulter les prix.
@@ -56,6 +57,7 @@ class CollectionShare(DatabaseModelBase):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    recipient: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     allow_collection: Mapped[bool] = mapped_column(Boolean, nullable=False)
     allow_wishlist: Mapped[bool] = mapped_column(Boolean, nullable=False)
     allow_prices: Mapped[bool] = mapped_column(Boolean, nullable=False)

@@ -12,6 +12,7 @@
 # Description : creation et validation des sessions invitees de partage.
 
 from datetime import datetime, timezone
+import logging
 from typing import Any, Callable
 
 from sqlalchemy import create_engine
@@ -35,6 +36,7 @@ class CollectionShareGuestAuthenticationService:
         engine: Engine | None = None,
         engine_factory: Callable[[str], Engine] = create_engine,
         clock: Callable[[], datetime] | None = None,
+        logger: logging.Logger | None = None,
     ):
         """Initialise le service d'authentification invitee.
 
@@ -45,6 +47,7 @@ class CollectionShareGuestAuthenticationService:
             engine (Engine | None): Moteur SQLAlchemy injectable en test.
             engine_factory (Callable[[str], Engine]): Fabrique de moteur SQLAlchemy.
             clock (Callable[[], datetime] | None): Horloge UTC injectable.
+            logger (logging.Logger | None): Journal applicatif injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -57,6 +60,7 @@ class CollectionShareGuestAuthenticationService:
         if self.engine is None and configuration.is_database_enabled():
             self.engine = engine_factory(configuration.database_url)
         self.clock = clock or self._utc_now
+        self.logger = logger or logging.getLogger(__name__)
 
     def create_share_link_token(self, share_id: int, expires_at: datetime) -> str:
         """Cree un token de lien signe et inutilisable comme Bearer.
@@ -108,6 +112,7 @@ class CollectionShareGuestAuthenticationService:
         if int(payload.get("exp", 0)) <= self._timestamp(now):
             raise CollectionShareUnavailableError("Partage expire ou revoque.")
         share = self._find_active_share(share_id, now)
+        self._log_share_access(share)
         expires_at = share["expires_at"]
         expires_in = max(0, int((expires_at - now).total_seconds()))
         access_token = self.token_service.create_access_token(
@@ -168,6 +173,14 @@ class CollectionShareGuestAuthenticationService:
                 "prices": bool(share["allow_prices"]),
             },
         }
+
+    def _log_share_access(self, share: dict[str, Any]) -> None:
+        self.logger.info(
+            "Acces invite a un partage de collection: share_id=%s owner_user_id=%s recipient=%s.",
+            share.get("id"),
+            share.get("owner_user_id"),
+            share.get("recipient") or "-",
+        )
 
     @staticmethod
     def _positive_identifier(value: Any) -> int:

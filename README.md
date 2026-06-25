@@ -46,10 +46,11 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 - Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec
   pseudonyme unique, validation email puis validation administrateur optionnelle.
-- Activation des liens `/collection/share/<token>` en session GUEST revocable,
-  avec retrait immediat du token de l'URL et redirection selon les permissions.
+- Partage temporaire de collection par liens `/collection/share/<token>`,
+  transformes en session GUEST revocable apres ouverture.
 - Gestion proprietaire des liens temporaires depuis `/configuration/partages`,
-  avec permissions collection, liste de souhaits et prix.
+  avec destinataire optionnel, duree, permissions collection, liste de souhaits
+  et prix.
 - Navigation GUEST adaptee au partage : identite proprietaire, categories et
   prix conditionnels, sans acces aux actions de modification ni a Configuration.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
@@ -134,6 +135,22 @@ Regles detaillees :
 Le backend ne consulte plus de collection globale depuis un fichier ODS. Les
 vues Ma collection et Liste de souhaits lisent PostgreSQL via les endpoints
 `/collections/videogames/**`.
+
+## Partage Temporaire De Collection
+
+Un utilisateur inscrit qui a deja importe sa collection peut creer un lien
+temporaire depuis `/configuration/partages` pour donner un acces en lecture
+seule a une autre personne. Le partage peut cibler la collection, la liste de
+souhaits ou les deux, avec ou sans informations de prix.
+
+Chaque lien peut aussi recevoir un destinataire libre, visible par le
+proprietaire dans la liste des partages. Ce libelle aide a identifier a qui le
+lien etait destine et apparait dans les logs backend lors de l'ouverture du
+partage, sans journaliser le token brut.
+
+L'ouverture du lien transforme le token signe en session `GUEST`, puis retire le
+token de l'URL. Le proprietaire peut revoquer un partage a tout moment ; les
+liens expires ou revoques ferment la session invitee au prochain appel backend.
 
 Variables principales :
 

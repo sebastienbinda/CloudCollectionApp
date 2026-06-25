@@ -87,6 +87,7 @@ class CollectionShareController:
                 payload.get("allow_collection"),
                 payload.get("allow_wishlist"),
                 payload.get("allow_prices"),
+                payload.get("recipient"),
             )
             return jsonify({"share": share}), 201
         except ValueError as exc:

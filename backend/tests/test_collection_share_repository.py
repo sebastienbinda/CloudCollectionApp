@@ -154,6 +154,7 @@ class CollectionShareRepositoryTest(unittest.TestCase):
                 "created_at",
                 "expires_at",
                 "revoked_at",
+                "recipient",
                 "allow_collection",
                 "allow_wishlist",
                 "allow_prices",
@@ -187,6 +188,7 @@ class CollectionShareRepositoryTest(unittest.TestCase):
             allow_collection=True,
             allow_wishlist=False,
             allow_prices=True,
+            recipient="Famille",
         )
 
         sql, parameters = connection.executed_statements[0]
@@ -195,6 +197,7 @@ class CollectionShareRepositoryTest(unittest.TestCase):
         self.assertIn("t_collection_share", sql)
         self.assertNotIn("token", sql.lower())
         self.assertNotIn("token", parameters)
+        self.assertEqual("Famille", parameters["recipient"])
         self.assertEqual(12, parameters["owner_user_id"])
         self.assertTrue(parameters["allow_collection"])
         self.assertFalse(parameters["allow_wishlist"])
@@ -330,6 +333,7 @@ class CollectionShareRepositoryTest(unittest.TestCase):
             "created_at": self.created_at,
             "expires_at": self.expires_at,
             "revoked_at": None,
+            "recipient": "Famille",
             "allow_collection": True,
             "allow_wishlist": False,
             "allow_prices": True,

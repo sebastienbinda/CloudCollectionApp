@@ -223,6 +223,7 @@ Content-Type: application/json
 
 ```json
 {
+  "recipient": "Alice",
   "duration_hours": 24,
   "allow_collection": true,
   "allow_wishlist": false,
@@ -230,10 +231,14 @@ Content-Type: application/json
 }
 ```
 
-`duration_hours` must be an integer from 1 to 240. All permissions must be JSON
-booleans, and at least collection or wishlist access must be enabled. Success
-returns `201` with a `share` containing dates, permissions, `ACTIVE` status and
-an absolute `/collection/share/<token>` frontend link.
+`recipient` is optional. When present, it must be a string of at most 256
+characters after trimming; blank values are stored and returned as `null`.
+It is used only for owner display and backend access logs, not for
+authorization. `duration_hours` must be an integer from 1 to 240. All
+permissions must be JSON booleans, and at least collection or wishlist access
+must be enabled. Success returns `201` with a `share` containing recipient,
+dates, permissions, `ACTIVE` status and an absolute `/collection/share/<token>`
+frontend link.
 
 Creation returns `400` for invalid duration/permissions, `404` when the Bearer
 subject no longer resolves to an owner, `503` when PostgreSQL is unavailable,
@@ -249,8 +254,8 @@ Authorization: Bearer <access_token>
 
 Returns `shares` owned by the connected user, including active, expired and
 revoked entries. Each entry contains `id`, `created_at`, `expires_at`, nullable
-`revoked_at`, `permissions`, `status` and a reconstructed signed `link`. Raw
-tokens are not stored in PostgreSQL.
+`revoked_at`, nullable `recipient`, `permissions`, `status` and a reconstructed
+signed `link`. Raw tokens are not stored in PostgreSQL.
 
 The list uses `200`, `404` for an unresolved owner, `503` for unavailable
 PostgreSQL and `500` for an unexpected failure.
