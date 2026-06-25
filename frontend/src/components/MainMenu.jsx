@@ -13,6 +13,7 @@
  * Description : menu principal React partage par les pages A propos et Ma collection.
  */
 import { useEffect, useRef, useState } from "react";
+import resolveMainMenuAccess from "../services/MainMenuAccessPolicy";
 
 const MENU_ICON_PATHS = {
   about: (
@@ -86,6 +87,9 @@ const renderMenuIcon = (iconName) => (
 function MainMenu({
   isAuthenticated,
   canUseCollectionViews = true,
+  canViewCollection = canUseCollectionViews,
+  canViewWishlist = canUseCollectionViews,
+  canAccessConfiguration = true,
   username,
   profile,
   onOpenAbout,
@@ -170,10 +174,15 @@ function MainMenu({
   };
 
   const normalizedProfile = String(profile || "").trim().toUpperCase();
-  const canOpenConfiguration = isAuthenticated && typeof onOpenConfiguration === "function";
-  const canOpenWishlist =
-    isAuthenticated && canUseCollectionViews && typeof onOpenWishlist === "function";
-  const canOpenHome = isAuthenticated && canUseCollectionViews && typeof onOpenHome === "function";
+  const { canOpenConfiguration, canOpenWishlist, canOpenHome } = resolveMainMenuAccess({
+    isAuthenticated,
+    canAccessConfiguration,
+    canViewWishlist,
+    canViewCollection,
+    onOpenConfiguration,
+    onOpenWishlist,
+    onOpenHome,
+  });
   const aboutItem = {
     key: "about",
     label: "A propos",
@@ -219,25 +228,25 @@ function MainMenu({
     libraryItem,
   ];
   const authenticatedNavigationItems = [
-    collectionItem,
-    wishlistItem,
+    canOpenHome ? collectionItem : null,
+    canOpenWishlist ? wishlistItem : null,
     libraryItem,
-    configurationItem,
+    canOpenConfiguration ? configurationItem : null,
     aboutItem,
-  ];
+  ].filter(Boolean);
   const navigationItems = isAuthenticated ? authenticatedNavigationItems : anonymousNavigationItems;
   const mobileAuthenticatedPrimaryItems = [
-    collectionItem,
-    wishlistItem,
+    canOpenHome ? collectionItem : null,
+    canOpenWishlist ? wishlistItem : null,
     libraryItem,
-  ];
+  ].filter(Boolean);
   const mobileAnonymousPrimaryItems = [
     libraryItem,
     null,
     aboutItem,
   ];
   const mobileAuthenticatedSecondaryItems = [
-    configurationItem,
+    canOpenConfiguration ? configurationItem : null,
     aboutItem,
     null,
   ];
@@ -291,6 +300,13 @@ function MainMenu({
 
   return (
     <div className="appNavigationBar">
+      {isAuthenticated ? (
+        <p className={`mobileSessionIdentity mobileSessionIdentity${normalizedProfile}`}>
+          {normalizedProfile === "GUEST"
+            ? username || "Invité"
+            : `Utilisateur connecté : ${username || "utilisateur"}`}
+        </p>
+      ) : null}
       <nav className="desktopNavigation" aria-label="Navigation principale">
         {navigationItems.map((item) => renderNavigationButton(item))}
       </nav>
@@ -299,6 +315,9 @@ function MainMenu({
           mobileSecondaryItems.length > 0 ? "" : "mobileDockNavigationCompact"
         }`}
         aria-label="Navigation mobile principale"
+        style={{
+          gridTemplateColumns: `repeat(${mobilePrimaryItems.length + (mobileSecondaryItems.length > 0 ? 1 : 0)}, minmax(0, 1fr))`,
+        }}
       >
         {mobilePrimaryItems.map((item) => renderNavigationButton(item, "mobileDockItem"))}
         {mobileSecondaryItems.length > 0 ? (
@@ -331,7 +350,9 @@ function MainMenu({
       <div className="desktopSessionActions">
         {isAuthenticated ? (
           <p className={`pageHeaderConnectedUser pageHeaderConnectedUser${normalizedProfile}`}>
-            Utilisateur connecte : {username || "utilisateur"}
+            {normalizedProfile === "GUEST"
+              ? username || "Invité"
+              : `Utilisateur connecté : ${username || "utilisateur"}`}
           </p>
         ) : null}
         {renderNavigationButton(sessionItem, "mainNavigationItem sessionNavigationItem")}

@@ -29,6 +29,8 @@ avoid unnecessary calls, but all real protection must remain on the backend side
   they are explicitly listed as public below.
 - Public backend routes are:
   - `POST /auth/token`, used to obtain a token.
+  - `POST /api/auth/collection-share/session`, used to exchange a signed,
+    temporary collection-share link token for a revocable GUEST Bearer session.
   - `POST /api/auth/register`, used to create an account before the user can
     own a Bearer token.
   - `GET /api/auth/pseudonym-availability`, used to validate a registration
@@ -98,11 +100,16 @@ passwords return `401` with a `WWW-Authenticate: Bearer realm="CloudCollectionAp
 
 The supported user profiles are:
 
+- `GUEST`: read-only profile scoped to one persisted collection share. It does
+  not inherit `USER` or `ADMIN` rights.
 - `USER`: default profile for registered users.
 - `ADMIN`: profile reserved for the configured `AUTH_USERNAME` /
   `AUTH_PASSWORD_ENCRYPTED` account.
 
 Profiles are hierarchical. `ADMIN` inherits every route right granted to `USER`.
+`GUEST` remains outside this hierarchy and can call only routes that list it
+explicitly. `GET /api/routes` lists `GUEST`, `USER` and `ADMIN` because every
+authenticated frontend session needs route discovery.
 Protected user routes require at least `USER`, while administrative routes such
 as `POST /api/library/reset` and `POST /api/library/platform-catalog/sync`
 require `ADMIN`.
@@ -113,26 +120,35 @@ be offered the `Ma collection`, platform detail, add-game or collection import
 screens. After sign-in, an `ADMIN` session opens `/configuration` instead of
 checking connected-user collection status.
 
-Connected-user collection routes are protected routes with the same minimum
-profile:
+Owner workflow routes require at least `USER` (`ADMIN` inherits the backend
+right even when its frontend does not expose collection ownership):
 
+- `POST /api/collection-shares`
+- `GET /api/collection-shares`
+- `DELETE /api/collection-shares/<share_id>`
 - `GET /api/users/me/collection`
 - `POST /api/users/import/file/<file_type>`
 - `POST /api/users/import/analyze/<file_type>`
 - `POST /api/users/import`
 - `POST /api/users/collection/reinit`
-- `GET /collections/videogames`
-- `GET /collections/videogames/platforms/search`
-- `GET /collections/videogames/games/search`
-- `GET /collections/videogames/games/<game_id>`
 - `GET /collections/videogames/download`
 - `POST /collections/videogames/games`
 - `PUT /collections/videogames/games`
 - `DELETE /collections/videogames/games`
 - `POST /api/library/platforms/<platform_id>/image`
 
+The collection read routes below explicitly accept `GUEST`, `USER` and
+`ADMIN`, then apply the validated identity and share scope:
+
+- `GET /collections/videogames`
+- `GET /collections/videogames/platforms/search`
+- `GET /collections/videogames/games/search`
+- `GET /collections/videogames/games/<game_id>`
+
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.
+Collection-share management resolves the owner from the Bearer subject and
+allows a user to list or revoke only shares attached to that owner.
 For platform image upload, the backend resolves `t_platform_image.user_id` from
 the token subject and stores proposed images with status `WAITING_VALIDATION`.
 
@@ -152,10 +168,48 @@ file; setting an image to `MAIN` switches any previous platform `MAIN` image to
 The Bearer token payload must contain:
 
 - `sub`: authenticated subject;
-- `profile`: `USER` or `ADMIN`;
+- `profile`: `GUEST`, `USER` or `ADMIN`;
 - `display_name`: registered-user pseudonym, or configured administrator name;
 - `iat`: issue timestamp;
 - `exp`: expiration timestamp.
+
+A GUEST Bearer additionally contains the collection-share identifier, owner
+identifier, current owner pseudonym and granted collection, wishlist and price
+permissions. The public link token has a distinct signed token kind and cannot
+be used directly as a Bearer token. The exchange endpoint reloads the share and
+owner from PostgreSQL before issuing the GUEST session.
+
+## Collection Share Authentication
+
+Collection sharing uses two signed tokens with separate purposes:
+
+1. The link token is created after `t_collection_share` has been persisted. It
+   contains `token_kind=COLLECTION_SHARE_LINK` and `collection_share_id`, is
+   embedded in `/collection/share/<token>`, and cannot authorize protected
+   routes.
+2. `POST /api/auth/collection-share/session` validates the link token without
+   requiring Authorization, reloads the active share and active owner, and
+   returns a revocable GUEST Bearer whose expiration does not exceed
+   `t_collection_share.expires_at`.
+
+The GUEST Bearer claims are:
+
+- `sub`: `guest-share:<collection_share_id>`;
+- `display_name` and `owner_pseudonym`: current owner pseudonym;
+- `profile`: `GUEST`;
+- `collection_share_id` and `owner_user_id`;
+- `permissions.collection`, `permissions.wishlist`, `permissions.prices`;
+- `iat` and `exp`.
+
+Every GUEST backend request validates the signature and expiration, then loads
+the share joined with its owner. A missing share, elapsed expiration, non-null
+revocation date, deleted owner, or owner status other than `ACTIVE` produces
+HTTP `411` with `error_code: COLLECTION_SHARE_UNAVAILABLE`. An expired GUEST
+Bearer also maps to `411`; ordinary USER/ADMIN expiration remains `401`.
+
+The raw link token and GUEST Bearer are not stored in PostgreSQL or application
+logs. The frontend stores only the exchanged Bearer using the existing session
+mechanism and removes the link token from browser history immediately.
 
 Route authorization must be enforced by `AuthGuard` from the token profile.
 Frontend route permissions may mirror the route catalog, but they must not be
@@ -202,6 +256,7 @@ Response codes to preserve:
 
 - `403` if no Bearer token is provided.
 - `401` if a token is provided but is invalid or expired.
+- `411` if a GUEST share is expired, revoked, or its owner is deleted or locked.
 - `200`, `201`, `400`, `404`, or `500` according to the route's business
   contract once the token has been validated.
 
@@ -215,6 +270,8 @@ The current message for a missing token is `Token Bearer manquant.`.
 - The signature uses HMAC SHA-256 with the application secret.
 - The default lifetime is 3600 seconds.
 - Validation must check the structure, signature, and expiration.
+- Every GUEST request must additionally reload the persisted share and owner;
+  no polling is required because invalidation is detected on the next call.
 - Never accept an unsigned token or a token whose expiration has passed.
 
 ## Environment Variables
@@ -246,6 +303,10 @@ tests, documentation, or scripts.
   Library consultation pages under `/bibliotheque`, including public game
   detail pages, public platform detail pages and accepted platform images.
 - The authenticated Ma collection page is `HomeView` on `/collection`.
+- `/collection/share/<token>` is a transient public frontend route. It clears
+  any existing local USER, ADMIN or GUEST session, exchanges the link without
+  an Authorization header, replaces the URL with `/about`, then stores the new
+  GUEST Bearer and redirects according to its category permissions.
 - Authenticated game detail pages under `/collection/jeux/<game_id>` must remain
   unavailable without a non-`ADMIN` collection session.
 - The `/` route functionally redirects to `/about` without a token and to
@@ -263,6 +324,12 @@ tests, documentation, or scripts.
   used by backend repositories to resolve the connected user.
 - If a sent token is rejected (`401` or `403`), the frontend must clear the local
   session and open the sign-in flow again.
+- If a GUEST call returns `411`, the frontend must clear the local session,
+  dispatch the unavailable-share flow and replace the current route with
+  `/about`. It must not open the ordinary USER/ADMIN sign-in modal.
+- GUEST presentation reads `owner_pseudonym` and permissions from the signed
+  Bearer. It displays `Invité de <pseudonyme>` and must not expose
+  Configuration, mutations, import, reinitialization, download or image upload.
 - Public accepted platform images may be used directly in `<img>` tags because
   their file route is explicitly public. Pending images are moderated only from
   protected administrator API calls and must not be publicly visible before

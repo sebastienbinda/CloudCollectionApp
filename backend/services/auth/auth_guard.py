@@ -14,9 +14,11 @@
 from functools import wraps
 from typing import Callable
 
-from flask import Flask, current_app, jsonify, request
+from flask import Flask, current_app, g, jsonify, request
 
 from .auth_token_service import AuthTokenService
+from .collection_share_unavailable_error import CollectionShareUnavailableError
+from .expired_access_token_error import ExpiredAccessTokenError
 from .user_profile import UserProfile
 
 
@@ -26,17 +28,19 @@ class AuthGuard:
     EXEMPT_METHODS = {"OPTIONS"}
     DEFAULT_REQUIRED_PROFILE = UserProfile.USER.value
 
-    def __init__(self, token_service: AuthTokenService):
+    def __init__(self, token_service: AuthTokenService, guest_session_validator=None):
         """Initialise le garde d'authentification.
 
         Args:
             token_service (AuthTokenService): Service utilise pour valider les tokens.
+            guest_session_validator (object | None): Validateur revocable des sessions GUEST.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.token_service = token_service
+        self.guest_session_validator = guest_session_validator
 
     def protect_all_routes(self, flask_app: Flask, exempt_endpoints: set[str] | None = None) -> None:
         """Protege globalement les endpoints Flask avec un token Bearer.
@@ -117,6 +121,27 @@ class AuthGuard:
 
         return decorator
 
+    def require_profiles(self, allowed_profiles: list[str] | tuple[str, ...]) -> Callable:
+        """Retourne un decorateur autorisant explicitement plusieurs profils.
+
+        Args:
+            allowed_profiles (list[str] | tuple[str, ...]): Profils exacts autorises.
+
+        Returns:
+            Callable: Decorateur Flask appliquant la liste de profils.
+        """
+
+        normalized_profiles = list(dict.fromkeys(
+            UserProfile.normalize(profile).value for profile in allowed_profiles
+        ))
+
+        def decorator(route_handler: Callable) -> Callable:
+            wrapped_route = self.require_token(route_handler)
+            wrapped_route.required_profiles = normalized_profiles
+            return wrapped_route
+
+        return decorator
+
     def validate_current_request(self):
         """Valide le header `Authorization` de la requete Flask courante.
 
@@ -127,14 +152,23 @@ class AuthGuard:
             None | tuple: `None` si le token est valide, sinon une reponse d'erreur JSON.
         """
 
-        token = self._extract_bearer_token()
-        if not token:
-            return self._forbidden_response("Token Bearer manquant.")
-
-        try:
-            payload = self.token_service.validate_access_token(token)
-        except ValueError as exc:
-            return self._unauthorized_response(str(exc))
+        payload = getattr(g, "auth_token_payload", None)
+        if payload is None:
+            token = self._extract_bearer_token()
+            if not token:
+                return self._forbidden_response("Token Bearer manquant.")
+            try:
+                payload = self.token_service.validate_access_token(token)
+                self._validate_guest_session(payload)
+            except ExpiredAccessTokenError as exc:
+                if UserProfile.normalize(exc.payload.get("profile")) is UserProfile.GUEST:
+                    return self._guest_unavailable_response()
+                return self._unauthorized_response(str(exc))
+            except CollectionShareUnavailableError:
+                return self._guest_unavailable_response()
+            except ValueError as exc:
+                return self._unauthorized_response(str(exc))
+            g.auth_token_payload = payload
         if not self._is_profile_allowed(payload.get("profile")):
             return self._forbidden_response("Profil utilisateur insuffisant.")
         return None
@@ -152,10 +186,23 @@ class AuthGuard:
             ValueError: Si le token est absent, invalide ou expire.
         """
 
+        cached_payload = getattr(g, "auth_token_payload", None)
+        if cached_payload is not None:
+            return cached_payload
         token = self._extract_bearer_token()
         if not token:
             raise ValueError("Token Bearer manquant.")
-        return self.token_service.validate_access_token(token)
+        payload = self.token_service.validate_access_token(token)
+        self._validate_guest_session(payload)
+        g.auth_token_payload = payload
+        return payload
+
+    def _validate_guest_session(self, payload: dict) -> None:
+        if UserProfile.normalize(payload.get("profile")) is not UserProfile.GUEST:
+            return
+        if self.guest_session_validator is None:
+            raise ValueError("Session invitee indisponible.")
+        self.guest_session_validator.validate_guest_session(payload)
 
     def _mark_protected_routes(self, flask_app: Flask, exempt_endpoints: set[str]) -> None:
         """Marque les vues Flask protegees pour la decouverte des routes.
@@ -260,3 +307,18 @@ class AuthGuard:
         """
 
         return jsonify({"error": message}), 403
+
+    def _guest_unavailable_response(self):
+        """Construit la reponse specifique d'invalidation d'un partage GUEST.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Reponse JSON HTTP 411.
+        """
+
+        return jsonify({
+            "error": "Partage expire ou revoque.",
+            "error_code": "COLLECTION_SHARE_UNAVAILABLE",
+        }), 411

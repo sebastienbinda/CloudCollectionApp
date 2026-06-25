@@ -17,6 +17,7 @@ import AuthApi from "../../services/AuthApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import useAuthSessionModal from "../useAuthSessionModal";
 import useBackendActionPermissions from "../useBackendActionPermissions";
+import GuestSessionViewPolicy from "../../services/GuestSessionViewPolicy";
 
 /**
  * Lit l'identite authentifiee stockee cote navigateur.
@@ -25,10 +26,14 @@ import useBackendActionPermissions from "../useBackendActionPermissions";
  */
 function getLocalAuthenticatedIdentity() {
   const hasLocalAccessToken = AuthApi.getAccessToken().trim().length > 0;
+  const payload = hasLocalAccessToken ? AuthApi.getAccessTokenPayload() : {};
+  const defaultUsername = hasLocalAccessToken ? AuthApi.getAuthenticatedUsername() : "";
+  const viewAccess = new GuestSessionViewPolicy(payload).toViewModel(defaultUsername);
   return {
     isAuthenticated: hasLocalAccessToken,
-    username: hasLocalAccessToken ? AuthApi.getAuthenticatedUsername() : "",
+    username: hasLocalAccessToken ? viewAccess.identityLabel : "",
     profile: hasLocalAccessToken ? VideoGamesApi.getAuthenticatedProfile() : "",
+    viewAccess,
   };
 }
 
@@ -58,6 +63,7 @@ function useSessionState() {
     hasAccessToken,
     authenticatedUsername: authenticatedIdentity.isAuthenticated ? authenticatedIdentity.username : "",
     authenticatedProfile: authenticatedIdentity.isAuthenticated ? authenticatedIdentity.profile : "",
+    viewAccess: authenticatedIdentity.viewAccess,
     logout: AuthApi.confirmAndClearAccessToken,
     authModalProps: {
       isOpen: authSessionModal.isOpen,

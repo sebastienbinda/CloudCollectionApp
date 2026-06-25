@@ -10,8 +10,8 @@
  * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
  * Licence : Apache 2.0
  */
-import AuthApi from "./AuthApi";
-import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
+import AuthApi from "./AuthApi.js";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard.js";
 
 class VideoGamesApi {
   /**
@@ -309,27 +309,34 @@ class VideoGamesApi {
    * @returns {Array<Object>} Jeux compatibles avec les composants existants.
    */
   static normalizeCollectionGames(games) {
-    return games.map((game) => ({
-      id: game.id,
-      platform_id: game.platform_id,
-      "Nom du jeu": game.name || "",
-      Plateforme: game.platform_name || "",
-      Studio: game.studio_name || "",
-      "Date de sortie": game.release_date || "",
-      "Date d'achat": game.buy_date || "",
-      "Lieu d'achat": game.buy_location || "",
-      Note: game.grade || "",
-      "Prix d'achat": game.purchase_price,
-      priceUnit: game.price_unit || "",
-      Version: game.region || game.version || "",
-      Etat: game.condition,
-      Notice: game.has_manual,
-      Collector: game.is_collector,
-      Steelbook: game.has_steelbook,
-      "Version digitale": game.is_digital,
-      Region: game.region || "",
-      Description: game.description || "",
-    }));
+    return games.map((game) => {
+      const normalizedGame = {
+        id: game.id,
+        platform_id: game.platform_id,
+        "Nom du jeu": game.name || "",
+        Plateforme: game.platform_name || "",
+        Studio: game.studio_name || "",
+        "Date de sortie": game.release_date || "",
+        "Date d'achat": game.buy_date || "",
+        "Lieu d'achat": game.buy_location || "",
+        Note: game.grade || "",
+        Version: game.region || game.version || "",
+        Etat: game.condition,
+        Notice: game.has_manual,
+        Collector: game.is_collector,
+        Steelbook: game.has_steelbook,
+        "Version digitale": game.is_digital,
+        Region: game.region || "",
+        Description: game.description || "",
+      };
+      if (Object.prototype.hasOwnProperty.call(game, "purchase_price")) {
+        normalizedGame["Prix d'achat"] = game.purchase_price;
+      }
+      if (Object.prototype.hasOwnProperty.call(game, "price_unit")) {
+        normalizedGame.priceUnit = game.price_unit || "";
+      }
+      return normalizedGame;
+    });
   }
 
   /**
@@ -352,7 +359,7 @@ class VideoGamesApi {
         "Impossible de telecharger le fichier de collection."
       );
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || "Impossible de telecharger le fichier de collection.");
     }
@@ -375,7 +382,7 @@ class VideoGamesApi {
     if (!response.ok) {
       const data = await this.parseJsonResponse(response, "Impossible de recuperer l'image.");
       if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || "Impossible de recuperer l'image.");
     }
@@ -427,7 +434,7 @@ class VideoGamesApi {
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       if (AuthApi.isExpiredAuthenticatedResponse(response, options)) {
-        AuthApi.handleExpiredSession();
+        AuthApi.handleExpiredSession(response);
       }
       throw new Error(data.error || fallbackMessage);
     }

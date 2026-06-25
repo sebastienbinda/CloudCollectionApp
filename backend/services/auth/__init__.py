@@ -12,6 +12,10 @@
 # Description : exports des utilitaires d'authentification backend.
 
 from .auth_guard import AuthGuard
+from .collection_share_guest_authentication_service import (
+    CollectionShareGuestAuthenticationService,
+)
+from .collection_share_unavailable_error import CollectionShareUnavailableError
 from .auth_token_service import (
     AuthenticatedTokenIdentity,
     AuthenticatedUserCredentials,
@@ -24,6 +28,7 @@ from .email_verification_service import (
     VerifiedUser,
 )
 from .duplicate_user_pseudonym_error import DuplicateUserPseudonymError
+from .expired_access_token_error import ExpiredAccessTokenError
 from .password_hash_service import PasswordHashService
 from .user_registration_service import (
     DuplicateUserEmailError,
@@ -39,10 +44,13 @@ __all__ = [
     "AuthenticatedTokenIdentity",
     "AuthenticatedUserCredentials",
     "AuthTokenService",
+    "CollectionShareGuestAuthenticationService",
+    "CollectionShareUnavailableError",
     "DuplicateUserEmailError",
     "DuplicateUserPseudonymError",
     "EmailVerificationService",
     "EmailVerificationToken",
+    "ExpiredAccessTokenError",
     "InvalidEmailVerificationTokenError",
     "PasswordPolicyError",
     "PasswordHashService",

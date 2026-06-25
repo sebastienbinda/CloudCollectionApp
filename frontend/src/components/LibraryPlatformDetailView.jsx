@@ -31,6 +31,9 @@ function LibraryPlatformDetailView({
   platformDetailPage,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -48,7 +51,8 @@ function LibraryPlatformDetailView({
   const primaryFields = buildPlatformPrimaryFields(platform);
   const description = formatDescription(platform?.description);
   const imageDisplay = buildImageDisplay(platform, platformDetailPage?.imageCacheVersion);
-  const canUploadImage = isAuthenticated && authenticatedProfile !== "ADMIN";
+  const normalizedProfile = String(authenticatedProfile || "").trim().toUpperCase();
+  const canUploadImage = isAuthenticated && !["ADMIN", "GUEST"].includes(normalizedProfile);
   const imageInputRef = useRef(null);
 
   return (
@@ -59,6 +63,9 @@ function LibraryPlatformDetailView({
       subtitle="Detail de la plateforme"
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

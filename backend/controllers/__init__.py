@@ -13,6 +13,7 @@
 
 from .authentication_controller import AuthenticationController
 from .collection_controller import CollectionController
+from .collection_share_controller import CollectionShareController
 from .game_controller import GameController
 from .library_controller import LibraryController
 from .platform_controller import PlatformController
@@ -25,6 +26,7 @@ from .user_controller import UserController
 __all__ = [
     "AuthenticationController",
     "CollectionController",
+    "CollectionShareController",
     "GameController",
     "LibraryController",
     "PlatformController",

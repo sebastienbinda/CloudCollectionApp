@@ -18,10 +18,12 @@ class UserProfile(str, Enum):
     """Enumere les profils applicatifs autorises.
 
     Attributes:
+        GUEST (str): Profil invite limite a un partage de collection.
         USER (str): Profil standard attribue aux utilisateurs inscrits.
         ADMIN (str): Profil administrateur reserve aux identifiants configures.
     """
 
+    GUEST = "GUEST"
     USER = "USER"
     ADMIN = "ADMIN"
 
@@ -77,6 +79,8 @@ class UserProfile(str, Enum):
         """
 
         profile = cls.normalize(minimum_profile)
+        if profile is cls.GUEST:
+            return [cls.GUEST.value]
         if profile is cls.USER:
             return [cls.USER.value, cls.ADMIN.value]
         return [cls.ADMIN.value]

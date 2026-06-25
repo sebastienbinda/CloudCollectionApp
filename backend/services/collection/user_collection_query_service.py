@@ -244,11 +244,18 @@ class UserCollectionQueryService:
             configuration.schema_name,
         )
 
-    def get_statistics(self, user_id: int) -> dict[str, Any]:
+    def get_statistics(
+        self,
+        user_id: int,
+        include_collection: bool = True,
+        include_wishlist: bool = True,
+    ) -> dict[str, Any]:
         """Retourne les statistiques globales de collection utilisateur.
 
         Args:
             user_id (int): Identifiant de l'utilisateur connecte.
+            include_collection (bool): Autorise le calcul des jeux possedes.
+            include_wishlist (bool): Autorise le calcul de la liste de souhaits.
 
         Returns:
             dict[str, Any]: Statistiques globales serialisables.
@@ -258,12 +265,29 @@ class UserCollectionQueryService:
         """
 
         with self.engine.connect() as connection:
-            collection_statistics = self._statistics_payload(connection, user_id, False)
-            wishlist_statistics = self._statistics_payload(connection, user_id, True)
+            collection_statistics = (
+                self._statistics_payload(connection, user_id, False)
+                if include_collection
+                else self._empty_statistics_payload()
+            )
+            wishlist_statistics = (
+                self._statistics_payload(connection, user_id, True)
+                if include_wishlist
+                else self._empty_statistics_payload()
+            )
         return {
             **collection_statistics,
             "collection": collection_statistics,
             "wishlist": wishlist_statistics,
+        }
+
+    @staticmethod
+    def _empty_statistics_payload() -> dict[str, Any]:
+        return {
+            "total": 0,
+            "total_value": 0,
+            "average_value": 0,
+            "max_platform": "",
         }
 
     def _statistics_payload(

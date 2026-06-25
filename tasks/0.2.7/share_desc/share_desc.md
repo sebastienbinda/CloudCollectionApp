@@ -1,0 +1,2 @@
+L'objectif de la tache est de permettre a un utilisateur qui créé un nouveau lien de partage de sa collection de permettre l'ajout d'un destintaire du partage.
+Ce destinataire, sera affichée dans la liste des partages existants et sera utilisé pour logguer tout nouvel access a une collection partagé dans les logs backend lorsque le token est transformé en bearer.

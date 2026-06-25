@@ -149,34 +149,39 @@ class FakeUserCollectionQueryService:
     last_platforms_criteria = None
     last_games_criteria = None
     collection_file_path = str(Path(__file__))
+    last_user_id = None
+    last_statistics_scope = None
 
-    def get_statistics(self, user_id):
+    def get_statistics(self, user_id, include_collection=True, include_wishlist=True):
         """Retourne les statistiques de collection factices.
 
         Args:
             user_id (int): Identifiant utilisateur.
+            include_collection (bool): Autorise les statistiques collection.
+            include_wishlist (bool): Autorise les statistiques wishlist.
 
         Returns:
             dict[str, object]: Statistiques factices.
         """
 
-        return {
+        self.__class__.last_user_id = user_id
+        self.__class__.last_statistics_scope = (include_collection, include_wishlist)
+        collection = {
             "total": 42,
-            "total_value": 0,
-            "average_value": 0,
+            "total_value": 1234.5,
+            "average_value": 29.39,
             "max_platform": "Switch",
-            "collection": {
-                "total": 42,
-                "total_value": 0,
-                "average_value": 0,
-                "max_platform": "Switch",
-            },
-            "wishlist": {
-                "total": 3,
-                "total_value": 0,
-                "average_value": 0,
-                "max_platform": "NES",
-            },
+        } if include_collection else self._empty_statistics()
+        wishlist = {
+            "total": 3,
+            "total_value": 150,
+            "average_value": 50,
+            "max_platform": "NES",
+        } if include_wishlist else self._empty_statistics()
+        return {
+            **collection,
+            "collection": collection,
+            "wishlist": wishlist,
         }
 
     def list_platforms(self, user_id, criteria):
@@ -191,6 +196,7 @@ class FakeUserCollectionQueryService:
         """
 
         self.__class__.last_platforms_criteria = criteria
+        self.__class__.last_user_id = user_id
         return {
             "page": self._page(criteria),
             "platforms": [
@@ -203,8 +209,8 @@ class FakeUserCollectionQueryService:
                     "description": {"generation": "8"},
                     "nb_games": 25,
                     "total_games": 25,
-                    "total_value": 0,
-                    "average_value": 0,
+                    "total_value": 1499.75,
+                    "average_value": 59.99,
                 }
             ],
         }
@@ -221,6 +227,7 @@ class FakeUserCollectionQueryService:
         """
 
         self.__class__.last_games_criteria = criteria
+        self.__class__.last_user_id = user_id
         return {
             "page": self._page(criteria),
             "games": [
@@ -236,6 +243,8 @@ class FakeUserCollectionQueryService:
                     "buy_date": "",
                     "buy_location": "",
                     "grade": "",
+                    "purchase_price": 59.99,
+                    "price_unit": "EUR",
                     "wishlist": criteria.wishlist is True,
                 }
             ],
@@ -264,10 +273,11 @@ class FakeUserCollectionQueryService:
             dict[str, object] | None: Jeu factice ou absence.
         """
 
-        if game_id != 3:
+        if game_id not in (3, 4):
             return None
+        self.__class__.last_user_id = user_id
         return {
-            "id": 3,
+            "id": game_id,
             "name": "Mario Kart",
             "platform_name": "Switch",
             "platform_id": 1,
@@ -278,7 +288,27 @@ class FakeUserCollectionQueryService:
             "buy_date": "",
             "buy_location": "",
             "grade": "",
-            "wishlist": False,
+            "purchase_price": 59.99,
+            "price_unit": "EUR",
+            "wishlist": game_id == 4,
+        }
+
+    @staticmethod
+    def _empty_statistics():
+        """Retourne une categorie de statistiques vide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict[str, object]: Statistiques sans donnees.
+        """
+
+        return {
+            "total": 0,
+            "total_value": 0,
+            "average_value": 0,
+            "max_platform": "",
         }
 
     def _page(self, criteria):

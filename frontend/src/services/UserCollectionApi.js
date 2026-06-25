@@ -234,7 +234,7 @@ class UserCollectionApi {
    */
   static createErrorFromResponse(response, data = {}, fallbackMessage = "", options = {}, url = "") {
     if (AuthApi.isExpiredAuthenticatedResponse(response, options)) {
-      AuthApi.handleExpiredSession();
+      AuthApi.handleExpiredSession(response);
     }
 
     const code = this.getErrorCodeForStatus(response.status, url);

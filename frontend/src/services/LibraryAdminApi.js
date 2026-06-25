@@ -244,7 +244,7 @@ class LibraryAdminApi {
    */
   static createErrorFromResponse(response, data = {}, fallbackMessage = "", requestOptions = {}) {
     if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
-      AuthApi.handleExpiredSession();
+      AuthApi.handleExpiredSession(response);
     }
     return new LibraryAdminApiError(
       data.error || fallbackMessage,

@@ -63,6 +63,9 @@
 
 ## Functional Documentation to Respect
 
+- Before changing collection sharing, GUEST sessions, share permissions,
+  revocation, owner share management, or shared collection presentation, read
+  and respect `documentation/share.md`.
 - Before changing authentication, backend route protection, frontend session handling, or access control, read and respect `documentation/authentication.md`.
 - Before changing backend API routes, payloads, response contracts, or HTTP status behavior, read and respect `documentation/backend-api.md`.
 - Before changing backend Flask startup, controllers, services, ODS infrastructure, backend tests, or shared backend orchestration, read and respect `documentation/backend-arch.md`.
@@ -80,6 +83,10 @@
 
 ## Change Governance
 
+- Treat `documentation/share.md` as the governing functional contract for the
+  complete collection-sharing block. Any change to its lifecycle, permissions,
+  security model, revocation behavior, routes or frontend rules requires an
+  explicit confirmation before implementation.
 - Ask for explicit confirmation before making any modification that changes a paradigm, invariant, or expected behavior described in any related `documentation/*.md` file.
 - Ask for explicit confirmation before modifying an existing `documentation/*.md` file when the change contradicts, replaces, or weakens a rule already documented in that file.
 - When adding or modifying any frontend page, explicitly state whether the rules from `documentation/site-plan.md` were respected for every site page.

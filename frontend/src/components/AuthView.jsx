@@ -235,6 +235,9 @@ function AuthView({
   const authNavigationProps = {
     isAuthenticated: false,
     canUseCollectionViews: false,
+    canViewCollection: false,
+    canViewWishlist: false,
+    canAccessConfiguration: false,
     authenticatedUsername: "",
     authenticatedProfile: "",
     activeNavigationKey: "login",
@@ -304,6 +307,9 @@ function AuthView({
       subtitle="Connectez-vous pour afficher les actions de mise a jour."
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={false}
+      canViewWishlist={false}
+      canAccessConfiguration={false}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}

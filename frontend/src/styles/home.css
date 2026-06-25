@@ -629,6 +629,23 @@
   color: #7f1d1d;
 }
 
+.pageHeaderConnectedUserGUEST,
+.mobileSessionIdentityGUEST {
+  background: rgba(254, 243, 199, 0.97);
+  border-color: #fbbf24;
+  color: #854d0e;
+}
+
+.mobileSessionIdentityADMIN {
+  background: rgba(254, 226, 226, 0.96);
+  border-color: #fca5a5;
+  color: #7f1d1d;
+}
+
+.mobileSessionIdentity {
+  display: none;
+}
+
 .pageHeaderDateSummary {
   color: #334155;
   display: flex;
@@ -987,6 +1004,35 @@
     display: none;
   }
 
+  .mobileSessionIdentity {
+    background: rgba(236, 253, 245, 0.97);
+    border: 1px solid #99f6e4;
+    border-radius: 999px;
+    bottom: calc(100% + 0.4rem);
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #0f766e;
+    margin: 0;
+    max-width: calc(100% - 1rem);
+    overflow-wrap: anywhere;
+    padding: 0.28rem 0.55rem;
+    position: absolute;
+    right: 0;
+  }
+
+  .mobileSessionIdentityADMIN {
+    background: rgba(254, 226, 226, 0.96);
+    border-color: #fca5a5;
+    color: #7f1d1d;
+  }
+
+  .mobileSessionIdentityGUEST {
+    background: rgba(254, 243, 199, 0.97);
+    border-color: #fbbf24;
+    color: #854d0e;
+  }
+
   .mobileDockNavigation {
     display: grid;
     gap: 0.2rem;
@@ -1023,6 +1069,12 @@
 
   .pageHeader .subtitle {
     display: none;
+  }
+
+  .pageHeader.guestSessionPageHeader .subtitle {
+    display: block;
+    font-size: 0.74rem;
+    margin-bottom: 0;
   }
 
   .pageHeaderDateSummary {

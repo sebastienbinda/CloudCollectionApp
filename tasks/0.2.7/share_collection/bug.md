@@ -1,0 +1,1 @@
+En tant que guest quand je click sur Bibliotheque je vois l'onget "Liste de souahits" dans le menu alors que je n'y ai pas accès (interdit par configuration du partage). Lorsque je click dessus, je suis redirigé sur la page "Ma collection". Je ne devrais pas voir l'entrée du menu "List de souhaits" si je n'y ai pas accès.

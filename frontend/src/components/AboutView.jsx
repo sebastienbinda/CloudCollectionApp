@@ -21,8 +21,12 @@ import PageLayout from "./PageLayout";
  * @returns {import("react").JSX.Element} Page About publique.
  */
 function AboutView({
+  error,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -52,6 +56,9 @@ function AboutView({
       }
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}
@@ -62,6 +69,7 @@ function AboutView({
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
+      {error ? <p className="error" role="alert">{error}</p> : null}
       <section className="aboutContent" aria-label="Fonctionnalites de l'application">
         <div className="aboutIntro">
           <h2>Ce que permet l'application</h2>

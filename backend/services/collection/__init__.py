@@ -11,6 +11,10 @@
 #
 """Exports publics du domaine collection utilisateur."""
 
+from .collection_share_management_service import CollectionShareManagementService
+from .collection_share_not_found_error import CollectionShareNotFoundError
+from .collection_share_owner_not_found_error import CollectionShareOwnerNotFoundError
+from .guest_collection_access_policy import CollectionAccessContext, GuestCollectionAccessPolicy
 from .user_collection_query_contract import (
     UserCollectionGameQueryCriteria,
     UserCollectionPlatformQueryCriteria,
@@ -18,6 +22,9 @@ from .user_collection_query_contract import (
 )
 
 __all__ = [
+    "CollectionShareManagementService",
+    "CollectionShareNotFoundError",
+    "CollectionShareOwnerNotFoundError",
     "UserCollectionGameQueryCriteria",
     "UserCollectionPlatformQueryCriteria",
     "UserCollectionQueryParser",

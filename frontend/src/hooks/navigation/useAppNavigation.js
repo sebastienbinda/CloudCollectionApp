@@ -14,6 +14,8 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
+import AuthApi from "../../services/AuthApi";
+import GuestNavigationPolicy from "../../services/GuestNavigationPolicy";
 
 /**
  * Gere la vue courante, la plateforme selectionnee et l'historique navigateur.
@@ -22,6 +24,7 @@ import AppRouting from "../../appRouting";
  * @returns {Object} Etat et callbacks de navigation.
  */
 function useAppNavigation(options) {
+  const guestNavigationPolicy = new GuestNavigationPolicy(options);
   const [currentView, setCurrentView] = useState(AppRouting.getViewFromUrl);
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
     AppRouting.getPlatformIdFromUrl()
@@ -55,9 +58,14 @@ function useAppNavigation(options) {
     window.history.pushState({}, "", path);
   };
 
+  const openGuestFallback = () => {
+    const destination = guestNavigationPolicy.getFallbackDestination();
+    openView(destination.view, destination.path);
+  };
+
   const openAddGamePage = () => {
-    if (!options.canUseCollectionViews) {
-      openView("configuration", "/configuration");
+    if (!options.canViewCollection || options.isGuest) {
+      openGuestFallback();
       return;
     }
     options.clearDeleteGameFeedback();
@@ -67,8 +75,8 @@ function useAppNavigation(options) {
   };
 
   const openPlatform = (platform) => {
-    if (!options.canUseCollectionViews) {
-      openView("configuration", "/configuration");
+    if (!options.canViewCollection) {
+      openGuestFallback();
       return;
     }
     const platformId = typeof platform === "object" && platform !== null ? platform.id : platform;
@@ -85,7 +93,7 @@ function useAppNavigation(options) {
     }
     const resolvedSource = source === "collection" ? "collection" : "library";
     if (resolvedSource === "collection" && !options.canUseCollectionViews) {
-      openView("configuration", "/configuration");
+      openGuestFallback();
       return;
     }
     options.clearDeleteGameFeedback();
@@ -110,6 +118,37 @@ function useAppNavigation(options) {
     setCurrentView("libraryPlatformDetail");
     window.history.pushState({}, "", `/bibliotheque/plateformes/${encodeURIComponent(platformId)}`);
   };
+
+  useEffect(() => {
+    if (!options.isGuest || !guestNavigationPolicy.isViewBlocked(currentView)) return;
+    const destination = guestNavigationPolicy.getFallbackDestination();
+    setSelectedPlatform("");
+    setCurrentView(destination.view);
+    window.history.replaceState({}, "", destination.path);
+  }, [
+    currentView,
+    options.canViewCollection,
+    options.canViewWishlist,
+    options.isGuest,
+  ]);
+
+  useEffect(() => {
+    const handleGuestShareUnavailable = () => {
+      options.clearDeleteGameFeedback();
+      options.setGlobalError("Ce partage a expire ou a ete revoque.");
+      setSelectedPlatform("");
+      setSelectedGameId("");
+      setSelectedGameSource("library");
+      setCurrentView("about");
+      window.history.replaceState({}, "", "/about");
+    };
+
+    window.addEventListener(AuthApi.guestShareUnavailableEventName, handleGuestShareUnavailable);
+    return () => window.removeEventListener(
+      AuthApi.guestShareUnavailableEventName,
+      handleGuestShareUnavailable
+    );
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -147,6 +186,7 @@ function useAppNavigation(options) {
         "/wishlist": "wishlist",
         "/add-game": "addGame",
         "/configuration": "configuration",
+        "/configuration/partages": "collectionShares",
         "/configuration/images-plateformes": "platformImageModeration",
         "/users": "users",
         "/collection/import": "collectionOnboarding",
@@ -180,12 +220,22 @@ function useAppNavigation(options) {
   }, [currentView, options.hasAccessToken]);
 
   useEffect(() => {
+    if (options.isGuest) return;
+    if (currentView !== "collectionShares" || options.authenticatedProfile === "USER") return;
+    const isAdmin = options.authenticatedProfile === "ADMIN";
+    setCurrentView(isAdmin ? "configuration" : "about");
+    window.history.replaceState({}, "", isAdmin ? "/configuration" : "/about");
+  }, [currentView, options.authenticatedProfile, options.isGuest]);
+
+  useEffect(() => {
+    if (options.isGuest) return;
     if (!["platformImageModeration", "users"].includes(currentView) || options.authenticatedProfile === "ADMIN") return;
     setCurrentView("home");
     window.history.replaceState({}, "", "/collection");
-  }, [options.authenticatedProfile, currentView]);
+  }, [options.authenticatedProfile, currentView, options.isGuest]);
 
   useEffect(() => {
+    if (options.isGuest) return;
     const collectionViews = ["home", "games", "wishlist", "addGame", "collectionOnboarding"];
     if (currentView === "gameDetail" && selectedGameSource === "collection" && !options.canUseCollectionViews) {
       const fallbackView = options.authenticatedProfile === "ADMIN" ? "configuration" : "about";
@@ -202,7 +252,13 @@ function useAppNavigation(options) {
     setSelectedPlatform("");
     setCurrentView(fallbackView);
     window.history.replaceState({}, "", fallbackPath);
-  }, [currentView, options.authenticatedProfile, options.canUseCollectionViews, selectedGameSource]);
+  }, [
+    currentView,
+    options.authenticatedProfile,
+    options.canUseCollectionViews,
+    options.isGuest,
+    selectedGameSource,
+  ]);
 
   useEffect(() => {
     if (!options.hasAccessToken || currentView !== "home" || window.location.pathname !== "/") return;
@@ -223,8 +279,8 @@ function useAppNavigation(options) {
     selectedGameId,
     selectedGameSource,
     goHome: () => {
-      if (!options.canUseCollectionViews) {
-        openView("configuration", "/configuration");
+      if (!options.canViewCollection) {
+        openGuestFallback();
         return;
       }
       openView("home", "/collection");
@@ -237,22 +293,35 @@ function useAppNavigation(options) {
     openLibraryStudios: () => openView("libraryStudios", "/bibliotheque/studios"),
     openLibraryGames: () => openView("libraryGames", "/bibliotheque/jeux"),
     openWishlist: () => {
-      if (!options.canUseCollectionViews) {
-        openView("configuration", "/configuration");
+      if (!options.canViewWishlist) {
+        openGuestFallback();
         return;
       }
       openView("wishlist", "/wishlist");
     },
     openAddGamePage,
-    openConfiguration: () => openView("configuration", "/configuration"),
+    openConfiguration: () => {
+      if (!options.canAccessConfiguration) {
+        openGuestFallback();
+        return;
+      }
+      openView("configuration", "/configuration");
+    },
+    openCollectionShares: () => {
+      if (options.authenticatedProfile !== "USER") {
+        openView("about", "/about");
+        return;
+      }
+      openView("collectionShares", "/configuration/partages");
+    },
     openPlatformImageModeration: () => openView(
       "platformImageModeration",
       "/configuration/images-plateformes"
     ),
     openUsersPage: () => openView("users", "/users"),
     openCollectionOnboarding: () => {
-      if (!options.canUseCollectionViews) {
-        openView("configuration", "/configuration");
+      if (!options.canViewCollection || options.isGuest) {
+        openGuestFallback();
         return;
       }
       openView("collectionOnboarding", "/collection/import");

@@ -46,6 +46,12 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
 - Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec
   pseudonyme unique, validation email puis validation administrateur optionnelle.
+- Activation des liens `/collection/share/<token>` en session GUEST revocable,
+  avec retrait immediat du token de l'URL et redirection selon les permissions.
+- Gestion proprietaire des liens temporaires depuis `/configuration/partages`,
+  avec permissions collection, liste de souhaits et prix.
+- Navigation GUEST adaptee au partage : identite proprietaire, categories et
+  prix conditionnels, sans acces aux actions de modification ni a Configuration.
 - Administration utilisateur et telechargement brut du fichier ODS utilisateur.
 - Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
 - Moderation administrateur des images de plateformes proposees.
@@ -84,6 +90,7 @@ Organisation :
 
 Regles detaillees :
 
+- Partage de collection : `documentation/share.md`
 - Architecture backend : `documentation/backend-arch.md`
 - API backend : `documentation/backend-api.md`
 - Authentification : `documentation/authentication.md`
@@ -130,6 +137,8 @@ vues Ma collection et Liste de souhaits lisent PostgreSQL via les endpoints
 
 Variables principales :
 
+- `FRONTEND_PUBLIC_URL` : origine publique utilisee par le backend pour les
+  redirections et liens frontend, notamment `/collection/share/<token>`.
 - `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
   utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
@@ -299,6 +308,7 @@ Frontend :
 
 ```bash
 cd frontend
+node --test tests/*.test.js
 npm run build
 ```
 
@@ -348,6 +358,7 @@ Documentation CI : `documentation/ci.md`.
 Documents fonctionnels et techniques principaux :
 
 - `documentation/backend-api.md` : routes et contrats API backend.
+- `documentation/share.md` : cycle de vie, permissions et securite du partage de collection.
 - `documentation/backend-arch.md` : architecture Flask/backend.
 - `documentation/frontend-arch.md` : architecture React/Vite.
 - `documentation/authentication.md` : authentification, routes protegees et session frontend.

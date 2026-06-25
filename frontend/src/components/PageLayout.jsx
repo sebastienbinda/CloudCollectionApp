@@ -94,6 +94,9 @@ function PageLayout({
   headerAsideContent = null,
   isAuthenticated,
   canUseCollectionViews = true,
+  canViewCollection = canUseCollectionViews,
+  canViewWishlist = canUseCollectionViews,
+  canAccessConfiguration = true,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
@@ -161,6 +164,9 @@ function PageLayout({
         <MainMenu
           isAuthenticated={isAuthenticated}
           canUseCollectionViews={canUseCollectionViews}
+          canViewCollection={canViewCollection}
+          canViewWishlist={canViewWishlist}
+          canAccessConfiguration={canAccessConfiguration}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           onOpenAbout={onOpenAbout}

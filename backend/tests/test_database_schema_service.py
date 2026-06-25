@@ -217,8 +217,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260622_0013"], script_directory.get_heads())
-        self.assertEqual(10, len(revisions))
+        self.assertEqual(["20260623_0014"], script_directory.get_heads())
+        self.assertEqual(11, len(revisions))
+        self.assertEqual("20260622_0013", revisions_by_id["20260623_0014"].down_revision)
         self.assertEqual("20260620_0010", revisions_by_id["20260620_0011"].down_revision)
         self.assertEqual("20260614_0008", revisions_by_id["20260618_0009"].down_revision)
         self.assertEqual("20260605_0007", revisions_by_id["20260614_0008"].down_revision)
@@ -252,6 +253,35 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn('["platform"]', migration_source)
         self.assertIn('"ix_t_game_developer"', migration_source)
         self.assertIn('["developer"]', migration_source)
+
+    def test_collection_share_migration_declares_expected_schema(self):
+        """Verifie la migration de stockage des partages de collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident table, relation et index.
+        """
+
+        migration_path = (
+            Path(__file__).resolve().parents[1]
+            / "migrations"
+            / "versions"
+            / "20260623_0014_add_collection_shares.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn('down_revision: Union[str, None] = "20260622_0013"', migration_source)
+        self.assertIn('"s_collection_share"', migration_source)
+        self.assertIn('"t_collection_share"', migration_source)
+        self.assertIn('"owner_user_id"', migration_source)
+        self.assertIn('"allow_collection"', migration_source)
+        self.assertIn('"allow_wishlist"', migration_source)
+        self.assertIn('"allow_prices"', migration_source)
+        self.assertIn('ondelete="CASCADE"', migration_source)
+        self.assertIn("ck_t_collection_share_expiration", migration_source)
+        self.assertIn("ix_t_collection_share_owner_user_id", migration_source)
 
     def test_wishlist_migration_declares_expected_column_and_backfill(self):
         """Verifie que la migration wishlist preserve les donnees existantes.

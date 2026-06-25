@@ -16,6 +16,11 @@
   disables submission until a valid available pseudonym is confirmed.
 - `/auth/verify-email`: public email verification result page opened after the
   backend validates a browser verification link.
+- `/collection/share/<token>`: transient public activation route. It clears any
+  existing local session, exchanges the signed link token without
+  Authorization, immediately removes the raw token from browser history, then
+  opens the first shared category. It renders About with an error when exchange
+  fails.
 - `/bibliotheque`: public Library landing page with global entity counters and
   public global game search.
 - `/bibliotheque/plateformes`: public paginated platform reference list.
@@ -55,8 +60,32 @@ public pages.
   has a collection and wants to add games from another file.
 - `/configuration`: authenticated Configuration page for protected application
   actions.
+- `/configuration/partages`: authenticated owner page for creating, copying,
+  listing and revoking temporary shares. It is available only to a `USER` with
+  an imported collection and discovered share-management route permissions.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
+
+## GUEST Routes
+
+A GUEST session is a non-`ADMIN` read-only session scoped by signed share
+claims:
+
+- `/collection` and platform views are available only with collection
+  permission and display `Collection de <pseudonyme>`;
+- `/wishlist` is available only with wishlist permission and displays
+  `Liste de souhaits de <pseudonyme>`;
+- `/collection/jeux/<game_id>` is available only when backend confirms that
+  the game belongs to a shared category;
+- `/bibliotheque/**`, `/about` and Logout remain available;
+- `/configuration`, every `/configuration/**` subroute, `/users`, `/add-game`
+  and `/collection/import` are unavailable. Direct navigation redirects to the
+  shared Collection first, otherwise Wishlist, otherwise About.
+
+When a protected GUEST call returns `411`, the frontend clears the session and
+returns to `/about` with the expired/revoked-share message. It does not open the
+ordinary sign-in modal. Missing price claims are reflected by absent price UI,
+not frontend calculation.
 
 After sign-in, the frontend must check the connected user's collection status
 before opening Ma collection, except for the configured `ADMIN` account. Users

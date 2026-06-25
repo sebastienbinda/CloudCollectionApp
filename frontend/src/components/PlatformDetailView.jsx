@@ -44,6 +44,12 @@ function PlatformDetailView({
   isSavingGame,
   isAuthenticated,
   canUseCollectionViews,
+  canViewCollection,
+  canViewWishlist,
+  canAccessConfiguration,
+  canViewPrices = true,
+  isGuest = false,
+  guestCollectionLabel = "",
   authenticatedUsername,
   authenticatedProfile,
   canEditGame,
@@ -96,9 +102,13 @@ function PlatformDetailView({
       shellClassName="container"
       eyebrow="Plateforme"
       title={selectedPlatformName}
-      subtitle="Filtrer la liste par plateforme"
+      subtitle={isGuest ? guestCollectionLabel : "Filtrer la liste par plateforme"}
+      headerClassName={`pageHeader${isGuest ? " guestSessionPageHeader" : ""}`}
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
+      canViewCollection={canViewCollection}
+      canViewWishlist={canViewWishlist}
+      canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
       onOpenAbout={onOpenAbout}
@@ -111,7 +121,9 @@ function PlatformDetailView({
       headerAsideContent={(
         <div
           className={`platformDetailStats ${
-            isAuthenticated ? "platformDetailStatsAuthenticated" : "platformDetailStatsPublic"
+            isAuthenticated && canViewPrices
+              ? "platformDetailStatsAuthenticated"
+              : "platformDetailStatsPublic"
           }`}
           aria-label="Statistiques de la plateforme"
         >
@@ -119,7 +131,7 @@ function PlatformDetailView({
             <span>Jeux</span>
             <strong>{formatNumber(selectedPlatformStats?.games_count ?? games.length)}</strong>
           </article>
-          {isAuthenticated ? (
+          {isAuthenticated && canViewPrices ? (
             <>
               <article>
                 <span>Valeur</span>
