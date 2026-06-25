@@ -222,8 +222,8 @@ Use the following domain folders for new or modified hooks:
   full routed pages.
 - `CollectionShareManagementView` is routed at `/configuration/partages`, uses
   `PageLayout`, and contains display and user interactions only. Creation,
-  listing, revocation, validation and permission decisions remain outside the
-  component.
+  listing, revocation, recipient capture, validation and permission decisions
+  remain outside the component.
 
 ## GUEST Presentation
 

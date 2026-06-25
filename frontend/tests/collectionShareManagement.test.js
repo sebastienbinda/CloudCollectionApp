@@ -51,6 +51,7 @@ beforeEach(() => {
 
 test("valide les bornes de duree et les permissions obligatoires", () => {
   const baseForm = {
+    recipient: " Alice ",
     durationHours: 24,
     allowCollection: true,
     allowWishlist: false,
@@ -65,11 +66,15 @@ test("valide les bornes de duree et les permissions obligatoires", () => {
     allowWishlist: false,
   }).error);
   assert.deepEqual(validateCollectionShareForm(baseForm).payload, {
+    recipient: "Alice",
     duration_hours: 24,
     allow_collection: true,
     allow_wishlist: false,
     allow_prices: true,
   });
+  assert.equal(validateCollectionShareForm({ ...baseForm, recipient: "x".repeat(257) }).error,
+    "Le destinataire doit contenir 256 caracteres maximum.");
+  assert.equal(validateCollectionShareForm({ ...baseForm, recipient: "   " }).payload.recipient, null);
 });
 
 test("liste cree et revoque avec les contrats HTTP proprietaire", async () => {
@@ -86,7 +91,7 @@ test("liste cree et revoque avec les contrats HTTP proprietaire", async () => {
   };
 
   const shares = await CollectionSharesApi.listShares();
-  const created = await CollectionSharesApi.createShare({ duration_hours: 24 });
+  const created = await CollectionSharesApi.createShare({ duration_hours: 24, recipient: "Alice" });
   const revoked = await CollectionSharesApi.revokeShare(9);
 
   assert.equal(shares[0].status, "EXPIRED");
@@ -96,6 +101,10 @@ test("liste cree et revoque avec les contrats HTTP proprietaire", async () => {
   assert.deepEqual(requests.map((request) => request.options.method || "GET"), [
     "GET", "POST", "DELETE",
   ]);
+  assert.deepEqual(JSON.parse(requests[1].options.body), {
+    duration_hours: 24,
+    recipient: "Alice",
+  });
 });
 
 test("presente distinctement les partages actifs expires et revoques", () => {

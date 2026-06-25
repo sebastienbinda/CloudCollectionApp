@@ -59,6 +59,22 @@ class DatabaseConfigurationTest(unittest.TestCase):
         self.assertFalse(table.columns["wishlist"].nullable)
         self.assertEqual("false", str(table.columns["wishlist"].server_default.arg))
 
+    def test_collection_share_model_exposes_recipient_column(self):
+        """Verifie que le modele ORM expose le destinataire optionnel.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la colonne et sa taille.
+        """
+
+        table = DatabaseModelBase.metadata.tables["t_collection_share"]
+
+        self.assertIn("recipient", table.columns)
+        self.assertTrue(table.columns["recipient"].nullable)
+        self.assertEqual(256, table.columns["recipient"].type.length)
+
     def test_platform_image_model_exposes_user_and_validation_columns(self):
         """Verifie que le modele ORM expose le schema des images plateformes.
 

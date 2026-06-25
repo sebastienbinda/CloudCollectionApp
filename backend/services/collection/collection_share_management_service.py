@@ -26,6 +26,7 @@ class CollectionShareManagementService:
 
     MIN_DURATION_HOURS = 1
     MAX_DURATION_HOURS = 240
+    MAX_RECIPIENT_LENGTH = 256
 
     def __init__(
         self,
@@ -71,6 +72,7 @@ class CollectionShareManagementService:
         allow_collection: Any,
         allow_wishlist: Any,
         allow_prices: Any,
+        recipient: Any = None,
     ) -> dict[str, Any]:
         """Cree un partage valide pour le proprietaire connecte.
 
@@ -80,6 +82,7 @@ class CollectionShareManagementService:
             allow_collection (Any): Permission collection brute.
             allow_wishlist (Any): Permission wishlist brute.
             allow_prices (Any): Permission prix brute.
+            recipient (Any): Destinataire brut du partage.
 
         Returns:
             dict[str, Any]: Partage serialise avec son lien signe.
@@ -96,6 +99,7 @@ class CollectionShareManagementService:
             allow_wishlist,
             allow_prices,
         )
+        normalized_recipient = self._normalize_recipient(recipient)
         engine = self._require_engine()
         owner_user_id = self._resolve_owner_user_id(owner_subject)
         created_at = self.clock()
@@ -109,6 +113,7 @@ class CollectionShareManagementService:
                 permissions["collection"],
                 permissions["wishlist"],
                 permissions["prices"],
+                normalized_recipient,
             )
         return self._serialize_share(row, "ACTIVE")
 
@@ -204,6 +209,18 @@ class CollectionShareManagementService:
             "prices": allow_prices,
         }
 
+    def _normalize_recipient(self, recipient: Any) -> str | None:
+        if recipient is None:
+            return None
+        if type(recipient) is not str:
+            raise ValueError("recipient doit etre une chaine de caracteres.")
+        normalized_recipient = recipient.strip()
+        if not normalized_recipient:
+            return None
+        if len(normalized_recipient) > self.MAX_RECIPIENT_LENGTH:
+            raise ValueError("recipient doit contenir 256 caracteres maximum.")
+        return normalized_recipient
+
     def _serialize_share(self, row: dict[str, Any], status: str) -> dict[str, Any]:
         share_token = self.guest_authentication_service.create_share_link_token(
             int(row["id"]),
@@ -211,6 +228,7 @@ class CollectionShareManagementService:
         )
         return {
             "id": int(row["id"]),
+            "recipient": row.get("recipient") or None,
             "created_at": self._datetime_text(row["created_at"]),
             "expires_at": self._datetime_text(row["expires_at"]),
             "revoked_at": self._optional_datetime_text(row.get("revoked_at")),

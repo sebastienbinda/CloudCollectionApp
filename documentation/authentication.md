@@ -208,8 +208,11 @@ HTTP `411` with `error_code: COLLECTION_SHARE_UNAVAILABLE`. An expired GUEST
 Bearer also maps to `411`; ordinary USER/ADMIN expiration remains `401`.
 
 The raw link token and GUEST Bearer are not stored in PostgreSQL or application
-logs. The frontend stores only the exchanged Bearer using the existing session
-mechanism and removes the link token from browser history immediately.
+logs. The exchange success log may contain the share id, owner id and persisted
+recipient label so an owner can audit who a link was intended for; it must not
+contain the raw link token or Bearer. The frontend stores only the exchanged
+Bearer using the existing session mechanism and removes the link token from
+browser history immediately.
 
 Route authorization must be enforced by `AuthGuard` from the token profile.
 Frontend route permissions may mirror the route catalog, but they must not be

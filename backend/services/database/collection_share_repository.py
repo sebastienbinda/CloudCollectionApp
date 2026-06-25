@@ -41,6 +41,7 @@ class SqlAlchemyCollectionShareRepository:
         allow_collection: bool,
         allow_wishlist: bool,
         allow_prices: bool,
+        recipient: str | None = None,
     ) -> dict[str, object]:
         """Cree un partage rattache a un proprietaire.
 
@@ -52,6 +53,7 @@ class SqlAlchemyCollectionShareRepository:
             allow_collection (bool): Autorisation collection.
             allow_wishlist (bool): Autorisation liste de souhaits.
             allow_prices (bool): Autorisation prix.
+            recipient (str | None): Destinataire lisible du partage.
 
         Returns:
             dict[str, object]: Partage cree.
@@ -64,9 +66,9 @@ class SqlAlchemyCollectionShareRepository:
             text(
                 f'INSERT INTO "{self.schema_name}".t_collection_share '
                 "(owner_user_id, created_at, expires_at, revoked_at, "
-                "allow_collection, allow_wishlist, allow_prices) "
+                "allow_collection, allow_wishlist, allow_prices, recipient) "
                 "VALUES (:owner_user_id, :created_at, :expires_at, NULL, "
-                ":allow_collection, :allow_wishlist, :allow_prices) "
+                ":allow_collection, :allow_wishlist, :allow_prices, :recipient) "
                 f"RETURNING {self._share_columns()}"
             ),
             {
@@ -76,6 +78,7 @@ class SqlAlchemyCollectionShareRepository:
                 "allow_collection": allow_collection,
                 "allow_wishlist": allow_wishlist,
                 "allow_prices": allow_prices,
+                "recipient": recipient,
             },
         ).mappings().one()
         return dict(row)
@@ -217,7 +220,7 @@ class SqlAlchemyCollectionShareRepository:
     def _share_columns() -> str:
         return (
             "id, owner_user_id, created_at, expires_at, revoked_at, "
-            "allow_collection, allow_wishlist, allow_prices"
+            "allow_collection, allow_wishlist, allow_prices, recipient"
         )
 
     @staticmethod
@@ -240,6 +243,7 @@ class SqlAlchemyCollectionShareRepository:
                 "allow_collection",
                 "allow_wishlist",
                 "allow_prices",
+                "recipient",
             )
         )
 

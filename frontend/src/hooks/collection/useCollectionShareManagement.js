@@ -10,6 +10,7 @@ import CollectionSharesApi from "../../services/CollectionSharesApi.js";
 import { validateCollectionShareForm } from "./collectionShareForm.js";
 
 const INITIAL_SHARE_FORM = Object.freeze({
+  recipient: "",
   durationHours: 24,
   allowCollection: true,
   allowWishlist: false,

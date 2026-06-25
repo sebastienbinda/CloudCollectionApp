@@ -161,6 +161,7 @@ class FakeShareManagementRepository:
         allow_collection,
         allow_wishlist,
         allow_prices,
+        recipient=None,
     ):
         """Ajoute un partage factice.
 
@@ -172,6 +173,7 @@ class FakeShareManagementRepository:
             allow_collection (bool): Permission collection.
             allow_wishlist (bool): Permission wishlist.
             allow_prices (bool): Permission prix.
+            recipient (str | None): Destinataire du partage.
 
         Returns:
             dict: Partage ajoute.
@@ -186,6 +188,7 @@ class FakeShareManagementRepository:
             "allow_collection": allow_collection,
             "allow_wishlist": allow_wishlist,
             "allow_prices": allow_prices,
+            "recipient": recipient,
         }
         self.next_id += 1
         self.rows.append(row)
@@ -277,7 +280,9 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
                     True,
                     False,
                     True,
+                    "  Alice  ",
                 )
+                self.assertEqual("Alice", share["recipient"])
                 self.assertEqual(
                     (self.now + timedelta(hours=duration_hours)).isoformat(),
                     share["expires_at"],
@@ -306,6 +311,7 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
                         True,
                         False,
                         False,
+                        None,
                     )
 
     def test_create_share_requires_explicit_boolean_permissions(self):
@@ -333,6 +339,54 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
                         *permissions,
                     )
 
+    def test_create_share_normalizes_optional_recipient(self):
+        """Verifie le nettoyage et la validation du destinataire.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les cas optionnels et invalides.
+        """
+
+        anonymous_share = self.service.create_share(
+            "user@example.com",
+            24,
+            True,
+            False,
+            False,
+            "   ",
+        )
+        named_share = self.service.create_share(
+            "user@example.com",
+            24,
+            True,
+            False,
+            False,
+            "Bob",
+        )
+
+        self.assertIsNone(anonymous_share["recipient"])
+        self.assertEqual("Bob", named_share["recipient"])
+        with self.assertRaises(ValueError):
+            self.service.create_share(
+                "user@example.com",
+                24,
+                True,
+                False,
+                False,
+                "x" * 257,
+            )
+        with self.assertRaises(ValueError):
+            self.service.create_share(
+                "user@example.com",
+                24,
+                True,
+                False,
+                False,
+                123,
+            )
+
     def test_list_shares_serializes_active_expired_and_revoked_rows(self):
         """Verifie la liste historique et la reconstruction des liens.
 
@@ -344,19 +398,28 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
         """
 
         active = self.repository.create_share(
-            None, 7, self.now, self.now + timedelta(hours=2), True, False, True
+            None, 7, self.now, self.now + timedelta(hours=2), True, False, True, "Alice"
         )
         expired = self.repository.create_share(
-            None, 7, self.now - timedelta(hours=2), self.now - timedelta(hours=1), True, True, False
+            None,
+            7,
+            self.now - timedelta(hours=2),
+            self.now - timedelta(hours=1),
+            True,
+            True,
+            False,
+            None,
         )
         revoked = self.repository.create_share(
-            None, 7, self.now, self.now + timedelta(hours=3), False, True, False
+            None, 7, self.now, self.now + timedelta(hours=3), False, True, False, "Bob"
         )
         self.repository.revoke_share(None, revoked["id"], 7, self.now)
 
         shares = self.service.list_shares("user@example.com")
 
         self.assertEqual(["ACTIVE", "EXPIRED", "REVOKED"], [row["status"] for row in shares])
+        self.assertEqual("Alice", shares[0]["recipient"])
+        self.assertIsNone(shares[1]["recipient"])
         self.assertEqual(active["id"], shares[0]["id"])
         self.assertEqual(expired["id"], shares[1]["id"])
         self.assertIn("/collection/share/signed-", shares[2]["link"])

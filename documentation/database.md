@@ -257,6 +257,7 @@ connected user being reinitialized. It must not delete global `t_platform`,
 | `created_at` | `TIMESTAMP` | No | Share creation date. |
 | `expires_at` | `TIMESTAMP` | No | Share expiration date. |
 | `revoked_at` | `TIMESTAMP` | Yes | Revocation date; null while not revoked. |
+| `recipient` | `VARCHAR(256)` | Yes | Optional owner-facing label for the intended share recipient. |
 | `allow_collection` | `BOOLEAN` | No | Allows owned collection consultation. |
 | `allow_wishlist` | `BOOLEAN` | No | Allows wishlist consultation. |
 | `allow_prices` | `BOOLEAN` | No | Allows purchase-price consultation. |
@@ -284,6 +285,9 @@ check, owner foreign key with `ON DELETE CASCADE`, and owner-list index. The
 sessions. Link tokens are reconstructed and signed from persisted share data
 when create/list responses are serialized; GUEST Bearers are issued only after
 the share and owner have been reloaded. Neither token is a database column.
+Migration `20260625_0015` adds nullable `recipient` metadata. This value is not
+an authorization rule; it is displayed to the owner and written to access logs
+when the link token is exchanged.
 
 Revocation is idempotent and sets `revoked_at` only when it is null. No cleanup
 job deletes expired or revoked history. Runtime validation joins the share to

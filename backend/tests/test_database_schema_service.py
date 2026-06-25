@@ -217,8 +217,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260623_0014"], script_directory.get_heads())
-        self.assertEqual(11, len(revisions))
+        self.assertEqual(["20260625_0015"], script_directory.get_heads())
+        self.assertEqual(12, len(revisions))
+        self.assertEqual("20260623_0014", revisions_by_id["20260625_0015"].down_revision)
         self.assertEqual("20260622_0013", revisions_by_id["20260623_0014"].down_revision)
         self.assertEqual("20260620_0010", revisions_by_id["20260620_0011"].down_revision)
         self.assertEqual("20260614_0008", revisions_by_id["20260618_0009"].down_revision)
@@ -282,6 +283,29 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn('ondelete="CASCADE"', migration_source)
         self.assertIn("ck_t_collection_share_expiration", migration_source)
         self.assertIn("ix_t_collection_share_owner_user_id", migration_source)
+
+    def test_collection_share_recipient_migration_declares_expected_column(self):
+        """Verifie la migration du destinataire des partages.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la colonne et la chaine Alembic.
+        """
+
+        migration_path = (
+            Path(__file__).resolve().parents[1]
+            / "migrations"
+            / "versions"
+            / "20260625_0015_add_collection_share_recipient.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn('down_revision: Union[str, None] = "20260623_0014"', migration_source)
+        self.assertIn('"t_collection_share"', migration_source)
+        self.assertIn('"recipient"', migration_source)
+        self.assertIn("sa.String(length=256)", migration_source)
 
     def test_wishlist_migration_declares_expected_column_and_backfill(self):
         """Verifie que la migration wishlist preserve les donnees existantes.

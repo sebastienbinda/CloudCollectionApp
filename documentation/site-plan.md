@@ -61,8 +61,9 @@ public pages.
 - `/configuration`: authenticated Configuration page for protected application
   actions.
 - `/configuration/partages`: authenticated owner page for creating, copying,
-  listing and revoking temporary shares. It is available only to a `USER` with
-  an imported collection and discovered share-management route permissions.
+  listing and revoking temporary shares, including an optional recipient label.
+  It is available only to a `USER` with an imported collection and discovered
+  share-management route permissions.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
 

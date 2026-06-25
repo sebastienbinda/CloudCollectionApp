@@ -24,7 +24,7 @@
   align-items: end;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(12rem, 0.7fr) minmax(24rem, 2fr) auto;
+  grid-template-columns: minmax(12rem, 1fr) minmax(10rem, 0.7fr) minmax(24rem, 2fr) auto;
 }
 
 .collectionShareForm > label,
@@ -40,7 +40,8 @@
   text-transform: uppercase;
 }
 
-.collectionShareForm input[type="number"] {
+.collectionShareForm input[type="number"],
+.collectionShareForm input[type="text"] {
   min-height: 2.5rem;
 }
 
@@ -123,7 +124,7 @@
 .collectionShareCard dl {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0.9rem 0;
 }
 
