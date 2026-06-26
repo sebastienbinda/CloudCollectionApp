@@ -17,8 +17,11 @@ A reader for a file type must implement `CollectionFileReader` from
 
 Required behavior:
 
-- expose `accepted_extensions`, for example `(".ods",)`;
-- implement `analyze_sheets(file_path)` and return available sheet names;
+- expose `accepted_extensions`, for example `(".ods",)` or `(".csv",)`;
+- implement `analyze_sheets(file_path)` and return available sheet names for
+  spreadsheet files; single-table formats such as CSV may return available
+  column names through the same method so the shared workflow can prefill the
+  mapping UI;
 - implement `read(file_path, description)` and return `CollectionImportData`;
 - raise `CollectionFileReadError` for unreadable files;
 - raise `CollectionFileValidationError` or a compatible domain validation error
@@ -31,6 +34,29 @@ Required behavior:
 
 Register new readers through `CollectionFileReaderFactory`. Do not add reader
 selection logic to controllers or persistence repositories.
+
+## Supported Reader Shapes
+
+ODS readers use `single_sheet_conf` or `multiple_sheets_conf` and map fields
+with spreadsheet column letters in `column_information`.
+
+CSV readers use `file_type = "csv"` and a top-level `mapping` object where each
+import field maps directly to a CSV header name:
+
+```json
+{
+  "file_type": "csv",
+  "wishlist": {"mode": "column"},
+  "mapping": {
+    "name": "Jeu",
+    "platform": "Console",
+    "wishlist": "Souhait"
+  }
+}
+```
+
+CSV has no sheet concept. It must reject ODS sheet configuration and dedicated
+wishlist-sheet mode. Wishlist may be absent or read from a mapped CSV column.
 
 ## Import Data Rules
 

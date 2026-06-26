@@ -49,6 +49,35 @@ class CollectionFileType(str, Enum):
     """Enumere les formats de fichiers de collection pris en charge."""
 
     LIBREOFFICE_ODS = "libreoffice_ods"
+    CSV = "csv"
+
+
+@dataclass(frozen=True)
+class CollectionCsvConfiguration:
+    """Represente la disposition d'un fichier CSV de collection.
+
+    Attributes:
+        column_information (dict[CollectionImportField, str]): Noms des colonnes par champ.
+    """
+
+    column_information: dict[CollectionImportField, str]
+
+    def to_dict(self) -> dict:
+        """Convertit la configuration CSV en dictionnaire serialisable.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Representation JSON de la configuration CSV.
+        """
+
+        return {
+            "mapping": {
+                field.value: column_name
+                for field, column_name in self.column_information.items()
+            }
+        }
 
 
 @dataclass(frozen=True)
@@ -213,6 +242,7 @@ class CollectionFileDescription:
         wishlist (WishlistImportConfiguration): Configuration wishlist valide.
         single_sheet_conf (Optional[CollectionSheetLayout]): Configuration feuille unique.
         multiple_sheets_conf (Optional[CollectionMultipleSheetsConfiguration]): Configuration multi-onglets.
+        csv_conf (Optional[CollectionCsvConfiguration]): Configuration CSV.
         price_unit (Optional[str]): Unite globale des prix du fichier.
     """
 
@@ -220,6 +250,7 @@ class CollectionFileDescription:
     wishlist: WishlistImportConfiguration = field(default_factory=WishlistImportConfiguration.none)
     single_sheet_conf: Optional[CollectionSheetLayout] = None
     multiple_sheets_conf: Optional[CollectionMultipleSheetsConfiguration] = None
+    csv_conf: Optional[CollectionCsvConfiguration] = None
     price_unit: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -242,4 +273,6 @@ class CollectionFileDescription:
             )
         if self.multiple_sheets_conf is not None:
             payload["multiple_sheets_conf"] = self.multiple_sheets_conf.to_dict()
+        if self.csv_conf is not None:
+            payload.update(self.csv_conf.to_dict())
         return payload

@@ -14,14 +14,14 @@
 Le code de cette application a ete realise a l'aide de Codex et de l'API GPT 5.5.
 
 Application web personnelle qui transforme un fichier de collection LibreOffice
-Calc `.ods` en site en ligne accessible a tout moment. Chaque utilisateur garde
+Calc `.ods` ou CSV en site en ligne accessible a tout moment. Chaque utilisateur garde
 sa collection privee rattachee a son compte, tout en contribuant a enrichir une
 base commune de jeux, plateformes et studios.
 
-Le premier fichier ODS importe initialise la collection personnelle, et les
+Le premier fichier ODS ou CSV importe initialise la collection personnelle, et les
 imports suivants peuvent ajouter des jeux sans reinitialiser la collection. La
 consultation de collection s'appuie ensuite sur PostgreSQL, tandis que le
-dernier fichier ODS utilisateur reste telechargeable en brut. Le backend expose
+dernier fichier utilisateur reste telechargeable en brut. Le backend expose
 une API securisee pour proteger les donnees utilisateur et alimenter le
 referentiel commun, tandis que le frontend fournit une interface web de
 consultation, recherche et import.
@@ -43,7 +43,7 @@ voir le resultat a cette adresse : https://www.cloud-collection.fr
   `wishlist=true`.
 - Recherche globale par nom de jeu.
 - Filtres et tris de collection apres authentification.
-- Import de collection ODS personnelle et ajout par nouvel import pour les utilisateurs inscrits.
+- Import de collection ODS ou CSV personnelle et ajout par nouvel import pour les utilisateurs inscrits.
 - Page About publique, authentification Bearer et creation de compte avec
   pseudonyme unique, validation email puis validation administrateur optionnelle.
 - Partage temporaire de collection par liens `/collection/share/<token>`,
@@ -77,7 +77,7 @@ Technologies principales :
 - Flask
 - SQLAlchemy et Alembic
 - PostgreSQL
-- pandas, odfpy et XML/ZIP standard library pour l'import ODS utilisateur
+- pandas, odfpy, CSV standard library et XML/ZIP standard library pour l'import utilisateur
 
 Organisation :
 
@@ -85,6 +85,7 @@ Organisation :
 - `backend/controllers/` : endpoints HTTP et mapping des reponses.
 - `backend/services/` : services metier et infrastructure organises par domaine.
 - `backend/services/ods/` : lecture d'import ODS utilisateur, archive, cache et secours XML.
+- `backend/services/csv/` : lecture d'import CSV utilisateur.
 - `backend/services/collection/imports/` : contrats et mapping de valeurs reutilisables par tous les formats d'import.
 - `backend/services/database/` : configuration SQLAlchemy, ORM, repositories et schema.
 - `backend/tests/` : tests backend par couche.
@@ -130,7 +131,7 @@ Regles detaillees :
 - Menu : `documentation/menu.md`
 - Page About : `documentation/about.md`
 
-## Import ODS Utilisateur
+## Import Utilisateur
 
 Le backend ne consulte plus de collection globale depuis un fichier ODS. Les
 vues Ma collection et Liste de souhaits lisent PostgreSQL via les endpoints
@@ -211,14 +212,16 @@ collection-example.ods
 Structure fonctionnelle attendue pour l'import :
 
 - le fichier est d'abord depose dans le workspace utilisateur, puis analyse
-  pour proposer les onglets disponibles ;
+  pour proposer les onglets ODS disponibles ou les colonnes CSV disponibles ;
 - apres analyse, l'application peut proposer de reutiliser la derniere
   configuration d'import sauvegardee ;
-- un onglet par plateforme ou une configuration explicite des onglets ;
+- pour ODS, un onglet par plateforme ou une configuration explicite des onglets ;
+- pour CSV, un mapping direct entre chaque information importee et une colonne
+  du fichier ;
 - en mode multi-onglets avec layout partage, l'utilisateur peut lister les
   onglets a importer ou les onglets a exclure ;
-- l'import peut lire une wishlist depuis aucun emplacement, un onglet dedie ou
-  une colonne dediee ;
+- l'import peut lire une wishlist depuis aucun emplacement, une colonne dediee,
+  ou un onglet dedie pour ODS ;
 - apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
   collection.
 - l'import peut associer des informations privees optionnelles a chaque jeu

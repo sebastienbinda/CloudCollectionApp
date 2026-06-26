@@ -35,4 +35,8 @@ class CollectionFileReaderFactory:
             from services.ods import OdsCollectionImportReader
 
             return OdsCollectionImportReader()
+        if file_type == CollectionFileType.CSV:
+            from services.csv import CsvCollectionImportReader
+
+            return CsvCollectionImportReader()
         raise ValueError(f"Type de fichier non supporte: {file_type.value}.")

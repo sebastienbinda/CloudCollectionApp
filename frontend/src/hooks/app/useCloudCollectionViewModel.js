@@ -280,6 +280,7 @@ function useCloudCollectionViewModel() {
       updateWishlistConfiguration: userCollectionOnboarding.updateWishlistConfiguration,
       updateWishlistLayout: userCollectionOnboarding.updateWishlistLayout,
       updateWishlistLayoutColumn: userCollectionOnboarding.updateWishlistLayoutColumn,
+      updateCsvMapping: userCollectionOnboarding.updateCsvMapping,
       addImportSheetConfiguration: userCollectionOnboarding.addImportSheetConfiguration,
       removeImportSheetConfiguration: userCollectionOnboarding.removeImportSheetConfiguration,
       importSelectedCollection: userCollectionOnboarding.importSelectedCollection,

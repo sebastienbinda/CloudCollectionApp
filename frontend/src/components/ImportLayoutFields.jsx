@@ -82,4 +82,5 @@ function ImportLayoutFields({
   );
 }
 
+export { FIELD_LABELS };
 export default ImportLayoutFields;

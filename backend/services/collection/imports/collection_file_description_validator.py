@@ -23,9 +23,11 @@ from .collection_file_description import (
     CollectionSheetLayout,
     WishlistImportConfiguration,
 )
+from .collection_file_description_rules import CollectionFileDescriptionRules
 from .wishlist_import_configuration_validator import WishlistImportConfigurationValidator
 from .spreadsheet_cell_reference import SpreadsheetCellReferenceParser
 from .collection_private_information_contract import ALLOWED_PRICE_UNITS
+from .csv_file_description_validator import CsvFileDescriptionValidator
 
 
 class CollectionFileDescriptionValidationError(ValueError):
@@ -57,12 +59,16 @@ class CollectionFileDescriptionValidator:
         self,
         cell_reference_parser: Optional[SpreadsheetCellReferenceParser] = None,
         wishlist_validator: Optional[WishlistImportConfigurationValidator] = None,
+        csv_validator: Optional[CsvFileDescriptionValidator] = None,
+        rules: Optional[CollectionFileDescriptionRules] = None,
     ):
         """Initialise le validateur de description.
 
         Args:
             cell_reference_parser (Optional[SpreadsheetCellReferenceParser]): Parser tableur.
             wishlist_validator (Optional[WishlistImportConfigurationValidator]): Validateur wishlist.
+            csv_validator (Optional[CsvFileDescriptionValidator]): Validateur CSV.
+            rules (Optional[CollectionFileDescriptionRules]): Regles de coherence.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -70,6 +76,8 @@ class CollectionFileDescriptionValidator:
 
         self.cell_reference_parser = cell_reference_parser or SpreadsheetCellReferenceParser()
         self.wishlist_validator = wishlist_validator or WishlistImportConfigurationValidator()
+        self.csv_validator = csv_validator or CsvFileDescriptionValidator()
+        self.rules = rules or CollectionFileDescriptionRules()
 
     def parse_json_text(
         self,
@@ -125,7 +133,14 @@ class CollectionFileDescriptionValidator:
         wishlist_payload = payload.get("wishlist")
         single_sheet_conf = payload.get("single_sheet_conf")
         multiple_sheets_conf = payload.get("multiple_sheets_conf")
-        self._validate_top_level_modes(single_sheet_conf, multiple_sheets_conf, errors)
+        csv_mapping = payload.get("mapping")
+        self.rules.validate_top_level_modes(
+            file_type,
+            single_sheet_conf,
+            multiple_sheets_conf,
+            csv_mapping,
+            errors,
+        )
         wishlist_configuration = self.wishlist_validator.build(
             wishlist_payload,
             errors,
@@ -135,6 +150,7 @@ class CollectionFileDescriptionValidator:
 
         single_sheet = None
         multiple_sheets = None
+        csv_conf = None
         if isinstance(single_sheet_conf, dict):
             single_sheet = self._build_layout(
                 single_sheet_conf,
@@ -149,6 +165,13 @@ class CollectionFileDescriptionValidator:
                 errors,
                 available_sheet_names,
             )
+        if file_type == CollectionFileType.CSV:
+            csv_conf = self.csv_validator.build(
+                csv_mapping,
+                str((wishlist_payload or {}).get("mode") or ""),
+                errors,
+                available_sheet_names,
+            )
         self.wishlist_validator.validate_collection_configuration(
             wishlist_configuration,
             wishlist_payload,
@@ -156,8 +179,9 @@ class CollectionFileDescriptionValidator:
             multiple_sheets,
             errors,
         )
+        self.rules.validate_csv_wishlist_configuration(csv_conf, wishlist_configuration, errors)
         price_unit = self._parse_price_unit(payload.get("price_unit"), errors)
-        if self._uses_purchase_price(single_sheet, multiple_sheets) and price_unit is None:
+        if self.rules.uses_purchase_price(single_sheet, multiple_sheets, csv_conf) and price_unit is None:
             errors.append("price_unit est requis quand purchase_price est configure.")
 
         if errors:
@@ -167,6 +191,7 @@ class CollectionFileDescriptionValidator:
             wishlist=wishlist_configuration or WishlistImportConfiguration.none(),
             single_sheet_conf=single_sheet,
             multiple_sheets_conf=multiple_sheets,
+            csv_conf=csv_conf,
             price_unit=price_unit,
         )
 
@@ -189,31 +214,6 @@ class CollectionFileDescriptionValidator:
             return None
         return price_unit
 
-    def _uses_purchase_price(
-        self,
-        single_sheet: Optional[CollectionSheetLayout],
-        multiple_sheets: Optional[CollectionMultipleSheetsConfiguration],
-    ) -> bool:
-        """Indique si un layout configure une colonne de prix.
-
-        Args:
-            single_sheet (Optional[CollectionSheetLayout]): Layout simple.
-            multiple_sheets (Optional[CollectionMultipleSheetsConfiguration]): Layouts multiples.
-
-        Returns:
-            bool: `True` lorsqu'un prix doit etre importe.
-        """
-
-        layouts = [single_sheet]
-        if multiple_sheets is not None:
-            layouts.append(multiple_sheets.shared_layout)
-            layouts.extend(sheet.layout for sheet in multiple_sheets.sheets or [])
-        return any(
-            layout is not None
-            and CollectionImportField.PURCHASE_PRICE in layout.column_information
-            for layout in layouts
-        )
-
     def _parse_file_type(
         self,
         value: Any,
@@ -224,21 +224,6 @@ class CollectionFileDescriptionValidator:
         except ValueError:
             errors.append("file_type inconnu.")
             return None
-
-    def _validate_top_level_modes(
-        self,
-        single_sheet_conf: Any,
-        multiple_sheets_conf: Any,
-        errors: list[str],
-    ) -> None:
-        if single_sheet_conf is not None and multiple_sheets_conf is not None:
-            errors.append("single_sheet_conf et multiple_sheets_conf sont exclusifs.")
-        if single_sheet_conf is None and multiple_sheets_conf is None:
-            errors.append("un mode de configuration est requis.")
-        if single_sheet_conf is not None and not isinstance(single_sheet_conf, dict):
-            errors.append("single_sheet_conf doit etre un objet.")
-        if multiple_sheets_conf is not None and not isinstance(multiple_sheets_conf, dict):
-            errors.append("multiple_sheets_conf doit etre un objet.")
 
     def _build_multiple_sheets(
         self,

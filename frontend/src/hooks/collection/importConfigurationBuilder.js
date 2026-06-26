@@ -13,6 +13,13 @@
  * Description : construction frontend de la description d'import de collection.
  */
 
+import { applyDataRangeDefaults } from "./importSpreadsheetColumnTools";
+import {
+  buildCsvImportConfigurationDescription,
+  buildFrontendCsvConfiguration,
+  createDefaultCsvMapping,
+} from "./csvImportConfigurationBuilder";
+
 const REQUIRED_FIELDS = Object.freeze(["name", "platform"]);
 const OPTIONAL_FIELDS = Object.freeze([
   "studio", "release_date",
@@ -50,6 +57,7 @@ function createDefaultImportConfiguration() {
   return {
     fileType: "libreoffice_ods",
     priceUnit: "EUR",
+    csvMapping: createDefaultCsvMapping(),
     multipleSheets: false,
     sharedLayout: true,
     sheetInformation: SHEET_INFORMATION,
@@ -91,6 +99,9 @@ function createImportConfigurationFromDescription(description) {
     description.wishlist,
     defaultConfiguration.wishlist
   );
+  if (description.file_type === "csv") {
+    return buildFrontendCsvConfiguration(description, defaultConfiguration, wishlist);
+  }
   if (description.single_sheet_conf) {
     return {
       ...defaultConfiguration,
@@ -233,6 +244,9 @@ function buildFrontendSharedLayout(layoutDescription, defaultLayout) {
  */
 function buildImportConfigurationDescription(configuration) {
   const errors = [];
+  if (configuration.fileType === "csv") {
+    return buildCsvImportConfigurationDescription(configuration);
+  }
   const fileType = "libreoffice_ods";
   const wishlist = buildWishlistConfiguration(configuration, errors);
   if (!configuration.multipleSheets) {
@@ -399,85 +413,6 @@ function splitSheetNames(value) {
     .split(/[\n,]/)
     .map((sheetName) => sheetName.trim())
     .filter(Boolean);
-}
-
-/**
- * Applique les valeurs deduites d'une plage tableur a un layout.
- *
- * @param {Object} layout - Layout courant.
- * @param {string} dataRange - Plage saisie.
- * @param {string[]} columnFields - Champs a pre-remplir dans l'ordre.
- * @returns {Object} Layout enrichi.
- */
-function applyDataRangeDefaults(layout, dataRange, columnFields) {
-  const parsedRange = parseDataRange(dataRange);
-  if (!parsedRange) {
-    return { ...layout, dataRange };
-  }
-  const nextColumns = { ...layout.columns };
-  parsedRange.columns.slice(0, columnFields.length).forEach((column, index) => {
-    nextColumns[columnFields[index]] = column;
-  });
-  return {
-    ...layout,
-    dataRange,
-    headerRow: String(parsedRange.headerRow),
-    columns: nextColumns,
-  };
-}
-
-/**
- * Parse une plage simple de type `A1:D200`.
- *
- * @param {string} dataRange - Plage saisie.
- * @returns {{headerRow: number, columns: string[]}|null} Details deduits.
- */
-function parseDataRange(dataRange) {
-  const match = String(dataRange || "").trim().toUpperCase().match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
-  if (!match) {
-    return null;
-  }
-  const startColumnIndex = columnNameToIndex(match[1]);
-  const endColumnIndex = columnNameToIndex(match[3]);
-  if (startColumnIndex > endColumnIndex) {
-    return null;
-  }
-  return {
-    headerRow: Number.parseInt(match[2], 10),
-    columns: Array.from(
-      { length: endColumnIndex - startColumnIndex + 1 },
-      (_, index) => columnIndexToName(startColumnIndex + index)
-    ),
-  };
-}
-
-/**
- * Convertit une colonne tableur en index.
- *
- * @param {string} columnName - Nom de colonne.
- * @returns {number} Index base 1.
- */
-function columnNameToIndex(columnName) {
-  return columnName.split("").reduce((total, character) => (
-    total * 26 + character.charCodeAt(0) - 64
-  ), 0);
-}
-
-/**
- * Convertit un index en colonne tableur.
- *
- * @param {number} index - Index base 1.
- * @returns {string} Nom de colonne.
- */
-function columnIndexToName(index) {
-  let value = index;
-  let columnName = "";
-  while (value > 0) {
-    const remainder = (value - 1) % 26;
-    columnName = String.fromCharCode(65 + remainder) + columnName;
-    value = Math.floor((value - 1) / 26);
-  }
-  return columnName;
 }
 
 export {

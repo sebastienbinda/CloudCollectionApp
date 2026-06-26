@@ -329,6 +329,7 @@ class AppViewSwitch {
         onWishlistConfigurationChange={props.updateWishlistConfiguration}
         onWishlistLayoutChange={props.updateWishlistLayout}
         onWishlistLayoutColumnChange={props.updateWishlistLayoutColumn}
+        onCsvMappingChange={props.updateCsvMapping}
         onAddSheet={props.addImportSheetConfiguration}
         onRemoveSheet={props.removeImportSheetConfiguration}
         onSubmitImport={props.importSelectedCollection}

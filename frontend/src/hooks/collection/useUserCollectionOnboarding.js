@@ -16,8 +16,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import AuthApi from "../../services/AuthApi";
 import UserCollectionApi from "../../services/UserCollectionApi";
 import getUserCollectionErrorMessage from "./userCollectionImportMessages";
+import updatedLayoutValue from "./importLayoutState";
 import {
-  applyDataRangeDefaults,
   buildImportConfigurationDescription,
   collectionRequiredFields,
   createImportConfigurationFromDescription,
@@ -36,27 +36,7 @@ function canCurrentTokenUseCollectionViews() {
 }
 
 /**
- * Met a jour un layout et applique les colonnes deduites si la plage change.
- *
- * @param {Object} layout - Layout courant.
- * @param {string} fieldName - Champ modifie.
- * @param {string} value - Nouvelle valeur.
- * @param {string[]} columnFields - Champs colonnes a pre-remplir.
- * @returns {Object} Layout mis a jour.
- * @throws {void} Ne leve pas d'exception.
- */
-function updatedLayoutValue(layout, fieldName, value, columnFields) {
-  if (fieldName === "dataRange") {
-    return applyDataRangeDefaults(layout, value, columnFields);
-  }
-  return {
-    ...layout,
-    [fieldName]: value,
-  };
-}
-
-/**
- * Orchestre la verification de collection et l'import initial du fichier ODS.
+ * Orchestre la verification de collection et l'import initial du fichier de collection.
  *
  * @param {Object} options - Navigation, session et callbacks de rafraichissement.
  * @returns {Object} Etat et actions exposes a la vue d'onboarding.
@@ -168,6 +148,12 @@ function useUserCollectionOnboarding(options) {
     setAvailableImportSheets(sheetNames);
     setHasAnalyzedImportFile(true);
     setImportConfiguration((currentConfiguration) => {
+      if (currentConfiguration.fileType === "csv") {
+        return {
+          ...currentConfiguration,
+          multipleSheets: false,
+        };
+      }
       if (sheetNames.length <= 1) {
         return {
           ...currentConfiguration,
@@ -241,6 +227,17 @@ function useUserCollectionOnboarding(options) {
     setImportConfiguration((currentConfiguration) => ({
       ...currentConfiguration,
       [fieldName]: value,
+    }));
+    setOnboardingError("");
+  }, []);
+
+  const updateCsvMapping = useCallback((fieldName, value) => {
+    setImportConfiguration((currentConfiguration) => ({
+      ...currentConfiguration,
+      csvMapping: {
+        ...currentConfiguration.csvMapping,
+        [fieldName]: value,
+      },
     }));
     setOnboardingError("");
   }, []);
@@ -492,6 +489,7 @@ function useUserCollectionOnboarding(options) {
     updateWishlistConfiguration,
     updateWishlistLayout,
     updateWishlistLayoutColumn,
+    updateCsvMapping,
     addImportSheetConfiguration,
     removeImportSheetConfiguration,
     importSelectedCollection,

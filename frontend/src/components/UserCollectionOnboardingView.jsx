@@ -17,7 +17,7 @@ import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
 
 /**
- * Affiche le parcours initial d'import de collection ODS.
+ * Affiche le parcours initial d'import de collection.
  *
  * @param {Object} props - Etat d'import, session et callbacks de navigation.
  * @returns {import("react").JSX.Element} Vue d'onboarding d'import.
@@ -57,6 +57,7 @@ function UserCollectionOnboardingView({
   onWishlistConfigurationChange,
   onWishlistLayoutChange,
   onWishlistLayoutColumnChange,
+  onCsvMappingChange,
   onAddSheet,
   onRemoveSheet,
   onSubmitImport,
@@ -129,18 +130,23 @@ function UserCollectionOnboardingView({
         ) : (
           <form className="collectionImportForm" onSubmit={handleSubmit}>
           <label>
+            Type de fichier
+            <select
+              value={importConfiguration.fileType}
+              disabled={isBusy || Boolean(selectedCollectionFileName)}
+              onChange={(event) => onConfigurationChange("fileType", event.target.value)}
+            >
+              <option value="libreoffice_ods">LibreOffice ODS</option>
+              <option value="csv">CSV</option>
+            </select>
+          </label>
+          <label>
             Fichier de collection
-            <input type="file" accept=".ods" onChange={handleFileChange} disabled={isBusy} />
+            <input type="file" accept=".ods,.csv" onChange={handleFileChange} disabled={isBusy} />
           </label>
           {selectedCollectionFileName ? (
             <p className="collectionSelectedFile">{selectedCollectionFileName}</p>
           ) : null}
-          <label>
-            Type de fichier
-            <select value={importConfiguration.fileType} disabled>
-              <option value="libreoffice_ods">LibreOffice ODS</option>
-            </select>
-          </label>
           {hasAnalyzedImportFile ? (
             <ImportConfigurationFields
               configuration={importConfiguration}
@@ -155,6 +161,7 @@ function UserCollectionOnboardingView({
               onWishlistConfigurationChange={onWishlistConfigurationChange}
               onWishlistLayoutChange={onWishlistLayoutChange}
               onWishlistLayoutColumnChange={onWishlistLayoutColumnChange}
+              onCsvMappingChange={onCsvMappingChange}
               onAddSheet={onAddSheet}
               onRemoveSheet={onRemoveSheet}
             />
