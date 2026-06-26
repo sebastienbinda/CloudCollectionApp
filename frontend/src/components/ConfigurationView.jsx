@@ -30,6 +30,7 @@ function ConfigurationView({
   canAddGame,
   canDownloadOds,
   canResetLibrary,
+  canImportLibraryCsv,
   canSyncPlatformCatalog,
   canModeratePlatformImages,
   canReinitializeCollection,
@@ -56,6 +57,7 @@ function ConfigurationView({
   onOpenWishlist,
   onAddGame,
   onOpenUsers,
+  onOpenAdminLibraryImport,
   onOpenPlatformImageModeration,
   onOpenConfiguration,
   onOpenCollectionOnboarding,
@@ -177,6 +179,22 @@ function ConfigurationView({
             {isReinitializingCollection ? (
               <ProgressBar label="Reinitialisation de la collection en cours" />
             ) : null}
+          </article>
+        ) : null}
+
+        {isAdmin ? (
+          <article className="adminActionCard">
+            <span>Bibliotheque</span>
+            <h2>Importer CSV</h2>
+            <p>Ajoute des jeux et studios dans la Bibliotheque globale.</p>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={onOpenAdminLibraryImport}
+              disabled={!canImportLibraryCsv}
+            >
+              Ouvrir l'import
+            </button>
           </article>
         ) : null}
 

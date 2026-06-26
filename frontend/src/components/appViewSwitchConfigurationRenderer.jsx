@@ -24,6 +24,7 @@ function renderConfigurationView(props, pageLayoutProps) {
       canAddGame={props.actionPermissions.canAddGame}
       canDownloadOds={props.actionPermissions.canDownloadOds}
       canResetLibrary={props.actionPermissions.canResetLibrary}
+      canImportLibraryCsv={props.actionPermissions.canImportLibraryCsv}
       canSyncPlatformCatalog={props.actionPermissions.canSyncPlatformCatalog}
       canModeratePlatformImages={props.actionPermissions.canModeratePlatformImages}
       canReinitializeCollection={props.actionPermissions.canReinitializeCollection}
@@ -41,6 +42,7 @@ function renderConfigurationView(props, pageLayoutProps) {
       isReinitializingCollection={props.isReinitializingCollection}
       onAddGame={props.openAddGamePage}
       onOpenUsers={props.openUsersPage}
+      onOpenAdminLibraryImport={props.openAdminLibraryImport}
       onOpenPlatformImageModeration={props.openPlatformImageModeration}
       onOpenCollectionOnboarding={props.openCollectionOnboarding}
       onOpenCollectionShares={props.openCollectionShares}

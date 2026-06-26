@@ -147,7 +147,7 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"platformImageModeration"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"adminLibraryImport"|"platformImageModeration"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
    */
   static getViewFromUrl() {
     if (/^\/collection\/share\/[^/]+$/.test(window.location.pathname)) {
@@ -197,6 +197,9 @@ class AppRouting {
     }
     if (window.location.pathname === "/configuration/partages") {
       return "collectionShares";
+    }
+    if (window.location.pathname === "/configuration/import") {
+      return "adminLibraryImport";
     }
     if (window.location.pathname === "/configuration/images-plateformes") {
       return "platformImageModeration";

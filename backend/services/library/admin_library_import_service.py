@@ -1,0 +1,175 @@
+#   ____ _                 _  ____      _ _           _   _             ___
+#  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+# | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+#                                                                            |_|   |_|
+# Projet : CloudCollectionApp
+# Date de creation : 2026-06-26
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
+#
+# Description : service metier d'import CSV admin Bibliotheque.
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from services.collection.imports import (
+    CollectionFileDescriptionValidationError,
+    CollectionFileReadError,
+    CollectionFileValidationError,
+    CollectionImportDateValidator,
+)
+from services.csv.csv_collection_import_reader import CsvCollectionImportReader
+from services.database.admin_library_import_repository import (
+    SqlAlchemyAdminLibraryImportRepository,
+)
+from services.database.database_configuration import DatabaseConfiguration
+
+from .admin_library_import_configuration import (
+    AdminLibraryImportConfigurationError,
+    AdminLibraryImportConfigurationLoader,
+)
+
+
+class AdminLibraryImportInvalidFileError(ValueError):
+    """Signale qu'un fichier CSV admin ne peut pas etre importe."""
+
+    def __init__(self, details: list[str]):
+        """Initialise l'erreur d'import admin.
+
+        Args:
+            details (list[str]): Messages d'erreur exploitables par l'IHM.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.details = details
+        super().__init__("Fichier CSV admin invalide.")
+
+
+@dataclass(frozen=True)
+class AdminLibraryImportResult:
+    """Regroupe les compteurs exposes par l'import CSV admin.
+
+    Attributes:
+        linked_platforms (int): Nombre de plateformes rattachees au referentiel.
+        created_studios (int): Nombre de studios crees.
+        created_games (int): Nombre de jeux crees.
+        warnings (dict): Avertissements produits pendant la lecture et le matching.
+    """
+
+    linked_platforms: int
+    created_studios: int
+    created_games: int
+    warnings: dict
+
+    def to_dict(self) -> dict:
+        """Convertit le resultat en payload JSON.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict: Resultat serialisable pour l'API admin.
+        """
+
+        return {
+            "linked_platforms": self.linked_platforms,
+            "created_studios": self.created_studios,
+            "created_games": self.created_games,
+            "warnings": dict(self.warnings),
+        }
+
+
+class AdminLibraryImportService:
+    """Orchestre l'import CSV admin dans la Bibliotheque globale."""
+
+    def __init__(
+        self,
+        repository,
+        reader: CsvCollectionImportReader | None = None,
+        configuration_loader: AdminLibraryImportConfigurationLoader | None = None,
+        date_validator: CollectionImportDateValidator | None = None,
+    ):
+        """Initialise le service d'import admin.
+
+        Args:
+            repository (object): Repository de persistance Bibliotheque.
+            reader (CsvCollectionImportReader | None): Lecteur CSV injectable.
+            configuration_loader (AdminLibraryImportConfigurationLoader | None): Chargeur JSON.
+            date_validator (CollectionImportDateValidator | None): Validateur de dates.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.repository = repository
+        self.reader = reader or CsvCollectionImportReader()
+        self.configuration_loader = configuration_loader or AdminLibraryImportConfigurationLoader()
+        self.date_validator = date_validator or CollectionImportDateValidator()
+
+    @classmethod
+    def from_environment(cls) -> "AdminLibraryImportService":
+        """Construit le service depuis la configuration d'environnement.
+
+        Args:
+            Aucun.
+
+        Returns:
+            AdminLibraryImportService: Service configure pour PostgreSQL.
+
+        Raises:
+            ValueError: Si la base de donnees n'est pas configuree.
+        """
+
+        return cls(
+            SqlAlchemyAdminLibraryImportRepository(DatabaseConfiguration.from_environment())
+        )
+
+    def import_csv_file(
+        self,
+        csv_file_path: str,
+        original_filename: str = "",
+    ) -> AdminLibraryImportResult:
+        """Importe un CSV admin dans la Bibliotheque globale.
+
+        Args:
+            csv_file_path (str): Chemin temporaire du fichier televerse.
+            original_filename (str): Nom original transmis par le navigateur.
+
+        Returns:
+            AdminLibraryImportResult: Compteurs et warnings d'import.
+
+        Raises:
+            AdminLibraryImportInvalidFileError: Si le fichier ou la configuration est invalide.
+            sqlalchemy.exc.SQLAlchemyError: Si la persistance echoue.
+        """
+
+        self._validate_extension(original_filename or csv_file_path)
+        try:
+            columns = self.reader.analyze_sheets(csv_file_path)
+            description = self.configuration_loader.load_for_columns(columns)
+            import_data = self.reader.read(csv_file_path, description)
+            import_data = self.date_validator.validate(import_data)
+            persistence_result = self.repository.import_library(import_data)
+        except AdminLibraryImportConfigurationError as exc:
+            raise AdminLibraryImportInvalidFileError(exc.details) from exc
+        except CollectionFileDescriptionValidationError as exc:
+            raise AdminLibraryImportInvalidFileError(exc.details) from exc
+        except CollectionFileValidationError as exc:
+            raise AdminLibraryImportInvalidFileError([str(exc)]) from exc
+        except CollectionFileReadError as exc:
+            raise AdminLibraryImportInvalidFileError([str(exc)]) from exc
+        return AdminLibraryImportResult(
+            linked_platforms=persistence_result.linked_platforms,
+            created_studios=persistence_result.created_studios,
+            created_games=persistence_result.created_games,
+            warnings=import_data.warnings.to_dict(),
+        )
+
+    def _validate_extension(self, filename: str) -> None:
+        extension = Path(filename or "").suffix.lower()
+        if extension not in self.reader.accepted_extensions:
+            raise AdminLibraryImportInvalidFileError(["Seuls les fichiers CSV sont acceptes."])

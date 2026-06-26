@@ -25,6 +25,7 @@ import PlatformDetailView from "./PlatformDetailView";
 import renderPlatformImageModerationView from "./appViewSwitchPlatformImageModerationRenderer";
 import renderConfigurationView from "./appViewSwitchConfigurationRenderer";
 import renderCollectionShareManagementView from "./appViewSwitchCollectionShareRenderer";
+import renderAdminLibraryImportView from "./appViewSwitchAdminLibraryImportRenderer";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
 import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
@@ -47,7 +48,13 @@ class AppViewSwitch {
     if (props.currentView === "about") {
       return "about";
     }
-    if (["configuration", "collectionShares", "platformImageModeration", "users"].includes(props.currentView)) {
+    if ([
+      "configuration",
+      "adminLibraryImport",
+      "collectionShares",
+      "platformImageModeration",
+      "users",
+    ].includes(props.currentView)) {
       return "configuration";
     }
     if (props.currentView === "wishlist") {
@@ -141,6 +148,12 @@ class AppViewSwitch {
       return props.authenticatedProfile === "ADMIN"
         ? renderConfigurationView(props, this.buildPageLayoutProps(props))
         : this.renderAbout(props);
+    }
+
+    if (props.currentView === "adminLibraryImport") {
+      return props.authenticatedProfile === "ADMIN"
+        ? renderAdminLibraryImportView(props, this.buildPageLayoutProps(props))
+        : renderConfigurationView(props, this.buildPageLayoutProps(props));
     }
 
     if (props.currentView === "users") {

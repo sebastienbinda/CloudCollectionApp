@@ -135,6 +135,34 @@ class LibraryAdminApi {
   }
 
   /**
+   * Importe un CSV admin dans la Bibliotheque globale.
+   *
+   * @param {File} csvFile - Fichier CSV selectionne dans l'IHM.
+   * @returns {Promise<Object>} Compteurs d'import retournes par le backend.
+   * @throws {LibraryAdminApiError} Si l'import est refuse ou impossible.
+   */
+  static async importLibraryCsv(csvFile) {
+    const formData = new FormData();
+    formData.append("library_file", csvFile);
+    const requestOptions = {
+      method: "POST",
+      headers: AuthApi.getAuthorizationHeaders(),
+      body: formData,
+    };
+    const fallbackMessage = "Impossible d'importer le CSV dans la Bibliotheque.";
+    const response = await BackendAvailabilityGuard.fetch(
+      "/api/library/import/csv",
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
    * Modifie le statut d'une image de plateforme.
    *
    * @param {string|number} platformId - Identifiant de plateforme.

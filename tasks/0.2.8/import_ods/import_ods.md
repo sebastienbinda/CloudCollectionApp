@@ -1,0 +1,4 @@
+En tant qu'utilisateur lors de l'import d'un fichier au format ods, apres avoir selectionner une plage de données, je veux que le  mapping des colonnes soit fait en me proposer la liste des noms de colonnes correspondant a la ligne de titre de la plage de données si j'en ai saisie une.
+La configuration json du mapping reste inchangé, i ls'agit juste d'une facilitation ihm pour l'utilisateur qui peut au lieu de saisir la lettre de la colonne pour chaque information, choisir parmis une liste déroulante des noms de colonnes existantes dans sont fichier.
+
+Pour cela, on peut réutiliser le endpoint analyze enrichi avec le noms des colonnes dans le fichier en lui passant la plage de données et la ligne des titres si ces informations sont saisies.

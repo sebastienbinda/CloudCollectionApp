@@ -11,11 +11,18 @@
 #
 # Description : controleur HTTP des actions admin Bibliotheque.
 
-from flask import Flask, current_app, jsonify
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+from flask import Flask, current_app, jsonify, request
 
 from services import AuthGuard, UserProfile
 from services.database.platform_catalog_update_service import PlatformCatalogUpdateService
 from services.library import LibraryResetAlreadyRunningError, LibraryResetJobCoordinator
+from services.library.admin_library_import_service import (
+    AdminLibraryImportInvalidFileError,
+    AdminLibraryImportService,
+)
 from services.library.library_reset_service import LibraryResetService
 
 
@@ -28,6 +35,7 @@ class LibraryController:
         reset_job_coordinator: LibraryResetJobCoordinator | None = None,
         reset_service_factory=None,
         platform_catalog_update_service_factory=None,
+        admin_import_service_factory=None,
         library_service_provider=None,
     ):
         """Initialise le controleur admin Bibliotheque.
@@ -38,6 +46,8 @@ class LibraryController:
             reset_service_factory (Callable | None): Fabrique du service de reset.
             platform_catalog_update_service_factory (Callable | None): Fabrique du service
                 d'actualisation des plateformes.
+            admin_import_service_factory (Callable | None): Fabrique du service d'import CSV
+                admin Bibliotheque.
             library_service_provider (LibraryServiceProvider | None): Cache de services
                 Bibliotheque a invalider apres actualisation.
 
@@ -51,6 +61,10 @@ class LibraryController:
         self.platform_catalog_update_service_factory = (
             platform_catalog_update_service_factory
             or PlatformCatalogUpdateService.from_environment
+        )
+        self.admin_import_service_factory = (
+            admin_import_service_factory
+            or AdminLibraryImportService.from_environment
         )
         self.library_service_provider = library_service_provider
 
@@ -75,6 +89,14 @@ class LibraryController:
             endpoint="sync_platform_catalog",
             view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
                 self.sync_platform_catalog
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/import/csv",
+            endpoint="import_library_csv",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.import_library_csv
             ),
             methods=["POST"],
         )
@@ -118,6 +140,40 @@ class LibraryController:
             )
             return jsonify({"error": "Unable to sync platform catalog."}), 500
 
+    def import_library_csv(self):
+        """Importe un CSV admin dans la Bibliotheque globale.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Compteurs d'import ou erreur JSON.
+        """
+
+        uploaded_file = request.files.get("library_file")
+        if uploaded_file is None or not uploaded_file.filename:
+            return jsonify({"error": "library_file est requis."}), 400
+
+        temporary_path = ""
+        try:
+            suffix = Path(uploaded_file.filename).suffix or ".csv"
+            with NamedTemporaryFile(delete=False, suffix=suffix) as temporary_file:
+                uploaded_file.save(temporary_file)
+                temporary_path = temporary_file.name
+            result = self.admin_import_service_factory().import_csv_file(
+                temporary_path,
+                uploaded_file.filename,
+            )
+            self._reset_library_service_provider()
+            return jsonify(result.to_dict()), 201
+        except AdminLibraryImportInvalidFileError as exc:
+            return jsonify({"error": "Fichier CSV admin invalide.", "details": exc.details}), 400
+        except Exception:
+            current_app.logger.exception("Erreur inattendue pendant l'import CSV admin.")
+            return jsonify({"error": "Unable to import admin CSV."}), 500
+        finally:
+            self._delete_temporary_file(temporary_path)
+
     def _run_reset_job(self, job):
         """Execute le service de reset dans le thread de job.
 
@@ -133,3 +189,13 @@ class LibraryController:
     def _reset_library_service_provider(self) -> None:
         if self.library_service_provider is not None:
             self.library_service_provider.reset()
+
+    def _delete_temporary_file(self, file_path: str) -> None:
+        if not file_path:
+            return
+        try:
+            Path(file_path).unlink()
+        except FileNotFoundError:
+            return
+        except OSError:
+            current_app.logger.warning("Impossible de supprimer le CSV temporaire admin.")

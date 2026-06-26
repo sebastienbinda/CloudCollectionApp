@@ -23,6 +23,9 @@ from services.collection.imports import (
 from services.database.user_collection_import_repository import (
     SqlAlchemyUserCollectionImportRepository,
 )
+from services.database.admin_library_import_repository import (
+    SqlAlchemyAdminLibraryImportRepository,
+)
 from services.database import PlatformMatchingConfiguration, PlatformMatchingService
 from services.users import UserCollectionNameNormalizer
 
@@ -180,6 +183,65 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual(["Switch"], [game.platform_name for game in import_data.games])
         self.assertEqual("Sports", import_data.warnings.platform_matches[0]["game_name"])
         self.assertEqual("Switch", import_data.warnings.platform_mappings[0]["matched_platform"])
+
+
+class AdminLibraryImportRepositoryTest(unittest.TestCase):
+    """Valide le repository d'import admin Bibliotheque."""
+
+    def test_import_library_creates_games_without_user_associations(self):
+        """Verifie que l'import admin ne touche pas aux collections utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les compteurs et appels.
+        """
+
+        invalidations = []
+        user_association_calls = []
+        repository = object.__new__(SqlAlchemyAdminLibraryImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
+        repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
+        repository.platform_repository = SimpleNamespace(
+            load_catalog_rows=lambda connection: [{"name": "Switch"}],
+            load_ids_by_key=lambda connection: {"switch": 7},
+            invalidate_cache=lambda: invalidations.append("platforms"),
+        )
+        repository.platform_matching_service = SimpleNamespace(
+            match_import_data=lambda import_data, platform_rows: import_data,
+        )
+        repository.studio_repository = SimpleNamespace(
+            load_ids_by_key=lambda connection: {},
+            insert=lambda connection, name: 13,
+        )
+        repository.game_repository = SimpleNamespace(
+            load_ids_by_key=lambda connection: {},
+            game_key=lambda game: (
+                repository.name_normalizer.comparison_key(game.platform_name),
+                repository.name_normalizer.comparison_key(game.name),
+            ),
+            insert=lambda connection, game, platform_id, studio_id: 11,
+        )
+        repository.user_collection_repository = SimpleNamespace(
+            ensure_user_game_associations=lambda connection, user_id, associations: (
+                user_association_calls.append((user_id, associations))
+            ),
+        )
+
+        result = repository.import_library(
+            CollectionImportData(
+                platforms=[CollectionImportPlatform("Switch")],
+                studios=[],
+                games=[CollectionImportGame("Zelda", "Switch", "", None)],
+            ),
+        )
+
+        self.assertEqual(["platforms"], invalidations)
+        self.assertEqual([], user_association_calls)
+        self.assertEqual(1, result.linked_platforms)
+        self.assertEqual(0, result.created_studios)
+        self.assertEqual(1, result.created_games)
 
 
 if __name__ == "__main__":
