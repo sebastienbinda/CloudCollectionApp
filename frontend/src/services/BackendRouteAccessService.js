@@ -27,6 +27,7 @@ class BackendRouteAccessService {
       canDeleteGame: false,
       canDownloadOds: false,
       canResetLibrary: false,
+      canImportLibraryCsv: false,
       canSyncPlatformCatalog: false,
       canModeratePlatformImages: false,
       canUpdatePlatformImageStatus: false,
@@ -165,6 +166,7 @@ class BackendRouteAccessService {
       canDeleteGame: false,
       canDownloadOds: this.canAccess("GET", "/collections/videogames/download"),
       canResetLibrary: this.canAccess("POST", "/api/library/reset"),
+      canImportLibraryCsv: this.canAccess("POST", "/api/library/import/csv"),
       canSyncPlatformCatalog: this.canAccess("POST", "/api/library/platform-catalog/sync"),
       canModeratePlatformImages: this.canAccess("GET", "/api/library/platforms/images"),
       canUpdatePlatformImageStatus: this.canAccess(

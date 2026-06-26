@@ -246,6 +246,11 @@ Structure fonctionnelle attendue pour l'import :
   puis envoie le rapport final a `ADMIN_NOTIFICATION_EMAIL`.
 - depuis Configuration, un utilisateur `ADMIN` peut mettre a jour le catalogue
   plateformes et alias en ajoutant en base les entrees absentes des CSV backend.
+- depuis Configuration, un utilisateur `ADMIN` peut ouvrir
+  `/configuration/import` pour importer un CSV dans la Bibliotheque globale.
+  L'import ajoute uniquement plateformes rattachees, studios et jeux via la
+  configuration fixe `backend/resources/admin_import_conf.json`, sans wishlist,
+  informations de collection personnelle ni sauvegarde de configuration.
 - depuis Configuration, un utilisateur `ADMIN` peut ouvrir la page dediee
   `/configuration/images-plateformes` pour moderer les images de plateformes
   proposees, les accepter, les refuser ou definir l'image principale.

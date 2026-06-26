@@ -44,6 +44,7 @@ class GuestNavigationPolicy {
   isViewBlocked(view) {
     if ([
       "configuration",
+      "adminLibraryImport",
       "collectionShares",
       "platformImageModeration",
       "users",

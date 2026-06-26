@@ -1,0 +1,9 @@
+{
+  "file_type": "csv",
+  "mapping": {
+    "name": 1,
+    "platform": 2,
+    "studio": 3,
+    "release_date": 4
+  }
+}

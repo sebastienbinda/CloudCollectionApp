@@ -26,6 +26,7 @@ import useLibraryGames from "../library/useLibraryGames";
 import useLibraryHomeSearch from "../library/useLibraryHomeSearch";
 import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPage";
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
+import useAdminLibraryCsvImportAction from "../library/useAdminLibraryCsvImportAction";
 import useLibraryResetAction from "../library/useLibraryResetAction";
 import useLibraryStudios from "../library/useLibraryStudios";
 import usePlatformImageModeration from "../library/usePlatformImageModeration";
@@ -143,6 +144,7 @@ function useCloudCollectionViewModel() {
   const libraryGames = useLibraryGames({
     enabled: navigation.currentView === "libraryGames",
   });
+  const adminLibraryCsvImportAction = useAdminLibraryCsvImportAction();
   const libraryResetAction = useLibraryResetAction();
   const platformCatalogSyncAction = usePlatformCatalogSyncAction();
   const platformImageModeration = usePlatformImageModeration({
@@ -230,6 +232,12 @@ function useCloudCollectionViewModel() {
       libraryResetError: libraryResetAction.libraryResetError,
       libraryResetMessage: libraryResetAction.libraryResetMessage,
       isResettingLibrary: libraryResetAction.isResettingLibrary,
+      adminLibraryImportError: adminLibraryCsvImportAction.adminLibraryImportError,
+      adminLibraryImportResult: adminLibraryCsvImportAction.adminLibraryImportResult,
+      isImportingAdminLibrary: adminLibraryCsvImportAction.isImportingAdminLibrary,
+      selectedAdminLibraryImportFileName: (
+        adminLibraryCsvImportAction.selectedAdminLibraryImportFileName
+      ),
       platformCatalogSyncError: platformCatalogSyncAction.platformCatalogSyncError,
       platformCatalogSyncMessage: platformCatalogSyncAction.platformCatalogSyncMessage,
       isSyncingPlatformCatalog: platformCatalogSyncAction.isSyncingPlatformCatalog,
@@ -257,6 +265,7 @@ function useCloudCollectionViewModel() {
       openWishlist: navigation.openWishlist,
       openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,
+      openAdminLibraryImport: navigation.openAdminLibraryImport,
       openPlatformImageModeration: navigation.openPlatformImageModeration,
       openAbout: navigation.openAbout,
       openAuth: navigation.openAuth,
@@ -267,6 +276,8 @@ function useCloudCollectionViewModel() {
       closeHomeSearch: homePage.closeHomeSearch,
       downloadOdsFile: odsDownload.downloadOdsFile,
       resetLibrary: libraryResetAction.resetLibrary,
+      importAdminLibraryCsv: adminLibraryCsvImportAction.importAdminLibraryCsv,
+      selectAdminLibraryImportFile: adminLibraryCsvImportAction.selectAdminLibraryImportFile,
       syncPlatformCatalog: platformCatalogSyncAction.syncPlatformCatalog,
       reinitializeCollection: userCollectionReinitialization.reinitializeCollection,
       handleAuthenticatedUser: userCollectionOnboarding.handleAuthenticatedUser,

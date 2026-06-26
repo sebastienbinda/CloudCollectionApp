@@ -187,6 +187,7 @@ function useAppNavigation(options) {
         "/add-game": "addGame",
         "/configuration": "configuration",
         "/configuration/partages": "collectionShares",
+        "/configuration/import": "adminLibraryImport",
         "/configuration/images-plateformes": "platformImageModeration",
         "/users": "users",
         "/collection/import": "collectionOnboarding",
@@ -229,7 +230,7 @@ function useAppNavigation(options) {
 
   useEffect(() => {
     if (options.isGuest) return;
-    if (!["platformImageModeration", "users"].includes(currentView) || options.authenticatedProfile === "ADMIN") return;
+    if (!["adminLibraryImport", "platformImageModeration", "users"].includes(currentView) || options.authenticatedProfile === "ADMIN") return;
     setCurrentView("home");
     window.history.replaceState({}, "", "/collection");
   }, [options.authenticatedProfile, currentView, options.isGuest]);
@@ -314,6 +315,7 @@ function useAppNavigation(options) {
       }
       openView("collectionShares", "/configuration/partages");
     },
+    openAdminLibraryImport: () => openView("adminLibraryImport", "/configuration/import"),
     openPlatformImageModeration: () => openView(
       "platformImageModeration",
       "/configuration/images-plateformes"
