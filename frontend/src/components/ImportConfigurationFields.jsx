@@ -13,6 +13,7 @@
  * Description : champs de configuration d'import de collection.
  */
 import ImportLayoutFields from "./ImportLayoutFields";
+import ImportCsvConfigurationFields from "./ImportCsvConfigurationFields";
 
 /**
  * Affiche les champs frontend de configuration d'import.
@@ -33,9 +34,23 @@ function ImportConfigurationFields({
   onWishlistConfigurationChange,
   onWishlistLayoutChange,
   onWishlistLayoutColumnChange,
+  onCsvMappingChange,
   onAddSheet,
   onRemoveSheet,
 }) {
+  if (configuration.fileType === "csv") {
+    return (
+      <ImportCsvConfigurationFields
+        configuration={configuration}
+        availableColumnNames={availableSheetNames}
+        disabled={disabled}
+        onConfigurationChange={onConfigurationChange}
+        onCsvMappingChange={onCsvMappingChange}
+        onWishlistConfigurationChange={onWishlistConfigurationChange}
+      />
+    );
+  }
+
   const columnFields = collectionColumnFields(configuration, !configuration.multipleSheets);
 
   return (

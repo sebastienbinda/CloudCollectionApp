@@ -12,6 +12,7 @@
 """Exports publics du contrat de configuration d'import de collection."""
 
 from .collection_file_description import (
+    CollectionCsvConfiguration,
     CollectionFileDescription,
     CollectionFileType,
     CollectionImportField,
@@ -47,6 +48,7 @@ from .wishlist_value_parser import WishlistValueParseResult, WishlistValueParser
 
 __all__ = [
     "CollectionFileDescription",
+    "CollectionCsvConfiguration",
     "CollectionFileDescriptionValidationError",
     "CollectionFileDescriptionValidator",
     "CollectionFileReadError",

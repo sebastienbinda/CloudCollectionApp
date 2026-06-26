@@ -1011,7 +1011,7 @@ modify another user's collection.
 | `GET` | `/api/users/me/collection` | Returns whether the connected user already has an imported collection. |
 | `GET` | `/api/users/import/` | Returns the connected user's last saved import configuration. |
 | `POST` | `/api/users/import/file/<file_type>` | Stores the connected user's temporary collection file. |
-| `POST` | `/api/users/import/analyze/<file_type>` | Analyzes the temporary file and returns sheet names. |
+| `POST` | `/api/users/import/analyze/<file_type>` | Analyzes the temporary file and returns ODS sheet names or CSV column names. |
 | `POST` | `/api/users/import` | Imports the connected user's collection from the temporary file and JSON configuration. |
 | `POST` | `/api/users/collection/reinit` | Reinitializes the connected user's imported collection. |
 
@@ -1072,13 +1072,21 @@ POST /api/users/import/file/libreoffice_ods
 Content-Type: multipart/form-data
 ```
 
+CSV uses the same route shape:
+
+```http
+POST /api/users/import/file/csv
+Content-Type: multipart/form-data
+```
+
 Field:
 
-- `collection_file`: ODS file to stage before configuration.
+- `collection_file`: ODS or CSV file to stage before configuration.
 
 The backend stores the file as
-`/users/workspace/<user_id>/current-import.ods`, overwriting any previous
-temporary import file for the same user. The copied file is chmod `0440`.
+`/users/workspace/<user_id>/current-import.<extension>`, overwriting any
+previous temporary import file for the same user. The copied file is chmod
+`0440`.
 
 Upload errors use:
 
@@ -1092,11 +1100,26 @@ Upload errors use:
 POST /api/users/import/analyze/libreoffice_ods
 ```
 
+CSV uses:
+
+```http
+POST /api/users/import/analyze/csv
+```
+
 Successful response:
 
 ```json
 {
   "sheets": ["Sheet1", "Sheet2"]
+}
+```
+
+For CSV, the same `sheets` field contains detected CSV column names in file
+order:
+
+```json
+{
+  "sheets": ["Jeu", "Console", "Studio"]
 }
 ```
 
@@ -1128,7 +1151,27 @@ The JSON configuration supports:
   sheets;
 - `multiple_sheets_conf.shared_layout.excluded_sheets` to import every sheet
   except selected sheets;
-- `multiple_sheets_conf.sheets` for per-sheet layouts.
+- `multiple_sheets_conf.sheets` for per-sheet layouts;
+- `mapping` for CSV, where each import field maps directly to a CSV header
+  name.
+
+Example CSV payload:
+
+```json
+{
+  "file_type": "csv",
+  "price_unit": "EUR",
+  "wishlist": {"mode": "column"},
+  "mapping": {
+    "name": "Jeu",
+    "platform": "Console",
+    "studio": "Studio",
+    "release_date": "Sortie",
+    "purchase_price": "Prix",
+    "wishlist": "Souhait"
+  }
+}
+```
 
 Every collection layout may map the nullable private fields `purchase_price`,
 `buy_location`, `buy_date`, `grade`, `condition`, `has_manual`, `is_collector`,
@@ -1149,8 +1192,10 @@ a score of at least `75` is accepted. Ambiguous or unknown non-empty values are
 returned through `warnings.invalid_games` and stored as null without rejecting
 the game.
 
-`included_sheets` and `excluded_sheets` are exclusive. Invalid JSON or
-configuration returns `422` with `error` and `details`.
+`included_sheets` and `excluded_sheets` are exclusive. CSV does not accept
+`single_sheet_conf`, `multiple_sheets_conf`, ODS sheet settings or
+`wishlist.mode = "sheet"`. Invalid JSON or configuration returns `422` with
+`error` and `details`.
 
 Wishlist modes:
 
@@ -1159,7 +1204,7 @@ Wishlist modes:
 - `{"mode": "sheet", ...}`: a dedicated sheet supplies wishlist rows and must
   include `sheet_name`, `data_range`, `header_row` and `column_information`;
 - `{"mode": "column"}`: every collection layout must define
-  `column_information.wishlist`.
+  `column_information.wishlist`, or CSV must define `mapping.wishlist`.
 
 Accepted wishlist column values are `Oui/Non`, `O/N`, `True/False`,
 `Yes/No` and `Y/N`, case-insensitively. Empty values are imported as
@@ -1171,20 +1216,21 @@ temporary file is overwritten and the final import adds missing games to the
 existing collection without clearing current associations.
 
 The backend copies the staged temporary file to
-`/users/workspace/<user_id>/<user_id>-collection.ods`, stores this complete path
-in `t_user.collection_file_path` only after a successful import, and removes the
-final copied file if the import fails. On additive import, the stored collection
-file and saved import configuration are replaced only after persistence
-succeeds. The copied file is chmod `0440`.
+`/users/workspace/<user_id>/<user_id>-collection.<extension>`, stores this
+complete path in `t_user.collection_file_path` only after a successful import,
+and removes the final copied file if the import fails. On additive import, the
+stored collection file and saved import configuration are replaced only after
+persistence succeeds. The copied file is chmod `0440`.
 
 Only configured ODS sheets are imported. With a shared layout, the user may
 either provide the sheets to import or the sheets to exclude; without either
-list, every sheet is imported. Platforms are matched against the application
-reference catalog and are not created by this endpoint. Missing studios and
-games are created; existing records are reused. User-game associations are
-inserted in `t_user_collection` when missing with their `wishlist` value and
-ignored when already present. No existing platform, studio, game or user
-association is updated by this endpoint.
+list, every sheet is imported. CSV imports one tabular file using its configured
+header mapping. Platforms are matched against the application reference catalog
+and are not created by this endpoint. Missing studios and games are created;
+existing records are reused. User-game associations are inserted in
+`t_user_collection` when missing with their `wishlist` value and ignored when
+already present. No existing platform, studio, game or user association is
+updated by this endpoint.
 
 Successful response:
 
@@ -1239,7 +1285,7 @@ file reading, matching and SQL persistence.
 
 Import errors use:
 
-- `400` for an invalid or unreadable ODS file;
+- `400` for an invalid or unreadable collection file;
 - `404` when the temporary file does not exist;
 - `422` for invalid JSON configuration;
 - `500` for an unexpected import failure.

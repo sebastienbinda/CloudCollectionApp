@@ -21,6 +21,7 @@ from services.collection.imports import (  # noqa: E402
     CollectionFileReaderFactory,
     CollectionFileType,
 )
+from services.csv import CsvCollectionImportReader  # noqa: E402
 from services.ods import OdsCollectionImportReader  # noqa: E402
 
 
@@ -41,6 +42,21 @@ class CollectionFileReaderFactoryTest(unittest.TestCase):
 
         self.assertIsInstance(reader, OdsCollectionImportReader)
         self.assertEqual((".ods",), reader.accepted_extensions)
+
+    def test_create_returns_csv_reader_for_csv(self):
+        """Verifie le mapping du type CSV.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le lecteur retourne.
+        """
+
+        reader = CollectionFileReaderFactory().create(CollectionFileType.CSV)
+
+        self.assertIsInstance(reader, CsvCollectionImportReader)
+        self.assertEqual((".csv",), reader.accepted_extensions)
 
 
 if __name__ == "__main__":

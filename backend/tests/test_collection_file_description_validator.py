@@ -83,6 +83,105 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
         self.assertEqual("EUR", description.price_unit)
         self.assertEqual("EUR", description.to_dict()["price_unit"])
 
+    def test_valid_csv_configuration(self):
+        """Verifie une configuration CSV valide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le DTO CSV.
+        """
+
+        payload = {
+            "file_type": "csv",
+            "wishlist": {"mode": "column"},
+            "price_unit": "EUR",
+            "mapping": {
+                "name": "Jeu",
+                "platform": "Console",
+                "studio": "Studio",
+                "purchase_price": "Prix",
+                "wishlist": "Souhait",
+            },
+        }
+
+        description = self.validator.validate(
+            payload,
+            {"Jeu", "Console", "Studio", "Prix", "Souhait"},
+        )
+
+        self.assertEqual(CollectionFileType.CSV, description.file_type)
+        self.assertIsNotNone(description.csv_conf)
+        self.assertEqual(
+            "Jeu",
+            description.csv_conf.column_information[CollectionImportField.NAME],
+        )
+        self.assertEqual(payload, description.to_dict())
+
+    def test_csv_rejects_missing_mapping_and_ods_layouts(self):
+        """Verifie le refus des layouts tableur pour CSV.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les erreurs.
+        """
+
+        payload = self._single_sheet_payload()
+        payload["file_type"] = "csv"
+
+        self._assert_errors(
+            payload,
+            [
+                "single_sheet_conf et multiple_sheets_conf ne sont pas autorises pour csv.",
+                "mapping est requis pour csv.",
+            ],
+        )
+
+    def test_csv_rejects_missing_required_mapping_column(self):
+        """Verifie le refus d'un mapping CSV incomplet.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur.
+        """
+
+        payload = {
+            "file_type": "csv",
+            "wishlist": {"mode": "none"},
+            "mapping": {"name": "Jeu"},
+        }
+
+        self._assert_errors(payload, ["colonne obligatoire manquante: platform."])
+
+    def test_csv_rejects_sheet_wishlist_mode(self):
+        """Verifie que CSV ne permet pas de wishlist par onglet.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur.
+        """
+
+        payload = {
+            "file_type": "csv",
+            "wishlist": {
+                "mode": "sheet",
+                "sheet_name": "Souhaits",
+                "data_range": "A1:B10",
+                "header_row": 1,
+                "column_information": {"name": "A", "platform": "B"},
+            },
+            "mapping": {"name": "Jeu", "platform": "Console"},
+        }
+
+        self._assert_errors(payload, ["wishlist.mode sheet n'est pas autorise pour csv."])
+
     def test_valid_shared_layout_configuration(self):
         """Verifie une configuration multi-onglets avec layout partage.
 

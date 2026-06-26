@@ -49,7 +49,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `POST /api/users/import/file/<file_type>` must use `multipart/form-data` with
   field `collection_file` and stores `/users/workspace/<user_id>/current-import.<extension>`.
 - `POST /api/users/import/analyze/<file_type>` reads the temporary file and
-  returns its sheet names.
+  returns its sheet names for ODS or its column names for CSV through the same
+  response field.
 - `GET /api/users/import/` returns the last saved import configuration, or
   `404` when none exists.
 - `POST /api/users/import` must use `application/json` and receives only the
@@ -92,7 +93,7 @@ database structure in `documentation/database.md`, and frontend navigation in
 - The stored path format is:
 
 ```text
-/users/workspace/<user_id>/<user_id>-collection.ods
+/users/workspace/<user_id>/<user_id>-collection.<extension>
 ```
 
 - The copied file must be removed when import parsing or persistence fails.
@@ -183,6 +184,31 @@ database structure in `documentation/database.md`, and frontend navigation in
   `invalid_games` warning without rejecting the game.
 - The editor field remains empty until a dedicated rule is specified.
 
+## CSV Import Rules
+
+- `file_type = "csv"` accepts files with the `.csv` extension.
+- CSV analysis reads the header row and returns column names in their file
+  order. The frontend uses these names in dropdowns for each importable field.
+- CSV configuration has no sheet, range or header-row settings. It uses a
+  top-level `mapping` object whose keys are import fields and whose values are
+  CSV header names.
+- CSV `mapping.name` and `mapping.platform` are mandatory. `mapping.wishlist`
+  is mandatory only when `wishlist.mode = "column"`.
+- CSV may map the same optional fields as ODS: `studio`, `release_date`,
+  `purchase_price`, `buy_location`, `buy_date`, `grade`, `condition`,
+  `has_manual`, `is_collector`, `has_steelbook`, `is_digital`, `region` and
+  `description`.
+- CSV does not support `single_sheet_conf`, `multiple_sheets_conf`,
+  `sheet_information`, `included_sheets`, `excluded_sheets` or
+  `wishlist.mode = "sheet"`.
+- Structurally invalid CSV files, empty headers, unnamed columns and duplicate
+  column names are invalid input.
+- Duplicate CSV entries after normalized `(platform, name)` matching keep the
+  first occurrence and ignore later duplicates with warning-level logging.
+- CSV readers must delegate value conversion to the shared
+  `CollectionImportValueMapper`; private-field, date, region, condition,
+  boolean and wishlist parsing rules are identical to ODS.
+
 ## Wishlist Import Rules
 
 - The import payload must include `wishlist.mode`.
@@ -190,9 +216,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   `wishlist=false`.
 - `wishlist.mode = "sheet"` reads a dedicated sheet with its own `sheet_name`,
   `data_range`, `header_row` and `column_information`; every valid row from
-  that sheet is imported with `wishlist=true`.
+  that sheet is imported with `wishlist=true`. This mode is ODS-only.
 - `wishlist.mode = "column"` reads a `wishlist` column from every collection
-  layout.
+  layout or from `mapping.wishlist` for CSV.
 - Accepted wishlist column values are `Oui/Non`, `O/N`, `True/False`,
   `Yes/No` and `Y/N`, case-insensitively.
 - An empty wishlist value in column mode is treated as `wishlist=false`.
@@ -219,6 +245,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 
 - Every collection or dedicated-wishlist layout must provide the game name and
   platform information. These are the only mandatory imported game fields.
+- CSV `mapping` must provide the same mandatory game name and platform
+  information through header names.
 - The platform may be mapped through the `platform` entry in
   `column_information` or supplied by `sheet_information = "platform"` in a
   multi-sheet layout.
@@ -256,10 +284,12 @@ database structure in `documentation/database.md`, and frontend navigation in
   `Content-Type` header on `POST /api/users/import/file/<file_type>`.
 - Analyze the uploaded temporary file before final import and use the returned
   sheet names to prefill single-sheet or multi-sheet configuration.
+- For CSV, use the analyzed column names to populate mapping dropdowns. Do not
+  expose ODS-only sheet, range or header-row controls for CSV.
 - After analysis, fetch the saved import configuration and apply it only when
   the user confirms reuse.
-- Prefill `header_row` from the first row of the selected data range and prefill
-  mapping columns from the range columns in order.
+- For ODS, prefill `header_row` from the first row of the selected data range
+  and prefill mapping columns from the range columns in order.
 - Send the final import configuration as JSON to `POST /api/users/import`.
 - Display the successful import summary and let the user open `/collection`
   explicitly instead of redirecting immediately.
