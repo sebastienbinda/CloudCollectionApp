@@ -1,49 +1,49 @@
 #   ____ _                 _  ____      _ _           _   _             ___
 #  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
 # | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
-# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
-#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
-#                                                                            |_|   |_|
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __| (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/|_| |_|\___/
+#
 # Projet : CloudCollectionApp
-# Date de creation : 2026-06-14
+# Date de creation : 2026-06-27
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : configuration des seuils de matching plateformes.
+# Description : configuration des seuils de matching des jeux.
 
 import os
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class PlatformMatchingConfiguration:
-    """Configure les seuils de matching des plateformes importees.
+class GameMatchingConfiguration:
+    """Configure les seuils de matching des jeux importes.
 
     Attributes:
-        low_level_rating (int): Score minimal d'import avec verification.
-        high_level_rating (int): Score minimal d'import sans warning.
+        low_level_rating (int): Score minimal de matching faible.
+        high_level_rating (int): Score minimal de rattachement automatique.
     """
 
     low_level_rating: int = 25
     high_level_rating: int = 75
 
     @classmethod
-    def from_environment(cls) -> "PlatformMatchingConfiguration":
+    def from_environment(cls) -> "GameMatchingConfiguration":
         """Construit la configuration depuis les variables d'environnement.
 
         Args:
             Aucun.
 
         Returns:
-            PlatformMatchingConfiguration: Configuration validee.
+            GameMatchingConfiguration: Configuration validee.
 
         Raises:
             ValueError: Si une variable de seuil est invalide.
         """
 
         configuration = cls(
-            low_level_rating=cls._parse_rating("PLATFORM_MATCHING_LOW_LVL_RATING", 25),
-            high_level_rating=cls._parse_rating("PLATFORM_MATCHING_HIGH_LEVEL_RATING", 75),
+            low_level_rating=cls._parse_rating("GAME_MATCHING_LOW_LVL_RATING", 25),
+            high_level_rating=cls._parse_rating("GAME_MATCHING_HIGH_LEVEL_RATING", 75),
         )
         configuration.validate()
         return configuration
@@ -62,13 +62,13 @@ class PlatformMatchingConfiguration:
         """
 
         if not 0 <= self.low_level_rating <= 100:
-            raise ValueError("PLATFORM_MATCHING_LOW_LVL_RATING doit etre entre 0 et 100.")
+            raise ValueError("GAME_MATCHING_LOW_LVL_RATING doit etre entre 0 et 100.")
         if not 0 <= self.high_level_rating <= 100:
-            raise ValueError("PLATFORM_MATCHING_HIGH_LEVEL_RATING doit etre entre 0 et 100.")
+            raise ValueError("GAME_MATCHING_HIGH_LEVEL_RATING doit etre entre 0 et 100.")
         if self.low_level_rating >= self.high_level_rating:
             raise ValueError(
-                "PLATFORM_MATCHING_LOW_LVL_RATING doit etre strictement inferieur a "
-                "PLATFORM_MATCHING_HIGH_LEVEL_RATING."
+                "GAME_MATCHING_LOW_LVL_RATING doit etre strictement inferieur a "
+                "GAME_MATCHING_HIGH_LEVEL_RATING."
             )
 
     @staticmethod

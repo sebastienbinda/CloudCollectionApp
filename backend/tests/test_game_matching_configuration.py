@@ -1,25 +1,25 @@
 #   ____ _                 _  ____      _ _           _   _             ___
 #  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
 # | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
-# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
-#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
-#                                                                            |_|   |_|
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __| (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___|_|_|\___|\___|\__|_|\___/|_| |_|\___/|_| |_|\___/
+#
 # Projet : CloudCollectionApp
-# Date de creation : 2026-06-14
+# Date de creation : 2026-06-27
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : tests de configuration du matching plateformes.
+# Description : tests de configuration du matching des jeux.
 
 import os
 import unittest
 from unittest.mock import patch
 
-from services.database import PlatformMatchingConfiguration
+from services.database import GameMatchingConfiguration
 
 
-class PlatformMatchingConfigurationTest(unittest.TestCase):
-    """Valide les seuils configurables du matching plateformes."""
+class GameMatchingConfigurationTest(unittest.TestCase):
+    """Valide les seuils configurables du matching des jeux."""
 
     def test_from_environment_uses_defaults_and_custom_values(self):
         """Verifie les valeurs par defaut et personnalisees.
@@ -32,16 +32,16 @@ class PlatformMatchingConfigurationTest(unittest.TestCase):
         """
 
         with patch.dict(os.environ, {}, clear=True):
-            default_configuration = PlatformMatchingConfiguration.from_environment()
+            default_configuration = GameMatchingConfiguration.from_environment()
         with patch.dict(
             os.environ,
             {
-                "PLATFORM_MATCHING_LOW_LVL_RATING": "30",
-                "PLATFORM_MATCHING_HIGH_LEVEL_RATING": "80",
+                "GAME_MATCHING_LOW_LVL_RATING": "30",
+                "GAME_MATCHING_HIGH_LEVEL_RATING": "80",
             },
             clear=True,
         ):
-            custom_configuration = PlatformMatchingConfiguration.from_environment()
+            custom_configuration = GameMatchingConfiguration.from_environment()
 
         self.assertEqual(25, default_configuration.low_level_rating)
         self.assertEqual(75, default_configuration.high_level_rating)
@@ -59,20 +59,20 @@ class PlatformMatchingConfigurationTest(unittest.TestCase):
         """
 
         invalid_environments = [
-            {"PLATFORM_MATCHING_LOW_LVL_RATING": "bad"},
+            {"GAME_MATCHING_LOW_LVL_RATING": "bad"},
             {
-                "PLATFORM_MATCHING_LOW_LVL_RATING": "75",
-                "PLATFORM_MATCHING_HIGH_LEVEL_RATING": "75",
+                "GAME_MATCHING_LOW_LVL_RATING": "75",
+                "GAME_MATCHING_HIGH_LEVEL_RATING": "75",
             },
-            {"PLATFORM_MATCHING_LOW_LVL_RATING": "-1"},
-            {"PLATFORM_MATCHING_HIGH_LEVEL_RATING": "101"},
+            {"GAME_MATCHING_LOW_LVL_RATING": "-1"},
+            {"GAME_MATCHING_HIGH_LEVEL_RATING": "101"},
         ]
 
         for environment in invalid_environments:
             with self.subTest(environment=environment):
                 with patch.dict(os.environ, environment, clear=True):
                     with self.assertRaises(ValueError):
-                        PlatformMatchingConfiguration.from_environment()
+                        GameMatchingConfiguration.from_environment()
 
 
 if __name__ == "__main__":

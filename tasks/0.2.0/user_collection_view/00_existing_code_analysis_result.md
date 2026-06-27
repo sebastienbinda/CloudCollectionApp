@@ -6,7 +6,8 @@ Le fonctionnement actuel de consultation de collection est encore centré sur le
 fichier ODS global résolu par `JEUXVIDEO_ODS_PATH`. Les routes backend de
 collection, de plateformes, de wishlist et plusieurs hooks frontend passent par
 `GamesService`, qui instancie `OdsPathResolver`, `OdsCache`, `OdsReader`,
-`OdsImageReader`, `OdsXmlReader` et `OdsWriter`.
+`OdsImageReader` et `OdsXmlReader`. L'ancien writer ODS a ete supprime apres le
+retrait des actions d'ecriture ODS.
 
 Le workflow d'import utilisateur existe déjà et persiste les plateformes,
 studios, jeux et associations dans PostgreSQL. Les tables nécessaires à la
@@ -155,7 +156,7 @@ Modifications prévues :
 | `backend/services/games/add_game_choice_service.py` | Fusion de choix depuis feuilles ODS et wishlist | Supprimer avec `/add-game-choices` |
 | `backend/services/ods/ods_reader.py` | Lecteur ODS générique utilisé par consultation et import | Conserver seulement si requis par import, sinon déplacer les morceaux utiles |
 | `backend/services/ods/ods_collection_import_reader.py` | Lecteur ODS dédié import utilisateur | Conserver comme base du flux import |
-| `backend/services/ods/ods_writer.py` et éditeurs associés | Écriture ODS collection et wishlist | Supprimer si plus aucune action ODS n'est conservée |
+| Writer ODS et éditeurs associés | Écriture ODS collection et wishlist | Supprimés après retrait des actions ODS |
 | `backend/services/ods/ods_image_reader.py` | Lecture images embarquées ODS | Supprimer du flux consultation ; conserver seulement si import en dépend, ce qui n'est pas le cas actuellement |
 | `backend/services/ods/ods_cache.py` | Cache de lecture ODS | Supprimer du flux consultation ; conserver seulement si import garde `OdsReader` |
 | `backend/services/ods/ods_path_resolver.py` | Résolution `JEUXVIDEO_ODS_PATH` | Supprimer du flux consultation |

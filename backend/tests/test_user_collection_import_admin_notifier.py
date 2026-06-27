@@ -15,6 +15,7 @@ import unittest
 from pathlib import Path
 
 from services.collection.imports import CollectionImportWarnings
+from services.database.user_collection_import_repository import CreatedGameMatchReport
 from services.users import UserCollectionImportAdminNotifier, UserCollectionImportReportContext
 from tests.fake_platform_matching_email_sender import FakePlatformMatchingEmailSender
 
@@ -43,6 +44,7 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertIn("Email utilisateur: importer@example.com", body)
         self.assertIn("Type de fichier: libreoffice_ods", body)
         self.assertIn("Jeux associes: 4", body)
+        self.assertIn("Aucun jeu cree faute de matching.", body)
         self.assertIn("Warnings: aucun warning detecte.", body)
 
     def test_notify_import_report_uses_backend_resource_template(self):
@@ -127,7 +129,38 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertIn("Chrono", body)
         self.assertIn("Peut etre", body)
 
-    def _context(self, warnings):
+    def test_notify_import_report_sends_created_game_match_reports(self):
+        """Verifie le detail des jeux crees faute de rattachement.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la section du mail.
+        """
+
+        sender = FakePlatformMatchingEmailSender()
+        notifier = UserCollectionImportAdminNotifier(sender, "admin@example.com")
+
+        notifier.notify_import_report(
+            self._context(
+                CollectionImportWarnings(),
+                created_game_match_reports=(
+                    CreatedGameMatchReport("Zelda", "Switch", "Mario Kart", 33),
+                    CreatedGameMatchReport("Chrono", "SNES", "", 0),
+                ),
+            )
+        )
+
+        body = sender.sent_emails[0]["body"]
+        self.assertIn("Jeux crees faute de rattachement", body)
+        self.assertIn("Jeu cree: Zelda", body)
+        self.assertIn("Meilleur candidat existant: Mario Kart", body)
+        self.assertIn("Score: 33", body)
+        self.assertIn("Jeu cree: Chrono", body)
+        self.assertIn("Meilleur candidat existant: aucun candidat", body)
+
+    def _context(self, warnings, created_game_match_reports=()):
         return UserCollectionImportReportContext(
             user_id=7,
             user_email="importer@example.com",
@@ -142,6 +175,7 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
             wishlisted_games=1,
             warnings=warnings,
             collection_file_description={"file_type": "libreoffice_ods"},
+            created_game_match_reports=created_game_match_reports,
         )
 
 

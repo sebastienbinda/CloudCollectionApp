@@ -176,10 +176,14 @@ Variables principales :
 - `BACKEND_IMG_HOST_DIR` : repertoire hote monte par Docker Compose dans
   `BACKEND_IMG_DIR` pour persister les images de plateformes. En production, le
   chemin doit etre absolu, exister et etre sauvegardable.
-- `MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
+- `PLATFORM_MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
   avec verification administrateur. Valeur par defaut : `25`.
-- `MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
+- `PLATFORM_MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
   l'import est accepte sans warning de verification. Valeur par defaut : `75`.
+- `GAME_MATCHING_LOW_LVL_RATING` : score minimal de matching faible des jeux.
+  Valeur par defaut : `25`.
+- `GAME_MATCHING_HIGH_LEVEL_RATING` : score minimal de rattachement automatique
+  d'un jeu existant. Valeur par defaut : `75`.
 - `REGION_MATCH_LIMIT` : score minimal de similarite pour rattacher une region
   importee a un code autorise. Valeur par defaut : `60`.
 - `ETAT_MATCH_LIMIT` : score minimal de similarite pour rattacher un etat
@@ -270,6 +274,15 @@ Demarrer depuis la racine :
 ```bash
 ./start.sh -d
 ```
+
+En mode production avec `./start.sh -p`, le script synchronise le depot Git avec
+la branche distante configuree. Si la branche locale et la branche distante ont
+diverge et necessitent un merge ou un rebase manuel, le demarrage est annule.
+Le script restructure aussi `docker/.env` selon `docker/.env.example`, en
+omettant les sections dediees au developpement local comme
+`EMAIL LOCAL AVEC MAILPIT`. Les variables absentes sont ajoutees dans leur
+section; le demarrage est alors annule pour laisser le temps de verifier et
+configurer les nouvelles valeurs.
 
 Ou depuis `docker/` :
 

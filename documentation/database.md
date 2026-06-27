@@ -308,7 +308,11 @@ During import:
   threshold, platform aliases from `t_platform_alias.name` are evaluated and the
   best alias match is kept only if it improves the direct score;
 - studios are matched by normalized `t_studio.name`;
-- games are matched by normalized `t_game.name` and platform;
+- games are first matched by exact normalized `t_game.name` and platform; when
+  no exact key exists, existing games on the same matched platform are scored
+  with the shared normalized similarity function and reused only if the best
+  score is unique and greater than or equal to
+  `GAME_MATCHING_HIGH_LEVEL_RATING`;
 - duplicate rows in the ODS file are ignored after the first normalized match;
 - invalid or empty game release dates are stored as `NULL`.
 

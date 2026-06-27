@@ -136,17 +136,17 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Technical sheets such as `Accueil` and `Liste de souhaits` must be ignored
   only when the import configuration excludes them.
 - Platforms are matched by normalized platform name.
-- When the best direct platform match is below `MATCHING_HIGH_LEVEL_RATING`, the
+- When the best direct platform match is below `PLATFORM_MATCHING_HIGH_LEVEL_RATING`, the
   backend searches platform aliases from the SQL reference catalog and uses an
   alias match only when it improves the direct score.
 - Matching scores range from `0` to `100`. The defaults are
-  `MATCHING_LOW_LVL_RATING=25` and `MATCHING_HIGH_LEVEL_RATING=75`.
-- Scores greater than or equal to `MATCHING_HIGH_LEVEL_RATING` are imported
+  `PLATFORM_MATCHING_LOW_LVL_RATING=25` and `PLATFORM_MATCHING_HIGH_LEVEL_RATING=75`.
+- Scores greater than or equal to `PLATFORM_MATCHING_HIGH_LEVEL_RATING` are imported
   without manual-verification warning.
-- Scores greater than or equal to `MATCHING_LOW_LVL_RATING` and lower than
-  `MATCHING_HIGH_LEVEL_RATING` are imported and reported in
+- Scores greater than or equal to `PLATFORM_MATCHING_LOW_LVL_RATING` and lower than
+  `PLATFORM_MATCHING_HIGH_LEVEL_RATING` are imported and reported in
   `warnings.platform_matches` for administrator verification.
-- Scores lower than `MATCHING_LOW_LVL_RATING`, including `0`, skip the impacted
+- Scores lower than `PLATFORM_MATCHING_LOW_LVL_RATING`, including `0`, skip the impacted
   games and report them in `warnings.skipped_games`.
 - The import warnings keep a `platform_mappings` list with the imported platform
   name, matched platform name, matching score, imported game count and alias
@@ -157,9 +157,18 @@ database structure in `documentation/database.md`, and frontend navigation in
   when `ADMIN_NOTIFICATION_EMAIL` is configured, even when the import has no
   warning. The report is sent outside the reader layer and includes the import
   context, counters, validated configuration, total duration, platform mappings
-  and every import warning.
+  and every import warning. When a game reference is created because no exact or
+  high-confidence existing game match was accepted, this same report lists the
+  created game with its platform, the best existing same-platform candidate and
+  the score obtained by the matching algorithm.
 - Studios are matched by normalized studio name.
-- Games are matched by normalized game name and platform.
+- Games are first matched by exact normalized `(platform, name)` key. When no
+  exact key exists, the backend computes the normalized name similarity score
+  against existing games on the same matched platform. A game is automatically
+  attached to an existing reference only when the best score is unique and
+  greater than or equal to `GAME_MATCHING_HIGH_LEVEL_RATING`; scores lower than
+  `GAME_MATCHING_LOW_LVL_RATING` are rejected immediately, and other
+  non-exact results create a new reference game.
 - Duplicate ODS entries after normalization keep the first occurrence and ignore
   later duplicates with warning-level logging.
 - Empty or invalid game release dates must be persisted as `NULL`, not as
@@ -260,17 +269,25 @@ database structure in `documentation/database.md`, and frontend navigation in
 - `USER_COLLECTION_MAX_UPLOAD_BYTES` is the single upload size setting.
 - The same value must configure Flask request size handling and the Nginx
   `client_max_body_size` used by the `web` service.
-- `MATCHING_LOW_LVL_RATING` configures the minimum platform score accepted for
+- `PLATFORM_MATCHING_LOW_LVL_RATING` configures the minimum platform score accepted for
   import with administrator verification. Default: `25`.
-- `MATCHING_HIGH_LEVEL_RATING` configures the platform score accepted without
+- `PLATFORM_MATCHING_HIGH_LEVEL_RATING` configures the platform score accepted without
   manual-verification warning. Default: `75`.
+- `GAME_MATCHING_LOW_LVL_RATING` configures the low game matching score below
+  which a non-exact game candidate is rejected. Default: `25`.
+- `GAME_MATCHING_HIGH_LEVEL_RATING` configures the unique high-confidence game
+  score required to automatically attach an imported game to an existing game on
+  the same platform. Default: `75`.
 - `REGION_MATCH_LIMIT` configures the minimum region matching score. It must be
   an integer between `0` and `100`; its default is `60`.
 - `ETAT_MATCH_LIMIT` configures the minimum condition matching score. It must
   be an integer between `0` and `100`; its default is `60`.
 - Matching ratings must be numeric integers between `0` and `100`, and
-  `MATCHING_LOW_LVL_RATING` must be strictly lower than
-  `MATCHING_HIGH_LEVEL_RATING`.
+  `PLATFORM_MATCHING_LOW_LVL_RATING` must be strictly lower than
+  `PLATFORM_MATCHING_HIGH_LEVEL_RATING`.
+- Game matching ratings must be numeric integers between `0` and `100`, and
+  `GAME_MATCHING_LOW_LVL_RATING` must be strictly lower than
+  `GAME_MATCHING_HIGH_LEVEL_RATING`.
 - Docker must mount the host `USERS_WORKSPACE` into `/users/workspace` for the
   backend container.
 - Do not hardcode secrets, tokens or user-specific absolute host paths.

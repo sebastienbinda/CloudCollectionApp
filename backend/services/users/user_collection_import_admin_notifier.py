@@ -116,6 +116,9 @@ class UserCollectionImportAdminNotifier:
                 "created_games": context.created_games,
                 "associated_games": context.associated_games,
                 "wishlisted_games": context.wishlisted_games,
+                "created_game_match_reports": self._created_game_match_reports_text(
+                    context.created_game_match_reports,
+                ),
                 "total_import_duration_seconds": "{duration:.3f}".format(
                     duration=float(
                         getattr(context.warnings, "total_import_duration_seconds", 0.0)
@@ -130,6 +133,23 @@ class UserCollectionImportAdminNotifier:
                 "warnings": "\n".join(warnings_lines),
             },
         )
+
+    def _created_game_match_reports_text(self, created_game_match_reports: tuple) -> str:
+        if not created_game_match_reports:
+            return "Aucun jeu cree faute de matching."
+        lines = ["Jeux crees faute de rattachement a un jeu existant:"]
+        for report in created_game_match_reports:
+            best_name = getattr(report, "best_existing_game_name", "") or "aucun candidat"
+            lines.append(
+                "- Jeu cree: {imported_game_name} | Plateforme: {platform_name} | "
+                "Meilleur candidat existant: {best_name} | Score: {best_score}".format(
+                    imported_game_name=getattr(report, "imported_game_name", ""),
+                    platform_name=getattr(report, "platform_name", ""),
+                    best_name=best_name,
+                    best_score=int(getattr(report, "best_score", 0) or 0),
+                )
+            )
+        return "\n".join(lines)
 
     def _append_warnings(self, lines: list[str], warnings: object) -> None:
         platform_mappings = list(getattr(warnings, "platform_mappings", []) or [])

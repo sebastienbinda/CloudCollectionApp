@@ -18,7 +18,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.database.user_collection_import_repository import UserCollectionImportPersistenceResult
+from services.database.user_collection_import_repository import (
+    CreatedGameMatchReport,
+    UserCollectionImportPersistenceResult,
+)
 from services.collection.imports import (
     CollectionFileDescription,
     CollectionFileType,
@@ -306,8 +309,19 @@ class UserCollectionImportServiceTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             notifier = FakeImportReportNotifier()
+            persistence_result = UserCollectionImportPersistenceResult(
+                1,
+                1,
+                1,
+                1,
+                user_email="importer@example.com",
+                created_game_match_reports=(
+                    CreatedGameMatchReport("Zelda", "Switch", "Mario Kart", 33),
+                ),
+            )
             service, repository, reader, source_file = self._build_service(
                 directory,
+                repository=FakeUserCollectionImportRepository(result=persistence_result),
                 report_notifier=notifier,
             )
 
@@ -328,6 +342,10 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertTrue(context.copied_to_workspace)
             self.assertEqual(result.associated_games, context.associated_games)
             self.assertEqual(result.wishlisted_games, context.wishlisted_games)
+            self.assertEqual(
+                repository.result.created_game_match_reports,
+                context.created_game_match_reports,
+            )
             self.assertEqual(
                 self._valid_description().to_dict(),
                 context.collection_file_description,

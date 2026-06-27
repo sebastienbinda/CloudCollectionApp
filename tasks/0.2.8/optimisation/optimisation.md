@@ -1,0 +1,1 @@
+Durant l'import beaucoup d'informations sont conservées en mémoire, est-il posible d'optimiser l'occupation mémoire durant l'import ?
