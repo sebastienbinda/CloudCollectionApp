@@ -154,7 +154,35 @@ class GameRepositoryTest(unittest.TestCase):
         self.assertIn("developer", sql)
         self.assertIn("duplicate_flag", sql)
         self.assertIn("FALSE", sql)
+        self.assertEqual("Chrono Trigger", parameters["name"])
         self.assertEqual(11, parameters["developer"])
+
+    def test_insert_standardizes_new_game_name(self):
+        """Verifie que les nouveaux jeux sont stockes avec un nom standardise.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le parametre SQL `name`.
+        """
+
+        connection = FakeConnection()
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+        game = OdsCollectionImportGame(
+            name="oddworld:L'odyssée d'abe",
+            platform_name="PlayStation",
+            studio_name="Oddworld Inhabitants",
+            release_date=None,
+        )
+
+        repository.insert(connection, game, platform_id=7, studio_id=11)
+
+        _sql, parameters = connection.executed_statements[0]
+        self.assertEqual("Oddworld : L'Odyssée d'Abe", parameters["name"])
 
     def test_insert_ignores_unpersistable_release_date(self):
         """Verifie qu'une date hors plage n'est jamais envoyee a PostgreSQL.

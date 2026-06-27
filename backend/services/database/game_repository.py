@@ -135,7 +135,7 @@ class SqlAlchemyGameRepository:
                 "RETURNING id"
             ),
             {
-                "name": game.name,
+                "name": self.name_normalizer.stored_game_name(game.name),
                 "release_date": self.date_validator.validate_release_date(game.release_date),
                 "developer": studio_id,
                 "platform": platform_id,
