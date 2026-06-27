@@ -169,6 +169,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   greater than or equal to `GAME_MATCHING_HIGH_LEVEL_RATING`; scores lower than
   `GAME_MATCHING_LOW_LVL_RATING` are rejected immediately, and other
   non-exact results create a new reference game.
+- Newly created reference games store a standardized display name: title words
+  are capitalized, joining words remain lowercase inside a title segment, Roman
+  numerals are uppercased and colons are stored with one surrounding space.
 - Duplicate ODS entries after normalization keep the first occurrence and ignore
   later duplicates with warning-level logging.
 - Empty or invalid game release dates must be persisted as `NULL`, not as

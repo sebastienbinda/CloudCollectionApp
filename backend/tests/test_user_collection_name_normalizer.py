@@ -89,6 +89,36 @@ class UserCollectionNameNormalizerTest(unittest.TestCase):
         self.assertIsNone(self.normalizer.stored_value(float("nan")))
         self.assertIsNone(self.normalizer.comparison_key(None))
 
+    def test_stored_game_name_standardizes_title_case(self):
+        """Verifie la standardisation des noms de jeux crees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la casse titre attendue.
+        """
+
+        cases = {
+            "le roi lion": "Le Roi Lion",
+            "Elden ring night reign": "Elden Ring Night Reign",
+            "Dirge of cerberus : Final fantasy 7": "Dirge of Cerberus : Final Fantasy 7",
+            "Dirge of cerberus : Final fantasy vii": "Dirge of Cerberus : Final Fantasy VII",
+            "Final Fantasy Xiii-3 Lightning Returns": "Final Fantasy XIII-3 Lightning Returns",
+            "xiom chronicles": "Xiom Chronicles",
+            "GoldenEye: au service du mal": "GoldenEye : Au Service du Mal",
+            "oddworld:L'odyssée d'abe": "Oddworld : L'Odyssée d'Abe",
+            "assassin's creed": "Assassin's Creed",
+            "Like a dragon gaiden : The man Who Erased his name": (
+                "Like a Dragon Gaiden : The Man Who Erased His Name"
+            ),
+            "Paper mario et la porte millénaire": "Paper Mario et la Porte Millénaire",
+        }
+
+        for raw_name, expected_name in cases.items():
+            with self.subTest(raw_name=raw_name):
+                self.assertEqual(expected_name, self.normalizer.stored_game_name(raw_name))
+
 
 if __name__ == "__main__":
     unittest.main()
