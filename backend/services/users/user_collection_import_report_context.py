@@ -32,6 +32,7 @@ class UserCollectionImportReportContext:
         wishlisted_games (int): Nombre de jeux importes en liste de souhaits.
         warnings (object): Avertissements et metadonnees de l'import.
         collection_file_description (dict): Configuration valide utilisee.
+        created_game_match_reports (tuple): Jeux crees avec meilleur candidat existant.
     """
 
     user_id: int
@@ -47,3 +48,4 @@ class UserCollectionImportReportContext:
     wishlisted_games: int
     warnings: object
     collection_file_description: dict
+    created_game_match_reports: tuple = ()

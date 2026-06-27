@@ -1275,10 +1275,10 @@ file, the reference platform retained by matching, the matching score, the
 number of imported games using that source platform name, and whether a platform
 alias produced the retained match.
 `warnings.platform_matches` lists games imported with a platform score greater
-than or equal to `MATCHING_LOW_LVL_RATING` and lower than
-`MATCHING_HIGH_LEVEL_RATING`; they are imported but require manual
+than or equal to `PLATFORM_MATCHING_LOW_LVL_RATING` and lower than
+`PLATFORM_MATCHING_HIGH_LEVEL_RATING`; they are imported but require manual
 administrator verification. `warnings.skipped_games` lists games ignored
-because the platform score is lower than `MATCHING_LOW_LVL_RATING`.
+because the platform score is lower than `PLATFORM_MATCHING_LOW_LVL_RATING`.
 `warnings.total_import_duration_seconds` contains the total backend import
 duration in seconds, measured around file validation, optional workspace copy,
 file reading, matching and SQL persistence.

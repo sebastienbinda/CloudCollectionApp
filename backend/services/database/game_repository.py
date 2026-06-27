@@ -47,14 +47,17 @@ class SqlAlchemyGameRepository:
         self.name_normalizer = name_normalizer
         self.date_validator = CollectionImportDateValidator()
 
-    def load_ids_by_key(self, connection: Connection) -> dict[tuple[str, str], int]:
-        """Charge les jeux existants par cle plateforme/nom.
+    def load_references_by_key(
+        self,
+        connection: Connection,
+    ) -> dict[tuple[str, str], tuple[int, str]]:
+        """Charge les jeux existants par cle avec leur nom d'origine.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
 
         Returns:
-            dict[tuple[str, str], int]: Identifiants des jeux.
+            dict[tuple[str, str], tuple[int, str]]: Identifiants et noms des jeux.
         """
 
         rows = connection.execute(
@@ -68,8 +71,23 @@ class SqlAlchemyGameRepository:
             (
                 self.name_normalizer.comparison_key(row["platform_name"]),
                 self.name_normalizer.comparison_key(row["name"]),
-            ): int(row["id"])
+            ): (int(row["id"]), str(row["name"] or ""))
             for row in rows
+        }
+
+    def load_ids_by_key(self, connection: Connection) -> dict[tuple[str, str], int]:
+        """Charge les jeux existants par cle plateforme/nom.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            dict[tuple[str, str], int]: Identifiants des jeux.
+        """
+
+        return {
+            game_key: game_reference[0]
+            for game_key, game_reference in self.load_references_by_key(connection).items()
         }
 
     def insert(

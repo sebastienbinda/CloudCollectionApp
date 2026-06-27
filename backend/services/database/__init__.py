@@ -17,6 +17,8 @@ from .database_schema_service import DatabaseSchemaService
 from .collection_share import CollectionShare
 from .collection_share_repository import SqlAlchemyCollectionShareRepository
 from .game import Game
+from .game_matching_configuration import GameMatchingConfiguration
+from .game_matching_service import GameMatchingService
 from .game_repository import SqlAlchemyGameRepository
 from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
 from .platform import Platform
@@ -41,6 +43,7 @@ from .user import User
 from .user_collection import UserCollection
 from .user_collection_file_repository import SqlAlchemyUserCollectionFileRepository
 from .user_collection_import_repository import (
+    CreatedGameMatchReport,
     SqlAlchemyUserCollectionImportRepository,
     UserCollectionImportPersistenceResult,
     UserCollectionImportUserNotFoundError,
@@ -54,7 +57,10 @@ __all__ = [
     "DatabaseModelBase",
     "DatabaseSchemaService",
     "CollectionShare",
+    "CreatedGameMatchReport",
     "Game",
+    "GameMatchingConfiguration",
+    "GameMatchingService",
     "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
     "SqlAlchemyCollectionShareRepository",

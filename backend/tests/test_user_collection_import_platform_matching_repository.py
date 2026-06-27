@@ -26,7 +26,12 @@ from services.database.user_collection_import_repository import (
 from services.database.admin_library_import_repository import (
     SqlAlchemyAdminLibraryImportRepository,
 )
-from services.database import PlatformMatchingConfiguration, PlatformMatchingService
+from services.database import (
+    GameMatchingConfiguration,
+    GameMatchingService,
+    PlatformMatchingConfiguration,
+    PlatformMatchingService,
+)
 from services.users import UserCollectionNameNormalizer
 
 
@@ -96,11 +101,16 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         repository.platform_matching_service = SimpleNamespace(
             match_import_data=lambda import_data, platform_rows: import_data,
         )
+        repository.game_matching_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=75),
+            repository.name_normalizer,
+        )
         repository.platform_matching_notifier = SimpleNamespace(
             notify_import_report=lambda warnings: None,
         )
         repository.studio_repository = SimpleNamespace(load_ids_by_key=lambda connection: {})
         repository.game_repository = SimpleNamespace(
+            load_references_by_key=lambda connection: {},
             load_ids_by_key=lambda connection: {},
             game_key=lambda game: (
                 repository.name_normalizer.comparison_key(game.platform_name),
@@ -154,8 +164,13 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         repository.platform_matching_service = PlatformMatchingService(
             PlatformMatchingConfiguration(low_level_rating=25, high_level_rating=75)
         )
+        repository.game_matching_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=75),
+            repository.name_normalizer,
+        )
         repository.studio_repository = SimpleNamespace(load_ids_by_key=lambda connection: {})
         repository.game_repository = SimpleNamespace(
+            load_references_by_key=lambda connection: {},
             load_ids_by_key=lambda connection: {},
             game_key=lambda game: (
                 repository.name_normalizer.comparison_key(game.platform_name),
@@ -184,6 +199,97 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual("Sports", import_data.warnings.platform_matches[0]["game_name"])
         self.assertEqual("Switch", import_data.warnings.platform_mappings[0]["matched_platform"])
 
+    def test_ensure_games_reuses_existing_game_with_high_unique_score(self):
+        """Verifie le rattachement d'un jeu existant par score de nom.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de creation.
+        """
+
+        insert_calls = []
+        repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
+        repository.game_matching_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=75),
+            repository.name_normalizer,
+        )
+        repository.game_repository = SimpleNamespace(
+            load_references_by_key=lambda connection: {
+                ("switch", "the legend of zelda"): (31, "The Legend of Zelda")
+            },
+            load_ids_by_key=lambda connection: {("switch", "the legend of zelda"): 31},
+            game_key=lambda game: (
+                repository.name_normalizer.comparison_key(game.platform_name),
+                repository.name_normalizer.comparison_key(game.name),
+            ),
+            insert=lambda connection, game, platform_id, studio_id: insert_calls.append(game),
+        )
+
+        associations, created_games, created_game_match_reports = repository._ensure_games(
+            object(),
+            CollectionImportData(
+                platforms=[CollectionImportPlatform("Switch")],
+                studios=[],
+                games=[CollectionImportGame("Legend of Zelda", "Switch", "", None)],
+            ),
+            {"switch": 7},
+            {},
+        )
+
+        self.assertEqual(0, created_games)
+        self.assertEqual([], created_game_match_reports)
+        self.assertEqual([], insert_calls)
+        self.assertEqual(31, associations[0].game_id)
+
+    def test_ensure_games_reports_created_game_best_existing_candidate(self):
+        """Verifie le diagnostic de matching pour un jeu cree.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le rapport de creation.
+        """
+
+        repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
+        repository.game_matching_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=90),
+            repository.name_normalizer,
+        )
+        repository.game_repository = SimpleNamespace(
+            load_references_by_key=lambda connection: {
+                ("switch", "mario kart"): (31, "Mario Kart")
+            },
+            game_key=lambda game: (
+                repository.name_normalizer.comparison_key(game.platform_name),
+                repository.name_normalizer.comparison_key(game.name),
+            ),
+            insert=lambda connection, game, platform_id, studio_id: 41,
+        )
+
+        associations, created_games, created_game_match_reports = repository._ensure_games(
+            object(),
+            CollectionImportData(
+                platforms=[CollectionImportPlatform("Switch")],
+                studios=[],
+                games=[CollectionImportGame("Zelda", "Switch", "", None)],
+            ),
+            {"switch": 7},
+            {},
+        )
+
+        self.assertEqual(1, created_games)
+        self.assertEqual(41, associations[0].game_id)
+        self.assertEqual(1, len(created_game_match_reports))
+        self.assertEqual("Zelda", created_game_match_reports[0].imported_game_name)
+        self.assertEqual("Switch", created_game_match_reports[0].platform_name)
+        self.assertEqual("Mario Kart", created_game_match_reports[0].best_existing_game_name)
+        self.assertGreaterEqual(created_game_match_reports[0].best_score, 0)
+
 
 class AdminLibraryImportRepositoryTest(unittest.TestCase):
     """Valide le repository d'import admin Bibliotheque."""
@@ -211,11 +317,16 @@ class AdminLibraryImportRepositoryTest(unittest.TestCase):
         repository.platform_matching_service = SimpleNamespace(
             match_import_data=lambda import_data, platform_rows: import_data,
         )
+        repository.game_matching_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=75),
+            repository.name_normalizer,
+        )
         repository.studio_repository = SimpleNamespace(
             load_ids_by_key=lambda connection: {},
             insert=lambda connection, name: 13,
         )
         repository.game_repository = SimpleNamespace(
+            load_references_by_key=lambda connection: {},
             load_ids_by_key=lambda connection: {},
             game_key=lambda game: (
                 repository.name_normalizer.comparison_key(game.platform_name),

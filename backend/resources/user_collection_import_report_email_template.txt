@@ -15,6 +15,8 @@ Compteurs:
 - Jeux associes: ${associated_games}
 - Jeux en liste de souhaits: ${wishlisted_games}
 
+${created_game_match_reports}
+
 Duree totale de l'import: ${total_import_duration_seconds} seconde(s).
 
 Configuration d'import:

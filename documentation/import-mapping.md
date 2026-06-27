@@ -47,11 +47,20 @@ reader architecture rules in `documentation/reader.md`.
   accents. Comparison keys are trimmed, lowercased and accent-free.
 - Games are deduplicated by normalized `(platform, name)`; the first retained
   row wins unless a wishlist duplicate rule applies.
+- Existing games are reused first by exact normalized `(platform, name)` key.
+  When no exact game key exists, candidates are limited to the same matched
+  platform and scored with the shared normalized similarity function. The
+  imported game is attached to an existing game only when the best candidate is
+  unique and reaches `GAME_MATCHING_HIGH_LEVEL_RATING` (default `75`); scores
+  below `GAME_MATCHING_LOW_LVL_RATING` (default `25`) and ambiguous or medium
+  scores create a new game reference. Each created game reference is included in
+  the administrator import report with the best existing same-platform candidate
+  name and matching score.
 - Platforms are scored first against canonical catalog names. When the direct
-  score is below `MATCHING_HIGH_LEVEL_RATING`, catalog aliases are evaluated
+  score is below `PLATFORM_MATCHING_HIGH_LEVEL_RATING`, catalog aliases are evaluated
   and used only when they improve the score.
-- A unique platform score at or above `MATCHING_HIGH_LEVEL_RATING` is accepted;
-  a score from `MATCHING_LOW_LVL_RATING` up to the high threshold is accepted
+- A unique platform score at or above `PLATFORM_MATCHING_HIGH_LEVEL_RATING` is accepted;
+  a score from `PLATFORM_MATCHING_LOW_LVL_RATING` up to the high threshold is accepted
   with a manual-check warning; a lower or ambiguous score skips affected games.
 - Studios use their normalized name. Existing studios are reused and missing
   non-empty studios are created.
