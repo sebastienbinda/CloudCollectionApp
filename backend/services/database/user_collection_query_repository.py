@@ -325,6 +325,7 @@ class SqlAlchemyUserCollectionQueryRepository:
             text(
                 "SELECT "
                 "game.id, game.name, game.release_date::text AS release_date, "
+                "game.duplicate_flag, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
                 "studio.id AS studio_id, studio.name AS studio_name, "
                 "user_collection.wishlist, user_collection.purchase_price, "
@@ -370,6 +371,7 @@ class SqlAlchemyUserCollectionQueryRepository:
             text(
                 "SELECT "
                 "game.id, game.name, game.release_date::text AS release_date, "
+                "game.duplicate_flag, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
                 "studio.id AS studio_id, studio.name AS studio_name, "
                 "user_collection.wishlist, user_collection.purchase_price, "

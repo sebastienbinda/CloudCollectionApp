@@ -289,12 +289,14 @@ user data, imported collection file paths or `t_user_collection` associations.
 | `GET` | `/api/library/studios` | Lists global reference studios. |
 | `GET` | `/api/library/games` | Lists global reference games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
+| `POST` | `/api/library/games/<game_id>/doublon` | Marks a Library game as a possible duplicate. Requires `USER` with an imported collection. |
 
 List endpoints support these query parameters:
 
 - `name`: optional name filter, matched without case or accent sensitivity;
 - `platform`: optional filter for `/api/library/games`, matched exactly after
   removing case, accents and spaces;
+- `duplicate_flag`: optional `true` or `false` filter for `/api/library/games`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule, where direction is `asc` or
@@ -310,6 +312,12 @@ Allowed sort columns:
 
 Invalid page, size or sort values fall back to the default page, default size or
 `name,asc` sort.
+
+`POST /api/library/games/<game_id>/doublon` is protected even though it is under
+the Library path. The backend resolves the connected user from the Bearer token
+and accepts the signal only if that user has already imported a collection. The
+reported game does not have to be attached to that user's collection. GUEST
+sessions cannot report duplicates.
 
 ### Library Entity Counts Response
 
@@ -525,6 +533,9 @@ are separate from the public read-only Library consultation endpoints.
 | --- | --- | --- |
 | `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
 | `POST` | `/api/library/platform-catalog/sync` | Adds missing platforms and aliases from backend CSV resources. |
+| `GET` | `/api/library/games/<game_id>/doublon` | Loads one Library game for duplicate correction. |
+| `GET` | `/api/library/games/<game_id>/doublon/candidates` | Lists same-platform candidate games for duplicate correction. |
+| `POST` | `/api/library/games/doublon` | Rejects or merges a reported duplicate game. |
 | `GET` | `/api/library/platforms/images` | Lists platform images for moderation. |
 | `PUT` | `/api/library/platforms/<platform_id>/image/<image_id>/status/<status>` | Accepts or refuses one platform image. |
 | `PUT` | `/api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>` | Changes one platform image type. |
@@ -602,6 +613,58 @@ Access and error status:
 
 - `403` when the Bearer token is missing or does not carry profile `ADMIN`;
 - `500` when the CSV read or SQL update fails unexpectedly.
+
+### Manage Game Duplicates
+
+```http
+GET /api/library/games/<game_id>/doublon
+GET /api/library/games/<game_id>/doublon/candidates?name=sonic
+POST /api/library/games/doublon
+Authorization: Bearer <admin-token>
+```
+
+The correction workflow only merges games from the same platform. Administrators
+may open it for a reported or unreported Library game. Refusing a report sets
+`t_game.duplicate_flag = false`. Merging remaps
+`t_user_collection` rows from the duplicate game to the kept game, adds the
+duplicate name to `t_game_alias` when requested, applies selected kept values to
+the target game, then deletes the duplicate `t_game` row.
+When the merged source game was flagged with `duplicate_flag = true`, the
+backend sends a templated email to every user whose collection had that
+duplicate game before the remap. This notification is tied only to administrator
+duplicate resolution and is not sent during imports.
+Reject and merge operations take the same PostgreSQL transaction advisory lock
+as admin and user collection imports. This serializes duplicate correction with
+global game matching/creation so an import cannot create or associate games
+against a catalog state that is being merged at the same time.
+
+Reject payload:
+
+```json
+{
+  "action": "reject",
+  "duplicate_game_id": 12
+}
+```
+
+Merge payload:
+
+```json
+{
+  "action": "merge",
+  "duplicate_game_id": 12,
+  "target_game_id": 8,
+  "keep_duplicate_name_as_alias": true,
+  "selected_values": {
+    "release_date": "1991-06-23",
+    "developer": 4
+  }
+}
+```
+
+Successful merge responses include `remapped_user_count`,
+`updated_collection_rows`, `merged_collection_rows`, `alias_created`,
+`deleted_duplicate` and `processing_time_ms`.
 
 ### List Platform Images For Moderation
 
@@ -1332,6 +1395,7 @@ EMAIL_DELIVERY_MODE=smtp
 ADMIN_NOTIFICATION_EMAIL=admin@example.com
 ADMIN_ACCOUNT_VALIDATION_ENABLED=true
 EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
+GAME_DUPLICATE_DAILY_NOTIFICATION_TIME=04:00
 SMTP_FROM_EMAIL=noreply@example.com
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
@@ -1357,6 +1421,18 @@ file reader layer and does not depend on the imported file type. It is sent even
 when the import has no warning and includes the user import context, counters,
 validated import configuration, total duration, platform mappings and every
 import warning.
+
+The backend also runs a daily duplicate-game check at
+`GAME_DUPLICATE_DAILY_NOTIFICATION_TIME`, using local `HH:MM` format and
+defaulting to `04:00`. When at least one global Library game has
+`duplicate_flag = true`, the same address receives a templated email with the
+number of games to process and links to `FRONTEND_PUBLIC_URL` plus the filtered
+`/bibliotheque/jeux?duplicate_flag=true` page.
+
+Users impacted by an administrator merge of a flagged duplicate receive a
+separate templated email. The message names the removed game, the kept game,
+the platform and explains whether their existing collection entry was remapped
+or merged with an entry they already had for the kept game.
 
 In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
 the Docker local stack can use Mailpit.

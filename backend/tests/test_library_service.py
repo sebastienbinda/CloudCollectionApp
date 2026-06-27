@@ -527,6 +527,7 @@ class LibraryServiceTest(unittest.TestCase):
                     "editor": "",
                     "status": "",
                     "platform": "NES",
+                    "duplicate_flag": False,
                 }
             ],
             payload["games"],

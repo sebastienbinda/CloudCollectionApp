@@ -17,6 +17,16 @@ from .library_query_contract import (
     LibraryQueryParser,
     LibrarySortRule,
 )
+from .game_duplicate_service import (
+    GameDuplicateError,
+    GameDuplicateMergeResult,
+    GameDuplicateNotFoundError,
+    GameDuplicatePermissionError,
+    GameDuplicateService,
+)
+from .game_duplicate_daily_notification_scheduler import GameDuplicateDailyNotificationScheduler
+from .game_duplicate_daily_notification_service import GameDuplicateDailyNotificationService
+from .game_duplicate_user_notifier import GameDuplicateUserNotifier
 from .library_reset_job_coordinator import (
     LibraryResetAlreadyRunningError,
     LibraryResetJob,
@@ -37,6 +47,14 @@ from .platform_image_storage_guard import PlatformImageStorageLimitExceededError
 
 __all__ = [
     "LibraryPageRequest",
+    "GameDuplicateError",
+    "GameDuplicateMergeResult",
+    "GameDuplicateNotFoundError",
+    "GameDuplicatePermissionError",
+    "GameDuplicateService",
+    "GameDuplicateDailyNotificationScheduler",
+    "GameDuplicateDailyNotificationService",
+    "GameDuplicateUserNotifier",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
     "LibraryResetAlreadyRunningError",

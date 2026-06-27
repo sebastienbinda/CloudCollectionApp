@@ -190,8 +190,11 @@ Variables principales :
   importe a un libelle francais ou anglais. Valeur par defaut : `60`.
 - `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
   attente de validation administrateur, des rapports de fin d'import utilisateur
-  des rapports de reset Bibliotheque et des propositions d'images de
-  plateformes.
+  des rapports de reset Bibliotheque, des propositions d'images de plateformes
+  et de l'alerte quotidienne des doublons signales.
+- `GAME_DUPLICATE_DAILY_NOTIFICATION_TIME` : heure locale quotidienne de
+  verification des jeux signales comme doublons, au format `HH:MM`. Valeur par
+  defaut : `04:00`.
 - `ADMIN_ACCOUNT_VALIDATION_ENABLED` : active la validation administrateur apres
   validation email utilisateur. Valeur par defaut : `true`.
 - `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
@@ -237,7 +240,19 @@ Structure fonctionnelle attendue pour l'import :
 - si `ADMIN_NOTIFICATION_EMAIL` est configure, le backend notifie
   l'administrateur apres chaque validation email utilisateur et envoie un seul
   rapport administrateur en fin d'import avec le contexte, les compteurs, la
-  configuration validee, la duree et les warnings eventuels ;
+  configuration validee, la duree et les warnings eventuels. Une verification
+  quotidienne configurable signale aussi par mail le nombre de jeux marques
+  doublons si au moins un doublon reste a traiter ;
+- quand un administrateur fusionne un jeu marque doublon, les utilisateurs dont
+  la collection contenait ce doublon recoivent un mail templated expliquant le
+  jeu retire, le jeu conserve et l'impact sur leur collection ;
+- un utilisateur connecte avec une collection peut signaler comme doublon un
+  jeu depuis le detail Bibliotheque ou le detail de sa collection apres
+  confirmation explicite, meme si le jeu Bibliotheque n'est pas rattache a sa
+  propre collection ;
+- un administrateur peut filtrer les jeux signales, refuser un signalement ou
+  fusionner deux jeux via un ecran dedie qui remappe les collections impactees
+  et peut conserver l'ancien nom comme alias ;
 - depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
   le parcours `/collection/import` pour ajouter les jeux d'un nouveau fichier
   sans supprimer sa collection actuelle ;

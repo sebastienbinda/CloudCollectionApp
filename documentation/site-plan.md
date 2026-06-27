@@ -29,8 +29,14 @@
   accepted platform images.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
+  Authenticated administrators get an additional filter for games reported or
+  not reported as duplicates.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global
-  reference Library.
+  reference Library. Connected `USER` accounts with an imported collection can
+  report the displayed Library game as a possible duplicate after an explicit
+  confirmation, even when that game is not attached to their own collection.
+  When the displayed game is also in the connected user's collection, the page
+  shows an ownership indicator.
 - `/`: redirects to `/about` without a token, to `/collection` with a
   non-`ADMIN` token, and to `/configuration` with an `ADMIN` token.
 
@@ -50,7 +56,9 @@ public pages.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
   attached to the connected user's collection. Nullable private purchase and
   copy information is shown only when available, including region flag and
-  purchase-price unit.
+  purchase-price unit. The connected `USER` can report the displayed game as a
+  possible duplicate after an explicit confirmation. The page shows an
+  ownership indicator.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data.
@@ -64,6 +72,11 @@ public pages.
   listing and revoking temporary shares, including an optional recipient label.
   It is available only to a `USER` with an imported collection and discovered
   share-management route permissions.
+- `/configuration/doublons/<game_id>`: authenticated `ADMIN` page for refusing
+  or merging a Library game duplicate from a Library game detail, even when the
+  game has not been reported by a user. After a reject or merge action, the page
+  displays a dedicated result screen with a clear success or failure state and,
+  after a successful merge, a button back to the kept Library game detail.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
 

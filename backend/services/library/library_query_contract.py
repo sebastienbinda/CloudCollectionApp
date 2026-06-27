@@ -100,6 +100,7 @@ class LibraryQueryCriteria:
         normalized_name (str): Filtre `name` sans casse ni accents.
         platform (str): Filtre `platform` brut nettoye.
         normalized_platform (str): Filtre `platform` sans casse ni accents.
+        duplicate_flag (bool | None): Filtre optionnel des jeux signales doublons.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises et normalises.
     """
 
@@ -108,6 +109,7 @@ class LibraryQueryCriteria:
     normalized_name: str
     platform: str
     normalized_platform: str
+    duplicate_flag: bool | None
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -170,6 +172,9 @@ class LibraryQueryParser:
             platform=self._parse_name(self._get_first_value(query_parameters, "platform")),
             normalized_platform=self._parse_normalized_name(
                 self._get_first_value(query_parameters, "platform")
+            ),
+            duplicate_flag=self._parse_duplicate_flag(
+                self._get_first_value(query_parameters, "duplicate_flag")
             ),
             sort_rules=tuple(
                 self._parse_sort_rules(
@@ -234,6 +239,23 @@ class LibraryQueryParser:
 
         comparison_key = self.name_normalizer.comparison_key(value)
         return comparison_key or ""
+
+    def _parse_duplicate_flag(self, value: Any) -> bool | None:
+        """Parse le filtre de signalement doublon.
+
+        Args:
+            value (Any): Valeur brute du parametre `duplicate_flag`.
+
+        Returns:
+            bool | None: Valeur booleenne demandee ou absence de filtre.
+        """
+
+        normalized_value = str(value or "").strip().lower()
+        if normalized_value in {"true", "1", "yes", "oui"}:
+            return True
+        if normalized_value in {"false", "0", "no", "non"}:
+            return False
+        return None
 
     def _parse_sort_rules(
         self,

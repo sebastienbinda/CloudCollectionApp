@@ -47,6 +47,34 @@ class FakeScalarResult:
         return self.value
 
 
+class FakeMappingResult:
+    """Resultat SQL factice retournant des lignes mapping."""
+
+    def __init__(self, rows):
+        """Initialise le resultat mapping.
+
+        Args:
+            rows (list[dict]): Lignes retournees par `mappings`.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.rows = rows
+
+    def mappings(self):
+        """Retourne les lignes mapping configurees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            list[dict]: Lignes SQL factices.
+        """
+
+        return self.rows
+
+
 class FakeConnection:
     """Connexion SQLAlchemy factice capturant les requetes executees."""
 
@@ -61,6 +89,7 @@ class FakeConnection:
         """
 
         self.executed_statements = []
+        self.mapping_results = []
 
     def execute(self, statement, parameters=None):
         """Capture une requete SQL et ses parametres.
@@ -74,6 +103,8 @@ class FakeConnection:
         """
 
         self.executed_statements.append((str(statement), parameters))
+        if self.mapping_results:
+            return FakeMappingResult(self.mapping_results.pop(0))
         return FakeScalarResult(42)
 
 
@@ -95,7 +126,7 @@ class GameRepositoryTest(unittest.TestCase):
         self.assertEqual("developer", game_table.columns["developer"].name)
 
     def test_insert_uses_developer_column_and_parameter(self):
-        """Verifie que l'insertion SQL utilise le nom `developer`.
+        """Verifie que l'insertion SQL utilise les colonnes attendues.
 
         Args:
             Aucun.
@@ -121,6 +152,8 @@ class GameRepositoryTest(unittest.TestCase):
         sql, parameters = connection.executed_statements[0]
         self.assertEqual(42, game_id)
         self.assertIn("developer", sql)
+        self.assertIn("duplicate_flag", sql)
+        self.assertIn("FALSE", sql)
         self.assertEqual(11, parameters["developer"])
 
     def test_insert_ignores_unpersistable_release_date(self):
@@ -176,6 +209,44 @@ class GameRepositoryTest(unittest.TestCase):
 
         _sql, parameters = connection.executed_statements[0]
         self.assertIsNone(parameters["release_date"])
+
+    def test_load_references_includes_game_aliases_without_overriding_direct_names(self):
+        """Verifie que les alias de doublons sont reutilisables au matching.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les cles de reference.
+        """
+
+        connection = FakeConnection()
+        connection.mapping_results = [
+            [
+                {"id": 1, "name": "Sonic", "platform_name": "Mega Drive"},
+                {"id": 2, "name": "Sonic the edgedog", "platform_name": "Mega Drive"},
+            ],
+            [
+                {
+                    "id": 1,
+                    "name": "Sonic",
+                    "alias_name": "Sonic the edgedog",
+                    "platform_name": "Mega Drive",
+                }
+            ],
+        ]
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+
+        references = repository.load_references_by_key(connection)
+
+        self.assertEqual((1, "Sonic"), references[("mega drive", "sonic")])
+        self.assertEqual(
+            (2, "Sonic the edgedog"),
+            references[("mega drive", "sonic the edgedog")],
+        )
 
 
 if __name__ == "__main__":

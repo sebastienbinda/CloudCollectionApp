@@ -17,6 +17,7 @@ import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import EmailVerificationResultView from "./EmailVerificationResultView";
 import GameDetailView from "./GameDetailView";
+import GameDuplicateAdminView from "./GameDuplicateAdminView";
 import HomeView from "./HomeView";
 import LibraryEntityListView from "./LibraryEntityListView";
 import LibraryHomeView from "./LibraryHomeView";
@@ -53,6 +54,7 @@ class AppViewSwitch {
       "adminLibraryImport",
       "collectionShares",
       "platformImageModeration",
+      "gameDuplicateAdmin",
       "users",
     ].includes(props.currentView)) {
       return "configuration";
@@ -162,6 +164,12 @@ class AppViewSwitch {
 
     if (props.currentView === "platformImageModeration") {
       return renderPlatformImageModerationView(props, this.buildPageLayoutProps(props));
+    }
+
+    if (props.currentView === "gameDuplicateAdmin") {
+      return props.authenticatedProfile === "ADMIN"
+        ? this.renderGameDuplicateAdmin(props)
+        : renderConfigurationView(props, this.buildPageLayoutProps(props));
     }
 
     if (props.currentView === "collectionOnboarding") {
@@ -427,6 +435,24 @@ class AppViewSwitch {
         {...this.buildPageLayoutProps(props)}
         gameDetailPage={props.gameDetailPage}
         selectedGameSource={props.selectedGameSource}
+        onOpenGameDuplicateAdmin={props.openGameDuplicateAdmin}
+        onBack={() => window.history.back()}
+      />
+    );
+  }
+
+  /**
+   * Rend la page admin de correction d'un doublon de jeu.
+   *
+   * @param {Object} props - Etat et callbacks de correction.
+   * @returns {import("react").JSX.Element} Vue admin de doublon.
+   */
+  static renderGameDuplicateAdmin(props) {
+    return (
+      <GameDuplicateAdminView
+        {...this.buildPageLayoutProps(props)}
+        duplicatePage={props.gameDuplicateAdminPage}
+        onOpenGameDetail={props.openGameDetail}
         onBack={() => window.history.back()}
       />
     );

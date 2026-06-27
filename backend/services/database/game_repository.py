@@ -67,13 +67,31 @@ class SqlAlchemyGameRepository:
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform'
             )
         ).mappings()
-        return {
+        references = {
             (
                 self.name_normalizer.comparison_key(row["platform_name"]),
                 self.name_normalizer.comparison_key(row["name"]),
             ): (int(row["id"]), str(row["name"] or ""))
             for row in rows
         }
+        alias_rows = connection.execute(
+            text(
+                f'SELECT game.id, game.name, alias.name AS alias_name, '
+                "platform.name AS platform_name "
+                f'FROM "{self.schema_name}".t_game_alias alias '
+                f'JOIN "{self.schema_name}".t_game game ON game.id = alias.game_id '
+                f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform'
+            )
+        ).mappings()
+        for row in alias_rows:
+            references.setdefault(
+                (
+                    self.name_normalizer.comparison_key(row["platform_name"]),
+                    self.name_normalizer.comparison_key(row["alias_name"]),
+                ),
+                (int(row["id"]), str(row["name"] or "")),
+            )
+        return references
 
     def load_ids_by_key(self, connection: Connection) -> dict[tuple[str, str], int]:
         """Charge les jeux existants par cle plateforme/nom.
@@ -112,8 +130,9 @@ class SqlAlchemyGameRepository:
         return int(connection.execute(
             text(
                 f'INSERT INTO "{self.schema_name}".t_game '
-                "(name, release_date, developer, editor, platform, description) "
-                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL) RETURNING id"
+                "(name, release_date, developer, editor, platform, description, duplicate_flag) "
+                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL, FALSE) "
+                "RETURNING id"
             ),
             {
                 "name": game.name,
@@ -208,9 +227,10 @@ class SqlAlchemyGameRepository:
         rows = connection.execute(
             text(
                 "SELECT "
-                "game.id, game.name, game.release_date, game.description, "
-                "developer_studio.name AS developer, editor_studio.name AS editor, "
-                "platform.name AS platform "
+                "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
+                "game.developer AS developer_id, developer_studio.name AS developer, "
+                "game.editor AS editor_id, editor_studio.name AS editor, "
+                "game.platform AS platform_id, platform.name AS platform "
                 f'FROM "{self.schema_name}".t_game game '
                 f'LEFT JOIN "{self.schema_name}".t_studio developer_studio '
                 "ON developer_studio.id = game.developer "
@@ -246,7 +266,7 @@ class SqlAlchemyGameRepository:
         row = connection.execute(
             text(
                 "SELECT "
-                "game.id, game.name, game.release_date, game.description, "
+                "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
                 "developer_studio.name AS developer, editor_studio.name AS editor, "
                 "platform.name AS platform "
                 f'FROM "{self.schema_name}".t_game game '
@@ -293,5 +313,9 @@ class SqlAlchemyGameRepository:
                 "REPLACE(TRANSLATE(LOWER(platform.name), :accented_characters, "
                 ":plain_characters), ' ', '') = :platform_key"
             )
+
+        if criteria.duplicate_flag is not None:
+            parameters["duplicate_flag"] = criteria.duplicate_flag
+            filters.append("game.duplicate_flag = :duplicate_flag")
 
         return f"WHERE {' AND '.join(filters)}" if filters else ""

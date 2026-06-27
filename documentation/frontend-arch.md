@@ -142,6 +142,10 @@ Use the following domain folders for new or modified hooks:
 - Own table filters, sorting and derived game collections.
 - Own game detail loading for `/collection/jeux/<game_id>` through protected
   collection endpoints.
+- Game detail ownership indicators must be derived in the game detail hook:
+  collection detail is owned by definition, while Library detail may check the
+  protected collection detail endpoint and silently treat a missing row as not
+  owned.
 - Request supported collection and wishlist sort orders from the backend with
   the `sort` query parameter. Do not recalculate backend list ordering in React
   for collection consultation pages.
@@ -172,9 +176,24 @@ Use the following domain folders for new or modified hooks:
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
+- Public Library and collection game detail may show the protected
+  duplicate-report action to a connected `USER` only after the
+  collection-status hook confirms that the user has an imported collection. The
+  hook must ask for explicit confirmation before calling
+  `LibraryApi.reportGameDuplicate`; the component only renders the provided
+  action state.
 - Keep protected Library administration calls in a dedicated admin service and
   user-triggered hooks. They must use route discovery before being displayed and
   must not change the public read-only Library consultation routes.
+- The Bibliotheque games list may expose the `duplicate_flag` filter only to
+  `ADMIN` sessions. The hook owns this criterion and sends it to the backend;
+  the generic list component only renders the provided filter state.
+- Game duplicate correction belongs to the Library admin frontend domain:
+  protected HTTP calls stay in `LibraryAdminApi`, state and user actions stay in
+  `useGameDuplicateAdminPage`, and `/configuration/doublons/<game_id>` must be
+  rendered through `AppViewSwitch` and `PageLayout`. Reject and merge outcomes
+  must be rendered as a dedicated result state, not as raw JSON below the
+  correction form.
 - Platform image moderation belongs to the Library admin frontend domain:
   protected HTTP calls stay in `LibraryAdminApi`, state and user actions stay in
   `usePlatformImageModeration`, and the Configuration section only renders the

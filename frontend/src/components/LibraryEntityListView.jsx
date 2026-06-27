@@ -114,6 +114,20 @@ function LibraryEntityListView({
               ) : null}
             </div>
           ) : null}
+          {listState.duplicateFlagFilter ? (
+            <div className="libraryPlatformFilter">
+              <select
+                id="library-duplicate-flag-filter"
+                value={listState.duplicateFlagFilter.selectedValue}
+                onChange={(event) => listState.duplicateFlagFilter.onChange(event.target.value)}
+                aria-label="Filtrer par signalement doublon"
+              >
+                <option value="">Tous les statuts doublon</option>
+                <option value="true">Doublons signales</option>
+                <option value="false">Non signales</option>
+              </select>
+            </div>
+          ) : null}
         </form>
 
         {listState.isLoading ? <ProgressBar label="Chargement de la liste" /> : null}

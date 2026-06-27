@@ -19,6 +19,11 @@ from flask import Flask, current_app, jsonify, request
 from services import AuthGuard, UserProfile
 from services.database.platform_catalog_update_service import PlatformCatalogUpdateService
 from services.library import LibraryResetAlreadyRunningError, LibraryResetJobCoordinator
+from services.library import (
+    GameDuplicateError,
+    GameDuplicateNotFoundError,
+    GameDuplicateService,
+)
 from services.library.admin_library_import_service import (
     AdminLibraryImportInvalidFileError,
     AdminLibraryImportService,
@@ -36,6 +41,7 @@ class LibraryController:
         reset_service_factory=None,
         platform_catalog_update_service_factory=None,
         admin_import_service_factory=None,
+        duplicate_service_factory=None,
         library_service_provider=None,
     ):
         """Initialise le controleur admin Bibliotheque.
@@ -48,6 +54,7 @@ class LibraryController:
                 d'actualisation des plateformes.
             admin_import_service_factory (Callable | None): Fabrique du service d'import CSV
                 admin Bibliotheque.
+            duplicate_service_factory (Callable | None): Fabrique du service doublons.
             library_service_provider (LibraryServiceProvider | None): Cache de services
                 Bibliotheque a invalider apres actualisation.
 
@@ -66,6 +73,7 @@ class LibraryController:
             admin_import_service_factory
             or AdminLibraryImportService.from_environment
         )
+        self.duplicate_service_factory = duplicate_service_factory or GameDuplicateService.from_environment
         self.library_service_provider = library_service_provider
 
     def register_routes(self, flask_app: Flask) -> None:
@@ -97,6 +105,30 @@ class LibraryController:
             endpoint="import_library_csv",
             view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
                 self.import_library_csv
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/games/<int:game_id>/doublon",
+            endpoint="get_library_game_duplicate_admin",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.get_library_game_duplicate_admin
+            ),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/games/<int:game_id>/doublon/candidates",
+            endpoint="list_library_game_duplicate_candidates",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.list_library_game_duplicate_candidates
+            ),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/games/doublon",
+            endpoint="manage_library_game_duplicate",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.manage_library_game_duplicate
             ),
             methods=["POST"],
         )
@@ -173,6 +205,83 @@ class LibraryController:
             return jsonify({"error": "Unable to import admin CSV."}), 500
         finally:
             self._delete_temporary_file(temporary_path)
+
+    def get_library_game_duplicate_admin(self, game_id: int):
+        """Retourne le jeu signale pour l'ecran admin de correction.
+
+        Args:
+            game_id (int): Identifiant du jeu signale.
+
+        Returns:
+            tuple[flask.Response, int]: Jeu JSON ou erreur JSON.
+        """
+
+        try:
+            return jsonify({"game": self.duplicate_service_factory().get_duplicate_game(game_id)}), 200
+        except GameDuplicateNotFoundError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except Exception:
+            current_app.logger.exception("Erreur pendant la lecture admin doublon jeu.")
+            return jsonify({"error": "Unable to read duplicate game."}), 500
+
+    def list_library_game_duplicate_candidates(self, game_id: int):
+        """Liste les candidats de fusion admin pour un doublon.
+
+        Args:
+            game_id (int): Identifiant du jeu signale.
+
+        Returns:
+            tuple[flask.Response, int]: Candidats JSON ou erreur JSON.
+        """
+
+        try:
+            candidates = self.duplicate_service_factory().search_candidates(
+                game_id,
+                request.args.get("name", ""),
+                int(request.args.get("limit", "50")),
+            )
+            return jsonify({"candidates": candidates}), 200
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant la recherche candidats doublon.")
+            return jsonify({"error": "Unable to search duplicate candidates."}), 500
+
+    def manage_library_game_duplicate(self):
+        """Execute une correction admin de doublon de jeu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Resultat JSON ou erreur JSON.
+        """
+
+        payload = request.get_json(silent=True) or {}
+        try:
+            action = str(payload.get("action") or "").strip().lower()
+            duplicate_game_id = int(payload.get("duplicate_game_id"))
+            duplicate_service = self.duplicate_service_factory()
+            if action == "reject":
+                result = duplicate_service.reject_duplicate(duplicate_game_id)
+            elif action == "merge":
+                result = duplicate_service.merge_duplicate(
+                    duplicate_game_id,
+                    int(payload.get("target_game_id")),
+                    payload.get("selected_values") or {},
+                    bool(payload.get("keep_duplicate_name_as_alias", True)),
+                ).to_dict()
+            else:
+                return jsonify({"error": "Action doublon inconnue."}), 400
+            self._reset_library_service_provider()
+            return jsonify({"result": result}), 200
+        except GameDuplicateNotFoundError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except (TypeError, ValueError, GameDuplicateError) as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant la correction admin doublon.")
+            return jsonify({"error": "Unable to manage duplicate game."}), 500
 
     def _run_reset_job(self, job):
         """Execute le service de reset dans le thread de job.

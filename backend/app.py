@@ -36,6 +36,7 @@ from services import (
     CollectionShareGuestAuthenticationService,
     DatabaseConfiguration,
     DatabaseSchemaService,
+    GameDuplicateDailyNotificationScheduler,
     LibraryResetJobCoordinator,
     LibraryServiceProvider,
     PlatformImageConfiguration,
@@ -123,7 +124,22 @@ library_controller = LibraryController(
 platform_controller = PlatformController(library_service_factory=library_service_provider)
 platform_image_controller = PlatformImageController(auth_guard)
 studio_controller = StudioController(library_service_factory=library_service_provider)
-game_controller = GameController(library_service_factory=library_service_provider)
+game_controller = GameController(auth_guard, library_service_factory=library_service_provider)
+
+game_duplicate_daily_notification_scheduler = None
+if database_configuration.is_database_enabled() and (
+    __name__ != "__main__" or os.getenv("WERKZEUG_RUN_MAIN") == "true"
+):
+    try:
+        game_duplicate_daily_notification_scheduler = (
+            GameDuplicateDailyNotificationScheduler.from_environment()
+        )
+        game_duplicate_daily_notification_scheduler.start()
+    except Exception as exc:
+        app.logger.exception(
+            "Planification de la notification quotidienne des doublons impossible: %s",
+            exc,
+        )
 
 # 5. Enregistre les routes avant de les marquer avec la protection globale.
 authentication_controller.register_routes(app)

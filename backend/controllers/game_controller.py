@@ -13,9 +13,19 @@
 
 from functools import wraps
 
-from flask import Flask, jsonify, request
+from flask import Flask, current_app, jsonify, request
 
-from services import DatabaseConfiguration, LibraryQueryParser, LibraryService
+from services import (
+    AuthGuard,
+    DatabaseConfiguration,
+    GameDuplicateNotFoundError,
+    GameDuplicatePermissionError,
+    GameDuplicateService,
+    LibraryQueryParser,
+    LibraryService,
+    SqlAlchemyUserRepository,
+    UserProfile,
+)
 
 
 class GameController:
@@ -23,12 +33,24 @@ class GameController:
 
     PUBLIC_ENDPOINTS = frozenset({"get_library_game", "list_library_games"})
 
-    def __init__(self, library_service_factory=None, library_query_parser=None):
+    def __init__(
+        self,
+        auth_guard: AuthGuard | None = None,
+        library_service_factory=None,
+        library_query_parser=None,
+        duplicate_service_factory=None,
+        user_repository_class=SqlAlchemyUserRepository,
+        database_configuration_class=DatabaseConfiguration,
+    ):
         """Initialise le controleur des jeux.
 
         Args:
+            auth_guard (AuthGuard | None): Garde d'authentification des actions protegees.
             library_service_factory (Callable | None): Fabrique du service Bibliotheque.
             library_query_parser (LibraryQueryParser | None): Parseur de requetes Bibliotheque.
+            duplicate_service_factory (Callable | None): Fabrique du service doublons.
+            user_repository_class (type): Classe de repository utilisateur.
+            database_configuration_class (type): Classe de configuration base.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -36,8 +58,12 @@ class GameController:
 
         self._library_service = None
         self._library_service_factory = None
+        self.auth_guard = auth_guard
         self.library_service_factory = library_service_factory or self._create_default_library_service
         self.library_query_parser = library_query_parser or LibraryQueryParser()
+        self.duplicate_service_factory = duplicate_service_factory or GameDuplicateService.from_environment
+        self.user_repository_class = user_repository_class
+        self.database_configuration_class = database_configuration_class
 
     def register_routes(self, flask_app: Flask) -> None:
         """Enregistre les routes jeux dans l'application Flask.
@@ -61,6 +87,15 @@ class GameController:
             view_func=self._as_view(self.get_library_game),
             methods=["GET"],
         )
+        if self.auth_guard is not None:
+            flask_app.add_url_rule(
+                "/api/library/games/<int:game_id>/doublon",
+                endpoint="report_library_game_duplicate",
+                view_func=self.auth_guard.require_profile(UserProfile.USER.value)(
+                    self.report_library_game_duplicate
+                ),
+                methods=["POST"],
+            )
 
     def get_public_endpoint_names(self) -> set[str]:
         """Retourne les endpoints publics portes par le controleur.
@@ -111,6 +146,35 @@ class GameController:
             return jsonify({"error": str(exc)}), 503
         except Exception as exc:
             return jsonify({"error": f"Unable to read library game: {exc}"}), 500
+
+    def report_library_game_duplicate(self, game_id: int):
+        """Signale un jeu de la Bibliotheque comme doublon.
+
+        Args:
+            game_id (int): Identifiant du jeu signale.
+
+        Returns:
+            flask.Response | tuple[flask.Response, int]: Confirmation JSON ou erreur JSON.
+        """
+
+        try:
+            result = self.duplicate_service_factory().report_duplicate(
+                self._current_user_id(),
+                game_id,
+            )
+            return jsonify({
+                **result,
+                "message": "Merci, un administrateur verifiera ce signalement.",
+            }), 200
+        except GameDuplicatePermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+        except GameDuplicateNotFoundError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant le signalement de doublon jeu.")
+            return jsonify({"error": "Unable to report duplicate game."}), 500
 
     @property
     def library_service_factory(self):
@@ -164,6 +228,29 @@ class GameController:
         """
 
         return LibraryService(DatabaseConfiguration.from_environment())
+
+    def _current_user_id(self) -> int:
+        """Retourne l'identifiant base de l'utilisateur connecte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            int: Identifiant technique utilisateur.
+
+        Raises:
+            ValueError: Si le token ne correspond pas a un utilisateur en base.
+        """
+
+        if self.auth_guard is None:
+            raise ValueError("Authentification indisponible.")
+        payload = self.auth_guard.get_current_token_payload()
+        user_id = self.user_repository_class(
+            self.database_configuration_class.from_environment()
+        ).find_user_id_by_email(payload.get("sub"))
+        if user_id is None:
+            raise ValueError("Utilisateur introuvable.")
+        return int(user_id)
 
     def _as_view(self, route_handler):
         """Transforme une methode liee en fonction Flask annotable.

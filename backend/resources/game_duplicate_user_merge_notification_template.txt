@@ -1,0 +1,21 @@
+Mise a jour de votre collection.
+
+Un doublon de jeu a ete corrige par un administrateur.
+
+Jeu retire:
+${duplicate_game_name}
+
+Jeu conserve:
+${target_game_name}
+
+Plateforme:
+${platform_name}
+
+Impact sur votre collection:
+${impact_description}
+
+Vous pouvez consulter votre collection ici:
+${collection_url}
+
+Detail du jeu conserve:
+${target_game_url}

@@ -135,6 +135,7 @@ right even when its frontend does not expose collection ownership):
 - `POST /collections/videogames/games`
 - `PUT /collections/videogames/games`
 - `DELETE /collections/videogames/games`
+- `POST /api/library/games/<game_id>/doublon`
 - `POST /api/library/platforms/<platform_id>/image`
 
 The collection read routes below explicitly accept `GUEST`, `USER` and
@@ -157,6 +158,9 @@ Protected administrator routes include:
 - `POST /api/library/reset`
 - `POST /api/library/platform-catalog/sync`
 - `GET /api/library/platforms/images`
+- `GET /api/library/games/<game_id>/doublon`
+- `GET /api/library/games/<game_id>/doublon/candidates`
+- `POST /api/library/games/doublon`
 - `PUT /api/library/platforms/<platform_id>/image/<image_id>/status/<status>`
 - `PUT /api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>`
 

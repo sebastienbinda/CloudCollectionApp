@@ -119,6 +119,19 @@ function useAppNavigation(options) {
     window.history.pushState({}, "", `/bibliotheque/plateformes/${encodeURIComponent(platformId)}`);
   };
 
+  const openGameDuplicateAdmin = (game) => {
+    const gameId = typeof game === "object" && game !== null ? game.id : game;
+    if (!gameId) {
+      return;
+    }
+    options.clearDeleteGameFeedback();
+    setSelectedGameId(String(gameId));
+    setSelectedLibraryPlatformId("");
+    setSelectedGameSource("library");
+    setCurrentView("gameDuplicateAdmin");
+    window.history.pushState({}, "", `/configuration/doublons/${encodeURIComponent(gameId)}`);
+  };
+
   useEffect(() => {
     if (!options.isGuest || !guestNavigationPolicy.isViewBlocked(currentView)) return;
     const destination = guestNavigationPolicy.getFallbackDestination();
@@ -172,6 +185,13 @@ function useAppNavigation(options) {
         setSelectedLibraryPlatformId("");
         setSelectedGameSource("collection");
         setCurrentView("gameDetail");
+        return;
+      }
+      if (/^\/configuration\/doublons\/\d+$/.test(pathname)) {
+        setSelectedGameId(AppRouting.getGameDuplicateIdFromUrl());
+        setSelectedLibraryPlatformId("");
+        setSelectedGameSource("library");
+        setCurrentView("gameDuplicateAdmin");
         return;
       }
       const mappedView = {
@@ -230,7 +250,10 @@ function useAppNavigation(options) {
 
   useEffect(() => {
     if (options.isGuest) return;
-    if (!["adminLibraryImport", "platformImageModeration", "users"].includes(currentView) || options.authenticatedProfile === "ADMIN") return;
+    if (
+      !["adminLibraryImport", "platformImageModeration", "users", "gameDuplicateAdmin"].includes(currentView) ||
+      options.authenticatedProfile === "ADMIN"
+    ) return;
     setCurrentView("home");
     window.history.replaceState({}, "", "/collection");
   }, [options.authenticatedProfile, currentView, options.isGuest]);
@@ -330,6 +353,7 @@ function useAppNavigation(options) {
     },
     openPlatform,
     openGameDetail,
+    openGameDuplicateAdmin,
     openLibraryPlatformDetail,
   };
 }

@@ -36,6 +36,15 @@ from .library.library_query_contract import (
     LibraryQueryParser,
     LibrarySortRule,
 )
+from .library.game_duplicate_service import (
+    GameDuplicateError,
+    GameDuplicateNotFoundError,
+    GameDuplicatePermissionError,
+    GameDuplicateService,
+)
+from .library.game_duplicate_daily_notification_scheduler import (
+    GameDuplicateDailyNotificationScheduler,
+)
 from .library.library_reset_job_coordinator import (
     LibraryResetAlreadyRunningError,
     LibraryResetJob,
@@ -74,6 +83,11 @@ __all__ = [
     "EmailVerificationService",
     "InvalidEmailVerificationTokenError",
     "LibraryPageRequest",
+    "GameDuplicateError",
+    "GameDuplicateNotFoundError",
+    "GameDuplicatePermissionError",
+    "GameDuplicateService",
+    "GameDuplicateDailyNotificationScheduler",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
     "LibraryResetAlreadyRunningError",

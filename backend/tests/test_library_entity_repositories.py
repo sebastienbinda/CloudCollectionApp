@@ -325,8 +325,11 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.game_repository.list_public_library_games(connection, criteria)
 
         sql, parameters = connection.executed_statements[0]
+        self.assertIn("game.developer AS developer_id", sql)
         self.assertIn("developer_studio.name AS developer", sql)
+        self.assertIn("game.editor AS editor_id", sql)
         self.assertIn("editor_studio.name AS editor", sql)
+        self.assertIn("game.platform AS platform_id", sql)
         self.assertIn("platform.name AS platform", sql)
         self.assertIn("developer_studio.id = game.developer", sql)
         self.assertIn("editor_studio.id = game.editor", sql)
@@ -350,7 +353,10 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
             None: Les assertions valident les parametres bindes.
         """
 
-        criteria = self.query_parser.parse("games", {"name": " Zelda ", "platform": "Switch"})
+        criteria = self.query_parser.parse(
+            "games",
+            {"name": " Zelda ", "platform": "Switch", "duplicate_flag": "true"},
+        )
         connection = FakeRepositoryConnection(scalar_value=4)
 
         count = self.game_repository.count_public_library_games_by_criteria(
@@ -364,10 +370,12 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertIn("REPLACE(TRANSLATE(LOWER(platform.name)", sql)
         self.assertIn(":name_pattern", sql)
         self.assertIn(":platform_key", sql)
+        self.assertIn("game.duplicate_flag = :duplicate_flag", sql)
         self.assertNotIn("Zelda", sql)
         self.assertNotIn("Switch", sql)
         self.assertEqual("%zelda%", parameters["name_pattern"])
         self.assertEqual("switch", parameters["platform_key"])
+        self.assertTrue(parameters["duplicate_flag"])
 
 
 if __name__ == "__main__":

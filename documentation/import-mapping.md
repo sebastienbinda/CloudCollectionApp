@@ -47,9 +47,10 @@ reader architecture rules in `documentation/reader.md`.
   accents. Comparison keys are trimmed, lowercased and accent-free.
 - Games are deduplicated by normalized `(platform, name)`; the first retained
   row wins unless a wishlist duplicate rule applies.
-- Existing games are reused first by exact normalized `(platform, name)` key.
-  When no exact game key exists, candidates are limited to the same matched
-  platform and scored with the shared normalized similarity function. The
+- Existing games are reused first by exact normalized `(platform, name)` key,
+  including names stored in `t_game_alias` after duplicate correction. When no
+  exact game key exists, candidates are limited to the same matched platform and
+  scored with the shared normalized similarity function. The
   imported game is attached to an existing game only when the best candidate is
   unique and reaches `GAME_MATCHING_HIGH_LEVEL_RATING` (default `75`); scores
   below `GAME_MATCHING_LOW_LVL_RATING` (default `25`) and ambiguous or medium

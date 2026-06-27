@@ -456,6 +456,12 @@ function useUserCollectionOnboarding(options) {
     if (!hasAccessToken || !authenticatedUsername || !canUseCollectionViews) {
       return;
     }
+    if (
+      currentView === "gameDetail" &&
+      options.selectedGameSource === "library"
+    ) {
+      return;
+    }
     if ([
       "about",
       "auth",
@@ -487,6 +493,7 @@ function useUserCollectionOnboarding(options) {
 
   return {
     hasCollection,
+    checkCurrentUserCollection,
     selectedCollectionFile,
     availableImportSheets,
     hasAnalyzedImportFile,

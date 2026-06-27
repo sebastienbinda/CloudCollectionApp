@@ -317,6 +317,7 @@ class VideoGamesApi {
         Plateforme: game.platform_name || "",
         Studio: game.studio_name || "",
         "Date de sortie": game.release_date || "",
+        duplicate_flag: Boolean(game.duplicate_flag),
         "Date d'achat": game.buy_date || "",
         "Lieu d'achat": game.buy_location || "",
         Note: game.grade || "",

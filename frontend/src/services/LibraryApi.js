@@ -138,6 +138,32 @@ class LibraryApi {
   }
 
   /**
+   * Signale un jeu comme doublon depuis une session utilisateur.
+   *
+   * @param {string|number} gameId - Identifiant du jeu signale.
+   * @returns {Promise<Object>} Confirmation backend.
+   */
+  static async reportGameDuplicate(gameId) {
+    const requestOptions = {
+      method: "POST",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const fallbackMessage = "Impossible de signaler ce doublon.";
+    const response = await BackendAvailabilityGuard.fetch(
+      `/api/library/games/${encodeURIComponent(gameId)}/doublon`,
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
+        AuthApi.handleExpiredSession(response);
+      }
+      throw new Error(data.error || fallbackMessage);
+    }
+    return data;
+  }
+
+  /**
    * Construit une URL de liste Bibliotheque a partir des criteres UI.
    *
    * @param {string} path - Chemin backend appele.
@@ -153,6 +179,12 @@ class LibraryApi {
     const platform = String(criteria.platform || "").trim();
     if (platform) {
       query.set("platform", platform);
+    }
+    const duplicateFlag = criteria.duplicate_flag === false
+      ? "false"
+      : String(criteria.duplicate_flag || "").trim();
+    if (["true", "false"].includes(duplicateFlag)) {
+      query.set("duplicate_flag", duplicateFlag);
     }
     if (Number.isFinite(criteria.page)) {
       query.set("page", String(criteria.page));
