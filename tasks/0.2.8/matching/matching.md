@@ -13,6 +13,3 @@ Pour les jeux durant l'import si le seuil est compris entre le seuil haut et bas
  - L'administrateur peux ensuite depuis une page dédiée acccessible depuis un nouvel encart de la page configuration "Control des imports", refuser l'association et dans ce cas un nouveau jeux est créé et le jeu de la collection de l'utilisateur est rattaché a ce nouveau jeu créé.
 Dans tous les cas si le seuil est inférieur a limite basse le jeux est créé et la plateforme refusée.
 Lors du mail envoyé a l'admin en fin d'import, il faut faire apparaitre très  clairement si l'administrateur a des nouveaux a controler depuis cette nouvelle page de "Control des imports".
-
-
-Suppression de JEUXVIDEO_ODS_BACKUP_DIR et de son utilisation dans OdsWritter

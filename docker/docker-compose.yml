@@ -24,8 +24,6 @@ services:
       PLATFORM_IMAGE_MAX_TOTAL_BYTES: ${PLATFORM_IMAGE_MAX_TOTAL_BYTES:-1073741824}
       JEUXVIDEO_ODS_PATH: /project/collection.ods
       JEUXVIDEO_ODS_TMP_DIR: /project/tmp
-      JEUXVIDEO_ODS_BACKUP_DIR: /project/backup
-      ODS_FORMULA_RECALCULATION: required
       AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-3600}
       AUTH_USERNAME: ${AUTH_USERNAME:-admin}
       AUTH_ENV_ENCRYPTION_KEY: ${AUTH_ENV_ENCRYPTION_KEY:-}
@@ -33,7 +31,6 @@ services:
       AUTH_SECRET_KEY_ENCRYPTED: ${AUTH_SECRET_KEY_ENCRYPTED:-}
     volumes:
       - ${JEUXVIDEO_ODS_FILE:-../collection-example.ods}:/project/collection.ods
-      - ${JEUXVIDEO_BACKUP_DIR:-../backup}:/project/backup
       - ${BACKEND_IMG_HOST_DIR:-../images}:/images
     tmpfs:
       - /project/tmp
