@@ -16,7 +16,6 @@ services:
       context: ..
       dockerfile: docker/backend.Dockerfile
     environment:
-      APP_HOME_TITLE: ${APP_HOME_TITLE:-Ma collection}
       BACKEND_PORT: "7777"
       BACKEND_IMG_DIR: ${BACKEND_IMG_DIR:-/images}
       PLATFORM_IMAGE_MAX_UPLOAD_BYTES: ${PLATFORM_IMAGE_MAX_UPLOAD_BYTES:-10485760}
