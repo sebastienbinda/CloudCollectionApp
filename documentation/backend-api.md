@@ -1390,6 +1390,7 @@ EMAIL_DELIVERY_MODE=smtp
 ADMIN_NOTIFICATION_EMAIL=admin@example.com
 ADMIN_ACCOUNT_VALIDATION_ENABLED=true
 EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
+GAME_DUPLICATE_DAILY_NOTIFICATION_TIME=04:00
 SMTP_FROM_EMAIL=noreply@example.com
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
@@ -1415,6 +1416,13 @@ file reader layer and does not depend on the imported file type. It is sent even
 when the import has no warning and includes the user import context, counters,
 validated import configuration, total duration, platform mappings and every
 import warning.
+
+The backend also runs a daily duplicate-game check at
+`GAME_DUPLICATE_DAILY_NOTIFICATION_TIME`, using local `HH:MM` format and
+defaulting to `04:00`. When at least one global Library game has
+`duplicate_flag = true`, the same address receives a templated email with the
+number of games to process and links to `FRONTEND_PUBLIC_URL` plus the filtered
+`/bibliotheque/jeux?duplicate_flag=true` page.
 
 In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
 the Docker local stack can use Mailpit.

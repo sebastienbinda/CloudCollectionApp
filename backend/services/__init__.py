@@ -42,6 +42,9 @@ from .library.game_duplicate_service import (
     GameDuplicatePermissionError,
     GameDuplicateService,
 )
+from .library.game_duplicate_daily_notification_scheduler import (
+    GameDuplicateDailyNotificationScheduler,
+)
 from .library.library_reset_job_coordinator import (
     LibraryResetAlreadyRunningError,
     LibraryResetJob,
@@ -84,6 +87,7 @@ __all__ = [
     "GameDuplicateNotFoundError",
     "GameDuplicatePermissionError",
     "GameDuplicateService",
+    "GameDuplicateDailyNotificationScheduler",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
     "LibraryResetAlreadyRunningError",

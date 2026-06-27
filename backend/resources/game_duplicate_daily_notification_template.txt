@@ -1,0 +1,9 @@
+Notification quotidienne des jeux en doublon.
+
+${duplicate_count} jeu(x) sont actuellement signales comme doublons dans la Bibliotheque.
+
+Vous pouvez acceder au site ici:
+${site_url}
+
+Acces direct a la liste des jeux signales:
+${library_games_url}

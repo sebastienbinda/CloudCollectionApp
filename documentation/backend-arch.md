@@ -105,7 +105,7 @@ Use domain folders under `backend/services/`:
   contracts, value mapping, matching configuration and shared validators;
 - `library/`: public read-only consultation of global reference games,
   platforms and studios, plus platform image upload/public read/moderation
-  business services;
+  business services and the scheduled duplicate-game administrator notification;
 - `logging/`: backend logging setup and handlers;
 - `ods/`: user collection ODS import readers, archive access, XML fallback and
   import cache;

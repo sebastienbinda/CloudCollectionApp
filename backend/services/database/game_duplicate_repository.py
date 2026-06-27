@@ -90,6 +90,23 @@ class SqlAlchemyGameDuplicateRepository:
             {"game_id": game_id},
         ).rowcount > 0
 
+    def count_reported_duplicates(self, connection: Connection) -> int:
+        """Compte les jeux actuellement signales comme doublons.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle ou de lecture.
+
+        Returns:
+            int: Nombre de jeux avec `duplicate_flag` actif.
+        """
+
+        return int(connection.execute(
+            text(
+                f'SELECT COUNT(*) FROM "{self.schema_name}".t_game '
+                "WHERE duplicate_flag = TRUE"
+            ),
+        ).scalar_one())
+
     def reject_duplicate(self, connection: Connection, game_id: int) -> bool:
         """Refuse un signalement de doublon.
 
