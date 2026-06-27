@@ -353,7 +353,10 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
             None: Les assertions valident les parametres bindes.
         """
 
-        criteria = self.query_parser.parse("games", {"name": " Zelda ", "platform": "Switch"})
+        criteria = self.query_parser.parse(
+            "games",
+            {"name": " Zelda ", "platform": "Switch", "duplicate_flag": "true"},
+        )
         connection = FakeRepositoryConnection(scalar_value=4)
 
         count = self.game_repository.count_public_library_games_by_criteria(
@@ -367,10 +370,12 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertIn("REPLACE(TRANSLATE(LOWER(platform.name)", sql)
         self.assertIn(":name_pattern", sql)
         self.assertIn(":platform_key", sql)
+        self.assertIn("game.duplicate_flag = :duplicate_flag", sql)
         self.assertNotIn("Zelda", sql)
         self.assertNotIn("Switch", sql)
         self.assertEqual("%zelda%", parameters["name_pattern"])
         self.assertEqual("switch", parameters["platform_key"])
+        self.assertTrue(parameters["duplicate_flag"])
 
 
 if __name__ == "__main__":

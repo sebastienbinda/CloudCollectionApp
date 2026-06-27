@@ -91,7 +91,13 @@ class FakeSqlConnection:
         """
 
         self.executed_statements.append((str(statement), parameters))
-        return None
+        return FakeSqlResult()
+
+
+class FakeSqlResult:
+    """Resultat SQL factice avec compteur de lignes."""
+
+    rowcount = 1
 
 
 class FakeEngine:
@@ -151,6 +157,7 @@ class FakeGameDuplicateRepository:
             1: {"id": 1, "name": "Sonic the edgedog", "platform": 7, "platform_name": "Mega Drive", "duplicate_flag": True},
             2: {"id": 2, "name": "Sonic", "platform": 7, "platform_name": "Mega Drive", "duplicate_flag": False},
             3: {"id": 3, "name": "Sonic", "platform": 8, "platform_name": "Master System", "duplicate_flag": False},
+            4: {"id": 4, "name": "Sonic 1", "platform": 7, "platform_name": "Mega Drive", "duplicate_flag": False},
         }
         self.aliases = []
         self.deleted_games = []
@@ -403,6 +410,28 @@ class GameDuplicateServiceTest(unittest.TestCase):
         self.assertIn("pg_advisory_xact_lock", sql)
         self.assertEqual(repository.GLOBAL_GAME_IMPORT_LOCK_KEY, parameters["lock_key"])
 
+    def test_repository_remap_user_collections_keeps_numeric_condition_as_numeric(self):
+        """Verifie que la fusion ne compare pas `condition` a une chaine vide.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le SQL de fusion des collections.
+        """
+
+        repository = SqlAlchemyGameDuplicateRepository("collection")
+        connection = FakeSqlConnection()
+
+        result = repository.remap_user_collections(connection, 1590, 1676)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual({"merged_rows": 1, "updated_rows": 1}, result)
+        self.assertIn('"condition" = COALESCE(target."condition", duplicate."condition")', sql)
+        self.assertNotIn("NULLIF(target.condition", sql)
+        self.assertNotIn("NULLIF(target.\"condition\"", sql)
+        self.assertEqual({"duplicate_game_id": 1590, "target_game_id": 1676}, parameters)
+
     def test_search_candidates_reuses_public_game_search_on_same_platform(self):
         """Verifie que les candidats passent par la recherche publique des jeux.
 
@@ -446,6 +475,23 @@ class GameDuplicateServiceTest(unittest.TestCase):
         self.assertEqual(4, result.remapped_user_count)
         self.assertEqual(3, result.updated_collection_rows)
         self.assertEqual(1, result.merged_collection_rows)
+
+    def test_merge_duplicate_accepts_unreported_source_for_admin_correction(self):
+        """Verifie qu'un admin peut fusionner un jeu non signale.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la fusion sans `duplicate_flag`.
+        """
+
+        result = self.service.merge_duplicate(4, 2, {}, True)
+
+        self.assertEqual(4, result.duplicate_game_id)
+        self.assertEqual(2, result.target_game_id)
+        self.assertEqual((2, "Sonic 1"), self.repository.aliases[0])
+        self.assertEqual([4], self.repository.deleted_games)
 
     def test_merge_duplicate_rejects_cross_platform_target(self):
         """Verifie qu'une fusion inter-plateforme est refusee.

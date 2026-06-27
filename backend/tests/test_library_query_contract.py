@@ -156,6 +156,24 @@ class LibraryQueryParserTest(unittest.TestCase):
         self.assertEqual("Méga Drive", criteria.platform)
         self.assertEqual("mega drive", criteria.normalized_platform)
 
+    def test_parse_accepts_duplicate_flag_filter(self):
+        """Verifie le parsing du filtre de jeux signales comme doublons.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les valeurs booleennes.
+        """
+
+        flagged_criteria = self.parser.parse("games", {"duplicate_flag": "true"})
+        unflagged_criteria = self.parser.parse("games", {"duplicate_flag": "false"})
+        ignored_criteria = self.parser.parse("games", {"duplicate_flag": "all"})
+
+        self.assertTrue(flagged_criteria.duplicate_flag)
+        self.assertFalse(unflagged_criteria.duplicate_flag)
+        self.assertIsNone(ignored_criteria.duplicate_flag)
+
     def test_parse_accepts_multiple_sort_parameters(self):
         """Verifie le parsing de plusieurs tris autorises.
 

@@ -29,6 +29,8 @@
   accepted platform images.
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
+  Authenticated administrators get an additional filter for games reported or
+  not reported as duplicates.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global
   reference Library.
 - `/`: redirects to `/about` without a token, to `/collection` with a
@@ -65,7 +67,10 @@ public pages.
   It is available only to a `USER` with an imported collection and discovered
   share-management route permissions.
 - `/configuration/doublons/<game_id>`: authenticated `ADMIN` page for refusing
-  or merging a game reported as duplicate from a Library game detail.
+  or merging a Library game duplicate from a Library game detail, even when the
+  game has not been reported by a user. After a reject or merge action, the page
+  displays a dedicated result screen with a clear success or failure state and,
+  after a successful merge, a button back to the kept Library game detail.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
 

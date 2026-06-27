@@ -266,8 +266,6 @@ class GameDuplicateService:
             target_game = self.repository.find_game_for_duplicate_management(connection, target_game_id)
             if duplicate_game is None or target_game is None:
                 raise GameDuplicateNotFoundError("Game not found.")
-            if not duplicate_game.get("duplicate_flag"):
-                raise GameDuplicateError("Le jeu source n'est pas signale comme doublon.")
             if duplicate_game.get("platform") != target_game.get("platform"):
                 raise GameDuplicateError("Les deux jeux doivent appartenir a la meme plateforme.")
             remapped_user_count = self.repository.count_users_with_game(
@@ -341,6 +339,7 @@ class GameDuplicateService:
             normalized_name=self.name_normalizer.comparison_key(name_query) or "",
             platform=platform_name,
             normalized_platform=self.name_normalizer.comparison_key(platform_name) or "",
+            duplicate_flag=None,
             sort_rules=(LibrarySortRule("name", "asc"),),
         )
 

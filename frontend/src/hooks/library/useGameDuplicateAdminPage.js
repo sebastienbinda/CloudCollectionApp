@@ -36,7 +36,7 @@ function useGameDuplicateAdminPage(options = {}) {
   const [candidateSearch, setCandidateSearch] = useState("");
   const [fieldSources, setFieldSources] = useState({});
   const [keepAlias, setKeepAlias] = useState(true);
-  const [result, setResult] = useState(null);
+  const [resolutionResult, setResolutionResult] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -59,6 +59,7 @@ function useGameDuplicateAdminPage(options = {}) {
     try {
       setIsLoading(true);
       setError("");
+      setResolutionResult(null);
       const [gameData, candidateData] = await Promise.all([
         LibraryAdminApi.fetchDuplicateGame(options.gameId),
         LibraryAdminApi.searchDuplicateCandidates(options.gameId, name),
@@ -94,7 +95,15 @@ function useGameDuplicateAdminPage(options = {}) {
     if (!window.confirm("Refuser ce signalement de doublon ?")) {
       return;
     }
-    await executeAction(() => LibraryAdminApi.rejectDuplicateGame(options.gameId));
+    await executeAction(
+      () => LibraryAdminApi.rejectDuplicateGame(options.gameId),
+      {
+        action: "reject",
+        duplicateGame,
+        successMessage: "Le signalement de doublon a ete refuse.",
+        targetGame: duplicateGame,
+      }
+    );
   };
 
   const mergeDuplicate = async () => {
@@ -102,21 +111,30 @@ function useGameDuplicateAdminPage(options = {}) {
       setError("Selectionnez le jeu a conserver.");
       return;
     }
-    await executeAction(() => LibraryAdminApi.mergeDuplicateGame({
-      duplicate_game_id: options.gameId,
-      target_game_id: selectedCandidate.id,
-      keep_duplicate_name_as_alias: keepAlias,
-      selected_values: buildSelectedValues(duplicateGame, selectedCandidate, fieldSources),
-    }));
+    await executeAction(
+      () => LibraryAdminApi.mergeDuplicateGame({
+        duplicate_game_id: options.gameId,
+        target_game_id: selectedCandidate.id,
+        keep_duplicate_name_as_alias: keepAlias,
+        selected_values: buildSelectedValues(duplicateGame, selectedCandidate, fieldSources),
+      }),
+      {
+        action: "merge",
+        duplicateGame,
+        successMessage: "Le doublon a ete fusionne avec succes.",
+        targetGame: selectedCandidate,
+      }
+    );
   };
 
-  const executeAction = async (action) => {
+  const executeAction = async (action, metadata) => {
     try {
       setIsSaving(true);
       setError("");
-      setResult(await action());
+      const actionResult = await action();
+      setResolutionResult(createSuccessResult(actionResult, metadata));
     } catch (caughtError) {
-      setError(caughtError.message || "La correction du doublon a echoue.");
+      setResolutionResult(createFailureResult(caughtError, metadata));
     } finally {
       setIsSaving(false);
     }
@@ -132,9 +150,10 @@ function useGameDuplicateAdminPage(options = {}) {
     isLoading,
     isSaving,
     keepAlias,
-    result,
+    resolutionResult,
     selectedCandidate,
     selectedCandidateId,
+    clearResolutionResult: () => setResolutionResult(null),
     mergeDuplicate,
     rejectDuplicate,
     searchCandidates,
@@ -143,6 +162,40 @@ function useGameDuplicateAdminPage(options = {}) {
     setSelectedCandidateId,
     updateFieldSource,
   };
+}
+
+function createSuccessResult(apiResult, metadata) {
+  const result = apiResult?.result || apiResult || {};
+  return {
+    action: metadata.action,
+    duplicateGame: metadata.duplicateGame || null,
+    isSuccess: true,
+    message: metadata.successMessage,
+    result,
+    targetGame: resolveTargetGame(metadata.targetGame, result),
+  };
+}
+
+function createFailureResult(error, metadata) {
+  return {
+    action: metadata.action,
+    duplicateGame: metadata.duplicateGame || null,
+    errorStatus: error?.status || 0,
+    isSuccess: false,
+    message: error?.message || "La correction du doublon a echoue.",
+    result: error?.details || {},
+    targetGame: metadata.targetGame || null,
+  };
+}
+
+function resolveTargetGame(targetGame, result) {
+  if (targetGame?.id) {
+    return targetGame;
+  }
+  if (result?.target_game_id) {
+    return { id: result.target_game_id, name: "" };
+  }
+  return targetGame || null;
 }
 
 function createDefaultFieldSources() {

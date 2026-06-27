@@ -37,17 +37,20 @@ function GameDuplicateAdminView({
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
+  onOpenGameDetail,
   onBack,
 }) {
   const duplicateGame = duplicatePage.duplicateGame;
   const selectedCandidate = duplicatePage.selectedCandidate;
+  const resolutionResult = duplicatePage.resolutionResult;
+  const isResultScreen = Boolean(resolutionResult);
 
   return (
     <PageLayout
       shellClassName="appShell gameDuplicateShell"
       eyebrow="Administration"
-      title="Correction de doublon"
-      subtitle={duplicateGame ? duplicateGame.name : "Jeu signale"}
+      title={isResultScreen ? "Resultat de resolution" : "Correction de doublon"}
+      subtitle={buildSubtitle(duplicateGame, resolutionResult)}
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
@@ -67,10 +70,18 @@ function GameDuplicateAdminView({
         Retour
       </button>
 
-      {duplicatePage.isLoading ? <ProgressBar label="Chargement du doublon" /> : null}
-      {duplicatePage.error ? <p className="error">{duplicatePage.error}</p> : null}
+      {isResultScreen ? (
+        <GameDuplicateResultScreen
+          result={resolutionResult}
+          onBackToForm={duplicatePage.clearResolutionResult}
+          onOpenGameDetail={onOpenGameDetail}
+        />
+      ) : null}
 
-      {duplicateGame ? (
+      {duplicatePage.isLoading ? <ProgressBar label="Chargement du doublon" /> : null}
+      {!isResultScreen && duplicatePage.error ? <p className="error">{duplicatePage.error}</p> : null}
+
+      {!isResultScreen && duplicateGame ? (
         <section className="gameDuplicateWorkspace" aria-label="Correction de doublon">
           <div className="gameDuplicateHeader">
             <div>
@@ -163,15 +174,99 @@ function GameDuplicateAdminView({
             </>
           ) : null}
 
-          {duplicatePage.result ? (
-            <pre className="gameDuplicateResult">
-              {JSON.stringify(duplicatePage.result.result || duplicatePage.result, null, 2)}
-            </pre>
-          ) : null}
         </section>
       ) : null}
     </PageLayout>
   );
+}
+
+function GameDuplicateResultScreen({ result, onBackToForm, onOpenGameDetail }) {
+  const actionLabel = result.action === "merge" ? "Fusion" : "Refus";
+  const targetGame = result.targetGame;
+  const canOpenTarget = result.isSuccess && targetGame?.id;
+
+  return (
+    <section
+      className={`gameDuplicateResultScreen ${result.isSuccess ? "isSuccess" : "isFailure"}`}
+      aria-label="Resultat de correction du doublon"
+    >
+      <div className="gameDuplicateResultBanner">
+        <span>{result.isSuccess ? "Succes" : "Echec"}</span>
+        <strong>{result.message}</strong>
+      </div>
+
+      <dl className="gameDuplicateResultFacts">
+        <div>
+          <dt>Action</dt>
+          <dd>{actionLabel}</dd>
+        </div>
+        <div>
+          <dt>Jeu signale</dt>
+          <dd>{result.duplicateGame?.name || "-"}</dd>
+        </div>
+        <div>
+          <dt>Jeu conserve</dt>
+          <dd>{targetGame?.name || targetGame?.id || "-"}</dd>
+        </div>
+        <div>
+          <dt>Statut</dt>
+          <dd>{result.isSuccess ? "Termine" : buildFailureStatus(result)}</dd>
+        </div>
+      </dl>
+
+      {result.isSuccess && result.action === "merge" ? (
+        <div className="gameDuplicateResultMetrics" aria-label="Compteurs de fusion">
+          <Metric label="Utilisateurs rattaches" value={result.result?.remapped_user_count} />
+          <Metric label="Lignes remappees" value={result.result?.updated_collection_rows} />
+          <Metric label="Lignes fusionnees" value={result.result?.merged_collection_rows} />
+          <Metric label="Alias cree" value={result.result?.alias_created ? "Oui" : "Non"} />
+        </div>
+      ) : null}
+
+      <div className="gameDuplicateResultActions">
+        {canOpenTarget ? (
+          <button
+            className="primaryAction"
+            type="button"
+            onClick={() => onOpenGameDetail(targetGame, "library")}
+          >
+            {result.action === "merge" ? "Voir le jeu fusionne" : "Voir le jeu"}
+          </button>
+        ) : null}
+        {!result.isSuccess ? (
+          <button className="secondaryButton" type="button" onClick={onBackToForm}>
+            Retour au formulaire
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <strong>{value ?? 0}</strong>
+    </div>
+  );
+}
+
+function buildSubtitle(duplicateGame, resolutionResult) {
+  if (resolutionResult?.isSuccess) {
+    return "Operation terminee";
+  }
+  if (resolutionResult && !resolutionResult.isSuccess) {
+    return "Operation echouee";
+  }
+  return duplicateGame ? duplicateGame.name : "Jeu signale";
+}
+
+function buildFailureStatus(result) {
+  if (result.errorStatus) {
+    return `Erreur ${result.errorStatus}`;
+  }
+  return "Erreur";
 }
 
 function formatFieldValue(game, fieldKey) {

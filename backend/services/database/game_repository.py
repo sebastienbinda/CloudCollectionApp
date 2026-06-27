@@ -314,4 +314,8 @@ class SqlAlchemyGameRepository:
                 ":plain_characters), ' ', '') = :platform_key"
             )
 
+        if criteria.duplicate_flag is not None:
+            parameters["duplicate_flag"] = criteria.duplicate_flag
+            filters.append("game.duplicate_flag = :duplicate_flag")
+
         return f"WHERE {' AND '.join(filters)}" if filters else ""

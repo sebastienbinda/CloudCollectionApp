@@ -175,10 +175,15 @@ Use the following domain folders for new or modified hooks:
 - Keep protected Library administration calls in a dedicated admin service and
   user-triggered hooks. They must use route discovery before being displayed and
   must not change the public read-only Library consultation routes.
+- The Bibliotheque games list may expose the `duplicate_flag` filter only to
+  `ADMIN` sessions. The hook owns this criterion and sends it to the backend;
+  the generic list component only renders the provided filter state.
 - Game duplicate correction belongs to the Library admin frontend domain:
   protected HTTP calls stay in `LibraryAdminApi`, state and user actions stay in
   `useGameDuplicateAdminPage`, and `/configuration/doublons/<game_id>` must be
-  rendered through `AppViewSwitch` and `PageLayout`.
+  rendered through `AppViewSwitch` and `PageLayout`. Reject and merge outcomes
+  must be rendered as a dedicated result state, not as raw JSON below the
+  correction form.
 - Platform image moderation belongs to the Library admin frontend domain:
   protected HTTP calls stay in `LibraryAdminApi`, state and user actions stay in
   `usePlatformImageModeration`, and the Configuration section only renders the

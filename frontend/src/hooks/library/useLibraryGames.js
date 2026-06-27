@@ -44,13 +44,18 @@ const PLATFORM_PAGE_SIZE = 500;
  */
 function useLibraryGames(options = {}) {
   const enabled = options.enabled !== false;
+  const canFilterDuplicateFlag = options.authenticatedProfile === "ADMIN";
   const [platformOptions, setPlatformOptions] = useState([]);
   const [selectedPlatform, setSelectedPlatform] = useState("");
+  const [selectedDuplicateFlag, setSelectedDuplicateFlag] = useState("");
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
   const [platformError, setPlatformError] = useState("");
   const extraCriteria = useMemo(
-    () => ({ platform: selectedPlatform }),
-    [selectedPlatform]
+    () => ({
+      duplicate_flag: canFilterDuplicateFlag ? selectedDuplicateFlag : "",
+      platform: selectedPlatform,
+    }),
+    [canFilterDuplicateFlag, selectedDuplicateFlag, selectedPlatform]
   );
 
   useEffect(() => {
@@ -94,6 +99,16 @@ function useLibraryGames(options = {}) {
     setSelectedPlatform(platformName);
   }, []);
 
+  const handleDuplicateFlagChange = useCallback((duplicateFlag) => {
+    setSelectedDuplicateFlag(duplicateFlag);
+  }, []);
+
+  useEffect(() => {
+    if (!canFilterDuplicateFlag && selectedDuplicateFlag) {
+      setSelectedDuplicateFlag("");
+    }
+  }, [canFilterDuplicateFlag, selectedDuplicateFlag]);
+
   useEffect(() => {
     if (
       selectedPlatform
@@ -119,6 +134,10 @@ function useLibraryGames(options = {}) {
       selectedValue: selectedPlatform,
       onChange: handlePlatformChange,
     },
+    duplicateFlagFilter: canFilterDuplicateFlag ? {
+      selectedValue: selectedDuplicateFlag,
+      onChange: handleDuplicateFlagChange,
+    } : null,
   };
 }
 

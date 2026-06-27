@@ -90,8 +90,7 @@ function useGameDetailPage(options) {
   return {
     canCorrectDuplicate: (
       options.source === "library" &&
-      options.canCorrectDuplicate === true &&
-      Boolean(gameDetail?.duplicate_flag)
+      options.canCorrectDuplicate === true
     ),
     canReportDuplicate: (
       options.source === "collection" &&

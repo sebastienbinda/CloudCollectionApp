@@ -181,27 +181,33 @@ class SqlAlchemyGameDuplicateRepository:
         """
 
         merged_rows = connection.execute(
-           text(
-               f'UPDATE "{self.schema_name}".t_user_collection target '
-               "SET "
-               "wishlist = COALESCE(target.wishlist, false) OR COALESCE(duplicate.wishlist, false), "
-               "purchase_price = COALESCE(target.purchase_price, duplicate.purchase_price), "
-               "price_unit = COALESCE(NULLIF(target.price_unit, ''), duplicate.price_unit), "
-               "buy_location = COALESCE(NULLIF(target.buy_location, ''), duplicate.buy_location), "
-               "buy_date = COALESCE(target.buy_date, duplicate.buy_date), "
-               "grade = COALESCE(NULLIF(target.grade, ''), duplicate.grade), "
-               '"condition" = COALESCE(target."condition", duplicate."condition"), '
-               "has_manual = COALESCE(target.has_manual, false) OR COALESCE(duplicate.has_manual, false), "
-               "is_collector = COALESCE(target.is_collector, false) OR COALESCE(duplicate.is_collector, false), "
-               "has_steelbook = COALESCE(target.has_steelbook, false) OR COALESCE(duplicate.has_steelbook, false), "
-               "is_digital = COALESCE(target.is_digital, false) OR COALESCE(duplicate.is_digital, false), "
-               "region = COALESCE(NULLIF(target.region, ''), duplicate.region), "
-               "description = COALESCE(target.description, duplicate.description) "
-               f'FROM "{self.schema_name}".t_user_collection duplicate '
-               "WHERE target.user_id = duplicate.user_id "
-               "AND target.game_id = :target_game_id "
-               "AND duplicate.game_id = :duplicate_game_id"
-           ), { "duplicate_game_id": duplicate_game_id, "target_game_id": target_game_id, },
+            text(
+                f'UPDATE "{self.schema_name}".t_user_collection target '
+                "SET "
+                "wishlist = COALESCE(target.wishlist, false) "
+                "OR COALESCE(duplicate.wishlist, false), "
+                "purchase_price = COALESCE(target.purchase_price, duplicate.purchase_price), "
+                "price_unit = COALESCE(NULLIF(target.price_unit, ''), duplicate.price_unit), "
+                "buy_location = COALESCE(NULLIF(target.buy_location, ''), duplicate.buy_location), "
+                "buy_date = COALESCE(target.buy_date, duplicate.buy_date), "
+                "grade = COALESCE(NULLIF(target.grade, ''), duplicate.grade), "
+                '"condition" = COALESCE(target."condition", duplicate."condition"), '
+                "has_manual = COALESCE(target.has_manual, false) "
+                "OR COALESCE(duplicate.has_manual, false), "
+                "is_collector = COALESCE(target.is_collector, false) "
+                "OR COALESCE(duplicate.is_collector, false), "
+                "has_steelbook = COALESCE(target.has_steelbook, false) "
+                "OR COALESCE(duplicate.has_steelbook, false), "
+                "is_digital = COALESCE(target.is_digital, false) "
+                "OR COALESCE(duplicate.is_digital, false), "
+                "region = COALESCE(NULLIF(target.region, ''), duplicate.region), "
+                "description = COALESCE(target.description, duplicate.description) "
+                f'FROM "{self.schema_name}".t_user_collection duplicate '
+                "WHERE target.user_id = duplicate.user_id "
+                "AND target.game_id = :target_game_id "
+                "AND duplicate.game_id = :duplicate_game_id"
+            ),
+            {"duplicate_game_id": duplicate_game_id, "target_game_id": target_game_id},
         ).rowcount
         connection.execute(
             text(

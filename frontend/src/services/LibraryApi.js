@@ -180,6 +180,12 @@ class LibraryApi {
     if (platform) {
       query.set("platform", platform);
     }
+    const duplicateFlag = criteria.duplicate_flag === false
+      ? "false"
+      : String(criteria.duplicate_flag || "").trim();
+    if (["true", "false"].includes(duplicateFlag)) {
+      query.set("duplicate_flag", duplicateFlag);
+    }
     if (Number.isFinite(criteria.page)) {
       query.set("page", String(criteria.page));
     }

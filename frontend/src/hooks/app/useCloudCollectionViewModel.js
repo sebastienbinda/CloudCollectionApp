@@ -152,6 +152,7 @@ function useCloudCollectionViewModel() {
   });
   const libraryGames = useLibraryGames({
     enabled: navigation.currentView === "libraryGames",
+    authenticatedProfile: session.authenticatedProfile,
   });
   const adminLibraryCsvImportAction = useAdminLibraryCsvImportAction();
   const libraryResetAction = useLibraryResetAction();

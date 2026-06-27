@@ -21,3 +21,5 @@ A ajouter :
 
  - Apres la resolution du doublon sur l'IHM par l'admin, il faut un affichage plus visuel du resultat avec des lables et des couleurs au lieu d'afficher le json brut. Il faut un message clair qui indique si ca a marché ou si a échoué. Cet écran de résultat doit etre un écran dédié pas en dessous du formulaire de résolution. Et il doit y avoir un boutton pour retourner sur la page de détail du jeux fusionné.
  - Le bouton "Corriger un doublon" doit toujours etre visible par les admin qui peuvent donc décider de corriger un doublon non signalé
+ - En tant que admin je veux un filtre sur ce flag doublon dans les critères de recherche des jeux sur la page bibliotheque jeux.
+ - Je veux une tache qui vérifie une fois par jour a heure fixe configurable par défaut 4 heure du matin si des jeux ont le flag doublon a true. Si oui un mail est envoyé a l'admin pour lui indiquer le nombre de jeux en doublon a traiter et lui donnant le lien vers le site.

@@ -452,6 +452,7 @@ class AppViewSwitch {
       <GameDuplicateAdminView
         {...this.buildPageLayoutProps(props)}
         duplicatePage={props.gameDuplicateAdminPage}
+        onOpenGameDetail={props.openGameDetail}
         onBack={() => window.history.back()}
       />
     );

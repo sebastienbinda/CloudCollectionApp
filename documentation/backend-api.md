@@ -296,6 +296,7 @@ List endpoints support these query parameters:
 - `name`: optional name filter, matched without case or accent sensitivity;
 - `platform`: optional filter for `/api/library/games`, matched exactly after
   removing case, accents and spaces;
+- `duplicate_flag`: optional `true` or `false` filter for `/api/library/games`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule, where direction is `asc` or
@@ -531,7 +532,7 @@ are separate from the public read-only Library consultation endpoints.
 | --- | --- | --- |
 | `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
 | `POST` | `/api/library/platform-catalog/sync` | Adds missing platforms and aliases from backend CSV resources. |
-| `GET` | `/api/library/games/<game_id>/doublon` | Loads one reported duplicate game for correction. |
+| `GET` | `/api/library/games/<game_id>/doublon` | Loads one Library game for duplicate correction. |
 | `GET` | `/api/library/games/<game_id>/doublon/candidates` | Lists same-platform candidate games for duplicate correction. |
 | `POST` | `/api/library/games/doublon` | Rejects or merges a reported duplicate game. |
 | `GET` | `/api/library/platforms/images` | Lists platform images for moderation. |
@@ -621,8 +622,9 @@ POST /api/library/games/doublon
 Authorization: Bearer <admin-token>
 ```
 
-The correction workflow only merges games from the same platform. Refusing a
-report sets `t_game.duplicate_flag = false`. Merging remaps
+The correction workflow only merges games from the same platform. Administrators
+may open it for a reported or unreported Library game. Refusing a report sets
+`t_game.duplicate_flag = false`. Merging remaps
 `t_user_collection` rows from the duplicate game to the kept game, adds the
 duplicate name to `t_game_alias` when requested, applies selected kept values to
 the target game, then deletes the duplicate `t_game` row.
