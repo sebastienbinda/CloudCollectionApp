@@ -243,6 +243,13 @@ Structure fonctionnelle attendue pour l'import :
   configuration validee, la duree et les warnings eventuels. Une verification
   quotidienne configurable signale aussi par mail le nombre de jeux marques
   doublons si au moins un doublon reste a traiter ;
+- quand un administrateur fusionne un jeu marque doublon, les utilisateurs dont
+  la collection contenait ce doublon recoivent un mail templated expliquant le
+  jeu retire, le jeu conserve et l'impact sur leur collection ;
+- un utilisateur connecte avec une collection peut signaler comme doublon un
+  jeu depuis le detail Bibliotheque ou le detail de sa collection apres
+  confirmation explicite, meme si le jeu Bibliotheque n'est pas rattache a sa
+  propre collection ;
 - depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
   le parcours `/collection/import` pour ajouter les jeux d'un nouveau fichier
   sans supprimer sa collection actuelle ;

@@ -26,6 +26,7 @@ from .game_duplicate_service import (
 )
 from .game_duplicate_daily_notification_scheduler import GameDuplicateDailyNotificationScheduler
 from .game_duplicate_daily_notification_service import GameDuplicateDailyNotificationService
+from .game_duplicate_user_notifier import GameDuplicateUserNotifier
 from .library_reset_job_coordinator import (
     LibraryResetAlreadyRunningError,
     LibraryResetJob,
@@ -53,6 +54,7 @@ __all__ = [
     "GameDuplicateService",
     "GameDuplicateDailyNotificationScheduler",
     "GameDuplicateDailyNotificationService",
+    "GameDuplicateUserNotifier",
     "LibraryQueryCriteria",
     "LibraryQueryParser",
     "LibraryResetAlreadyRunningError",

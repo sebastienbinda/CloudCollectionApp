@@ -289,7 +289,7 @@ user data, imported collection file paths or `t_user_collection` associations.
 | `GET` | `/api/library/studios` | Lists global reference studios. |
 | `GET` | `/api/library/games` | Lists global reference games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
-| `POST` | `/api/library/games/<game_id>/doublon` | Marks a game from the connected user's collection as a possible duplicate. Requires `USER`. |
+| `POST` | `/api/library/games/<game_id>/doublon` | Marks a Library game as a possible duplicate. Requires `USER` with an imported collection. |
 
 List endpoints support these query parameters:
 
@@ -315,8 +315,9 @@ Invalid page, size or sort values fall back to the default page, default size or
 
 `POST /api/library/games/<game_id>/doublon` is protected even though it is under
 the Library path. The backend resolves the connected user from the Bearer token
-and accepts the signal only if the game is attached to that user's collection.
-GUEST sessions cannot report duplicates.
+and accepts the signal only if that user has already imported a collection. The
+reported game does not have to be attached to that user's collection. GUEST
+sessions cannot report duplicates.
 
 ### Library Entity Counts Response
 
@@ -628,6 +629,10 @@ may open it for a reported or unreported Library game. Refusing a report sets
 `t_user_collection` rows from the duplicate game to the kept game, adds the
 duplicate name to `t_game_alias` when requested, applies selected kept values to
 the target game, then deletes the duplicate `t_game` row.
+When the merged source game was flagged with `duplicate_flag = true`, the
+backend sends a templated email to every user whose collection had that
+duplicate game before the remap. This notification is tied only to administrator
+duplicate resolution and is not sent during imports.
 Reject and merge operations take the same PostgreSQL transaction advisory lock
 as admin and user collection imports. This serializes duplicate correction with
 global game matching/creation so an import cannot create or associate games
@@ -1423,6 +1428,11 @@ defaulting to `04:00`. When at least one global Library game has
 `duplicate_flag = true`, the same address receives a templated email with the
 number of games to process and links to `FRONTEND_PUBLIC_URL` plus the filtered
 `/bibliotheque/jeux?duplicate_flag=true` page.
+
+Users impacted by an administrator merge of a flagged duplicate receive a
+separate templated email. The message names the removed game, the kept game,
+the platform and explains whether their existing collection entry was remapped
+or merged with an entry they already had for the kept game.
 
 In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
 the Docker local stack can use Mailpit.

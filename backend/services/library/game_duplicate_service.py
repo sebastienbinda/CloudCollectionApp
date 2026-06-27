@@ -11,6 +11,7 @@
 #
 # Description : service metier de signalement et correction des doublons de jeux.
 
+import logging
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Callable
@@ -23,6 +24,7 @@ from services.database.game_duplicate_repository import SqlAlchemyGameDuplicateR
 from services.database.game_repository import SqlAlchemyGameRepository
 from services.users import UserCollectionNameNormalizer
 
+from .game_duplicate_user_notifier import GameDuplicateUserNotifier
 from .library_query_contract import LibraryPageRequest, LibraryQueryCriteria, LibrarySortRule
 
 EngineFactory = Callable[[str], Engine]
@@ -98,6 +100,8 @@ class GameDuplicateService:
         engine: Engine | None = None,
         engine_factory: EngineFactory = create_engine,
         name_normalizer: UserCollectionNameNormalizer | None = None,
+        user_notifier: GameDuplicateUserNotifier | None = None,
+        logger: logging.Logger | None = None,
     ):
         """Initialise le service de doublons de jeux.
 
@@ -108,6 +112,8 @@ class GameDuplicateService:
             engine (Engine | None): Moteur SQLAlchemy injectable en test.
             engine_factory (EngineFactory): Fabrique de moteur SQLAlchemy.
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur de recherche.
+            user_notifier (GameDuplicateUserNotifier | None): Notifier utilisateur injectable.
+            logger (logging.Logger | None): Journal applicatif injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -128,6 +134,8 @@ class GameDuplicateService:
             configuration.schema_name,
             self.name_normalizer,
         )
+        self.user_notifier = user_notifier or GameDuplicateUserNotifier.from_environment()
+        self.logger = logger or logging.getLogger(__name__)
 
     def report_duplicate(self, user_id: int, game_id: int) -> dict[str, Any]:
         """Signale un jeu de la collection utilisateur comme doublon.
@@ -140,16 +148,16 @@ class GameDuplicateService:
             dict[str, Any]: Payload de confirmation.
 
         Raises:
-            GameDuplicatePermissionError: Si le jeu n'est pas dans la collection.
+            GameDuplicatePermissionError: Si l'utilisateur n'a pas encore de collection.
             GameDuplicateNotFoundError: Si le jeu n'existe pas.
         """
 
         with self.engine.begin() as connection:
-            if not self.repository.find_game_for_duplicate_management(connection, game_id):
+            if not self.repository.game_exists(connection, game_id):
                 raise GameDuplicateNotFoundError("Game not found.")
-            if not self.repository.user_has_game(connection, user_id, game_id):
+            if not self.repository.user_has_collection(connection, user_id):
                 raise GameDuplicatePermissionError(
-                    "Ce jeu doit appartenir a votre collection pour etre signale."
+                    "Une collection importee est requise pour signaler un doublon."
                 )
             self.repository.mark_game_as_duplicate(connection, game_id)
         return {"game_id": game_id, "duplicate_flag": True}
@@ -257,6 +265,8 @@ class GameDuplicateService:
         start_time = perf_counter()
         if duplicate_game_id == target_game_id:
             raise GameDuplicateError("Le jeu doublon et le jeu conserve doivent etre differents.")
+        impacted_users = []
+        should_notify_impacted_users = False
         with self.engine.begin() as connection:
             self.repository.lock_global_game_catalog(connection)
             duplicate_game = self.repository.find_game_for_duplicate_management(
@@ -268,6 +278,13 @@ class GameDuplicateService:
                 raise GameDuplicateNotFoundError("Game not found.")
             if duplicate_game.get("platform") != target_game.get("platform"):
                 raise GameDuplicateError("Les deux jeux doivent appartenir a la meme plateforme.")
+            should_notify_impacted_users = bool(duplicate_game.get("duplicate_flag"))
+            if should_notify_impacted_users:
+                impacted_users = self.repository.list_users_impacted_by_merge(
+                    connection,
+                    duplicate_game_id,
+                    target_game_id,
+                )
             remapped_user_count = self.repository.count_users_with_game(
                 connection,
                 duplicate_game_id,
@@ -286,7 +303,7 @@ class GameDuplicateService:
                 target_game_id,
             )
             deleted_duplicate = self.repository.delete_game(connection, duplicate_game_id)
-        return GameDuplicateMergeResult(
+        result = GameDuplicateMergeResult(
             duplicate_game_id=duplicate_game_id,
             target_game_id=target_game_id,
             remapped_user_count=remapped_user_count,
@@ -296,6 +313,9 @@ class GameDuplicateService:
             deleted_duplicate=deleted_duplicate,
             processing_time_ms=self._elapsed_ms(start_time),
         )
+        if should_notify_impacted_users:
+            self._notify_impacted_users(impacted_users, duplicate_game, target_game)
+        return result
 
     @classmethod
     def from_environment(cls):
@@ -345,3 +365,16 @@ class GameDuplicateService:
 
     def _elapsed_ms(self, start_time: float) -> int:
         return int(round((perf_counter() - start_time) * 1000))
+
+    def _notify_impacted_users(
+        self,
+        impacted_users: list[dict[str, Any]],
+        duplicate_game: dict[str, Any],
+        target_game: dict[str, Any],
+    ) -> None:
+        try:
+            self.user_notifier.notify_merge(impacted_users, duplicate_game, target_game)
+        except Exception:
+            self.logger.exception(
+                "Impossible d'envoyer la notification utilisateur de fusion de doublon."
+            )

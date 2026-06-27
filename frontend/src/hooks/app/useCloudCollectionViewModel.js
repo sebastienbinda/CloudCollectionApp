@@ -120,15 +120,6 @@ function useCloudCollectionViewModel() {
     hasAccessToken: canViewWishlist,
     gamesReloadKey: refresh.gamesReloadKey,
   });
-  const gameDetailPage = useGameDetailPage({
-    currentView: navigation.currentView,
-    gameId: navigation.selectedGameId,
-    source: navigation.selectedGameSource,
-    hasAccessToken: canUseCollectionViews,
-    canCorrectDuplicate: session.actionPermissions.canCorrectGameDuplicate,
-    canReportDuplicate: session.actionPermissions.canReportGameDuplicate,
-    isGuest: session.viewAccess.isGuest,
-  });
   const gameDuplicateAdminPage = useGameDuplicateAdminPage({
     enabled: navigation.currentView === "gameDuplicateAdmin",
     gameId: navigation.selectedGameId,
@@ -171,12 +162,24 @@ function useCloudCollectionViewModel() {
     hasAccessToken: canUseCollectionViews && session.authenticatedProfile !== "GUEST",
     authenticatedUsername: session.authenticatedUsername,
     currentView: navigation.currentView,
+    selectedGameSource: navigation.selectedGameSource,
     canUseCollectionViews,
     openCollectionOnboarding: navigation.openCollectionOnboarding,
     openConfiguration: navigation.openConfiguration,
     openVerifiedCollection: navigation.openVerifiedCollection,
     reloadOds: refresh.reloadOds,
     reloadGames: refresh.reloadGames,
+  });
+  const gameDetailPage = useGameDetailPage({
+    currentView: navigation.currentView,
+    gameId: navigation.selectedGameId,
+    source: navigation.selectedGameSource,
+    hasAccessToken: canUseCollectionViews,
+    canCorrectDuplicate: session.actionPermissions.canCorrectGameDuplicate,
+    canReportDuplicate: session.actionPermissions.canReportGameDuplicate,
+    isGuest: session.viewAccess.isGuest,
+    hasCollection: userCollectionOnboarding.hasCollection,
+    checkCurrentUserCollection: userCollectionOnboarding.checkCurrentUserCollection,
   });
   const userCollectionReinitialization = useUserCollectionReinitialization({
     reloadOds: refresh.reloadOds,

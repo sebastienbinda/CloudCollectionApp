@@ -32,7 +32,9 @@
   Authenticated administrators get an additional filter for games reported or
   not reported as duplicates.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global
-  reference Library.
+  reference Library. Connected `USER` accounts with an imported collection can
+  report the displayed Library game as a possible duplicate after an explicit
+  confirmation, even when that game is not attached to their own collection.
 - `/`: redirects to `/about` without a token, to `/collection` with a
   non-`ADMIN` token, and to `/configuration` with an `ADMIN` token.
 
@@ -52,7 +54,8 @@ public pages.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
   attached to the connected user's collection. Nullable private purchase and
   copy information is shown only when available, including region flag and
-  purchase-price unit.
+  purchase-price unit. The connected `USER` can report the displayed game as a
+  possible duplicate after an explicit confirmation.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data.

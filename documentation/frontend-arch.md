@@ -172,6 +172,12 @@ Use the following domain folders for new or modified hooks:
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints.
+- Public Library and collection game detail may show the protected
+  duplicate-report action to a connected `USER` only after the
+  collection-status hook confirms that the user has an imported collection. The
+  hook must ask for explicit confirmation before calling
+  `LibraryApi.reportGameDuplicate`; the component only renders the provided
+  action state.
 - Keep protected Library administration calls in a dedicated admin service and
   user-triggered hooks. They must use route discovery before being displayed and
   must not change the public read-only Library consultation routes.

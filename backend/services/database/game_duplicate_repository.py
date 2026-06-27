@@ -50,24 +50,43 @@ class SqlAlchemyGameDuplicateRepository:
             {"lock_key": self.GLOBAL_GAME_IMPORT_LOCK_KEY},
         )
 
-    def user_has_game(self, connection: Connection, user_id: int, game_id: int) -> bool:
-        """Indique si un utilisateur possede un jeu dans sa collection.
+    def user_has_collection(self, connection: Connection, user_id: int) -> bool:
+        """Indique si un utilisateur possede une collection importee.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
+
+        Returns:
+            bool: `True` si un fichier de collection est rattache au compte.
+        """
+
+        collection_file_path = connection.execute(
+            text(
+                f'SELECT collection_file_path FROM "{self.schema_name}".t_user '
+                "WHERE id = :user_id"
+            ),
+            {"user_id": user_id},
+        ).scalar_one_or_none()
+        return bool(collection_file_path)
+
+    def game_exists(self, connection: Connection, game_id: int) -> bool:
+        """Indique si un jeu existe dans la Bibliotheque globale.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
             game_id (int): Identifiant du jeu.
 
         Returns:
-            bool: `True` si le rattachement existe.
+            bool: `True` si le jeu existe.
         """
 
         row = connection.execute(
             text(
-                f'SELECT 1 FROM "{self.schema_name}".t_user_collection '
-                "WHERE user_id = :user_id AND game_id = :game_id"
+                f'SELECT 1 FROM "{self.schema_name}".t_game '
+                "WHERE id = :game_id"
             ),
-            {"user_id": user_id, "game_id": game_id},
+            {"game_id": game_id},
         ).first()
         return row is not None
 
@@ -179,6 +198,40 @@ class SqlAlchemyGameDuplicateRepository:
             ),
             {"game_id": game_id},
         ).scalar_one())
+
+    def list_users_impacted_by_merge(
+        self,
+        connection: Connection,
+        duplicate_game_id: int,
+        target_game_id: int,
+    ) -> list[dict[str, Any]]:
+        """Liste les utilisateurs impactes par une fusion de doublon.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            duplicate_game_id (int): Identifiant du jeu qui sera supprime.
+            target_game_id (int): Identifiant du jeu conserve.
+
+        Returns:
+            list[dict[str, Any]]: Utilisateurs avec email et presence du jeu cible.
+        """
+
+        rows = connection.execute(
+            text(
+                "SELECT app_user.id AS user_id, app_user.email AS user_email, "
+                "EXISTS ("
+                f'SELECT 1 FROM "{self.schema_name}".t_user_collection target '
+                "WHERE target.user_id = duplicate.user_id "
+                "AND target.game_id = :target_game_id"
+                ") AS had_target_game "
+                f'FROM "{self.schema_name}".t_user_collection duplicate '
+                f'JOIN "{self.schema_name}".t_user app_user ON app_user.id = duplicate.user_id '
+                "WHERE duplicate.game_id = :duplicate_game_id "
+                "ORDER BY app_user.id"
+            ),
+            {"duplicate_game_id": duplicate_game_id, "target_game_id": target_game_id},
+        ).mappings()
+        return [dict(row) for row in rows]
 
     def remap_user_collections(
         self,

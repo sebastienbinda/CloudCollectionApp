@@ -69,8 +69,37 @@ function useGameDetailPage(options) {
     loadGameDetail();
   }, [options.currentView, options.gameId, options.hasAccessToken, options.source]);
 
+  useEffect(() => {
+    if (
+      options.currentView !== "gameDetail" ||
+      options.source !== "library" ||
+      options.canReportDuplicate !== true ||
+      options.isGuest ||
+      options.hasCollection !== null ||
+      typeof options.checkCurrentUserCollection !== "function"
+    ) {
+      return;
+    }
+    options.checkCurrentUserCollection().catch(() => {});
+  }, [
+    options.currentView,
+    options.source,
+    options.canReportDuplicate,
+    options.isGuest,
+    options.hasCollection,
+    options.checkCurrentUserCollection,
+  ]);
+
   const reportDuplicate = async () => {
     if (!gameDetail?.id) {
+      return;
+    }
+    const confirmed = window.confirm(
+      "Signaler ce jeu comme doublon informe les administrateurs qu'il pourrait "
+      + "correspondre a un autre jeu de la meme plateforme. Aucun changement "
+      + "n'est applique directement a votre collection. Confirmer le signalement ?"
+    );
+    if (!confirmed) {
       return;
     }
     try {
@@ -93,8 +122,9 @@ function useGameDetailPage(options) {
       options.canCorrectDuplicate === true
     ),
     canReportDuplicate: (
-      options.source === "collection" &&
+      ["collection", "library"].includes(options.source) &&
       options.canReportDuplicate === true &&
+      options.hasCollection === true &&
       !options.isGuest &&
       !gameDetail?.duplicate_flag
     ),

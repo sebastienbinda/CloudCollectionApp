@@ -164,7 +164,8 @@ class FakeGameDuplicateRepository:
         self.lock_calls = []
         self.updated_values = []
         self.remap_calls = []
-        self.user_has_game_result = True
+        self.impacted_user_calls = []
+        self.user_has_collection_result = True
 
     def lock_global_game_catalog(self, connection):
         """Memorise la prise du verrou global des jeux.
@@ -191,19 +192,31 @@ class FakeGameDuplicateRepository:
 
         return self.games.get(game_id)
 
-    def user_has_game(self, connection, user_id, game_id):
-        """Indique si l'utilisateur possede le jeu.
+    def game_exists(self, connection, game_id):
+        """Indique si le jeu existe.
+
+        Args:
+            connection (object): Connexion ignoree.
+            game_id (int): Identifiant du jeu.
+
+        Returns:
+            bool: `True` si le jeu existe.
+        """
+
+        return game_id in self.games
+
+    def user_has_collection(self, connection, user_id):
+        """Indique si l'utilisateur possede une collection.
 
         Args:
             connection (object): Connexion ignoree.
             user_id (int): Identifiant utilisateur.
-            game_id (int): Identifiant du jeu.
 
         Returns:
             bool: Valeur configuree.
         """
 
-        return self.user_has_game_result
+        return self.user_has_collection_result
 
     def mark_game_as_duplicate(self, connection, game_id):
         """Marque un jeu comme doublon.
@@ -247,6 +260,27 @@ class FakeGameDuplicateRepository:
         """
 
         return 4
+
+    def list_users_impacted_by_merge(self, connection, duplicate_game_id, target_game_id):
+        """Retourne les utilisateurs impactes par la fusion.
+
+        Args:
+            connection (object): Connexion ignoree.
+            duplicate_game_id (int): Jeu supprime.
+            target_game_id (int): Jeu conserve.
+
+        Returns:
+            list[dict]: Utilisateurs factices.
+        """
+
+        self.impacted_user_calls.append((duplicate_game_id, target_game_id))
+        return [
+            {
+                "user_id": 7,
+                "user_email": "sonic@example.com",
+                "had_target_game": False,
+            }
+        ]
 
     def insert_game_alias(self, connection, target_game_id, alias_name):
         """Memorise l'alias cree.
@@ -354,6 +388,37 @@ class FakePublicGameRepository:
         return self.rows
 
 
+class FakeGameDuplicateUserNotifier:
+    """Notifier factice des utilisateurs impactes."""
+
+    def __init__(self):
+        """Initialise la capture des notifications.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.notifications = []
+
+    def notify_merge(self, impacted_users, duplicate_game, target_game):
+        """Capture une notification de fusion.
+
+        Args:
+            impacted_users (list[dict]): Utilisateurs impactes.
+            duplicate_game (dict): Jeu supprime.
+            target_game (dict): Jeu conserve.
+
+        Returns:
+            int: Nombre de notifications factice.
+        """
+
+        self.notifications.append((impacted_users, duplicate_game, target_game))
+        return len(impacted_users)
+
+
 class GameDuplicateServiceTest(unittest.TestCase):
     """Valide les regles metier des doublons de jeux."""
 
@@ -369,15 +434,17 @@ class GameDuplicateServiceTest(unittest.TestCase):
 
         self.repository = FakeGameDuplicateRepository()
         self.game_repository = FakePublicGameRepository()
+        self.user_notifier = FakeGameDuplicateUserNotifier()
         self.service = GameDuplicateService(
             DatabaseConfiguration(None, "collection", "0.1"),
             repository=self.repository,
             game_repository=self.game_repository,
             engine=FakeEngine(),
+            user_notifier=self.user_notifier,
         )
 
-    def test_report_duplicate_requires_game_in_user_collection(self):
-        """Verifie le refus si le jeu n'appartient pas a l'utilisateur.
+    def test_report_duplicate_requires_user_collection(self):
+        """Verifie le refus si l'utilisateur n'a pas de collection.
 
         Args:
             Aucun.
@@ -386,10 +453,27 @@ class GameDuplicateServiceTest(unittest.TestCase):
             None: Les assertions valident l'exception.
         """
 
-        self.repository.user_has_game_result = False
+        self.repository.user_has_collection_result = False
 
         with self.assertRaises(GameDuplicatePermissionError):
             self.service.report_duplicate(7, 1)
+
+    def test_report_duplicate_accepts_game_outside_user_collection(self):
+        """Verifie qu'une collection suffit pour signaler un jeu Bibliotheque.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le signalement.
+        """
+
+        self.repository.user_has_collection_result = True
+
+        result = self.service.report_duplicate(7, 2)
+
+        self.assertTrue(result["duplicate_flag"])
+        self.assertTrue(self.repository.games[2]["duplicate_flag"])
 
     def test_repository_global_game_catalog_lock_uses_import_advisory_lock(self):
         """Verifie que le verrou doublon utilise le verrou PostgreSQL des imports.
@@ -471,10 +555,16 @@ class GameDuplicateServiceTest(unittest.TestCase):
         self.assertEqual((2, "Sonic the edgedog"), self.repository.aliases[0])
         self.assertEqual(["global_game_catalog"], self.repository.lock_calls)
         self.assertEqual([(1, 2)], self.repository.remap_calls)
+        self.assertEqual([(1, 2)], self.repository.impacted_user_calls)
         self.assertEqual([1], self.repository.deleted_games)
         self.assertEqual(4, result.remapped_user_count)
         self.assertEqual(3, result.updated_collection_rows)
         self.assertEqual(1, result.merged_collection_rows)
+        self.assertEqual(1, len(self.user_notifier.notifications))
+        impacted_users, duplicate_game, target_game = self.user_notifier.notifications[0]
+        self.assertEqual("sonic@example.com", impacted_users[0]["user_email"])
+        self.assertEqual("Sonic the edgedog", duplicate_game["name"])
+        self.assertEqual("Sonic", target_game["name"])
 
     def test_merge_duplicate_accepts_unreported_source_for_admin_correction(self):
         """Verifie qu'un admin peut fusionner un jeu non signale.
@@ -492,6 +582,8 @@ class GameDuplicateServiceTest(unittest.TestCase):
         self.assertEqual(2, result.target_game_id)
         self.assertEqual((2, "Sonic 1"), self.repository.aliases[0])
         self.assertEqual([4], self.repository.deleted_games)
+        self.assertEqual([], self.repository.impacted_user_calls)
+        self.assertEqual([], self.user_notifier.notifications)
 
     def test_merge_duplicate_rejects_cross_platform_target(self):
         """Verifie qu'une fusion inter-plateforme est refusee.
