@@ -35,6 +35,36 @@ from services.database import (
 from services.users import UserCollectionNameNormalizer
 
 
+class FakeImportConnection:
+    """Connexion factice capturant les requetes executees pendant l'import."""
+
+    def __init__(self):
+        """Initialise la connexion factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.executed_statements = []
+
+    def execute(self, statement, parameters=None):
+        """Capture une requete SQL et ses parametres.
+
+        Args:
+            statement (object): Requete SQLAlchemy recue.
+            parameters (dict | None): Parametres SQL associes.
+
+        Returns:
+            SimpleNamespace: Resultat factice sans donnees.
+        """
+
+        self.executed_statements.append((str(statement), parameters or {}))
+        return SimpleNamespace()
+
+
 class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
     """Valide que l'import ne cree plus de plateformes utilisateur."""
 
@@ -85,9 +115,10 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         """
 
         invalidations = []
+        connection = FakeImportConnection()
         repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
         repository.name_normalizer = UserCollectionNameNormalizer()
-        repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
+        repository.engine = SimpleNamespace(begin=lambda: nullcontext(connection))
         repository.user_file_repository = SimpleNamespace(
             lock_user_collection_state=lambda connection, user_id: "",
             find_user_email=lambda connection, user_id: "importer@example.com",
@@ -134,6 +165,11 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         )
 
         self.assertEqual(["platforms"], invalidations)
+        self.assertIn("pg_advisory_xact_lock", connection.executed_statements[0][0])
+        self.assertEqual(
+            repository.GLOBAL_GAME_IMPORT_LOCK_KEY,
+            connection.executed_statements[0][1]["lock_key"],
+        )
         self.assertEqual("importer@example.com", result.user_email)
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(1, result.created_games)
@@ -148,9 +184,10 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             None: Les assertions valident les warnings de l'objet d'import initial.
         """
 
+        connection = FakeImportConnection()
         repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
         repository.name_normalizer = UserCollectionNameNormalizer()
-        repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
+        repository.engine = SimpleNamespace(begin=lambda: nullcontext(connection))
         repository.user_file_repository = SimpleNamespace(
             lock_user_collection_state=lambda connection, user_id: "",
             find_user_email=lambda connection, user_id: "importer@example.com",
@@ -194,6 +231,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             {"file_type": "libreoffice_ods"},
         )
 
+        self.assertIn("pg_advisory_xact_lock", connection.executed_statements[0][0])
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(["Switch"], [game.platform_name for game in import_data.games])
         self.assertEqual("Sports", import_data.warnings.platform_matches[0]["game_name"])
@@ -305,10 +343,11 @@ class AdminLibraryImportRepositoryTest(unittest.TestCase):
         """
 
         invalidations = []
+        connection = FakeImportConnection()
         user_association_calls = []
         repository = object.__new__(SqlAlchemyAdminLibraryImportRepository)
         repository.name_normalizer = UserCollectionNameNormalizer()
-        repository.engine = SimpleNamespace(begin=lambda: nullcontext(object()))
+        repository.engine = SimpleNamespace(begin=lambda: nullcontext(connection))
         repository.platform_repository = SimpleNamespace(
             load_catalog_rows=lambda connection: [{"name": "Switch"}],
             load_ids_by_key=lambda connection: {"switch": 7},
@@ -349,6 +388,7 @@ class AdminLibraryImportRepositoryTest(unittest.TestCase):
         )
 
         self.assertEqual(["platforms"], invalidations)
+        self.assertIn("pg_advisory_xact_lock", connection.executed_statements[0][0])
         self.assertEqual([], user_association_calls)
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(0, result.created_studios)

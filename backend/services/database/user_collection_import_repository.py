@@ -15,7 +15,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
 
 from services.collection.imports import CollectionImportData
@@ -116,6 +116,8 @@ class _UserCollectionFileRemover:
 
 class SqlAlchemyUserCollectionImportRepository:
     """Coordonne les repositories d'entites dans une transaction d'import."""
+
+    GLOBAL_GAME_IMPORT_LOCK_KEY = 4_282_026_062_701
 
     def __init__(
         self,
@@ -225,6 +227,7 @@ class SqlAlchemyUserCollectionImportRepository:
 
         with self.engine.begin() as connection:
             self.user_file_repository.lock_user_collection_state(connection, user_id)
+            self._lock_global_game_import_state(connection)
             user_email = self.user_file_repository.find_user_email(connection, user_id)
             matched_import_data = self._match_platforms(connection, import_data)
             self._synchronize_import_data(import_data, matched_import_data)
@@ -258,6 +261,21 @@ class SqlAlchemyUserCollectionImportRepository:
             associated_games=associated_games,
             user_email=user_email,
             created_game_match_reports=tuple(created_game_match_reports),
+        )
+
+    def _lock_global_game_import_state(self, connection: Connection) -> None:
+        """Serialise le matching et la creation des jeux globaux pendant l'import.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            None: Le verrou est conserve jusqu'a la fin de la transaction.
+        """
+
+        connection.execute(
+            text("SELECT pg_advisory_xact_lock(:lock_key)"),
+            {"lock_key": self.GLOBAL_GAME_IMPORT_LOCK_KEY},
         )
 
     def _synchronize_import_data(

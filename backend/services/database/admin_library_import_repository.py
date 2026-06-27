@@ -53,6 +53,7 @@ class SqlAlchemyAdminLibraryImportRepository(SqlAlchemyUserCollectionImportRepos
         """
 
         with self.engine.begin() as connection:
+            self._lock_global_game_import_state(connection)
             matched_import_data = self._match_platforms(connection, import_data)
             self._synchronize_import_data(import_data, matched_import_data)
             platform_ids, linked_platforms = self._ensure_platforms(

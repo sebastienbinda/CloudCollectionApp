@@ -116,6 +116,72 @@ class GameMatchingServiceTest(unittest.TestCase):
         self.assertIsNone(low_score_id)
         self.assertIsNone(ambiguous_id)
 
+    def test_find_existing_game_id_rejects_base_title_against_numbered_sequel(self):
+        """Verifie qu'un jeu de base ne matche pas sa suite numerotee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de rattachement.
+        """
+
+        game = CollectionImportGame("Final Fantasy", "NES", None, None)
+        existing_game_ids = {("nes", "final fantasy 2"): 17}
+
+        result = self.service.evaluate_existing_game(
+            game,
+            existing_game_ids,
+            self.service.build_platform_index(existing_game_ids),
+        )
+
+        self.assertIsNone(result.existing_game_id)
+        self.assertEqual(0, result.best_candidate.score)
+
+    def test_find_existing_game_id_accepts_equivalent_arabic_and_roman_suffixes(self):
+        """Verifie le matching eleve entre chiffres arabes et romains.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le rattachement de la suite equivalente.
+        """
+
+        game = CollectionImportGame("Final Fantasy 3", "NES", None, None)
+        existing_game_ids = {("nes", "final fantasy iii"): 23}
+
+        result = self.service.evaluate_existing_game(
+            game,
+            existing_game_ids,
+            self.service.build_platform_index(existing_game_ids),
+        )
+
+        self.assertEqual(23, result.existing_game_id)
+        self.assertEqual(100, result.best_candidate.score)
+
+    def test_find_existing_game_id_rejects_different_numbered_sequels(self):
+        """Verifie que deux suites numerotees differentes ne matchent pas.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de rattachement.
+        """
+
+        game = CollectionImportGame("Final Fantasy 3", "NES", None, None)
+        existing_game_ids = {("nes", "final fantasy 2"): 17}
+
+        result = self.service.evaluate_existing_game(
+            game,
+            existing_game_ids,
+            self.service.build_platform_index(existing_game_ids),
+        )
+
+        self.assertIsNone(result.existing_game_id)
+        self.assertEqual(0, result.best_candidate.score)
+
     def test_platform_index_limits_fuzzy_candidates_to_imported_platform(self):
         """Verifie que le score fuzzy ne parcourt que la plateforme demandee.
 

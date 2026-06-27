@@ -56,6 +56,12 @@ reader architecture rules in `documentation/reader.md`.
   scores create a new game reference. Each created game reference is included in
   the administrator import report with the best existing same-platform candidate
   name and matching score.
+- Game matching treats a trailing sequel number as a functional part of the
+  title. When two names share the same base but only one has a trailing number,
+  their score is forced to `0` (`Final Fantasy` vs `Final Fantasy 2`). When both
+  names have equivalent trailing Arabic or Roman numbers, their score is forced
+  to `100` (`Final Fantasy 3` vs `Final Fantasy III`). Different sequel numbers
+  force a score of `0`.
 - Platforms are scored first against canonical catalog names. When the direct
   score is below `PLATFORM_MATCHING_HIGH_LEVEL_RATING`, catalog aliases are evaluated
   and used only when they improve the score.
