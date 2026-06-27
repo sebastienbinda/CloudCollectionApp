@@ -171,7 +171,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   non-exact results create a new reference game.
 - Newly created reference games store a standardized display name: title words
   are capitalized, joining words remain lowercase inside a title segment, Roman
-  numerals are uppercased and colons are stored with one surrounding space.
+  numerals are uppercased only when they are complete words or complete `-`
+  separated parts (`Xiii-3` becomes `XIII-3`, but `xiom` becomes `Xiom`), and
+  colons are stored with one surrounding space.
 - Duplicate ODS entries after normalization keep the first occurrence and ignore
   later duplicates with warning-level logging.
 - Empty or invalid game release dates must be persisted as `NULL`, not as
@@ -247,7 +249,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 
 ## Normalization Rules
 
-- Stored names are `trim().lower()` while preserving accents.
+- Imported names are trimmed before mapping. Newly created `t_game.name` values
+  are stored with the standardized display-name rules described above.
 - Comparison keys are `trim().lower()` with accents removed through Unicode
   normalization.
 - Do not replace this behavior with plain case-insensitive SQL matching unless
