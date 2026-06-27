@@ -46,9 +46,10 @@ reader architecture rules in `documentation/reader.md`.
 - Imported names are trimmed for collection mapping. When a new reference game
   is created in `t_game`, its stored name is title-standardized: meaningful
   words start with an uppercase letter, configured joining words stay lowercase
-  outside the beginning of a title segment, Roman numerals are uppercase, and
-  `:` is stored with one surrounding space. Comparison keys are trimmed,
-  lowercased and accent-free.
+  outside the beginning of a title segment, Roman numerals are uppercase only
+  when they are complete words or complete `-` separated parts (`Xiii-3` becomes
+  `XIII-3`, but `xiom` becomes `Xiom`), and `:` is stored with one surrounding
+  space. Comparison keys are trimmed, lowercased and accent-free.
 - Games are deduplicated by normalized `(platform, name)`; the first retained
   row wins unless a wishlist duplicate rule applies.
 - Existing games are reused first by exact normalized `(platform, name)` key,
