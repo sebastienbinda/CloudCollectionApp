@@ -15,3 +15,9 @@ Je veux deux nouvelles actions sur la ficher de description du detail d'un jeu:
             - Association au jeu restant, des jeux deja associé dans la collection des utilisateurs dans la table t_user_collection
             - Retour json avec les informations de ce qui a été fait avec le nombre d'utilisateur pour qui le jeu a été remappé sur le jeux restant et le temps de traitement.
         Après retour success ou erreur du backend affichage du resultat retourné.
+
+
+A ajouter : 
+
+ - Apres la resolution du doublon sur l'IHM par l'admin, il faut un affichage plus visuel du resultat avec des lables et des couleurs au lieu d'afficher le json brut. Il faut un message clair qui indique si ca a marché ou si a échoué. Cet écran de résultat doit etre un écran dédié pas en dessous du formulaire de résolution. Et il doit y avoir un boutton pour retourner sur la page de détail du jeux fusionné.
+ - Le bouton "Corriger un doublon" doit toujours etre visible par les admin qui peuvent donc décider de corriger un doublon non signalé

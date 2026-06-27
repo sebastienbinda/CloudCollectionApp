@@ -146,6 +146,7 @@ class LibraryPayloadSerializer:
             "editor": self.text_value(row.get("editor")),
             "status": self.text_value(row.get("status")),
             "platform": self.text_value(row.get("platform")),
+            "duplicate_flag": bool(row.get("duplicate_flag")),
         }
 
     def date_value(self, value: Any) -> str:

@@ -123,7 +123,7 @@ library_controller = LibraryController(
 platform_controller = PlatformController(library_service_factory=library_service_provider)
 platform_image_controller = PlatformImageController(auth_guard)
 studio_controller = StudioController(library_service_factory=library_service_provider)
-game_controller = GameController(library_service_factory=library_service_provider)
+game_controller = GameController(auth_guard, library_service_factory=library_service_provider)
 
 # 5. Enregistre les routes avant de les marquer avec la protection globale.
 authentication_controller.register_routes(app)

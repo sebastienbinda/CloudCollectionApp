@@ -37,6 +37,7 @@ class DatabaseConfigurationTest(unittest.TestCase):
                 "t_studio",
                 "t_user",
                 "t_game",
+                "t_game_alias",
                 "t_user_collection",
                 "t_collection_share",
             },

@@ -48,7 +48,20 @@ class AppRouting {
    * @returns {string} Identifiant de jeu ou chaine vide.
    */
   static getGameIdFromUrl() {
-    const match = window.location.pathname.match(/^\/(?:bibliotheque|collection)\/jeux\/(\d+)$/);
+    const match = window.location.pathname.match(
+      /^\/(?:bibliotheque|collection)\/jeux\/(\d+)$|^\/configuration\/doublons\/(\d+)$/
+    );
+    return match ? (match[1] || match[2]) : "";
+  }
+
+  /**
+   * Lit l'identifiant de doublon jeu depuis l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.pathname`.
+   * @returns {string} Identifiant de jeu signale ou chaine vide.
+   */
+  static getGameDuplicateIdFromUrl() {
+    const match = window.location.pathname.match(/^\/configuration\/doublons\/(\d+)$/);
     return match ? match[1] : "";
   }
 
@@ -147,7 +160,7 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"adminLibraryImport"|"platformImageModeration"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
+   * @returns {"about"|"home"|"games"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"adminLibraryImport"|"platformImageModeration"|"gameDuplicateAdmin"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
    */
   static getViewFromUrl() {
     if (/^\/collection\/share\/[^/]+$/.test(window.location.pathname)) {
@@ -203,6 +216,9 @@ class AppRouting {
     }
     if (window.location.pathname === "/configuration/images-plateformes") {
       return "platformImageModeration";
+    }
+    if (/^\/configuration\/doublons\/\d+$/.test(window.location.pathname)) {
+      return "gameDuplicateAdmin";
     }
     if (window.location.pathname === "/users") {
       return "users";

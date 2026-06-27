@@ -14,7 +14,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Sequence, String, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Sequence, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,6 +32,7 @@ class Game(DatabaseModelBase):
         editor (Optional[int]): Identifiant du studio editeur.
         platform (int): Identifiant de la plateforme du jeu.
         description (Optional[dict]): Description structuree stockee en JSONB.
+        duplicate_flag (bool): Indique si le jeu a ete signale comme doublon.
     """
 
     __tablename__ = "t_game"
@@ -48,3 +49,4 @@ class Game(DatabaseModelBase):
     editor: Mapped[Optional[int]] = mapped_column(ForeignKey("t_studio.id"), nullable=True)
     platform: Mapped[int] = mapped_column(ForeignKey("t_platform.id"), nullable=False)
     description: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    duplicate_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

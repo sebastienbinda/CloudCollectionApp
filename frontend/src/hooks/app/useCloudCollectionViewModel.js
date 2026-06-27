@@ -23,6 +23,7 @@ import useWishlistPage from "../games/useWishlistPage";
 import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
+import useGameDuplicateAdminPage from "../library/useGameDuplicateAdminPage";
 import useLibraryHomeSearch from "../library/useLibraryHomeSearch";
 import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPage";
 import useLibraryPlatforms from "../library/useLibraryPlatforms";
@@ -124,6 +125,14 @@ function useCloudCollectionViewModel() {
     gameId: navigation.selectedGameId,
     source: navigation.selectedGameSource,
     hasAccessToken: canUseCollectionViews,
+    canCorrectDuplicate: session.actionPermissions.canCorrectGameDuplicate,
+    canReportDuplicate: session.actionPermissions.canReportGameDuplicate,
+    isGuest: session.viewAccess.isGuest,
+  });
+  const gameDuplicateAdminPage = useGameDuplicateAdminPage({
+    enabled: navigation.currentView === "gameDuplicateAdmin",
+    gameId: navigation.selectedGameId,
+    canCorrect: session.actionPermissions.canCorrectGameDuplicate,
   });
   const libraryPlatformDetailPage = useLibraryPlatformDetailPage({
     currentView: navigation.currentView,
@@ -192,6 +201,7 @@ function useCloudCollectionViewModel() {
       selectedLibraryPlatformId: navigation.selectedLibraryPlatformId,
       selectedGameSource: navigation.selectedGameSource,
       gameDetailPage,
+      gameDuplicateAdminPage,
       libraryPlatformDetailPage,
       homeStats: homePage.homeStats,
       platforms: platformsCatalog.platforms,
@@ -261,6 +271,7 @@ function useCloudCollectionViewModel() {
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
       openGameDetail: navigation.openGameDetail,
+      openGameDuplicateAdmin: navigation.openGameDuplicateAdmin,
       openLibraryPlatformDetail: navigation.openLibraryPlatformDetail,
       openWishlist: navigation.openWishlist,
       openCollectionOnboarding: navigation.openCollectionOnboarding,

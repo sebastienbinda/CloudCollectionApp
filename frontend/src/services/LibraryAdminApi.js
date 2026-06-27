@@ -163,6 +163,116 @@ class LibraryAdminApi {
   }
 
   /**
+   * Charge le jeu signale comme doublon pour correction admin.
+   *
+   * @param {string|number} gameId - Identifiant du jeu signale.
+   * @returns {Promise<Object>} Objet contenant `game`.
+   * @throws {LibraryAdminApiError} Si la lecture est refusee ou impossible.
+   */
+  static async fetchDuplicateGame(gameId) {
+    const requestOptions = {
+      method: "GET",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const fallbackMessage = "Impossible de charger le doublon.";
+    const response = await BackendAvailabilityGuard.fetch(
+      `/api/library/games/${encodeURIComponent(gameId)}/doublon`,
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
+   * Recherche les jeux candidats a la fusion d'un doublon.
+   *
+   * @param {string|number} gameId - Identifiant du jeu signale.
+   * @param {string} name - Filtre de nom optionnel.
+   * @returns {Promise<Object>} Objet contenant `candidates`.
+   * @throws {LibraryAdminApiError} Si la recherche est refusee ou impossible.
+   */
+  static async searchDuplicateCandidates(gameId, name = "") {
+    const requestOptions = {
+      method: "GET",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const parameters = new URLSearchParams();
+    if (String(name || "").trim()) {
+      parameters.set("name", String(name).trim());
+    }
+    const suffix = parameters.toString() ? `?${parameters.toString()}` : "";
+    const fallbackMessage = "Impossible de rechercher les jeux candidats.";
+    const response = await BackendAvailabilityGuard.fetch(
+      `/api/library/games/${encodeURIComponent(gameId)}/doublon/candidates${suffix}`,
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
+   * Refuse un signalement de doublon.
+   *
+   * @param {string|number} duplicateGameId - Identifiant du jeu signale.
+   * @returns {Promise<Object>} Resultat backend.
+   * @throws {LibraryAdminApiError} Si le refus echoue.
+   */
+  static async rejectDuplicateGame(duplicateGameId) {
+    return this.manageDuplicateGame({
+      action: "reject",
+      duplicate_game_id: duplicateGameId,
+    });
+  }
+
+  /**
+   * Fusionne un jeu signale dans un jeu conserve.
+   *
+   * @param {Object} payload - Payload de fusion admin.
+   * @returns {Promise<Object>} Resultat backend.
+   * @throws {LibraryAdminApiError} Si la fusion echoue.
+   */
+  static async mergeDuplicateGame(payload) {
+    return this.manageDuplicateGame({
+      action: "merge",
+      ...payload,
+    });
+  }
+
+  /**
+   * Execute une action admin sur un doublon de jeu.
+   *
+   * @param {Object} payload - Action et parametres de correction.
+   * @returns {Promise<Object>} Resultat backend.
+   * @throws {LibraryAdminApiError} Si l'action echoue.
+   */
+  static async manageDuplicateGame(payload) {
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        ...AuthApi.getAuthorizationHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    };
+    const fallbackMessage = "Impossible de corriger le doublon.";
+    const response = await BackendAvailabilityGuard.fetch(
+      "/api/library/games/doublon",
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
    * Modifie le statut d'une image de plateforme.
    *
    * @param {string|number} platformId - Identifiant de plateforme.

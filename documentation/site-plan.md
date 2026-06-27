@@ -64,6 +64,8 @@ public pages.
   listing and revoking temporary shares, including an optional recipient label.
   It is available only to a `USER` with an imported collection and discovered
   share-management route permissions.
+- `/configuration/doublons/<game_id>`: authenticated `ADMIN` page for refusing
+  or merging a game reported as duplicate from a Library game detail.
 - `/users`: user administration page, visible only when backend route discovery
   confirms access to `GET /api/users`.
 

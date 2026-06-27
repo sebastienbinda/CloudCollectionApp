@@ -25,13 +25,18 @@ import VideoGamesApi from "../../services/VideoGamesApi";
 function useGameDetailPage(options) {
   const [gameDetail, setGameDetail] = useState(null);
   const [gameDetailError, setGameDetailError] = useState("");
+  const [duplicateReportMessage, setDuplicateReportMessage] = useState("");
+  const [duplicateReportError, setDuplicateReportError] = useState("");
   const [isLoadingGameDetail, setIsLoadingGameDetail] = useState(false);
+  const [isReportingDuplicate, setIsReportingDuplicate] = useState(false);
 
   useEffect(() => {
     const loadGameDetail = async () => {
       if (options.currentView !== "gameDetail" || !options.gameId) {
         setGameDetail(null);
         setGameDetailError("");
+        setDuplicateReportMessage("");
+        setDuplicateReportError("");
         setIsLoadingGameDetail(false);
         return;
       }
@@ -39,12 +44,16 @@ function useGameDetailPage(options) {
       if (options.source === "collection" && !options.hasAccessToken) {
         setGameDetail(null);
         setGameDetailError("Connectez-vous pour consulter ce jeu de collection.");
+        setDuplicateReportMessage("");
+        setDuplicateReportError("");
         return;
       }
 
       try {
         setIsLoadingGameDetail(true);
         setGameDetailError("");
+        setDuplicateReportMessage("");
+        setDuplicateReportError("");
         const data = options.source === "collection"
           ? await VideoGamesApi.fetchGame(options.gameId)
           : await LibraryApi.fetchGame(options.gameId);
@@ -60,10 +69,43 @@ function useGameDetailPage(options) {
     loadGameDetail();
   }, [options.currentView, options.gameId, options.hasAccessToken, options.source]);
 
+  const reportDuplicate = async () => {
+    if (!gameDetail?.id) {
+      return;
+    }
+    try {
+      setIsReportingDuplicate(true);
+      setDuplicateReportMessage("");
+      setDuplicateReportError("");
+      const data = await LibraryApi.reportGameDuplicate(gameDetail.id);
+      setGameDetail((currentGame) => currentGame ? { ...currentGame, duplicate_flag: true } : currentGame);
+      setDuplicateReportMessage(data.message || "Merci, un administrateur verifiera ce signalement.");
+    } catch (error) {
+      setDuplicateReportError(error.message || "Impossible de signaler ce doublon.");
+    } finally {
+      setIsReportingDuplicate(false);
+    }
+  };
+
   return {
+    canCorrectDuplicate: (
+      options.source === "library" &&
+      options.canCorrectDuplicate === true &&
+      Boolean(gameDetail?.duplicate_flag)
+    ),
+    canReportDuplicate: (
+      options.source === "collection" &&
+      options.canReportDuplicate === true &&
+      !options.isGuest &&
+      !gameDetail?.duplicate_flag
+    ),
+    duplicateReportError,
+    duplicateReportMessage,
     gameDetail,
     gameDetailError,
     isLoadingGameDetail,
+    isReportingDuplicate,
+    reportDuplicate,
   };
 }
 

@@ -17,6 +17,8 @@ from .database_schema_service import DatabaseSchemaService
 from .collection_share import CollectionShare
 from .collection_share_repository import SqlAlchemyCollectionShareRepository
 from .game import Game
+from .game_alias import GameAlias
+from .game_duplicate_repository import SqlAlchemyGameDuplicateRepository
 from .game_matching_configuration import GameMatchingConfiguration
 from .game_matching_service import GameMatchingService
 from .game_repository import SqlAlchemyGameRepository
@@ -59,10 +61,12 @@ __all__ = [
     "CollectionShare",
     "CreatedGameMatchReport",
     "Game",
+    "GameAlias",
     "GameMatchingConfiguration",
     "GameMatchingService",
     "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
+    "SqlAlchemyGameDuplicateRepository",
     "SqlAlchemyCollectionShareRepository",
     "SqlAlchemyLibraryResetRepository",
     "SqlAlchemyPlatformImageRepository",

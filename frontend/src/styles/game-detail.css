@@ -74,6 +74,109 @@
   overflow-wrap: anywhere;
 }
 
+.gameDetailActions,
+.gameDuplicateHeader,
+.gameDuplicateSearch {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.gameDuplicateWorkspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.gameDuplicateHeader {
+  justify-content: space-between;
+}
+
+.gameDuplicateHeader div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.gameDuplicateHeader span,
+.gameDuplicateHeader small {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.gameDuplicateHeader strong {
+  color: #111827;
+  font-size: 1.2rem;
+}
+
+.gameDuplicateSearch label {
+  display: grid;
+  flex: 1 1 18rem;
+  font-weight: 750;
+  gap: 0.3rem;
+}
+
+.gameDuplicateSearch input,
+.gameDuplicateCandidateSelect {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.gameDuplicateCandidateSelect {
+  width: 100%;
+}
+
+.gameDuplicateAliasChoice {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  font-weight: 750;
+}
+
+.gameDuplicateComparison {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gameDuplicateComparison fieldset {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.gameDuplicateComparison legend {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 0 0.25rem;
+}
+
+.gameDuplicateComparison label {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.gameDuplicateComparison span {
+  overflow-wrap: anywhere;
+}
+
+.gameDuplicateResult {
+  background: #111827;
+  border-radius: 8px;
+  color: #f8fafc;
+  margin: 0;
+  overflow: auto;
+  padding: 1rem;
+}
+
 .searchResultCard[role="button"] {
   cursor: pointer;
 }
@@ -111,6 +214,10 @@
 
   .gameDetailGrid dd {
     font-size: 0.85rem;
+  }
+
+  .gameDuplicateComparison {
+    grid-template-columns: 1fr;
   }
 
 }

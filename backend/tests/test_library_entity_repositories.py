@@ -325,8 +325,11 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.game_repository.list_public_library_games(connection, criteria)
 
         sql, parameters = connection.executed_statements[0]
+        self.assertIn("game.developer AS developer_id", sql)
         self.assertIn("developer_studio.name AS developer", sql)
+        self.assertIn("game.editor AS editor_id", sql)
         self.assertIn("editor_studio.name AS editor", sql)
+        self.assertIn("game.platform AS platform_id", sql)
         self.assertIn("platform.name AS platform", sql)
         self.assertIn("developer_studio.id = game.developer", sql)
         self.assertIn("editor_studio.id = game.editor", sql)

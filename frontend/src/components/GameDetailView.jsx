@@ -41,6 +41,7 @@ function GameDetailView({
   onOpenLibrary,
   onOpenWishlist,
   onOpenConfiguration,
+  onOpenGameDuplicateAdmin,
   onLogout,
   onBack,
 }) {
@@ -77,6 +78,12 @@ function GameDetailView({
 
       {gameDetailPage?.isLoadingGameDetail ? <ProgressBar label="Chargement du jeu" /> : null}
       {gameDetailPage?.gameDetailError ? <p className="error">{gameDetailPage.gameDetailError}</p> : null}
+      {gameDetailPage?.duplicateReportMessage ? (
+        <p className="success">{gameDetailPage.duplicateReportMessage}</p>
+      ) : null}
+      {gameDetailPage?.duplicateReportError ? (
+        <p className="error">{gameDetailPage.duplicateReportError}</p>
+      ) : null}
 
       {!gameDetailPage?.isLoadingGameDetail && game ? (
         <section className="gameDetailContent" aria-label="Informations du jeu">
@@ -92,6 +99,27 @@ function GameDetailView({
               </div>
             ))}
           </dl>
+          <div className="gameDetailActions">
+            {gameDetailPage.canReportDuplicate ? (
+              <button
+                className="secondaryButton"
+                type="button"
+                disabled={gameDetailPage.isReportingDuplicate}
+                onClick={gameDetailPage.reportDuplicate}
+              >
+                Indiquer un doublon
+              </button>
+            ) : null}
+            {gameDetailPage.canCorrectDuplicate ? (
+              <button
+                className="primaryAction"
+                type="button"
+                onClick={() => onOpenGameDuplicateAdmin(game)}
+              >
+                Corriger un doublon
+              </button>
+            ) : null}
+          </div>
         </section>
       ) : null}
     </PageLayout>

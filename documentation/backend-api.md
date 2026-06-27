@@ -289,6 +289,7 @@ user data, imported collection file paths or `t_user_collection` associations.
 | `GET` | `/api/library/studios` | Lists global reference studios. |
 | `GET` | `/api/library/games` | Lists global reference games. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
+| `POST` | `/api/library/games/<game_id>/doublon` | Marks a game from the connected user's collection as a possible duplicate. Requires `USER`. |
 
 List endpoints support these query parameters:
 
@@ -310,6 +311,11 @@ Allowed sort columns:
 
 Invalid page, size or sort values fall back to the default page, default size or
 `name,asc` sort.
+
+`POST /api/library/games/<game_id>/doublon` is protected even though it is under
+the Library path. The backend resolves the connected user from the Bearer token
+and accepts the signal only if the game is attached to that user's collection.
+GUEST sessions cannot report duplicates.
 
 ### Library Entity Counts Response
 
@@ -525,6 +531,9 @@ are separate from the public read-only Library consultation endpoints.
 | --- | --- | --- |
 | `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
 | `POST` | `/api/library/platform-catalog/sync` | Adds missing platforms and aliases from backend CSV resources. |
+| `GET` | `/api/library/games/<game_id>/doublon` | Loads one reported duplicate game for correction. |
+| `GET` | `/api/library/games/<game_id>/doublon/candidates` | Lists same-platform candidate games for duplicate correction. |
+| `POST` | `/api/library/games/doublon` | Rejects or merges a reported duplicate game. |
 | `GET` | `/api/library/platforms/images` | Lists platform images for moderation. |
 | `PUT` | `/api/library/platforms/<platform_id>/image/<image_id>/status/<status>` | Accepts or refuses one platform image. |
 | `PUT` | `/api/library/platforms/<platform_id>/image/<image_id>/type/<image_type>` | Changes one platform image type. |
@@ -602,6 +611,53 @@ Access and error status:
 
 - `403` when the Bearer token is missing or does not carry profile `ADMIN`;
 - `500` when the CSV read or SQL update fails unexpectedly.
+
+### Manage Game Duplicates
+
+```http
+GET /api/library/games/<game_id>/doublon
+GET /api/library/games/<game_id>/doublon/candidates?name=sonic
+POST /api/library/games/doublon
+Authorization: Bearer <admin-token>
+```
+
+The correction workflow only merges games from the same platform. Refusing a
+report sets `t_game.duplicate_flag = false`. Merging remaps
+`t_user_collection` rows from the duplicate game to the kept game, adds the
+duplicate name to `t_game_alias` when requested, applies selected kept values to
+the target game, then deletes the duplicate `t_game` row.
+Reject and merge operations take the same PostgreSQL transaction advisory lock
+as admin and user collection imports. This serializes duplicate correction with
+global game matching/creation so an import cannot create or associate games
+against a catalog state that is being merged at the same time.
+
+Reject payload:
+
+```json
+{
+  "action": "reject",
+  "duplicate_game_id": 12
+}
+```
+
+Merge payload:
+
+```json
+{
+  "action": "merge",
+  "duplicate_game_id": 12,
+  "target_game_id": 8,
+  "keep_duplicate_name_as_alias": true,
+  "selected_values": {
+    "release_date": "1991-06-23",
+    "developer": 4
+  }
+}
+```
+
+Successful merge responses include `remapped_user_count`,
+`updated_collection_rows`, `merged_collection_rows`, `alias_created`,
+`deleted_duplicate` and `processing_time_ms`.
 
 ### List Platform Images For Moderation
 

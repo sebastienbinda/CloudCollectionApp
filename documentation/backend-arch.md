@@ -137,6 +137,10 @@ Database code must follow these boundaries:
   hours. The cache is shared by public Library reads and user import platform
   matching, protected by an in-process lock, and invalidated after imports,
   Library reset cleanup and admin CSV synchronization.
+- workflows that match, create, merge or delete global games must be serialized
+  with the shared PostgreSQL transaction advisory lock used by imports. This
+  includes user collection imports, admin Library imports and duplicate
+  correction reject/merge operations.
 
 ### ODS Infrastructure
 

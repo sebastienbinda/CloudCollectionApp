@@ -599,6 +599,9 @@ class BaseAppRoutesTest(unittest.TestCase):
         self.original_platform_image_service_factory = app_module.platform_image_controller.platform_image_service_factory
         self.original_studio_library_service_factory = app_module.studio_controller.library_service_factory
         self.original_game_library_service_factory = app_module.game_controller.library_service_factory
+        self.original_game_duplicate_service_factory = app_module.game_controller.duplicate_service_factory
+        self.original_game_user_repository_class = app_module.game_controller.user_repository_class
+        self.original_game_database_configuration_class = app_module.game_controller.database_configuration_class
         app_module.authentication_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.user_repository_class = FakeSqlAlchemyUserRepository
         app_module.user_controller.database_configuration_class = FakeDatabaseConfiguration
@@ -618,6 +621,8 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.platform_image_controller.platform_image_service_factory = FakePlatformImageRouteService
         app_module.studio_controller.library_service_factory = FakeLibraryService
         app_module.game_controller.library_service_factory = FakeLibraryService
+        app_module.game_controller.user_repository_class = FakeSqlAlchemyUserRepository
+        app_module.game_controller.database_configuration_class = FakeDatabaseConfiguration
         FakeUserCollectionImportRepository.has_collection = False
         FakeUserCollectionImportRepository.import_configuration = None
         FakeUserCollectionImportService.next_error = None
@@ -675,6 +680,9 @@ class BaseAppRoutesTest(unittest.TestCase):
         app_module.platform_image_controller.platform_image_service_factory = self.original_platform_image_service_factory
         app_module.studio_controller.library_service_factory = self.original_studio_library_service_factory
         app_module.game_controller.library_service_factory = self.original_game_library_service_factory
+        app_module.game_controller.duplicate_service_factory = self.original_game_duplicate_service_factory
+        app_module.game_controller.user_repository_class = self.original_game_user_repository_class
+        app_module.game_controller.database_configuration_class = self.original_game_database_configuration_class
 
     def get_auth_headers(self):
         """Construit un header Bearer valide.
