@@ -250,6 +250,9 @@ Structure fonctionnelle attendue pour l'import :
   jeu depuis le detail Bibliotheque ou le detail de sa collection apres
   confirmation explicite, meme si le jeu Bibliotheque n'est pas rattache a sa
   propre collection ;
+- un administrateur peut filtrer les jeux signales, refuser un signalement ou
+  fusionner deux jeux via un ecran dedie qui remappe les collections impactees
+  et peut conserver l'ancien nom comme alias ;
 - depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
   le parcours `/collection/import` pour ajouter les jeux d'un nouveau fichier
   sans supprimer sa collection actuelle ;
