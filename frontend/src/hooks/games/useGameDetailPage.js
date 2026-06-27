@@ -29,6 +29,7 @@ function useGameDetailPage(options) {
   const [duplicateReportError, setDuplicateReportError] = useState("");
   const [isLoadingGameDetail, setIsLoadingGameDetail] = useState(false);
   const [isReportingDuplicate, setIsReportingDuplicate] = useState(false);
+  const [isInCurrentUserCollection, setIsInCurrentUserCollection] = useState(false);
 
   useEffect(() => {
     const loadGameDetail = async () => {
@@ -37,6 +38,7 @@ function useGameDetailPage(options) {
         setGameDetailError("");
         setDuplicateReportMessage("");
         setDuplicateReportError("");
+        setIsInCurrentUserCollection(false);
         setIsLoadingGameDetail(false);
         return;
       }
@@ -46,6 +48,7 @@ function useGameDetailPage(options) {
         setGameDetailError("Connectez-vous pour consulter ce jeu de collection.");
         setDuplicateReportMessage("");
         setDuplicateReportError("");
+        setIsInCurrentUserCollection(false);
         return;
       }
 
@@ -68,6 +71,49 @@ function useGameDetailPage(options) {
 
     loadGameDetail();
   }, [options.currentView, options.gameId, options.hasAccessToken, options.source]);
+
+  useEffect(() => {
+    if (options.currentView !== "gameDetail" || !gameDetail?.id) {
+      setIsInCurrentUserCollection(false);
+      return undefined;
+    }
+    if (options.source === "collection") {
+      setIsInCurrentUserCollection(true);
+      return undefined;
+    }
+    if (
+      options.source !== "library" ||
+      options.hasAccessToken !== true ||
+      options.isGuest ||
+      options.hasCollection !== true
+    ) {
+      setIsInCurrentUserCollection(false);
+      return undefined;
+    }
+
+    let isCurrentCheck = true;
+    VideoGamesApi.fetchGame(gameDetail.id)
+      .then(() => {
+        if (isCurrentCheck) {
+          setIsInCurrentUserCollection(true);
+        }
+      })
+      .catch(() => {
+        if (isCurrentCheck) {
+          setIsInCurrentUserCollection(false);
+        }
+      });
+    return () => {
+      isCurrentCheck = false;
+    };
+  }, [
+    options.currentView,
+    options.source,
+    options.hasAccessToken,
+    options.isGuest,
+    options.hasCollection,
+    gameDetail?.id,
+  ]);
 
   useEffect(() => {
     if (
@@ -132,6 +178,7 @@ function useGameDetailPage(options) {
     duplicateReportMessage,
     gameDetail,
     gameDetailError,
+    isInCurrentUserCollection,
     isLoadingGameDetail,
     isReportingDuplicate,
     reportDuplicate,

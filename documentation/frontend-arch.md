@@ -142,6 +142,10 @@ Use the following domain folders for new or modified hooks:
 - Own table filters, sorting and derived game collections.
 - Own game detail loading for `/collection/jeux/<game_id>` through protected
   collection endpoints.
+- Game detail ownership indicators must be derived in the game detail hook:
+  collection detail is owned by definition, while Library detail may check the
+  protected collection detail endpoint and silently treat a missing row as not
+  owned.
 - Request supported collection and wishlist sort orders from the backend with
   the `sort` query parameter. Do not recalculate backend list ordering in React
   for collection consultation pages.

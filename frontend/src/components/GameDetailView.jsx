@@ -88,8 +88,18 @@ function GameDetailView({
       {!gameDetailPage?.isLoadingGameDetail && game ? (
         <section className="gameDetailContent" aria-label="Informations du jeu">
           <div className="gameDetailSummary">
-            <span>{platformName || EMPTY_VALUE}</span>
-            <strong>{title}</strong>
+            <div className="gameDetailTitleBlock">
+              <span>{platformName || EMPTY_VALUE}</span>
+              <strong>{title}</strong>
+            </div>
+            {gameDetailPage.isInCurrentUserCollection ? (
+              <div className="gameCollectionOwnershipIndicator" aria-label="Jeu possede">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                </svg>
+                <span>Vous possedez ce jeu</span>
+              </div>
+            ) : null}
           </div>
           <dl className="gameDetailGrid">
             {fields.map(([label, value]) => (

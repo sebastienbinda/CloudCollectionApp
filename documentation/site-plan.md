@@ -35,6 +35,8 @@
   reference Library. Connected `USER` accounts with an imported collection can
   report the displayed Library game as a possible duplicate after an explicit
   confirmation, even when that game is not attached to their own collection.
+  When the displayed game is also in the connected user's collection, the page
+  shows an ownership indicator.
 - `/`: redirects to `/about` without a token, to `/collection` with a
   non-`ADMIN` token, and to `/configuration` with an `ADMIN` token.
 
@@ -55,7 +57,8 @@ public pages.
   attached to the connected user's collection. Nullable private purchase and
   copy information is shown only when available, including region flag and
   purchase-price unit. The connected `USER` can report the displayed game as a
-  possible duplicate after an explicit confirmation.
+  possible duplicate after an explicit confirmation. The page shows an
+  ownership indicator.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data.
