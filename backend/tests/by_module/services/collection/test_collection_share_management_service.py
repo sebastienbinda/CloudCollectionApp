@@ -161,6 +161,7 @@ class FakeShareManagementRepository:
         allow_collection,
         allow_wishlist,
         allow_prices,
+        wishlist_buy_status_default_filter="all",
         recipient=None,
     ):
         """Ajoute un partage factice.
@@ -173,6 +174,7 @@ class FakeShareManagementRepository:
             allow_collection (bool): Permission collection.
             allow_wishlist (bool): Permission wishlist.
             allow_prices (bool): Permission prix.
+            wishlist_buy_status_default_filter (str): Filtre wishlist par defaut.
             recipient (str | None): Destinataire du partage.
 
         Returns:
@@ -188,6 +190,7 @@ class FakeShareManagementRepository:
             "allow_collection": allow_collection,
             "allow_wishlist": allow_wishlist,
             "allow_prices": allow_prices,
+            "wishlist_buy_status_default_filter": wishlist_buy_status_default_filter,
             "recipient": recipient,
         }
         self.next_id += 1
@@ -339,6 +342,38 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
                         *permissions,
                     )
 
+    def test_create_share_validates_wishlist_buy_status_default_filter(self):
+        """Verifie la validation du filtre wishlist par defaut.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les valeurs acceptees et refusees.
+        """
+
+        share = self.service.create_share(
+            "user@example.com",
+            24,
+            True,
+            True,
+            False,
+            None,
+            "oui",
+        )
+
+        self.assertEqual("yes", share["wishlist_buy_status_default_filter"])
+        with self.assertRaisesRegex(ValueError, "wishlist_buy_status_default_filter"):
+            self.service.create_share(
+                "user@example.com",
+                24,
+                True,
+                True,
+                False,
+                None,
+                "maybe",
+            )
+
     def test_create_share_normalizes_optional_recipient(self):
         """Verifie le nettoyage et la validation du destinataire.
 
@@ -398,7 +433,14 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
         """
 
         active = self.repository.create_share(
-            None, 7, self.now, self.now + timedelta(hours=2), True, False, True, "Alice"
+            None,
+            7,
+            self.now,
+            self.now + timedelta(hours=2),
+            True,
+            False,
+            True,
+            recipient="Alice",
         )
         expired = self.repository.create_share(
             None,
@@ -411,7 +453,14 @@ class CollectionShareManagementServiceTest(unittest.TestCase):
             None,
         )
         revoked = self.repository.create_share(
-            None, 7, self.now, self.now + timedelta(hours=3), False, True, False, "Bob"
+            None,
+            7,
+            self.now,
+            self.now + timedelta(hours=3),
+            False,
+            True,
+            False,
+            recipient="Bob",
         )
         self.repository.revoke_share(None, revoked["id"], 7, self.now)
 

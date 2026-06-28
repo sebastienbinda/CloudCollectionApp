@@ -635,6 +635,7 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertEqual("nes", criteria.normalized_platform_name)
         self.assertEqual(12, criteria.platform_id)
         self.assertIsNone(criteria.wishlist)
+        self.assertEqual("all", criteria.wishlist_buy_status)
         self.assertFalse(criteria.has_invalid_platform_id)
         self.assertEqual("1980-01-01", criteria.release_date_from.isoformat())
         self.assertEqual("1990-12-31", criteria.release_date_to.isoformat())
@@ -714,6 +715,31 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         for invalid_value in ["0", "1", "oui", "maybe"]:
             with self.assertRaisesRegex(ValueError, "Invalid wishlist"):
                 self.query_parser.parse_games({"wishlist": invalid_value})
+
+    def test_parser_reads_wishlist_buy_status_filter(self):
+        """Verifie le parsing du filtre d'achat wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les valeurs supportees.
+        """
+
+        self.assertEqual(
+            "all",
+            self.query_parser.parse_games({"wishlist_buy_status": "all"}).wishlist_buy_status,
+        )
+        self.assertEqual(
+            "yes",
+            self.query_parser.parse_games({"wishlist_buy_status": "oui"}).wishlist_buy_status,
+        )
+        self.assertEqual(
+            "no",
+            self.query_parser.parse_games({"wishlist_buy_status": "non"}).wishlist_buy_status,
+        )
+        with self.assertRaisesRegex(ValueError, "Invalid wishlist_buy_status"):
+            self.query_parser.parse_games({"wishlist_buy_status": "maybe"})
 
     def test_parser_reads_platform_wishlist_filter(self):
         """Verifie le parsing wishlist des plateformes.

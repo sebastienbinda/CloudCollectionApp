@@ -61,7 +61,7 @@ public pages.
   ownership indicator.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
-  collection data.
+  collection data and keeps the `wishlist_buy_status` filter in the URL.
 - `/collection/import`: authenticated onboarding/import page shown when
   `GET /api/users/me/collection` returns `has_collection: false` for a
   non-`ADMIN` user, and reachable from Configuration when the same user already
@@ -87,8 +87,9 @@ claims:
 
 - `/collection` and platform views are available only with collection
   permission and display `Collection de <pseudonyme>`;
-- `/wishlist` is available only with wishlist permission and displays
-  `Liste de souhaits de <pseudonyme>`;
+- `/wishlist` is available only with wishlist permission, displays
+  `Liste de souhaits de <pseudonyme>` and initializes the buy-status filter
+  from the share claim when the URL does not already define it;
 - `/collection/jeux/<game_id>` is available only when backend confirms that
   the game belongs to a shared category;
 - `/bibliotheque/**`, `/about` and Logout remain available;

@@ -19,6 +19,8 @@ from sqlalchemy.engine import Connection
 from services.collection.user_collection_query_contract import (
     UserCollectionGameQueryCriteria,
     UserCollectionPlatformQueryCriteria,
+    WISHLIST_BUY_STATUS_NO,
+    WISHLIST_BUY_STATUS_YES,
 )
 from services.library.library_query_contract import LibrarySortRule
 
@@ -420,6 +422,14 @@ class SqlAlchemyUserCollectionQueryRepository:
             parameters["wishlist"] = criteria.wishlist
         return "WHERE " + " AND ".join(filters)
 
+    @staticmethod
+    def _wishlist_buy_information_expression() -> str:
+        return (
+            "(user_collection.buy_date IS NOT NULL "
+            "OR NULLIF(TRIM(user_collection.buy_location), '') IS NOT NULL "
+            "OR user_collection.purchase_price IS NOT NULL)"
+        )
+
     def _build_game_where_clause(
         self,
         criteria: UserCollectionGameQueryCriteria,
@@ -453,6 +463,10 @@ class SqlAlchemyUserCollectionQueryRepository:
         if criteria.wishlist is not None:
             filters.append("user_collection.wishlist = :wishlist")
             parameters["wishlist"] = criteria.wishlist
+        if criteria.wishlist_buy_status == WISHLIST_BUY_STATUS_YES:
+            filters.append(self._wishlist_buy_information_expression())
+        elif criteria.wishlist_buy_status == WISHLIST_BUY_STATUS_NO:
+            filters.append(f"NOT ({self._wishlist_buy_information_expression()})")
         return "WHERE " + " AND ".join(filters)
 
     def _append_text_filter(

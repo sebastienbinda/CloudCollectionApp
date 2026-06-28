@@ -281,12 +281,14 @@ connected user being reinitialized. It must not delete global `t_platform`,
 | `allow_collection` | `BOOLEAN` | No | Allows owned collection consultation. |
 | `allow_wishlist` | `BOOLEAN` | No | Allows wishlist consultation. |
 | `allow_prices` | `BOOLEAN` | No | Allows purchase-price consultation. |
+| `wishlist_buy_status_default_filter` | `VARCHAR(8)` | No | Initial GUEST wishlist buy-status filter: `all`, `yes` or `no`. |
 
 Constraints:
 
 - Primary key: `id`
 - Foreign key: `owner_user_id` -> `t_user.id`, with cascade deletion.
 - Check: `expires_at > created_at`.
+- Check: `wishlist_buy_status_default_filter` is one of `all`, `yes`, `no`.
 
 Indexes:
 
@@ -308,6 +310,9 @@ the share and owner have been reloaded. Neither token is a database column.
 Migration `20260625_0015` adds nullable `recipient` metadata. This value is not
 an authorization rule; it is displayed to the owner and written to access logs
 when the link token is exchanged.
+Migration `20260628_0017` adds `wishlist_buy_status_default_filter` with
+default `all` and a check constraint. This value initializes the GUEST wishlist
+filter and is not an authorization rule.
 
 Revocation is idempotent and sets `revoked_at` only when it is null. No cleanup
 job deletes expired or revoked history. Runtime validation joins the share to

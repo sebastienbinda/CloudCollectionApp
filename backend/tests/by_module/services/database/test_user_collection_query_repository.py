@@ -381,6 +381,44 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertIn("user_collection.wishlist = :wishlist", sql)
         self.assertTrue(parameters["wishlist"])
 
+    def test_list_games_filters_wishlist_buy_status(self):
+        """Verifie le filtre backend des souhaits en cours d'achat.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les expressions SQL du filtre.
+        """
+
+        criteria = self.query_parser.parse_games({
+            "wishlist": "true",
+            "wishlist_buy_status": "yes",
+        })
+        connection = FakeRepositoryConnection(rows=[{"id": 3, "name": "Zelda"}])
+
+        self.repository.list_games(connection, 12, criteria)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertIn(
+            "user_collection.wishlist = :wishlist AND "
+            "(user_collection.buy_date IS NOT NULL",
+            sql,
+        )
+        self.assertIn("user_collection.buy_date IS NOT NULL", sql)
+        self.assertIn("NULLIF(TRIM(user_collection.buy_location), '') IS NOT NULL", sql)
+        self.assertIn("user_collection.purchase_price IS NOT NULL", sql)
+        self.assertTrue(parameters["wishlist"])
+
+        no_criteria = self.query_parser.parse_games({
+            "wishlist": "true",
+            "wishlist_buy_status": "no",
+        })
+        no_connection = FakeRepositoryConnection(rows=[])
+        self.repository.list_games(no_connection, 12, no_criteria)
+        no_sql, _ = no_connection.executed_statements[0]
+        self.assertIn("NOT ((user_collection.buy_date IS NOT NULL", no_sql)
+
     def test_count_games_uses_same_filters_without_pagination(self):
         """Verifie le compteur des jeux utilisateur filtres.
 

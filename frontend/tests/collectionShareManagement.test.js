@@ -56,6 +56,7 @@ test("valide les bornes de duree et les permissions obligatoires", () => {
     allowCollection: true,
     allowWishlist: false,
     allowPrices: true,
+    wishlistBuyStatusDefaultFilter: "yes",
   };
   assert.ok(validateCollectionShareForm({ ...baseForm, durationHours: 0 }).error);
   assert.ok(validateCollectionShareForm({ ...baseForm, durationHours: 241 }).error);
@@ -71,10 +72,15 @@ test("valide les bornes de duree et les permissions obligatoires", () => {
     allow_collection: true,
     allow_wishlist: false,
     allow_prices: true,
+    wishlist_buy_status_default_filter: "yes",
   });
   assert.equal(validateCollectionShareForm({ ...baseForm, recipient: "x".repeat(257) }).error,
     "Le destinataire doit contenir 256 caracteres maximum.");
   assert.equal(validateCollectionShareForm({ ...baseForm, recipient: "   " }).payload.recipient, null);
+  assert.ok(validateCollectionShareForm({
+    ...baseForm,
+    wishlistBuyStatusDefaultFilter: "maybe",
+  }).error);
 });
 
 test("liste cree et revoque avec les contrats HTTP proprietaire", async () => {

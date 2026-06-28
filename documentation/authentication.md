@@ -178,10 +178,12 @@ The Bearer token payload must contain:
 - `exp`: expiration timestamp.
 
 A GUEST Bearer additionally contains the collection-share identifier, owner
-identifier, current owner pseudonym and granted collection, wishlist and price
-permissions. The public link token has a distinct signed token kind and cannot
-be used directly as a Bearer token. The exchange endpoint reloads the share and
-owner from PostgreSQL before issuing the GUEST session.
+identifier, current owner pseudonym, granted collection, wishlist and price
+permissions, and the `wishlist_buy_status_default_filter` share option used by
+the frontend to initialize `/wishlist`. The public link token has a distinct
+signed token kind and cannot be used directly as a Bearer token. The exchange
+endpoint reloads the share and owner from PostgreSQL before issuing the GUEST
+session.
 
 ## Collection Share Authentication
 
@@ -203,6 +205,7 @@ The GUEST Bearer claims are:
 - `profile`: `GUEST`;
 - `collection_share_id` and `owner_user_id`;
 - `permissions.collection`, `permissions.wishlist`, `permissions.prices`;
+- `wishlist_buy_status_default_filter`: `all`, `yes` or `no`;
 - `iat` and `exp`.
 
 Every GUEST backend request validates the signature and expiration, then loads

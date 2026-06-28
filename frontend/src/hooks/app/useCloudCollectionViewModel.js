@@ -119,6 +119,7 @@ function useCloudCollectionViewModel() {
     currentView: navigation.currentView,
     hasAccessToken: canViewWishlist,
     gamesReloadKey: refresh.gamesReloadKey,
+    wishlistBuyStatusDefaultFilter: session.viewAccess.wishlistBuyStatusDefaultFilter,
   });
   const gameDuplicateAdminPage = useGameDuplicateAdminPage({
     enabled: navigation.currentView === "gameDuplicateAdmin",

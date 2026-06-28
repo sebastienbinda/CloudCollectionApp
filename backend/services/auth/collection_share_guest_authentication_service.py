@@ -172,6 +172,9 @@ class CollectionShareGuestAuthenticationService:
                 "wishlist": bool(share["allow_wishlist"]),
                 "prices": bool(share["allow_prices"]),
             },
+            "wishlist_buy_status_default_filter": (
+                share.get("wishlist_buy_status_default_filter") or "all"
+            ),
         }
 
     def _log_share_access(self, share: dict[str, Any]) -> None:

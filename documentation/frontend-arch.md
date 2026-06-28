@@ -139,6 +139,9 @@ Use the following domain folders for new or modified hooks:
 - Own platform game loading.
 - Request `wishlist=false` for collection game lists.
 - Own wishlist game loading for `/wishlist` and request `wishlist=true`.
+- Own the wishlist buy-status filter, persist it in the
+  `wishlist_buy_status` URL query parameter and initialize it from the GUEST
+  `wishlist_buy_status_default_filter` claim when no query parameter exists.
 - Own table filters, sorting and derived game collections.
 - Own game detail loading for `/collection/jeux/<game_id>` through protected
   collection endpoints.

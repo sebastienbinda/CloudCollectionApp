@@ -20,6 +20,7 @@ const wishlistColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie",
 const wishlistFilterColumns = ["Nom du jeu", "Plateforme"];
 const platformValueColumns = ["Plateforme"];
 const sortableColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie"];
+const wishlistBuyStatusValues = Object.freeze(["all", "yes", "no"]);
 const backendSortColumns = {
   "Nom du jeu": "name",
   Plateforme: "platform_name",
@@ -62,6 +63,32 @@ const buildBackendSort = (sortConfig) => {
   return `${backendColumn},${direction}`;
 };
 
+const normalizeWishlistBuyStatus = (value, defaultValue = "all") => {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  if (wishlistBuyStatusValues.includes(normalizedValue)) {
+    return normalizedValue;
+  }
+  const normalizedDefault = String(defaultValue || "").trim().toLowerCase();
+  return wishlistBuyStatusValues.includes(normalizedDefault) ? normalizedDefault : "all";
+};
+
+const getWishlistBuyStatusFromUrl = (defaultValue) => {
+  if (typeof window === "undefined") {
+    return normalizeWishlistBuyStatus(defaultValue);
+  }
+  const urlValue = new URLSearchParams(window.location.search).get("wishlist_buy_status");
+  return normalizeWishlistBuyStatus(urlValue, defaultValue);
+};
+
+const updateWishlistBuyStatusUrl = (value) => {
+  if (typeof window === "undefined" || window.location.pathname !== "/wishlist") {
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("wishlist_buy_status", normalizeWishlistBuyStatus(value));
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+};
+
 /**
  * Gere les jeux, filtres et tris backend de la page wishlist.
  *
@@ -73,6 +100,9 @@ function useWishlistPage(options) {
   const [valuesByColumn, setValuesByColumn] = useState({});
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ column: "Nom du jeu", direction: "asc" });
+  const [wishlistBuyStatus, setWishlistBuyStatus] = useState(() =>
+    getWishlistBuyStatusFromUrl(options.wishlistBuyStatusDefaultFilter)
+  );
   const [wishlistError, setWishlistError] = useState("");
   const [isLoadingWishlistGames, setIsLoadingWishlistGames] = useState(false);
 
@@ -92,6 +122,7 @@ function useWishlistPage(options) {
         setWishlistError("");
         const loadedGames = await VideoGamesApi.fetchGames({
           wishlist: true,
+          wishlist_buy_status: wishlistBuyStatus,
           sort: buildBackendSort(sortConfig),
         });
         setGames(Array.isArray(loadedGames) ? loadedGames : []);
@@ -106,7 +137,16 @@ function useWishlistPage(options) {
     };
 
     loadWishlistGames();
-  }, [options.currentView, options.hasAccessToken, options.gamesReloadKey, sortConfig]);
+  }, [options.currentView, options.hasAccessToken, options.gamesReloadKey, sortConfig, wishlistBuyStatus]);
+
+  useEffect(() => {
+    if (options.currentView !== "wishlist") {
+      return;
+    }
+    const selectedStatus = getWishlistBuyStatusFromUrl(options.wishlistBuyStatusDefaultFilter);
+    setWishlistBuyStatus(selectedStatus);
+    updateWishlistBuyStatusUrl(selectedStatus);
+  }, [options.currentView, options.wishlistBuyStatusDefaultFilter]);
 
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
   const filteredGames = filterGames(namedGames, wishlistFilterColumns, columnFilters);
@@ -119,6 +159,11 @@ function useWishlistPage(options) {
       direction: previous.column === column && previous.direction === "asc" ? "desc" : "asc",
     }));
   };
+  const updateWishlistBuyStatus = (value) => {
+    const normalizedValue = normalizeWishlistBuyStatus(value);
+    setWishlistBuyStatus(normalizedValue);
+    updateWishlistBuyStatusUrl(normalizedValue);
+  };
 
   return {
     wishlistGames: namedGames,
@@ -126,6 +171,8 @@ function useWishlistPage(options) {
     wishlistValuesByColumn: valuesByColumn,
     wishlistColumnFilters: columnFilters,
     setWishlistColumnFilters: setColumnFilters,
+    wishlistBuyStatus,
+    setWishlistBuyStatus: updateWishlistBuyStatus,
     wishlistSortConfig: sortConfig,
     wishlistSortedGames: filteredGames,
     wishlistFilteredGames: filteredGames,
@@ -136,4 +183,7 @@ function useWishlistPage(options) {
   };
 }
 
+export {
+  normalizeWishlistBuyStatus,
+};
 export default useWishlistPage;

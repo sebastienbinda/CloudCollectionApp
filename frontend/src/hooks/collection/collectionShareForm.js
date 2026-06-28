@@ -9,6 +9,7 @@
 const MINIMUM_DURATION_HOURS = 1;
 const MAXIMUM_DURATION_HOURS = 240;
 const MAXIMUM_RECIPIENT_LENGTH = 256;
+const WISHLIST_BUY_STATUS_DEFAULT_FILTERS = Object.freeze(["all", "yes", "no"]);
 
 /**
  * Valide et transforme le formulaire frontend en payload backend.
@@ -42,6 +43,15 @@ function validateCollectionShareForm(form) {
       error: "Le destinataire doit contenir 256 caracteres maximum.",
     };
   }
+  const wishlistBuyStatusDefaultFilter = String(
+    form.wishlistBuyStatusDefaultFilter || "all"
+  ).trim().toLowerCase();
+  if (!WISHLIST_BUY_STATUS_DEFAULT_FILTERS.includes(wishlistBuyStatusDefaultFilter)) {
+    return {
+      payload: null,
+      error: "Le filtre par defaut de la liste de souhaits est invalide.",
+    };
+  }
   return {
     error: "",
     payload: {
@@ -50,6 +60,7 @@ function validateCollectionShareForm(form) {
       allow_collection: form.allowCollection === true,
       allow_wishlist: form.allowWishlist === true,
       allow_prices: form.allowPrices === true,
+      wishlist_buy_status_default_filter: wishlistBuyStatusDefaultFilter,
     },
   };
 }
@@ -58,5 +69,6 @@ export {
   MAXIMUM_DURATION_HOURS,
   MAXIMUM_RECIPIENT_LENGTH,
   MINIMUM_DURATION_HOURS,
+  WISHLIST_BUY_STATUS_DEFAULT_FILTERS,
   validateCollectionShareForm,
 };

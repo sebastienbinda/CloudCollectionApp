@@ -41,6 +41,7 @@ class SqlAlchemyCollectionShareRepository:
         allow_collection: bool,
         allow_wishlist: bool,
         allow_prices: bool,
+        wishlist_buy_status_default_filter: str = "all",
         recipient: str | None = None,
     ) -> dict[str, object]:
         """Cree un partage rattache a un proprietaire.
@@ -53,6 +54,7 @@ class SqlAlchemyCollectionShareRepository:
             allow_collection (bool): Autorisation collection.
             allow_wishlist (bool): Autorisation liste de souhaits.
             allow_prices (bool): Autorisation prix.
+            wishlist_buy_status_default_filter (str): Filtre d'achat wishlist par defaut.
             recipient (str | None): Destinataire lisible du partage.
 
         Returns:
@@ -66,9 +68,11 @@ class SqlAlchemyCollectionShareRepository:
             text(
                 f'INSERT INTO "{self.schema_name}".t_collection_share '
                 "(owner_user_id, created_at, expires_at, revoked_at, "
-                "allow_collection, allow_wishlist, allow_prices, recipient) "
+                "allow_collection, allow_wishlist, allow_prices, "
+                "wishlist_buy_status_default_filter, recipient) "
                 "VALUES (:owner_user_id, :created_at, :expires_at, NULL, "
-                ":allow_collection, :allow_wishlist, :allow_prices, :recipient) "
+                ":allow_collection, :allow_wishlist, :allow_prices, "
+                ":wishlist_buy_status_default_filter, :recipient) "
                 f"RETURNING {self._share_columns()}"
             ),
             {
@@ -78,6 +82,7 @@ class SqlAlchemyCollectionShareRepository:
                 "allow_collection": allow_collection,
                 "allow_wishlist": allow_wishlist,
                 "allow_prices": allow_prices,
+                "wishlist_buy_status_default_filter": wishlist_buy_status_default_filter,
                 "recipient": recipient,
             },
         ).mappings().one()
@@ -220,7 +225,8 @@ class SqlAlchemyCollectionShareRepository:
     def _share_columns() -> str:
         return (
             "id, owner_user_id, created_at, expires_at, revoked_at, "
-            "allow_collection, allow_wishlist, allow_prices, recipient"
+            "allow_collection, allow_wishlist, allow_prices, "
+            "wishlist_buy_status_default_filter, recipient"
         )
 
     @staticmethod
@@ -243,6 +249,7 @@ class SqlAlchemyCollectionShareRepository:
                 "allow_collection",
                 "allow_wishlist",
                 "allow_prices",
+                "wishlist_buy_status_default_filter",
                 "recipient",
             )
         )

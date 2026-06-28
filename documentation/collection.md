@@ -124,6 +124,15 @@ The wishlist frontend page is centered on wished entries. It must request
 the user-facing wishlist columns and must not expose the technical `wishlist`
 field.
 
+The wishlist page may add `wishlist_buy_status=all|yes|no` to the backend game
+search. `all` keeps every wished game. `yes` keeps wished games whose purchase
+date, purchase location or purchase price is defined. `no` keeps wished games
+where none of those purchase-in-progress fields is defined. The selected value
+is preserved in the URL for direct access. For GUEST sessions, the initial URL
+value is derived from the signed share claim
+`wishlist_buy_status_default_filter` when the query parameter is absent, and
+the GUEST can change it afterwards.
+
 ## Statistics
 
 `GET /collections/videogames` returns separate sections:
@@ -150,9 +159,11 @@ Unsupported collection search parameters, unsupported sort columns, unsupported
 sort directions and invalid criterion formats also return `400` with a clear
 JSON `error` message.
 
-The wishlist filter is optional at API level. Without it, backend search
+The `wishlist` filter is optional at API level. Without it, backend search
 endpoints can return both owned and wished entries, which is useful for future
 features. The current collection page must always pass `wishlist=false`.
+The `wishlist_buy_status` filter is optional and meaningful for wishlist game
+searches; invalid values return `400`.
 
 Collection and wishlist list ordering must be requested through backend `sort`
 parameters. React pages may keep local display filters, but must not apply an
@@ -161,9 +172,9 @@ additional local sort to backend collection results.
 Game list filters must be displayed above the table/list, not as a filter row
 inside the table. The collection platform page exposes a game-name search and
 the current platform selector above the table. The wishlist page exposes a
-game-name search and a platform selector above the table. Desktop and mobile
-layouts must use the same filter state, while mobile keeps the compact game
-entry rendering.
+game-name search, a buy-status selector and a platform selector above the
+table. Desktop and mobile layouts must use the same filter state, while mobile
+keeps the compact game entry rendering.
 
 ## Validation
 

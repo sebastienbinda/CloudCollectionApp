@@ -144,6 +144,7 @@ class CollectionShareGuestAuthenticationServiceTest(unittest.TestCase):
             "allow_collection": True,
             "allow_wishlist": False,
             "allow_prices": True,
+            "wishlist_buy_status_default_filter": "yes",
             "recipient": "Alice",
             "status": "ACTIVE",
             "owner_pseudonym": "Player_One",
@@ -188,6 +189,7 @@ class CollectionShareGuestAuthenticationServiceTest(unittest.TestCase):
             {"collection": True, "wishlist": False, "prices": True},
             payload["permissions"],
         )
+        self.assertEqual("yes", payload["wishlist_buy_status_default_filter"])
         expected_expiration = int(self.expires_at.replace(tzinfo=timezone.utc).timestamp())
         self.assertEqual(expected_expiration, payload["exp"])
 

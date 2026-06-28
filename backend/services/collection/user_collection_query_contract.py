@@ -23,6 +23,15 @@ from services.library.library_query_contract import (
 )
 from services.users import UserCollectionNameNormalizer
 
+WISHLIST_BUY_STATUS_ALL = "all"
+WISHLIST_BUY_STATUS_YES = "yes"
+WISHLIST_BUY_STATUS_NO = "no"
+WISHLIST_BUY_STATUS_VALUES = frozenset({
+    WISHLIST_BUY_STATUS_ALL,
+    WISHLIST_BUY_STATUS_YES,
+    WISHLIST_BUY_STATUS_NO,
+})
+
 
 @dataclass(frozen=True)
 class UserCollectionPlatformQueryCriteria:
@@ -60,6 +69,7 @@ class UserCollectionGameQueryCriteria:
         release_date_from (date | None): Debut de plage de date de sortie.
         release_date_to (date | None): Fin de plage de date de sortie.
         wishlist (bool | None): Filtre wishlist, ou aucun filtre si absent.
+        wishlist_buy_status (str): Filtre d'achat wishlist: all, yes ou no.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises.
     """
 
@@ -75,6 +85,7 @@ class UserCollectionGameQueryCriteria:
     release_date_from: date | None
     release_date_to: date | None
     wishlist: bool | None
+    wishlist_buy_status: str
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -92,6 +103,7 @@ class UserCollectionQueryParser:
             "platform_id",
             "release_date",
             "wishlist",
+            "wishlist_buy_status",
             "page",
             "size",
             "sort",
@@ -189,6 +201,7 @@ class UserCollectionQueryParser:
             release_date_from=release_date_from,
             release_date_to=release_date_to,
             wishlist=self._parse_wishlist_filter(query_parameters),
+            wishlist_buy_status=self._parse_wishlist_buy_status_filter(query_parameters),
             sort_rules=self._parse_sort_rules(
                 self.GAME_SORT_COLUMNS,
                 self._get_all_values(query_parameters, "sort"),
@@ -384,6 +397,41 @@ class UserCollectionQueryParser:
         parsed_value = self._parse_wishlist(value)
         if parsed_value is None:
             raise ValueError("Invalid wishlist. Expected 'true' or 'false'.")
+        return parsed_value
+
+    def _parse_wishlist_buy_status_filter(
+        self,
+        query_parameters: QueryParameterSource | Mapping[str, Any],
+    ) -> str:
+        """Parse le filtre d'achat de la wishlist.
+
+        Args:
+            query_parameters (QueryParameterSource | Mapping[str, Any]): Parametres bruts.
+
+        Returns:
+            str: Filtre normalise: `all`, `yes` ou `no`.
+
+        Raises:
+            ValueError: Si la valeur n'est pas supportee.
+        """
+
+        raw_value = self._get_first_value(query_parameters, "wishlist_buy_status")
+        normalized_value = str(raw_value or "").strip().lower()
+        if not normalized_value:
+            return WISHLIST_BUY_STATUS_ALL
+        aliases = {
+            "all": WISHLIST_BUY_STATUS_ALL,
+            "tous": WISHLIST_BUY_STATUS_ALL,
+            "yes": WISHLIST_BUY_STATUS_YES,
+            "oui": WISHLIST_BUY_STATUS_YES,
+            "true": WISHLIST_BUY_STATUS_YES,
+            "no": WISHLIST_BUY_STATUS_NO,
+            "non": WISHLIST_BUY_STATUS_NO,
+            "false": WISHLIST_BUY_STATUS_NO,
+        }
+        parsed_value = aliases.get(normalized_value)
+        if parsed_value not in WISHLIST_BUY_STATUS_VALUES:
+            raise ValueError("Invalid wishlist_buy_status. Expected 'all', 'yes' or 'no'.")
         return parsed_value
 
     def _validate_query_parameters(

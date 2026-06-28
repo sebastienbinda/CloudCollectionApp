@@ -108,6 +108,16 @@ function WishlistView({
             </div>
             <div className="libraryPlatformFilter">
               <select
+                id="wishlist-buy-status-filter"
+                value={wishlistPage?.wishlistBuyStatus || "all"}
+                onChange={(event) => wishlistPage?.setWishlistBuyStatus?.(event.target.value)}
+                aria-label="Filtrer par en cours d'achat"
+              >
+                <option value="all">Tous les statuts d'achat</option>
+                <option value="yes">En cours d'achat</option>
+                <option value="no">Pas en cours d'achat</option>
+              </select>
+              <select
                 id="wishlist-platform-filter"
                 value={wishlistFilters.Plateforme || ""}
                 onChange={(event) => updateWishlistFilter("Plateforme", event.target.value)}
