@@ -385,9 +385,11 @@ platforms.
   an absolute host directory mounted to `/var/lib/postgresql/data` by the
   online Docker Compose file.
 - Backend production bind mounts such as `USERS_WORKSPACE`,
-  `BACKEND_IMG_HOST_DIR` and `BACKEND_LOG_HOST_DIR` must be writable by the
-  configured `RUNTIME_UID:RUNTIME_GID`, because the backend container does not
-  run as root.
+  `BACKEND_IMG_HOST_DIR` and `BACKEND_LOG_HOST_DIR` must be writable on the
+  host by `RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Without Docker `userns-remap`,
+  these values usually match `RUNTIME_UID:RUNTIME_GID`; with `userns-remap`,
+  they must be the host remapped IDs corresponding to the non-root backend
+  container user.
 - Never rely on manual SQL execution as the normal deployment path.
 - New migrations must be forward-only fixes for production data: they must not
   require emptying, recreating or resetting a production database.

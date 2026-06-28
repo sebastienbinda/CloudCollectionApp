@@ -18,8 +18,8 @@
 - Application Docker images are published only when a Git tag matching `X.Y.Z`
   is pushed.
 - Application Docker image versions come from the Git tag.
-- The production deployment archive is generated only when a Git tag matching
-  `X.Y.Z` is pushed.
+- The production deployment archive is generated and published as a GitHub
+  release asset only when a Git tag matching `X.Y.Z` is pushed.
 - The `age` utility image is published as `latest` only when a Git tag matching
   `X.Y.Z` is pushed and `docker/age-secrets.Dockerfile` changed since the
   previous release tag.
@@ -46,8 +46,10 @@ The `.github/workflows/ci.yml` workflow contains seven jobs:
   `ghcr.io/<owner>/<repository>/age-secrets:latest` when the tag matches
   `X.Y.Z` and `docker/age-secrets.Dockerfile` changed since the previous
   release tag.
-- `deploy-archive`: for Git tags only, builds and uploads
-  `cloud-application-deploy.zip` as a downloadable workflow artifact.
+- `deploy-archive`: for Git tags only, builds
+  `cloud-application-deploy-<version>.zip`, keeps it as a downloadable workflow
+  artifact, creates the GitHub release for the tag when needed, and uploads the
+  archive as a versioned release asset.
 - `docker-images`: for Git tags only, builds and pushes the backend and frontend
   Docker images after the validation jobs succeed.
 
@@ -81,19 +83,24 @@ loaded directly by import tests when needed.
 Frontend tests run through `npm test` in `frontend/`, using Node.js' native test
 runner against `frontend/tests/*.test.js`.
 
-The deploy archive is built by `scripts/create_deploy_archive.sh`. It contains
-only the production runtime files required on the deployment host:
+The deploy archive is built by `scripts/create_deploy_archive.sh` and named
+`cloud-application-deploy-<version>.zip`, where `<version>` is the release tag.
+It contains only the production runtime files required on the deployment host:
 
 - `runtime/start.sh`
 - `runtime/stop.sh`
 - `runtime/secure.sh`
+- `runtime/age_identity_cleanup.sh`
 - `runtime/prepare_directories.sh`
 - `runtime/docker-compose.online.yml`
 - `runtime/.env.production.example`
+- empty `runtime/.age/` and `runtime/env/` directories for the fixed age
+  identity and archive locations.
 
-The GitLab CI file `.gitlab-ci.yml` exposes the same deploy archive generation
-as the `cloud_application_deploy_archive` job. It runs on release tags matching
-`X.Y.Z` and publishes `cloud-application-deploy.zip` as a GitLab artifact.
+The GitLab CI file `.gitlab-ci.yml` exposes deploy archive generation as the
+`cloud_application_deploy_archive` job. It runs on release tags matching
+`X.Y.Z` and publishes `cloud-application-deploy.zip` as a GitLab artifact. The
+GitHub workflow is authoritative for GitHub release assets.
 
 The workflow uses GitHub and Docker actions that target the Node.js 24 runtime.
 This is independent from the frontend application build, which uses the Node.js
@@ -175,15 +182,16 @@ The age utility image is always published with only the `latest` tag.
 
 ## Deployment Archive
 
-The `cloud-application-deploy.zip` artifact is intended for production hosts
-that only need to run already published container images. It deliberately
-excludes Dockerfiles, source code, test files, build compose files and local
-development configuration.
+The `cloud-application-deploy-<version>.zip` release asset is intended for
+production hosts that only need to run already published container images. It
+deliberately excludes Dockerfiles, source code, test files, build compose files
+and local development configuration. Production startup is expected to run from
+this extracted archive, not from a Git checkout.
 
 After extraction, configure `runtime/.env` from
-`runtime/.env.production.example`, place the age secrets archive at
-`runtime/secrets.tar.gz.age` or set
-`AGE_SECRETS_ARCHIVE_FILE`, then start production with:
+`runtime/.env.production.example`, place the age identity at
+`runtime/.age/identity.txt`, place the encrypted age secrets archive at
+`runtime/env/secrets.tar.gz.age`, then start production with:
 
 ```bash
 ./runtime/start.sh -p
@@ -213,8 +221,9 @@ for the database healthcheck before starting.
 The application containers `backend` and `web` run with the numeric
 `RUNTIME_UID:RUNTIME_GID` configured in `runtime/.env`. The frontend image must
 listen on the unprivileged internal port `8080`, and Traefik must route traffic
-to that port. Host directories mounted by the backend must be writable by the
-configured runtime UID/GID.
+to that port. Host directories mounted by the backend must be writable by
+`RUNTIME_HOST_UID:RUNTIME_HOST_GID`, which may differ from the container
+runtime UID/GID when Docker `userns-remap` is enabled.
 
 Production PostgreSQL data must be persisted through the host bind mount
 configured by `POSTGRES_DATA_HOST_DIR`. Deployment `.env` files must set
@@ -229,7 +238,8 @@ with a transient anonymous volume.
 
 The workflow requires:
 
-- `contents: read` to checkout the tagged source.
+- `contents: write` to checkout the tagged source, create the GitHub release
+  when needed and upload the versioned deployment archive release asset.
 - `packages: write` to publish images to GitHub Container Registry.
 
 ## Development Rules
@@ -238,6 +248,9 @@ The workflow requires:
   frontend tests and frontend build have passed.
 - Publish Docker images only from Git tags matching `X.Y.Z`.
 - Use the release tag as the Docker image version.
+- Publish the deployment archive as
+  `cloud-application-deploy-<version>.zip` on the GitHub release matching the
+  tag.
 - Publish the age utility image only as `latest`, only from release tags matching
   `X.Y.Z`, and only when `docker/age-secrets.Dockerfile` changed since the
   previous release tag.

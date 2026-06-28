@@ -9,7 +9,7 @@ on:
       - "*"
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 concurrency:
@@ -222,15 +222,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Resolve deployment archive version
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolved_version="${GITHUB_REF_NAME}"
+          if [[ ! "${resolved_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Deployment archives are only published for tags matching X.Y.Z." >&2
+            exit 1
+          fi
+
+          echo "version=${resolved_version}" >> "${GITHUB_OUTPUT}"
+          echo "file=cloud-application-deploy-${resolved_version}.zip" >> "${GITHUB_OUTPUT}"
+
       - name: Build deployment archive
-        run: ./scripts/create_deploy_archive.sh cloud-application-deploy.zip
+        run: ./scripts/create_deploy_archive.sh "${{ steps.archive.outputs.file }}"
 
       - name: Upload deployment archive
         uses: actions/upload-artifact@v4
         with:
           name: cloud-application-deploy-${{ github.ref_name }}
-          path: cloud-application-deploy.zip
+          path: ${{ steps.archive.outputs.file }}
           if-no-files-found: error
+
+      - name: Publish deployment archive release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ steps.archive.outputs.version }}"
+          archive_file="${{ steps.archive.outputs.file }}"
+
+          if ! gh release view "$version" >/dev/null 2>&1; then
+            gh release create "$version" \
+              --title "$version" \
+              --notes "Release $version"
+          fi
+
+          gh release upload "$version" "$archive_file" --clobber
 
   docker-images:
     name: Build and publish Docker images

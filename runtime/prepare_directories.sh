@@ -141,8 +141,8 @@ directory_mode() {
   fi
 }
 
-runtime_can_write_directory() {
-  # Description : indique si RUNTIME_UID:RUNTIME_GID peut ecrire dans un repertoire.
+host_runtime_can_write_directory() {
+  # Description : indique si l'UID/GID hote du runtime peut ecrire dans un repertoire.
   # Parametres : $1 chemin.
   # Retour : 0 si writable, 1 sinon.
   local directory_path="$1"
@@ -163,11 +163,11 @@ runtime_can_write_directory() {
   group_permissions="${mode:1:1}"
   other_permissions="${mode:2:1}"
 
-  if [ "$owner_uid" = "$RUNTIME_UID" ] && [ $((owner_permissions & 2)) -ne 0 ]; then
+  if [ "$owner_uid" = "$RUNTIME_HOST_UID" ] && [ $((owner_permissions & 2)) -ne 0 ]; then
     return 0
   fi
 
-  if [ "$owner_gid" = "$RUNTIME_GID" ] && [ $((group_permissions & 2)) -ne 0 ]; then
+  if [ "$owner_gid" = "$RUNTIME_HOST_GID" ] && [ $((group_permissions & 2)) -ne 0 ]; then
     return 0
   fi
 
@@ -188,6 +188,7 @@ ensure_directory() {
   local resolved_path
   local owner
   local expected_owner
+  local container_owner
 
   require_absolute_path "$label" "$configured_path"
   resolved_path="$(resolve_host_path "$configured_path")"
@@ -200,13 +201,15 @@ ensure_directory() {
   mkdir -p "$resolved_path"
 
   if [ "$DEPLOY_ENV" = "online" ] && [ "$runtime_writable" = "true" ]; then
-    expected_owner="${RUNTIME_UID}:${RUNTIME_GID}"
+    expected_owner="${RUNTIME_HOST_UID}:${RUNTIME_HOST_GID}"
+    container_owner="${RUNTIME_UID}:${RUNTIME_GID}"
     if [ "$(id -u)" -eq 0 ]; then
       chown -R "$expected_owner" "$resolved_path"
     fi
-    if ! runtime_can_write_directory "$resolved_path"; then
+    if ! host_runtime_can_write_directory "$resolved_path"; then
       owner="$(directory_owner "$resolved_path")"
-      echo "${label} doit etre accessible en ecriture par ${expected_owner}, proprietaire actuel: ${owner}, mode: $(directory_mode "$resolved_path")."
+      echo "${label} doit etre accessible en ecriture par l'identite hote ${expected_owner} correspondant au runtime conteneur ${container_owner}."
+      echo "Proprietaire actuel: ${owner}, mode: $(directory_mode "$resolved_path")."
       echo "Relancez le demarrage avec des droits permettant le chown, ou corrigez le proprietaire et les permissions du repertoire."
       exit 1
     fi
@@ -224,6 +227,8 @@ fi
 APPLICATION_WORKDIR="$(env_value "APPLICATION_WORKDIR" "$default_application_workdir")"
 RUNTIME_UID="$(env_value "RUNTIME_UID" "10001")"
 RUNTIME_GID="$(env_value "RUNTIME_GID" "10001")"
+RUNTIME_HOST_UID="$(env_value "RUNTIME_HOST_UID" "$RUNTIME_UID")"
+RUNTIME_HOST_GID="$(env_value "RUNTIME_HOST_GID" "$RUNTIME_GID")"
 
 if [ "$DEPLOY_ENV" = "online" ]; then
   require_absolute_path "APPLICATION_WORKDIR" "$APPLICATION_WORKDIR"
