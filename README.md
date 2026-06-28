@@ -11,309 +11,90 @@
 -->
 # CloudCollectionApp
 
-Le code de cette application a ete realise a l'aide de Codex et de l'API GPT 5.5.
+> [!IMPORTANT]
+> Le code de cette application a ete genere avec l'aide de Codex et GPT-5.5.
 
-Application web personnelle qui transforme un fichier de collection LibreOffice
-Calc `.ods` ou CSV en site en ligne accessible a tout moment. Chaque utilisateur garde
-sa collection privee rattachee a son compte, tout en contribuant a enrichir une
-base commune de jeux, plateformes et studios.
+CloudCollectionApp est une application web personnelle de gestion de collection
+de jeux video. Elle permet d'importer une collection depuis un fichier ODS ou
+CSV, de la consulter en ligne, de l'enrichir avec des informations privees et de
+contribuer a un referentiel commun de plateformes, studios et jeux.
 
-Le premier fichier ODS ou CSV importe initialise la collection personnelle, et les
-imports suivants peuvent ajouter des jeux sans reinitialiser la collection. La
-consultation de collection s'appuie ensuite sur PostgreSQL, tandis que le
-dernier fichier utilisateur reste telechargeable en brut. Le backend expose
-une API securisee pour proteger les donnees utilisateur et alimenter le
-referentiel commun, tandis que le frontend fournit une interface web de
-consultation, recherche et import.
-
-## Version Deployee
-
-La derniere version release de l'application est deployee en ligne. Vous pouvez
-voir le resultat a cette adresse : https://www.cloud-collection.fr
+La version publique est disponible sur <https://www.cloud-collection.fr>.
 
 ## Fonctionnalites
 
-- Tableau de bord de collection avec somme et moyenne des prix, globalement et par plateforme.
-- Bibliotheque publique des plateformes, studios et jeux du referentiel commun.
-- Images publiques acceptees sur les fiches plateformes de la Bibliotheque,
-  avec proposition d'image par utilisateur connecte.
-- Referentiel de plateformes et alias fourni par defaut depuis les CSV backend.
-- Navigation par plateforme, detail de jeu, detail de plateforme et consultation de la collection personnelle.
-- Page Liste de souhaits pour consulter les jeux importes avec
-  `wishlist=true`.
-- Recherche globale par nom de jeu.
-- Filtres et tris de collection apres authentification.
-- Import de collection ODS ou CSV personnelle et ajout par nouvel import pour les utilisateurs inscrits.
-- Page About publique, authentification Bearer et creation de compte avec
-  pseudonyme unique, validation email puis validation administrateur optionnelle.
-- Partage temporaire de collection par liens `/collection/share/<token>`,
-  transformes en session GUEST revocable apres ouverture.
-- Gestion proprietaire des liens temporaires depuis `/configuration/partages`,
-  avec destinataire optionnel, duree, permissions collection, liste de souhaits
-  et prix.
-- Navigation GUEST adaptee au partage : identite proprietaire, categories et
-  prix conditionnels, sans acces aux actions de modification ni a Configuration.
-- Administration utilisateur et telechargement brut du fichier ODS utilisateur.
-- Reset administrateur de la Bibliotheque globale depuis les imports utilisateur stockes.
-- Moderation administrateur des images de plateformes proposees.
-- Initialisation PostgreSQL par Alembic pour les fonctionnalites utilisateur.
+- Import de collection utilisateur depuis LibreOffice Calc `.ods` ou CSV.
+- Consultation de la collection personnelle avec statistiques, filtres, tris,
+  details de jeux, prix, etats, regions, notes et descriptions privees.
+- Liste de souhaits alimentee par les imports utilisateur.
+- Bibliotheque commune de plateformes, studios et jeux, avec recherche et pages
+  de detail.
+- Proposition et moderation d'images de plateformes.
+- Creation de compte, validation email, validation administrateur optionnelle et
+  authentification par token Bearer.
+- Partage temporaire de collection par lien, avec session `GUEST`, permissions
+  par categorie et affichage optionnel des prix.
+- Administration des utilisateurs, reset de la Bibliotheque globale et gestion
+  des doublons signales.
+- Backend Flask, frontend React/Vite, PostgreSQL, Docker Compose et publication
+  d'images sur GitHub Container Registry.
 
-## Architecture Globale
+## Documentation
 
-Le projet est separe en deux applications :
+Le README donne uniquement les commandes et concepts principaux. Les details
+fonctionnels et techniques sont dans `documentation/` :
 
-- `backend/` : API Python Flask.
-- `frontend/` : application React construite avec Vite.
-
-En developpement, Vite proxifie les routes `/api` et `/collections` vers Flask.
-En Docker, le service `web` sert le frontend compile avec Nginx et proxifie vers
-le service `backend`.
-
-## Backend
-
-Technologies principales :
-
-- Python 3.12
-- Flask
-- SQLAlchemy et Alembic
-- PostgreSQL
-- pandas, odfpy, CSV standard library et XML/ZIP standard library pour l'import utilisateur
-
-Organisation :
-
-- `backend/app.py` : composition Flask, initialisation runtime, enregistrement des controllers et protection globale.
-- `backend/controllers/` : endpoints HTTP et mapping des reponses.
-- `backend/services/` : services metier et infrastructure organises par domaine.
-- `backend/services/ods/` : lecture d'import ODS utilisateur, archive, cache et secours XML.
-- `backend/services/csv/` : lecture d'import CSV utilisateur.
-- `backend/services/collection/imports/` : contrats et mapping de valeurs reutilisables par tous les formats d'import.
-- `backend/services/database/` : configuration SQLAlchemy, ORM, repositories et schema.
-- `backend/tests/` : tests backend par couche.
-
-Regles detaillees :
-
-- Partage de collection : `documentation/share.md`
-- Architecture backend : `documentation/backend-arch.md`
-- API backend : `documentation/backend-api.md`
-- Authentification : `documentation/authentication.md`
-- Base de donnees : `documentation/database.md`
-
-## Frontend
-
-Technologies principales :
-
-- React
-- Vite
-- CSS classique
-
-Organisation :
-
-- `frontend/src/App.jsx` : point d'entree React et composition du cadre applicatif.
-- `frontend/src/components/` : pages, vues, dialogues et composants reutilisables.
-- `frontend/src/services/` : clients API et services frontend.
-- `frontend/src/hooks/` : hooks React organises par domaine.
-- `frontend/src/styles.css` et `frontend/src/styles/` : styles de l'interface.
-
-Domaines de hooks :
-
-- `hooks/app/` : session, droits backend et view-model principal.
-- `hooks/navigation/` : vue courante, plateforme selectionnee et URL.
-- `hooks/collection/` : rechargement transversal et onboarding d'import.
-- `hooks/home/` : statistiques Ma collection et recherche globale.
-- `hooks/library/` : Bibliotheque publique, recherche, tri et pagination serveur.
-- `hooks/platforms/` : plateformes de la collection utilisateur lues depuis SQL.
-- `hooks/games/` : jeux de la collection utilisateur, detail de jeu, tri, filtres et actions futures.
-
-Regles detaillees :
-
-- Architecture frontend : `documentation/frontend-arch.md`
-- Plan de navigation : `documentation/site-plan.md`
-- Menu : `documentation/menu.md`
-- Page About : `documentation/about.md`
-
-## Import Utilisateur
-
-Le backend ne consulte plus de collection globale depuis un fichier ODS. Les
-vues Ma collection et Liste de souhaits lisent PostgreSQL via les endpoints
-`/collections/videogames/**`.
-
-## Partage Temporaire De Collection
-
-Un utilisateur inscrit qui a deja importe sa collection peut creer un lien
-temporaire depuis `/configuration/partages` pour donner un acces en lecture
-seule a une autre personne. Le partage peut cibler la collection, la liste de
-souhaits ou les deux, avec ou sans informations de prix.
-
-Chaque lien peut aussi recevoir un destinataire libre, visible par le
-proprietaire dans la liste des partages. Ce libelle aide a identifier a qui le
-lien etait destine et apparait dans les logs backend lors de l'ouverture du
-partage, sans journaliser le token brut.
-
-L'ouverture du lien transforme le token signe en session `GUEST`, puis retire le
-token de l'URL. Le proprietaire peut revoquer un partage a tout moment ; les
-liens expires ou revoques ferment la session invitee au prochain appel backend.
-
-Variables principales :
-
-- `FRONTEND_PUBLIC_URL` : origine publique utilisee par le backend pour les
-  redirections et liens frontend, notamment `/collection/share/<token>`.
-- `USERS_WORKSPACE` : repertoire hote monte par Docker Compose dans `/users/workspace`.
-- `USER_COLLECTION_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une collection
-  utilisateur, appliquee a Flask et au proxy Nginx du service `web`.
-- `BACKEND_IMG_DIR` : repertoire conteneur utilise par le backend pour stocker
-  les images de plateformes. Valeur par defaut : `/images`.
-- `PLATFORM_IMAGE_MAX_UPLOAD_BYTES` : taille maximale d'upload d'une image de
-  plateforme. Valeur par defaut : `10485760`.
-- `PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER` : nombre maximal d'images de
-  plateformes en attente par utilisateur. Valeur par defaut : `20`.
-- `PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER` : taille maximale cumulee des
-  images de plateformes en attente par utilisateur. Valeur par defaut :
-  `52428800`.
-- `PLATFORM_IMAGE_MAX_TOTAL_BYTES` : taille maximale totale des images de
-  plateformes stockees sur disque. Valeur par defaut : `1073741824`.
-  Les quotas utilisent la colonne `t_platform_image.file_size_bytes`, renseignee
-  lors de l'ajout d'une image, afin d'eviter un recalcul disque a chaque upload.
-- `BACKEND_IMG_HOST_DIR` : repertoire hote monte par Docker Compose dans
-  `BACKEND_IMG_DIR` pour persister les images de plateformes. En production, le
-  chemin doit etre absolu, exister et etre sauvegardable.
-- `PLATFORM_MATCHING_LOW_LVL_RATING` : score minimal de matching plateforme pour importer
-  avec verification administrateur. Valeur par defaut : `25`.
-- `PLATFORM_MATCHING_HIGH_LEVEL_RATING` : score de matching plateforme a partir duquel
-  l'import est accepte sans warning de verification. Valeur par defaut : `75`.
-- `GAME_MATCHING_LOW_LVL_RATING` : score minimal de matching faible des jeux.
-  Valeur par defaut : `25`.
-- `GAME_MATCHING_HIGH_LEVEL_RATING` : score minimal de rattachement automatique
-  d'un jeu existant. Valeur par defaut : `75`.
-- `REGION_MATCH_LIMIT` : score minimal de similarite pour rattacher une region
-  importee a un code autorise. Valeur par defaut : `60`.
-- `ETAT_MATCH_LIMIT` : score minimal de similarite pour rattacher un etat
-  importe a un libelle francais ou anglais. Valeur par defaut : `60`.
-- `ADMIN_NOTIFICATION_EMAIL` : destinataire des notifications d'inscription en
-  attente de validation administrateur, des rapports de fin d'import utilisateur
-  des rapports de reset Bibliotheque, des propositions d'images de plateformes
-  et de l'alerte quotidienne des doublons signales.
-- `GAME_DUPLICATE_DAILY_NOTIFICATION_TIME` : heure locale quotidienne de
-  verification des jeux signales comme doublons, au format `HH:MM`. Valeur par
-  defaut : `04:00`.
-- `ADMIN_ACCOUNT_VALIDATION_ENABLED` : active la validation administrateur apres
-  validation email utilisateur. Valeur par defaut : `true`.
-- `POSTGRES_DATA_HOST_DIR` : chemin absolu du repertoire hote utilise en
-  production pour persister les donnees PostgreSQL du conteneur `database`.
-- `TRAEFIK_LETSENCRYPT_HOST_DIR` : chemin absolu du repertoire hote monte dans
-  `/letsencrypt` pour persister le compte ACME, les certificats TLS et leurs cles
-  entre les recreations du conteneur Traefik. Ce repertoire doit etre prive,
-  sauvegarde et ne doit jamais etre publie dans le depot.
-
-Le backend journalise chaque appel REST avec la methode, le chemin, l'endpoint,
-le statut HTTP, la duree et l'adresse cliente. Les reponses HTTP en erreur
-(`4xx` et `5xx`) sont emises au niveau `ERROR`; lorsqu'une reponse JSON contient
-un champ `error`, son message borne est inclus sans journaliser le corps de la
-requete ni ses parametres.
-
-Un fichier exemple versionnable est fourni :
-
-```text
-collection-example.ods
-```
-
-Structure fonctionnelle attendue pour l'import :
-
-- le fichier est d'abord depose dans le workspace utilisateur, puis analyse
-  pour proposer les onglets ODS disponibles ou les colonnes CSV disponibles ;
-- apres analyse, l'application peut proposer de reutiliser la derniere
-  configuration d'import sauvegardee ;
-- pour ODS, un onglet par plateforme ou une configuration explicite des onglets ;
-- pour CSV, un mapping direct entre chaque information importee et une colonne
-  du fichier ;
-- en mode multi-onglets avec layout partage, l'utilisateur peut lister les
-  onglets a importer ou les onglets a exclure ;
-- l'import peut lire une wishlist depuis aucun emplacement, une colonne dediee,
-  ou un onglet dedie pour ODS ;
-- apres succes, l'interface affiche un resume d'import et propose d'ouvrir Ma
+- [documentation/backend-api.md](documentation/backend-api.md) : routes et
+  contrats API.
+- [documentation/backend-arch.md](documentation/backend-arch.md) : architecture
+  backend Flask.
+- [documentation/frontend-arch.md](documentation/frontend-arch.md) : architecture
+  frontend React/Vite.
+- [documentation/database.md](documentation/database.md) : schema PostgreSQL,
+  migrations et persistance production.
+- [documentation/authentication.md](documentation/authentication.md) :
+  authentification, profils et sessions.
+- [documentation/register.md](documentation/register.md) : inscription et
+  validation email.
+- [documentation/share.md](documentation/share.md) : partage temporaire de
   collection.
-- l'import peut associer des informations privees optionnelles a chaque jeu
-  (prix positif ou nul tronque a deux decimales et unite ISO, achat, note, etat,
-  contenu, region et description),
-  visibles uniquement dans le detail de la collection connectee ;
-- les listes collection et wishlist affichent le drapeau de region sur desktop
-  et mobile lorsqu'une region est renseignee ;
-- si `ADMIN_NOTIFICATION_EMAIL` est configure, le backend notifie
-  l'administrateur apres chaque validation email utilisateur et envoie un seul
-  rapport administrateur en fin d'import avec le contexte, les compteurs, la
-  configuration validee, la duree et les warnings eventuels. Une verification
-  quotidienne configurable signale aussi par mail le nombre de jeux marques
-  doublons si au moins un doublon reste a traiter ;
-- quand un administrateur fusionne un jeu marque doublon, les utilisateurs dont
-  la collection contenait ce doublon recoivent un mail templated expliquant le
-  jeu retire, le jeu conserve et l'impact sur leur collection ;
-- un utilisateur connecte avec une collection peut signaler comme doublon un
-  jeu depuis le detail Bibliotheque ou le detail de sa collection apres
-  confirmation explicite, meme si le jeu Bibliotheque n'est pas rattache a sa
-  propre collection ;
-- un administrateur peut filtrer les jeux signales, refuser un signalement ou
-  fusionner deux jeux via un ecran dedie qui remappe les collections impactees
-  et peut conserver l'ancien nom comme alias ;
-- depuis Configuration, un utilisateur non `ADMIN` avec collection peut ouvrir
-  le parcours `/collection/import` pour ajouter les jeux d'un nouveau fichier
-  sans supprimer sa collection actuelle ;
-- depuis Configuration, un utilisateur non `ADMIN` peut reinitialiser sa
-  collection pour supprimer les associations importees, effacer le fichier
-  serveur et revenir au parcours `/collection/import`.
-- depuis Configuration, un utilisateur `ADMIN` peut lancer un reset asynchrone
-  de la Bibliotheque globale. Le reset reconstruit le referentiel depuis les
-  fichiers utilisateurs stockes, refuse temporairement les imports utilisateur,
-  puis envoie le rapport final a `ADMIN_NOTIFICATION_EMAIL`.
-- depuis Configuration, un utilisateur `ADMIN` peut mettre a jour le catalogue
-  plateformes et alias en ajoutant en base les entrees absentes des CSV backend.
-- depuis Configuration, un utilisateur `ADMIN` peut ouvrir
-  `/configuration/import` pour importer un CSV dans la Bibliotheque globale.
-  L'import ajoute uniquement plateformes rattachees, studios et jeux via la
-  configuration fixe `backend/resources/admin_import_conf.json`, sans wishlist,
-  informations de collection personnelle ni sauvegarde de configuration.
-- depuis Configuration, un utilisateur `ADMIN` peut ouvrir la page dediee
-  `/configuration/images-plateformes` pour moderer les images de plateformes
-  proposees, les accepter, les refuser ou definir l'image principale.
+- [documentation/collection.md](documentation/collection.md) : consultation de la
+  collection utilisateur.
+- [documentation/import.md](documentation/import.md) : workflow d'import ODS/CSV.
+- [documentation/import-mapping.md](documentation/import-mapping.md) : regles de
+  conversion des valeurs importees.
+- [documentation/reader.md](documentation/reader.md) : lecteurs de fichiers de
+  collection.
+- [documentation/bibliotheque.md](documentation/bibliotheque.md) : Bibliotheque
+  commune, images et administration.
+- [documentation/users.md](documentation/users.md) : administration utilisateur.
+- [documentation/site-plan.md](documentation/site-plan.md),
+  [documentation/menu.md](documentation/menu.md) et
+  [documentation/about.md](documentation/about.md) : navigation, menu et page
+  publique About.
+- [documentation/ci.md](documentation/ci.md) : CI, images Docker et archive de
+  deploiement.
 
-## Lancement Local
+## Structure
+
+- `backend/` : API Flask, services metier, repositories, migrations et tests.
+- `frontend/` : application React/Vite.
+- `docker/` : fichiers utiles a la generation des images et au developpement
+  Docker local.
+- `runtime/` : fichiers necessaires au deploiement production.
+- `scripts/` : scripts de test, generation et livraison.
+- `.github/workflows/` : pipeline CI.
+
+## Deploiement Local
 
 ### Docker Compose
 
-Copier puis adapter l'environnement :
+Depuis la racine du projet :
 
 ```bash
-cp docker/.env.example docker/.env
+cp runtime/.env.local.example runtime/.env
+./runtime/start.sh -d
 ```
-
-Demarrer depuis la racine :
-
-```bash
-./start.sh -d
-```
-
-En mode production avec `./start.sh -p`, le script synchronise le depot Git avec
-la branche distante configuree. Si la branche locale et la branche distante ont
-diverge et necessitent un merge ou un rebase manuel, le demarrage est annule.
-Le script restructure aussi `docker/.env` selon `docker/.env.example`, en
-omettant les sections dediees au developpement local comme
-`EMAIL LOCAL AVEC MAILPIT`. Les variables absentes sont ajoutees dans leur
-section; le demarrage est alors annule pour laisser le temps de verifier et
-configurer les nouvelles valeurs.
-
-Ou depuis `docker/` :
-
-```bash
-docker compose -f docker-compose.local.yml up --build
-```
-
-En production, `docker/docker-compose.online.yml` exige
-`POSTGRES_DATA_HOST_DIR` avec un chemin absolu existant et sauvegardable pour
-monter les donnees PostgreSQL dans `/var/lib/postgresql/data`.
-Il exige egalement `TRAEFIK_LETSENCRYPT_HOST_DIR` avec un chemin absolu prive et
-sauvegardable pour monter les donnees ACME dans `/letsencrypt`. Le fichier
-`acme.json` contient des cles privees et ne doit jamais etre affiche, partage ou
-versionne.
-Il exige aussi `BACKEND_IMG_HOST_DIR` avec un chemin absolu existant et
-sauvegardable pour persister les images de plateformes.
 
 Services locaux :
 
@@ -321,11 +102,14 @@ Services locaux :
 - Mailpit : `http://localhost:8025`
 - PostgreSQL : `localhost:5432`
 
-Arreter :
+Arret :
 
 ```bash
-./stop.sh -d
+./runtime/stop.sh -d
 ```
+
+Le mode local utilise `docker/docker-compose.local.yml` et construit les images
+depuis le code source. Les variables locales se configurent dans `runtime/.env`.
 
 ### Backend Seul
 
@@ -349,19 +133,19 @@ BACKEND_PORT=7777 FRONTEND_PORT=7778 npm run dev
 
 Frontend : `http://localhost:7778`
 
-## Validation
+## Tests Et Build
 
 Backend :
 
 ```bash
-./test_backend.sh
+./scripts/test_backend.sh
 ```
 
 Frontend :
 
 ```bash
 cd frontend
-node --test tests/*.test.js
+npm test
 npm run build
 ```
 
@@ -372,57 +156,161 @@ docker compose -f docker/docker-compose.local.yml build backend
 docker compose -f docker/docker-compose.local.yml build web
 ```
 
-## CI Et Livraison
+## Deploiement Production
 
-Les workflows GitHub Actions sont dans :
+La production utilise les images publiees dans GitHub Container Registry et une
+archive de deploiement minimale `cloud-application-deploy.zip`. Cette archive est
+generee par la CI sur les tags de release `X.Y.Z` et contient uniquement :
 
-```text
-.github/workflows/ci.yml
-.github/workflows/validate-pr.yml
-```
-
-La CI valide les pull requests, les branches et les tags selon les zones
-modifiees. Le job Docker publie les images uniquement sur tag `X.Y.Z`.
+- `runtime/start.sh`
+- `runtime/stop.sh`
+- `runtime/secure.sh`
+- `runtime/prepare_directories.sh`
+- `runtime/docker-compose.online.yml`
+- `runtime/.env.production.example`
 
 Images publiees :
 
 ```text
 ghcr.io/sebastienbinda/cloudcollectionapp/backend:<version>
 ghcr.io/sebastienbinda/cloudcollectionapp/frontend:<version>
+ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest
 ```
 
-Déploiement production :
+### 1. Telecharger Et Extraire L'Archive
+
+Depuis la page de pipeline GitHub Actions ou GitLab CI du tag de release,
+telecharger l'artefact `cloud-application-deploy.zip`, puis l'extraire sur le
+serveur :
 
 ```bash
-docker compose --env-file docker/.env -f docker/docker-compose.online.yml pull
-docker compose --env-file docker/.env -f docker/docker-compose.online.yml up -d
+unzip cloud-application-deploy.zip
+cd cloud-application-deploy
+cp runtime/.env.production.example runtime/.env
 ```
 
-Le compose de production utilise les images GitHub Container Registry sans les
-builder localement. La variable `APP_VERSION` du fichier `.env` choisit le tag
-des images `backend` et `frontend`; si elle est absente, le tag `latest` est
-utilisé. Le stack de production démarre aussi PostgreSQL et construit
-`DATABASE_URL` depuis `POSTGRES_DB`, `POSTGRES_USER` et `POSTGRES_PASSWORD`.
+Configurer ensuite `runtime/.env`, notamment :
 
-Documentation CI : `documentation/ci.md`.
+- `APP_VERSION` avec le tag applicatif a deployer.
+- `RUNTIME_UID` et `RUNTIME_GID` avec l'identite Unix non-root utilisee par les
+  conteneurs applicatifs `backend` et `web`.
+- `DNS_NAME`, `BACKEND_PUBLIC_URL`, `FRONTEND_PUBLIC_URL`.
+- `APPLICATION_WORKDIR` avec le repertoire parent commun des donnees de travail
+  de l'application.
+- `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
+  `POSTGRES_DATA_HOST_DIR` et `TRAEFIK_LETSENCRYPT_HOST_DIR` si les sous-dossiers
+  par defaut de `APPLICATION_WORKDIR` ne conviennent pas.
+- les variables SMTP non secretes.
+- `AGE_SECRETS_ARCHIVE_FILE` et `AGE_SECRETS_IDENTITY_FILE` si les chemins par
+  defaut ne conviennent pas.
 
-## Documentation
+Le demarrage cree et valide automatiquement l'arborescence hote via
+`runtime/prepare_directories.sh`. Avec les valeurs par defaut, tous les
+repertoires persistants sont sous `/var/lib/cloudcollectionapp` :
 
-Documents fonctionnels et techniques principaux :
+```text
+/var/lib/cloudcollectionapp/users-workspace
+/var/lib/cloudcollectionapp/images
+/var/lib/cloudcollectionapp/logs
+/var/lib/cloudcollectionapp/postgres-data
+/var/lib/cloudcollectionapp/letsencrypt
+```
 
-- `documentation/backend-api.md` : routes et contrats API backend.
-- `documentation/share.md` : cycle de vie, permissions et securite du partage de collection.
-- `documentation/backend-arch.md` : architecture Flask/backend.
-- `documentation/frontend-arch.md` : architecture React/Vite.
-- `documentation/authentication.md` : authentification, routes protegees et session frontend.
-- `documentation/bibliotheque.md` : consultation publique du referentiel commun et reset administrateur.
-- `documentation/collection.md` : consultation SQL de la collection utilisateur.
-- `documentation/import.md` : regles fonctionnelles d'import de collection utilisateur.
-- `documentation/import-mapping.md` : mapping synthetique des valeurs importees vers les valeurs persistees.
-- `documentation/register.md` : inscription utilisateur et validation email.
-- `documentation/users.md` : administration des utilisateurs.
-- `documentation/site-plan.md` : navigation et redirections frontend.
-- `documentation/menu.md` : menu principal.
-- `documentation/about.md` : page About publique.
-- `documentation/database.md` : schema PostgreSQL et migrations.
-- `documentation/ci.md` : pipeline CI et publication Docker.
+Les repertoires ecrits par `backend` sont verifies avec le proprietaire
+`RUNTIME_UID:RUNTIME_GID`. Si le script ne peut pas creer ou corriger les
+proprietaires, relancer le demarrage avec des droits suffisants ou preparer les
+droits manuellement.
+
+`backend` et `web` sont lances avec `user: RUNTIME_UID:RUNTIME_GID`. `web`
+ecoute donc sur le port interne non privilegie `8080`, relaye par Traefik.
+PostgreSQL et Traefik gardent le comportement non-root/root controle par leurs
+images officielles, car forcer ces services au meme UID runtime peut casser
+l'initialisation de la base, les certificats ou l'ecoute des ports 80/443.
+
+### 2. Creer Ou Reutiliser Les Secrets Age
+
+En production, les secrets ne doivent pas etre stockes en clair dans
+`runtime/.env` ni durablement sur disque. `./runtime/start.sh -p` decrypte
+l'archive age dans un repertoire temporaire en memoire sous `/dev/shm`, prepare
+les fichiers Docker secrets, genere `DATABASE_URL`, lance Docker Compose, puis
+supprime les fichiers dechiffres. Si `/dev/shm` n'existe pas sur le serveur,
+configurer `PRODUCTION_SECRETS_TMP_PARENT` vers un autre tmpfs prive.
+
+Par defaut, l'archive attendue est :
+
+```text
+runtime/secrets.tar.gz.age
+```
+
+Elle doit contenir ces fichiers a sa racine :
+
+```text
+AUTH_ENV_ENCRYPTION_KEY
+AUTH_PASSWORD_ENCRYPTED
+AUTH_SECRET_KEY_ENCRYPTED
+POSTGRES_PASSWORD
+SMTP_PASSWORD
+```
+
+Si une archive existe deja, copier `secrets.tar.gz.age` sur le serveur et
+renseigner l'identite age privee via `AGE_SECRETS_IDENTITY_FILE` ou avec la
+configuration age de l'utilisateur systeme.
+
+Pour creer une nouvelle archive, preparer un dossier local avec les cinq fichiers
+ci-dessus, puis chiffrer :
+
+```bash
+./runtime/secure.sh encrypt \
+  --source-dir runtime/secrets-src \
+  --archive runtime/secrets.tar.gz.age \
+  --recipient age1...
+```
+
+Pour lire ou mettre a jour un secret existant :
+
+```bash
+./runtime/secure.sh read \
+  --archive runtime/secrets.tar.gz.age \
+  --name POSTGRES_PASSWORD \
+  --identity age-identity.txt
+
+./runtime/secure.sh set \
+  --archive runtime/secrets.tar.gz.age \
+  --name SMTP_PASSWORD \
+  --value "nouveau-secret" \
+  --identity age-identity.txt \
+  --recipient age1...
+```
+
+### 3. Demarrer La Production
+
+Depuis le repertoire extrait :
+
+```bash
+./runtime/start.sh -p
+```
+
+Le script :
+
+- aligne `runtime/.env` sur le modele `runtime/.env.production.example` ;
+- verifie que `RUNTIME_UID` et `RUNTIME_GID` sont numeriques ;
+- refuse de continuer si des variables obligatoires viennent d'etre ajoutees ;
+- cree et valide l'arborescence configuree sous `APPLICATION_WORKDIR` ;
+- decrypte les secrets age dans un repertoire temporaire en memoire ;
+- prepare les fichiers Docker secrets et supprime les fichiers dechiffres apres
+  le lancement ;
+- lance `runtime/docker-compose.online.yml`.
+
+Toute mise a jour ou recreation des conteneurs doit repasser par
+`./runtime/start.sh -p`, afin que les secrets soient redéchiffrés temporairement
+le temps du lancement Compose.
+
+Arret :
+
+```bash
+./runtime/stop.sh -p
+```
+
+Les details de CI, d'images, d'archive et de compose production sont dans
+[documentation/ci.md](documentation/ci.md). Les regles de persistance PostgreSQL
+et migrations sont dans [documentation/database.md](documentation/database.md).

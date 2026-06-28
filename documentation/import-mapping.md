@@ -140,5 +140,6 @@ document together:
   and `platform_matching_configuration.py`;
 - release-date validation:
   `backend/services/collection/imports/collection_import_date_validator.py`;
-- regression tests: `backend/tests/test_collection_import_value_mapper.py`
+- regression tests:
+  `backend/tests/by_module/services/collection/imports/test_collection_import_value_mapper.py`
   and the ODS import reader test modules.

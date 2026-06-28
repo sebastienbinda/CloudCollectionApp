@@ -21,7 +21,7 @@ RUN npm ci
 COPY frontend .
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 ARG APP_VERSION=dev
 ENV USER_COLLECTION_MAX_UPLOAD_BYTES=104857600
@@ -31,4 +31,8 @@ LABEL org.opencontainers.image.version="${APP_VERSION}"
 COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+USER root
+RUN chmod -R a+rwX /etc/nginx/conf.d /tmp /var/cache/nginx /var/run
+USER 101
+
+EXPOSE 8080

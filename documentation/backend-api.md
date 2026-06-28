@@ -1440,11 +1440,11 @@ the Docker local stack can use Mailpit.
 Test email delivery with:
 
 ```bash
-./test_email.sh --to destinataire@example.com
+./scripts/test_email.sh --to destinataire@example.com
 ```
 
 For the production compose stack:
 
 ```bash
-./test_email.sh -p --to destinataire@example.com
+./scripts/test_email.sh -p --to destinataire@example.com
 ```

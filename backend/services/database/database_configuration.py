@@ -16,6 +16,8 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
+from services.security import EnvironmentSecretReader
+
 
 @dataclass(frozen=True)
 class DatabaseConfiguration:
@@ -56,7 +58,9 @@ class DatabaseConfiguration:
         """
 
         configuration = cls(
-            database_url=cls._normalize_database_url(os.getenv("DATABASE_URL") or None),
+            database_url=cls._normalize_database_url(
+                EnvironmentSecretReader.read("DATABASE_URL") or None
+            ),
             schema_name=os.getenv("DB_SCHEMA_NAME", cls.DEFAULT_SCHEMA_NAME),
             application_version=os.getenv("APP_VERSION", cls.DEFAULT_APPLICATION_VERSION),
         )

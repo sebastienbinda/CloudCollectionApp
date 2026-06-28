@@ -353,7 +353,7 @@ When changing this feature, update or run tests covering:
 Run:
 
 ```bash
-./test_backend.sh
+./scripts/test_backend.sh
 cd frontend && npm run build
 ```
 
