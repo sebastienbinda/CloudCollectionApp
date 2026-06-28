@@ -16,7 +16,7 @@ set -euo pipefail
 
 RUNTIME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${RUNTIME_DIR}/.." && pwd)"
-SECURE_IMAGE_NAME="${SECURE_IMAGE_NAME:-cloudcollectionapp-age-secrets:latest}"
+SECURE_IMAGE_NAME="${SECURE_IMAGE_NAME:-ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest}"
 SECURE_DOCKERFILE="${PROJECT_ROOT}/docker/age-secrets.Dockerfile"
 AGE_DIRECTORY="${RUNTIME_DIR}/.age"
 ENV_DIRECTORY="${RUNTIME_DIR}/env"
@@ -118,8 +118,13 @@ ensure_secure_image() {
   # Retour : void.
   local force_build="$1"
 
-  if [ "$force_build" = "true" ] || ! docker image inspect "$SECURE_IMAGE_NAME" >/dev/null 2>&1; then
+  if [ "$force_build" = "true" ] && [ -f "$SECURE_DOCKERFILE" ]; then
     docker build -f "$SECURE_DOCKERFILE" -t "$SECURE_IMAGE_NAME" "$PROJECT_ROOT"
+    return
+  fi
+
+  if ! docker image inspect "$SECURE_IMAGE_NAME" >/dev/null 2>&1; then
+    docker pull "$SECURE_IMAGE_NAME"
   fi
 }
 

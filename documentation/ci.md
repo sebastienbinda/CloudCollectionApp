@@ -197,6 +197,9 @@ After extraction, configure `runtime/.env` from
 ./runtime/start.sh -p
 ```
 
+If the deployment environment file uses another name, pass it explicitly with
+`./runtime/start.sh -p -e <env-file>`.
+
 ## Production Compose
 
 The production compose file `runtime/docker-compose.online.yml` must consume the
@@ -212,11 +215,12 @@ The production stack also runs PostgreSQL as a `database` service on an
 internal Docker network. In production deployment, `./runtime/start.sh -p`
 calls `runtime/prepare_directories.sh` to create and validate the configured
 host directory tree, then
-decrypts the age secrets archive into a temporary tmpfs directory, passes
-`POSTGRES_PASSWORD_FILE` to PostgreSQL, generates `DATABASE_URL` as a Docker
-secret file, exposes it to the backend through `DATABASE_URL_FILE`, starts Docker
-Compose, then removes the decrypted files from the host. The backend must wait
-for the database healthcheck before starting.
+decrypts the age secrets archive with the published `age-secrets` Docker image
+into a temporary tmpfs directory, passes `POSTGRES_PASSWORD_FILE` to PostgreSQL,
+generates `DATABASE_URL` as a Docker secret file, exposes it to the backend
+through `DATABASE_URL_FILE`, starts Docker Compose, then removes the decrypted
+files from the host. The backend must wait for the database healthcheck before
+starting.
 
 The application containers `backend` and `web` run with the numeric
 `RUNTIME_UID:RUNTIME_GID` configured in `runtime/.env`. The frontend image must
@@ -232,7 +236,10 @@ and the default production paths derive from it:
 `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
 `POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`. Production host
 paths must be absolute. Do not replace the production database persistence path
-with a transient anonymous volume.
+with a transient anonymous volume. When the default `/var/lib/cloudcollectionapp`
+tree is used, `runtime/prepare_directories.sh` may use `sudo` during
+`./runtime/start.sh -p` to create host directories and apply the expected owners,
+while Docker Compose still starts from the current deployment user.
 
 ## Required GitHub Permissions
 

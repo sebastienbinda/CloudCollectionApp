@@ -232,7 +232,9 @@ repertoires persistants sont sous `/var/lib/cloudcollectionapp` :
 Les repertoires ecrits par `backend` sont verifies avec le proprietaire hote
 `RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Si le script ne peut pas creer ou corriger
 les proprietaires, relancer le demarrage avec des droits suffisants ou preparer
-les droits manuellement.
+les droits manuellement. Avec le chemin par defaut `/var/lib/cloudcollectionapp`,
+`./runtime/start.sh -p` peut demander le mot de passe `sudo` uniquement pour
+creer l'arborescence hote et appliquer les proprietaires attendus.
 
 `backend` et `web` sont lances avec `user: RUNTIME_UID:RUNTIME_GID`. `web`
 ecoute donc sur le port interne non privilegie `8080`, relaye par Traefik.
@@ -246,7 +248,9 @@ En production, les secrets ne doivent pas etre stockes en clair dans
 `runtime/.env` ni durablement sur disque. `./runtime/start.sh -p` decrypte
 l'archive age dans un repertoire temporaire en memoire sous `/dev/shm`, prepare
 les fichiers Docker secrets, genere `DATABASE_URL`, lance Docker Compose, puis
-supprime les fichiers dechiffres.
+supprime les fichiers dechiffres. Le dechiffrement utilise l'image Docker
+`ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest`; la commande
+`age` n'a pas besoin d'etre installee sur l'hote.
 
 Deux cas sont possibles.
 
@@ -302,13 +306,22 @@ Depuis le repertoire extrait :
 ./runtime/start.sh -p
 ```
 
+Si le fichier de production conserve un autre nom, par exemple
+`runtime/.env-prod`, le passer explicitement :
+
+```bash
+./runtime/start.sh -p -e runtime/.env-prod
+```
+
 Le script :
 
-- aligne `runtime/.env` sur le modele `runtime/.env.production.example` ;
+- aligne le fichier d'environnement selectionne sur le modele
+  `runtime/.env.production.example` en conservant les valeurs deja configurees ;
 - verifie que `RUNTIME_UID`, `RUNTIME_GID`, `RUNTIME_HOST_UID` et
   `RUNTIME_HOST_GID` sont numeriques ;
 - refuse de continuer si des variables obligatoires viennent d'etre ajoutees ;
-- cree et valide l'arborescence configuree sous `APPLICATION_WORKDIR` ;
+- cree et valide l'arborescence configuree sous `APPLICATION_WORKDIR`, avec
+  `sudo` si le chemin de production le necessite ;
 - decrypte les secrets age dans un repertoire temporaire en memoire ;
 - prepare les fichiers Docker secrets et supprime les fichiers dechiffres apres
   le lancement ;
