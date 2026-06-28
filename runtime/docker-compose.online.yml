@@ -1,0 +1,161 @@
+#   ____ _                 _  ____      _ _           _   _             ___
+#  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+# | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+# | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+#  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+#                                                                            |_|   |_|
+# Projet : CloudCollectionApp
+# Date de creation : 2026-05-11
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
+#
+name: cloudcollectionapp
+
+services:
+  traefik:
+    image: traefik:v3.7
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL:?LETSENCRYPT_EMAIL doit etre defini}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${TRAEFIK_LETSENCRYPT_HOST_DIR:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/letsencrypt}:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - frontend
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/sebastienbinda/cloudcollectionapp/backend:${APP_VERSION:-latest}
+    user: "${RUNTIME_UID:-10001}:${RUNTIME_GID:-10001}"
+    environment:
+      BACKEND_PORT: "7777"
+      HOME: /tmp
+      TMPDIR: /tmp
+      USER_COLLECTION_MAX_UPLOAD_BYTES: ${USER_COLLECTION_MAX_UPLOAD_BYTES:-104857600}
+      BACKEND_IMG_DIR: ${BACKEND_IMG_DIR:-/images}
+      PLATFORM_IMAGE_MAX_UPLOAD_BYTES: ${PLATFORM_IMAGE_MAX_UPLOAD_BYTES:-10485760}
+      PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER: ${PLATFORM_IMAGE_MAX_PENDING_IMAGES_PER_USER:-20}
+      PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER: ${PLATFORM_IMAGE_MAX_PENDING_BYTES_PER_USER:-52428800}
+      PLATFORM_IMAGE_MAX_TOTAL_BYTES: ${PLATFORM_IMAGE_MAX_TOTAL_BYTES:-1073741824}
+      PLATFORM_MATCHING_LOW_LVL_RATING: ${PLATFORM_MATCHING_LOW_LVL_RATING:-25}
+      PLATFORM_MATCHING_HIGH_LEVEL_RATING: ${PLATFORM_MATCHING_HIGH_LEVEL_RATING:-75}
+      GAME_MATCHING_LOW_LVL_RATING: ${GAME_MATCHING_LOW_LVL_RATING:-25}
+      GAME_MATCHING_HIGH_LEVEL_RATING: ${GAME_MATCHING_HIGH_LEVEL_RATING:-75}
+      REGION_MATCH_LIMIT: ${REGION_MATCH_LIMIT:-60}
+      ETAT_MATCH_LIMIT: ${ETAT_MATCH_LIMIT:-60}
+      BACKEND_LOG_LEVEL: ${BACKEND_LOG_LEVEL:-INFO}
+      BACKEND_LOG_FILE_ENABLED: ${BACKEND_LOG_FILE_ENABLED:-true}
+      BACKEND_LOG_DIR: /app/logs
+      BACKEND_LOG_FILE_NAME: ${BACKEND_LOG_FILE_NAME:-backend.log}
+      BACKEND_LOG_FILE_MAX_BYTES: ${BACKEND_LOG_FILE_MAX_BYTES:-10485760}
+      BACKEND_LOG_FILE_BACKUP_COUNT: ${BACKEND_LOG_FILE_BACKUP_COUNT:-30}
+      AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-3600}
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_ENV_ENCRYPTION_KEY_FILE: /run/secrets/auth_env_encryption_key
+      AUTH_PASSWORD_ENCRYPTED_FILE: /run/secrets/auth_password_encrypted
+      AUTH_SECRET_KEY_ENCRYPTED_FILE: /run/secrets/auth_secret_key_encrypted
+      APP_VERSION: ${APP_VERSION:-latest}
+      DB_SCHEMA_NAME: ${DB_SCHEMA_NAME:-cloudcollectionapp}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL:-https://${DNS_NAME}}
+      FRONTEND_PUBLIC_URL: ${FRONTEND_PUBLIC_URL:-https://${DNS_NAME}}
+      EMAIL_DELIVERY_MODE: ${EMAIL_DELIVERY_MODE:-smtp}
+      ADMIN_NOTIFICATION_EMAIL: ${ADMIN_NOTIFICATION_EMAIL:?ADMIN_NOTIFICATION_EMAIL doit etre defini}
+      ADMIN_ACCOUNT_VALIDATION_ENABLED: ${ADMIN_ACCOUNT_VALIDATION_ENABLED:-true}
+      EMAIL_VERIFICATION_TOKEN_TTL_HOURS: ${EMAIL_VERIFICATION_TOKEN_TTL_HOURS:-24}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:?SMTP_FROM_EMAIL doit etre defini}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST doit etre defini}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD_FILE: /run/secrets/smtp_password
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+    secrets:
+      - auth_env_encryption_key
+      - auth_password_encrypted
+      - auth_secret_key_encrypted
+      - database_url
+      - smtp_password
+    volumes:
+      - ${USERS_WORKSPACE:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/users-workspace}:/users/workspace
+      - ${BACKEND_IMG_HOST_DIR:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/images}:/images
+      - ${BACKEND_LOG_HOST_DIR:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/logs}:/app/logs
+    expose:
+      - "7777"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend_data
+    restart: unless-stopped
+
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cloudcollectionapp}
+      POSTGRES_USER: ${POSTGRES_USER:-cloudcollectionapp}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - ${POSTGRES_DATA_HOST_DIR:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/postgres-data}:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_data
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/sebastienbinda/cloudcollectionapp/frontend:${APP_VERSION:-latest}
+    user: "${RUNTIME_UID:-10001}:${RUNTIME_GID:-10001}"
+    environment:
+      USER_COLLECTION_MAX_UPLOAD_BYTES: ${USER_COLLECTION_MAX_UPLOAD_BYTES:-104857600}
+    depends_on:
+      - backend
+    expose:
+      - "8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cloudcollection.rule=Host(`${DNS_NAME}`) || Host(`www.${DNS_NAME}`)"
+      - "traefik.http.routers.cloudcollection.entrypoints=websecure"
+      - "traefik.http.routers.cloudcollection.tls=true"
+      - "traefik.http.routers.cloudcollection.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cloudcollection.loadbalancer.server.port=8080"
+    networks:
+      - frontend
+    restart: unless-stopped
+
+networks:
+  frontend:
+  backend_data:
+    internal: true
+
+secrets:
+  auth_env_encryption_key:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/AUTH_ENV_ENCRYPTION_KEY
+  auth_password_encrypted:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/AUTH_PASSWORD_ENCRYPTED
+  auth_secret_key_encrypted:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/AUTH_SECRET_KEY_ENCRYPTED
+  database_url:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/DATABASE_URL
+  postgres_password:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/POSTGRES_PASSWORD
+  smtp_password:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/SMTP_PASSWORD

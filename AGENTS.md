@@ -42,15 +42,23 @@
 ## Security
 
 - Never hardcode secrets, passwords, or tokens.
+- Secrets, password or tokens must be deployed in production mode with docker secrets files
 
 ## Tests and Validation
 
 - Always create or update backend unit tests when modifying logic.
+- Always create or update frontend unit tests when modifying frontend logic.
 - Run and validate tests after each code modification.
 - Do not try to use `pytest`: it is not installed in the local environment.
-  Use `./test_backend.sh` for backend tests because it initializes the required
+  Use `./scripts/test_backend.sh` for backend tests because it initializes the required
   Python environment before running the test suite.
+- Use `npm test` from the `frontend` directory for frontend tests because it
+  runs the configured frontend test suite and validates that frontend behavior is
+  not broken.
 - Rebuild Docker images when changes impact runtime behavior.
+- When a new feature requires new application runtime directories, update
+  `runtime/prepare_directories.sh` in the same change set so startup creates and
+  validates the required directory tree.
 
 ## Local Tooling Constraints
 

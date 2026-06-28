@@ -176,4 +176,4 @@ When modifying user administration, update backend tests for:
 - locked users being rejected by `POST /auth/token`;
 - `/api/routes` metadata for user routes.
 
-Run `./test_backend.sh` after changes.
+Run `./scripts/test_backend.sh` after changes.

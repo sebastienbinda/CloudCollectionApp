@@ -15,6 +15,8 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+from services.security import EnvironmentSecretReader
+
 
 @dataclass(frozen=True)
 class EmailConfiguration:
@@ -60,7 +62,7 @@ class EmailConfiguration:
             smtp_host=(os.getenv("SMTP_HOST") or "").strip() or None,
             smtp_port=int(os.getenv("SMTP_PORT", "587")),
             smtp_username=(os.getenv("SMTP_USERNAME") or "").strip() or None,
-            smtp_password=os.getenv("SMTP_PASSWORD") or None,
+            smtp_password=EnvironmentSecretReader.read("SMTP_PASSWORD") or None,
             smtp_use_tls=os.getenv("SMTP_USE_TLS", "true").strip().lower() == "true",
         )
         configuration.validate()

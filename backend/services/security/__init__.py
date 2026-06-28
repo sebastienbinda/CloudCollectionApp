@@ -12,5 +12,6 @@
 # Description : exports des utilitaires objet de securite.
 
 from services.security.env_secret_cipher import EnvSecretCipher
+from services.security.environment_secret_reader import EnvironmentSecretReader
 
-__all__ = ["EnvSecretCipher"]
+__all__ = ["EnvSecretCipher", "EnvironmentSecretReader"]

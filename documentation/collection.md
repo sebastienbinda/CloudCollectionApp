@@ -171,6 +171,6 @@ When changing collection consultation:
 
 - update backend tests for query parsing, SQL filters and response mapping;
 - update frontend build validation when API calls or normalization change;
-- run `./test_backend.sh`;
+- run `./scripts/test_backend.sh`;
 - run `npm run build` from `frontend/`;
 - rebuild backend and web Docker images when runtime behavior changes.

@@ -57,9 +57,9 @@ services:
       SMTP_PASSWORD: ${LOCAL_SMTP_PASSWORD:-}
       SMTP_USE_TLS: ${LOCAL_SMTP_USE_TLS:-false}
     volumes:
-      - ${USERS_WORKSPACE:-../users-workspace}:/users/workspace
-      - ${BACKEND_IMG_HOST_DIR:-../images}:/images
-      - ${BACKEND_LOG_HOST_DIR:-../logs}:/app/logs
+      - ${USERS_WORKSPACE:-${APPLICATION_WORKDIR:-../runtime-data}/users-workspace}:/users/workspace
+      - ${BACKEND_IMG_HOST_DIR:-${APPLICATION_WORKDIR:-../runtime-data}/images}:/images
+      - ${BACKEND_LOG_HOST_DIR:-${APPLICATION_WORKDIR:-../runtime-data}/logs}:/app/logs
     expose:
       - "7777"
     depends_on:
@@ -113,7 +113,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-8080}:8080"
     networks:
       - frontend
     restart: unless-stopped

@@ -164,7 +164,7 @@ Reader changes must include backend unit tests covering:
 Run:
 
 ```bash
-./test_backend.sh
+./scripts/test_backend.sh
 cd frontend && npm run build
 ```
 

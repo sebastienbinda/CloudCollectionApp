@@ -101,4 +101,4 @@ When modifying registration or email verification, update backend tests for:
   `ADMIN_NOTIFICATION_EMAIL` is configured;
 - `/api/routes` public indicators for registration and verification routes.
 
-Run `./test_backend.sh` after changes.
+Run `./scripts/test_backend.sh` after changes.

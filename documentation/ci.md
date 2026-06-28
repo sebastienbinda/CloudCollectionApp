@@ -3,58 +3,97 @@
 ## Key Points
 
 - Continuous integration is handled by GitHub Actions.
-- CI and PR validation workflow files are `.github/workflows/ci.yml` and
-  `.github/workflows/validate-pr.yml`.
+- CI and PR validation workflow files are `.github/workflows/ci.yml`,
+  `.github/workflows/validate-pr.yml` and `.gitlab-ci.yml`.
 - Pull requests are validated for Conventional Commits title format and release
   note labels.
 - The CI workflow runs on pull requests, on every branch push, and on every
   pushed Git tag.
 - Backend tests run only when backend-related files change, when the workflow
   file changes, and on every pushed Git tag.
+- Frontend tests run only when frontend-related files change, when the workflow
+  file changes, and on every pushed Git tag.
 - The frontend production build runs only when frontend-related files change,
   when the workflow file changes, and on every pushed Git tag.
-- Docker images are published only when a Git tag matching `X.Y.Z` is pushed.
-- Docker image versions come from the Git tag.
+- Application Docker images are published only when a Git tag matching `X.Y.Z`
+  is pushed.
+- Application Docker image versions come from the Git tag.
+- The production deployment archive is generated only when a Git tag matching
+  `X.Y.Z` is pushed.
+- The `age` utility image is published as `latest` only when a Git tag matching
+  `X.Y.Z` is pushed and `docker/age-secrets.Dockerfile` changed since the
+  previous release tag.
 - Published images are pushed to GitHub Container Registry.
 
 ## Objective
 
 The CI pipeline validates pull requests, branch pushes and tagged releases.
-Docker images are published only for release tags, and the release version is
-explicit: it is the pushed Git tag in `X.Y.Z` format.
+Application Docker images are published only for release tags, and the release
+version is explicit: it is the pushed Git tag in `X.Y.Z` format.
 
 ## Push And Release Workflow
 
-The `.github/workflows/ci.yml` workflow contains four jobs:
+The `.github/workflows/ci.yml` workflow contains seven jobs:
 
-- `change-detection`: detects whether backend or frontend validation is needed
-  from the files changed by the push.
-- `backend-tests`: runs `./test_backend.sh`.
+- `change-detection`: detects whether backend validation, frontend validation or
+  the age utility image publication is needed from the changed files.
+- `backend-tests`: runs `./scripts/test_backend.sh`.
+- `frontend-tests`: installs frontend dependencies with `npm ci` and runs
+  `npm test`.
 - `frontend-build`: installs frontend dependencies with `npm ci` and runs
   `npm run build`.
+- `age-secrets-image`: for Git tags only, builds and pushes
+  `ghcr.io/<owner>/<repository>/age-secrets:latest` when the tag matches
+  `X.Y.Z` and `docker/age-secrets.Dockerfile` changed since the previous
+  release tag.
+- `deploy-archive`: for Git tags only, builds and uploads
+  `cloud-application-deploy.zip` as a downloadable workflow artifact.
 - `docker-images`: for Git tags only, builds and pushes the backend and frontend
   Docker images after the validation jobs succeed.
 
 On pull requests and branch pushes, backend tests run for every added, modified
-or removed path prefixed with `backend/`, for `test_backend.sh`, for
+or removed path prefixed with `backend/`, for `scripts/test_backend.sh`, for
 `docker/backend.Dockerfile`, for `docker/backend.Dockerfile.dockerignore`, or
-for `.github/workflows/ci.yml`. The frontend build runs for every added,
-modified or removed path prefixed with `frontend/`, for
+for `.github/workflows/ci.yml`. Frontend tests and the frontend build run for
+every added, modified or removed path prefixed with `frontend/`, for
 `docker/frontend.Dockerfile`, for `docker/frontend.Dockerfile.dockerignore`, or
 for `.github/workflows/ci.yml`. On Git tags, both validations always run before
-Docker publication.
+Docker publication. The age utility image is published only on release tag
+events where `docker/age-secrets.Dockerfile` was added, modified or removed
+since the previous release tag. If there is no previous release tag, the first
+tag publishes the image when the Dockerfile exists in the tagged source.
 
-For push events, the workflow reads GitHub's event payload first so that file
-deletions and multi-commit branch pushes are detected reliably. It falls back
-to Git diff commands when the payload does not contain changed paths.
+For branch push events, the workflow reads GitHub's event payload first so that
+file deletions and multi-commit branch pushes are detected reliably. It falls
+back to Git diff commands when the payload does not contain changed paths. For
+release tags, the workflow compares the tagged commit with the previous release
+tag to decide whether the age utility image must be published.
 
-The `docker-images` job depends on both validation jobs. Docker images must not
-be pushed if tests or frontend build fail. Branch pushes never publish Docker
-images.
+The `docker-images`, `age-secrets-image` and `deploy-archive` jobs depend on
+backend tests, frontend tests and the frontend build. Docker images and the
+deployment archive must not be published if tests or frontend build fail. Branch
+pushes never publish Docker images or deployment archives.
 
-Backend tests run through `./test_backend.sh`, which prepares the Python
+Backend tests run through `./scripts/test_backend.sh`, which prepares the Python
 environment and then executes the backend test suite. ODS fixtures are now
 loaded directly by import tests when needed.
+
+Frontend tests run through `npm test` in `frontend/`, using Node.js' native test
+runner against `frontend/tests/*.test.js`.
+
+The deploy archive is built by `scripts/create_deploy_archive.sh`. It contains
+only the production runtime files required on the deployment host:
+
+- `runtime/start.sh`
+- `runtime/stop.sh`
+- `runtime/secure.sh`
+- `runtime/prepare_directories.sh`
+- `runtime/docker-compose.online.yml`
+- `runtime/.env.production.example`
+
+The GitLab CI file `.gitlab-ci.yml` exposes the same deploy archive generation
+as the `cloud_application_deploy_archive` job. It runs on release tags matching
+`X.Y.Z` and publishes `cloud-application-deploy.zip` as a GitLab artifact.
 
 The workflow uses GitHub and Docker actions that target the Node.js 24 runtime.
 This is independent from the frontend application build, which uses the Node.js
@@ -129,12 +168,30 @@ The images are published to GitHub Container Registry:
 - `ghcr.io/sebastienbinda/cloudcollectionapp/backend:latest`
 - `ghcr.io/sebastienbinda/cloudcollectionapp/frontend:<version>`
 - `ghcr.io/sebastienbinda/cloudcollectionapp/frontend:latest`
+- `ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest`
 
 The `<version>` tag is the Git tag that triggered the workflow.
+The age utility image is always published with only the `latest` tag.
+
+## Deployment Archive
+
+The `cloud-application-deploy.zip` artifact is intended for production hosts
+that only need to run already published container images. It deliberately
+excludes Dockerfiles, source code, test files, build compose files and local
+development configuration.
+
+After extraction, configure `runtime/.env` from
+`runtime/.env.production.example`, place the age secrets archive at
+`runtime/secrets.tar.gz.age` or set
+`AGE_SECRETS_ARCHIVE_FILE`, then start production with:
+
+```bash
+./runtime/start.sh -p
+```
 
 ## Production Compose
 
-The production compose file `docker/docker-compose.online.yml` must consume the
+The production compose file `runtime/docker-compose.online.yml` must consume the
 published GitHub Container Registry images instead of building local images:
 
 - `ghcr.io/sebastienbinda/cloudcollectionapp/backend:${APP_VERSION:-latest}`
@@ -144,15 +201,29 @@ published GitHub Container Registry images instead of building local images:
 Docker Compose resolves the image tag to `latest`.
 
 The production stack also runs PostgreSQL as a `database` service on an
-internal Docker network. The backend `DATABASE_URL` is built from
-`POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD`, and the backend must wait
+internal Docker network. In production deployment, `./runtime/start.sh -p`
+calls `runtime/prepare_directories.sh` to create and validate the configured
+host directory tree, then
+decrypts the age secrets archive into a temporary tmpfs directory, passes
+`POSTGRES_PASSWORD_FILE` to PostgreSQL, generates `DATABASE_URL` as a Docker
+secret file, exposes it to the backend through `DATABASE_URL_FILE`, starts Docker
+Compose, then removes the decrypted files from the host. The backend must wait
 for the database healthcheck before starting.
 
+The application containers `backend` and `web` run with the numeric
+`RUNTIME_UID:RUNTIME_GID` configured in `runtime/.env`. The frontend image must
+listen on the unprivileged internal port `8080`, and Traefik must route traffic
+to that port. Host directories mounted by the backend must be writable by the
+configured runtime UID/GID.
+
 Production PostgreSQL data must be persisted through the host bind mount
-configured by `POSTGRES_DATA_HOST_DIR`. Deployment `.env` files must set this
-variable to an absolute host path, mounted to `/var/lib/postgresql/data` by
-`docker/docker-compose.online.yml`. Do not replace this production persistence
-path with a transient anonymous volume.
+configured by `POSTGRES_DATA_HOST_DIR`. Deployment `.env` files must set
+`APPLICATION_WORKDIR` as the common parent directory for application work data,
+and the default production paths derive from it:
+`USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
+`POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`. Production host
+paths must be absolute. Do not replace the production database persistence path
+with a transient anonymous volume.
 
 ## Required GitHub Permissions
 
@@ -163,10 +234,13 @@ The workflow requires:
 
 ## Development Rules
 
-- Do not publish Docker images before backend tests and frontend build have
-  passed.
+- Do not publish backend or frontend Docker images before backend tests,
+  frontend tests and frontend build have passed.
 - Publish Docker images only from Git tags matching `X.Y.Z`.
 - Use the release tag as the Docker image version.
+- Publish the age utility image only as `latest`, only from release tags matching
+  `X.Y.Z`, and only when `docker/age-secrets.Dockerfile` changed since the
+  previous release tag.
 - Treat migrations present in release tags matching `X.Y.Z` as immutable.
 - Do not use `.env` to define the application release version; the release tag is
   the source of truth for published Docker images.

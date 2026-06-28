@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from services.security import EnvSecretCipher
+from services.security import EnvSecretCipher, EnvironmentSecretReader
 from services.users import UserStatus
 
 from .password_hash_service import PasswordHashService
@@ -395,14 +395,14 @@ class AuthTokenService:
             str: Secret pret a etre utilise par le service.
         """
 
-        encrypted_value = os.getenv(encrypted_env_name)
+        encrypted_value = EnvironmentSecretReader.read(encrypted_env_name)
         if encrypted_value:
-            encryption_key = os.getenv("AUTH_ENV_ENCRYPTION_KEY")
+            encryption_key = EnvironmentSecretReader.read("AUTH_ENV_ENCRYPTION_KEY")
             if not encryption_key:
                 raise ValueError("AUTH_ENV_ENCRYPTION_KEY est requis pour dechiffrer les secrets.")
             return EnvSecretCipher(encryption_key).decrypt(encrypted_value)
 
-        return os.getenv(plain_env_name, default_value)
+        return EnvironmentSecretReader.read(plain_env_name, default_value) or default_value
 
 
 def secrets_equal(left: str, right: str) -> bool:

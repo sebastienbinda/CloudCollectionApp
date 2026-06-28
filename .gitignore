@@ -14,3 +14,11 @@ backup/
 logs/
 users-workspace/
 images/
+runtime-data/
+cloud-application-deploy.zip
+runtime/.runtime/
+runtime/.env
+runtime/secrets-src/
+runtime/secrets-out/
+runtime/secrets.tar.gz.age
+age-identity*.txt

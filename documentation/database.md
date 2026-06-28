@@ -362,11 +362,27 @@ platforms.
 
 - Use Alembic migrations for every database structure change.
 - The production Docker stack must provide PostgreSQL through the
-  `database` service in `docker/docker-compose.online.yml` and must keep it on
+  `database` service in `runtime/docker-compose.online.yml` and must keep it on
   an internal Docker network.
+- Production PostgreSQL credentials must be passed through Docker secrets:
+  `POSTGRES_PASSWORD_FILE` for the `database` service and `DATABASE_URL_FILE`
+  for the backend. `./runtime/start.sh -p` decrypts the age archive, prepares
+  the secret files in a temporary tmpfs directory, derives `DATABASE_URL` as a
+  secret file from `POSTGRES_DB`, `POSTGRES_USER` and the decrypted
+  `POSTGRES_PASSWORD`, starts Docker Compose, then removes the decrypted files
+  from the host.
+- Production runtime directories must share the common parent configured by
+  `APPLICATION_WORKDIR`. `./runtime/start.sh -p` calls
+  `runtime/prepare_directories.sh` before Docker Compose startup to create and
+  validate `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
+  `POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`.
 - Production PostgreSQL data must be persisted through `POSTGRES_DATA_HOST_DIR`,
   an absolute host directory mounted to `/var/lib/postgresql/data` by the
   online Docker Compose file.
+- Backend production bind mounts such as `USERS_WORKSPACE`,
+  `BACKEND_IMG_HOST_DIR` and `BACKEND_LOG_HOST_DIR` must be writable by the
+  configured `RUNTIME_UID:RUNTIME_GID`, because the backend container does not
+  run as root.
 - Never rely on manual SQL execution as the normal deployment path.
 - New migrations must be forward-only fixes for production data: they must not
   require emptying, recreating or resetting a production database.
@@ -405,7 +421,7 @@ When modifying database structure, ORM models, SQL repositories, schema
 initialization or migrations:
 
 - update or add backend tests covering the changed persistence behavior;
-- run `./test_backend.sh`;
+- run `./scripts/test_backend.sh`;
 - rebuild affected Docker images when runtime behavior changes;
 - update this document's `Schema Definition` section for every schema change;
 - verify whether `README.md`, `documentation/ci.md` or another functional

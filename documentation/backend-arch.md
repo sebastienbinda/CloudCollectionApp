@@ -189,7 +189,7 @@ copy files, build SQL queries or decide whether an image is public.
 Backend tests should mirror the layer being changed:
 
 - controller or route behavior: update route tests such as
-  `backend/tests/test_app_routes.py`;
+  `backend/tests/by_module/controllers/test_app_routes.py`;
 - business service behavior: update the relevant service test;
 - ODS import parsing behavior: update ODS reader/cache tests;
 - database schema or migration orchestration: update database tests;
@@ -198,7 +198,7 @@ Backend tests should mirror the layer being changed:
 After backend code changes, run:
 
 ```bash
-./test_backend.sh
+./scripts/test_backend.sh
 ```
 
 Rebuild affected Docker images when runtime behavior changes.
