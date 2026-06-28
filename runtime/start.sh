@@ -26,6 +26,7 @@ PREPARE_DIRECTORIES_SCRIPT="${RUNTIME_DIR}/prepare_directories.sh"
 AGE_IDENTITY_CLEANUP_SCRIPT="${RUNTIME_DIR}/age_identity_cleanup.sh"
 AGE_SECRETS_ARCHIVE_FILE="${RUNTIME_DIR}/env/secrets.tar.gz.age"
 AGE_SECRETS_IDENTITY_FILE="${RUNTIME_DIR}/.age/identity.txt"
+AGE_SECRETS_IMAGE="${AGE_SECRETS_IMAGE:-ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest}"
 PRODUCTION_SECRETS_TMP_PARENT="/dev/shm"
 PRODUCTION_SECRETS_DIR=""
 
@@ -46,13 +47,14 @@ cleanup_production_secrets() {
 trap cleanup_production_secrets EXIT
 
 print_usage() {
-  echo "Usage: ./runtime/start.sh [-d] [-p] [-r]"
+  echo "Usage: ./runtime/start.sh [-d] [-p] [-r] [-e <env-file>]"
   echo "  -d  Demarre la stack Docker locale."
   echo "  -p  Demarre la stack Docker de production online."
   echo "  -r  Reconstruit les images Docker et force la recreation des conteneurs."
+  echo "  -e  Utilise un fichier d'environnement Docker explicite."
 }
 
-while getopts "dprh" option; do
+while getopts "dpre:h" option; do
   case "$option" in
     d)
       START_MODE="docker"
@@ -63,6 +65,9 @@ while getopts "dprh" option; do
       ;;
     r)
       RECREATE_DOCKER_STACK=true
+      ;;
+    e)
+      ENV_FILE="$OPTARG"
       ;;
     h)
       print_usage
@@ -140,25 +145,38 @@ fi
 source "$AGE_IDENTITY_CLEANUP_SCRIPT"
 
 env_variable_exists() {
-  # Description : indique si une variable est deja presente dans runtime/.env.
+  # Description : indique si une variable est deja presente dans le fichier d'environnement.
   # Parametres : $1 nom de variable.
   # Retour : 0 si presente, 1 sinon.
   local variable_name="$1"
   if [ ! -f "$ENV_FILE" ]; then
     return 1
   fi
-  grep -Eq "^[[:space:]]*${variable_name}=" "$ENV_FILE"
+  grep -Eq "^[[:space:]]*(export[[:space:]]+)?${variable_name}[[:space:]]*=" "$ENV_FILE"
 }
 
 env_variable_value() {
-  # Description : retourne la valeur courante d'une variable de runtime/.env.
+  # Description : retourne la valeur courante d'une variable du fichier d'environnement.
   # Parametres : $1 nom de variable.
   # Retour : ecrit la valeur sur stdout.
   local variable_name="$1"
   local current_line
 
-  current_line="$(grep -E "^[[:space:]]*${variable_name}=" "$ENV_FILE" 2>/dev/null | tail -n 1)"
-  printf '%s\n' "${current_line#*=}"
+  current_line="$(
+    grep -E "^[[:space:]]*(export[[:space:]]+)?${variable_name}[[:space:]]*=" "$ENV_FILE" 2>/dev/null \
+      | tail -n 1 \
+      | sed -E "s/^[[:space:]]*(export[[:space:]]+)?${variable_name}[[:space:]]*=[[:space:]]*//"
+  )"
+  printf '%s\n' "$current_line"
+}
+
+shell_env_variable_exists() {
+  # Description : indique si une variable est definie dans l'environnement shell.
+  # Parametres : $1 nom de variable.
+  # Retour : 0 si definie, 1 sinon.
+  local variable_name="$1"
+
+  [ "${!variable_name+x}" = "x" ]
 }
 
 prompt_missing_env_value() {
@@ -299,18 +317,54 @@ prepare_runtime_directories() {
     abort_start "Le script ${PREPARE_DIRECTORIES_SCRIPT} est introuvable ou non executable."
   fi
 
-  "$PREPARE_DIRECTORIES_SCRIPT" --env-file "$ENV_FILE" --mode "$DEPLOY_ENV"
+  if ! "$PREPARE_DIRECTORIES_SCRIPT" --env-file "$ENV_FILE" --mode "$DEPLOY_ENV"; then
+    abort_start "La preparation de l'arborescence runtime a echoue."
+  fi
+}
+
+container_path_for_age_secret() {
+  # Description : convertit un chemin hote en chemin visible par le conteneur age.
+  # Parametres : $1 chemin hote absolu.
+  # Retour : ecrit le chemin conteneur sur stdout.
+  local host_path="$1"
+
+  if [[ "$host_path" == "$PROJECT_ROOT" ]]; then
+    printf '/workspace\n'
+    return
+  fi
+
+  if [[ "$host_path" == "$PROJECT_ROOT"/* ]]; then
+    printf '/workspace/%s\n' "${host_path#"$PROJECT_ROOT"/}"
+    return
+  fi
+
+  if [[ "$host_path" == "$PRODUCTION_SECRETS_TMP_PARENT"/* ]]; then
+    printf '%s\n' "$host_path"
+    return
+  fi
+
+  abort_start "Chemin non accessible depuis le conteneur age: ${host_path}"
+}
+
+ensure_age_secrets_image() {
+  # Description : verifie que l'image age est disponible localement ou la telecharge.
+  # Parametres : aucun.
+  # Retour : void.
+  if ! docker image inspect "$AGE_SECRETS_IMAGE" >/dev/null 2>&1; then
+    echo "Telechargement de l'image age: ${AGE_SECRETS_IMAGE}"
+    if ! docker pull "$AGE_SECRETS_IMAGE"; then
+      abort_start "Impossible de telecharger l'image age ${AGE_SECRETS_IMAGE}."
+    fi
+  fi
 }
 
 decrypt_age_secrets_archive() {
   # Description : dechiffre l'archive age dans un repertoire temporaire de secrets.
   # Parametres : aucun.
   # Retour : void, prepare les fichiers de secrets pour Docker Compose.
-  local age_command=("age" "--decrypt")
-
-  if ! command -v age >/dev/null 2>&1; then
-    abort_start "La commande age est requise pour dechiffrer les secrets de production."
-  fi
+  local container_archive_file
+  local container_identity_file
+  local container_secrets_dir
 
   if [ ! -f "$AGE_SECRETS_ARCHIVE_FILE" ]; then
     abort_start "Archive de secrets age introuvable: ${AGE_SECRETS_ARCHIVE_FILE}"
@@ -319,16 +373,26 @@ decrypt_age_secrets_archive() {
   if [ ! -f "$AGE_SECRETS_IDENTITY_FILE" ]; then
     abort_start "Cle privee age introuvable: ${AGE_SECRETS_IDENTITY_FILE}"
   fi
-  age_command+=("--identity" "$AGE_SECRETS_IDENTITY_FILE")
 
   if [ ! -d "$PRODUCTION_SECRETS_TMP_PARENT" ]; then
     abort_start "Le repertoire temporaire ${PRODUCTION_SECRETS_TMP_PARENT} est introuvable."
   fi
 
+  ensure_age_secrets_image
   PRODUCTION_SECRETS_DIR="$(mktemp -d "${PRODUCTION_SECRETS_TMP_PARENT}/cloudcollectionapp-secrets.XXXXXX")"
   chmod 700 "$PRODUCTION_SECRETS_DIR"
+  container_archive_file="$(container_path_for_age_secret "$AGE_SECRETS_ARCHIVE_FILE")"
+  container_identity_file="$(container_path_for_age_secret "$AGE_SECRETS_IDENTITY_FILE")"
+  container_secrets_dir="$(container_path_for_age_secret "$PRODUCTION_SECRETS_DIR")"
 
-  if ! "${age_command[@]}" "$AGE_SECRETS_ARCHIVE_FILE" | tar -xzf - -C "$PRODUCTION_SECRETS_DIR"; then
+  if ! docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    --workdir /workspace \
+    --volume "${PROJECT_ROOT}:/workspace:ro" \
+    --volume "${PRODUCTION_SECRETS_TMP_PARENT}:${PRODUCTION_SECRETS_TMP_PARENT}" \
+    "$AGE_SECRETS_IMAGE" \
+    -lc 'set -euo pipefail; age --decrypt --identity "$2" "$1" | tar -xzf - -C "$3"' \
+    -- "$container_archive_file" "$container_identity_file" "$container_secrets_dir"; then
     abort_start "Le dechiffrement ou l'extraction de l'archive de secrets a echoue."
   fi
 
@@ -398,14 +462,6 @@ validate_production_environment_before_docker_start() {
   temp_file="$(mktemp "${ENV_FILE}.tmp.XXXXXX")"
 
   while IFS= read -r line || [ -n "$line" ]; do
-    if [[ "$line" == "# ============================================================================="* ]]; then
-      section_buffer="${line}"$'\n'
-      section_capture_remaining=2
-      section_title_line=""
-      pending_comments=""
-      continue
-    fi
-
     if [ "$section_capture_remaining" -gt 0 ]; then
       section_buffer+="${line}"$'\n'
       if [ "$section_capture_remaining" -eq 2 ]; then
@@ -426,6 +482,14 @@ validate_production_environment_before_docker_start() {
       continue
     fi
 
+    if [[ "$line" == "# ============================================================================="* ]]; then
+      section_buffer="${line}"$'\n'
+      section_capture_remaining=2
+      section_title_line=""
+      pending_comments=""
+      continue
+    fi
+
     if [ "$section_is_omitted" = true ]; then
       continue
     fi
@@ -442,7 +506,9 @@ validate_production_environment_before_docker_start() {
         pending_comments=""
         continue
       fi
-      if env_variable_exists "$variable_name"; then
+      if shell_env_variable_exists "$variable_name"; then
+        selected_value="${!variable_name}"
+      elif env_variable_exists "$variable_name"; then
         selected_value="$(env_variable_value "$variable_name")"
       else
         selected_value="$(prompt_missing_env_value "$variable_name" "$default_value")"

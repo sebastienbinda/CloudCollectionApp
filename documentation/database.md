@@ -371,16 +371,19 @@ platforms.
   an internal Docker network.
 - Production PostgreSQL credentials must be passed through Docker secrets:
   `POSTGRES_PASSWORD_FILE` for the `database` service and `DATABASE_URL_FILE`
-  for the backend. `./runtime/start.sh -p` decrypts the age archive, prepares
-  the secret files in a temporary tmpfs directory, derives `DATABASE_URL` as a
-  secret file from `POSTGRES_DB`, `POSTGRES_USER` and the decrypted
+  for the backend. `./runtime/start.sh -p` decrypts the age archive with the
+  published `age-secrets` Docker image, prepares the secret files in a temporary
+  tmpfs directory, derives `DATABASE_URL` as a secret file from `POSTGRES_DB`,
+  `POSTGRES_USER` and the decrypted
   `POSTGRES_PASSWORD`, starts Docker Compose, then removes the decrypted files
   from the host.
 - Production runtime directories must share the common parent configured by
   `APPLICATION_WORKDIR`. `./runtime/start.sh -p` calls
   `runtime/prepare_directories.sh` before Docker Compose startup to create and
   validate `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
-  `POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`.
+  `POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`. When the
+  configured paths require administrator privileges on the host, the preparation
+  script may use `sudo` for directory creation and ownership changes.
 - Production PostgreSQL data must be persisted through `POSTGRES_DATA_HOST_DIR`,
   an absolute host directory mounted to `/var/lib/postgresql/data` by the
   online Docker Compose file.

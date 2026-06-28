@@ -64,13 +64,13 @@ env_value() {
   local line
   local value
 
-  line="$(grep -E "^[[:space:]]*${variable_name}=" "$ENV_FILE" 2>/dev/null | tail -n 1 || true)"
+  line="$(grep -E "^[[:space:]]*(export[[:space:]]+)?${variable_name}[[:space:]]*=" "$ENV_FILE" 2>/dev/null | tail -n 1 || true)"
   if [ -z "$line" ]; then
     printf '%s\n' "$default_value"
     return
   fi
 
-  value="${line#*=}"
+  value="$(printf '%s\n' "$line" | sed -E "s/^[[:space:]]*(export[[:space:]]+)?${variable_name}[[:space:]]*=[[:space:]]*//")"
   value="${value%\"}"
   value="${value#\"}"
   value="${value%\'}"
@@ -141,6 +141,18 @@ directory_mode() {
   fi
 }
 
+run_privileged_command() {
+  # Description : execute une commande avec les privileges necessaires en production.
+  # Parametres : commande et arguments a executer.
+  # Retour : code retour de la commande executee.
+  if [ "$DEPLOY_ENV" = "online" ] && [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+    "$@" 2>/dev/null || sudo "$@"
+    return $?
+  fi
+
+  "$@"
+}
+
 host_runtime_can_write_directory() {
   # Description : indique si l'UID/GID hote du runtime peut ecrire dans un repertoire.
   # Parametres : $1 chemin.
@@ -198,13 +210,23 @@ ensure_directory() {
     exit 1
   fi
 
-  mkdir -p "$resolved_path"
+  if ! run_privileged_command mkdir -p "$resolved_path"; then
+    echo "Impossible de creer ${label}: ${resolved_path}"
+    if [ "$DEPLOY_ENV" = "online" ] && [ "$(id -u)" -ne 0 ]; then
+      echo "Ce chemin necessite probablement des privileges administrateur."
+      echo "Installez sudo ou creez le repertoire avec un utilisateur autorise, puis relancez ./runtime/start.sh -p."
+    fi
+    exit 1
+  fi
 
   if [ "$DEPLOY_ENV" = "online" ] && [ "$runtime_writable" = "true" ]; then
     expected_owner="${RUNTIME_HOST_UID}:${RUNTIME_HOST_GID}"
     container_owner="${RUNTIME_UID}:${RUNTIME_GID}"
-    if [ "$(id -u)" -eq 0 ]; then
-      chown -R "$expected_owner" "$resolved_path"
+    if ! run_privileged_command chown -R "$expected_owner" "$resolved_path"; then
+      echo "${label} doit appartenir a l'identite hote ${expected_owner} correspondant au runtime conteneur ${container_owner}."
+      echo "Impossible d'appliquer ce proprietaire automatiquement."
+      echo "Relancez le demarrage avec des droits permettant le chown, ou corrigez le proprietaire et les permissions du repertoire."
+      exit 1
     fi
     if ! host_runtime_can_write_directory "$resolved_path"; then
       owner="$(directory_owner "$resolved_path")"
