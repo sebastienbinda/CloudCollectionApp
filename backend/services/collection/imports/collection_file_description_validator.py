@@ -181,7 +181,15 @@ class CollectionFileDescriptionValidator:
         )
         self.rules.validate_csv_wishlist_configuration(csv_conf, wishlist_configuration, errors)
         price_unit = self._parse_price_unit(payload.get("price_unit"), errors)
-        if self.rules.uses_purchase_price(single_sheet, multiple_sheets, csv_conf) and price_unit is None:
+        if (
+            self.rules.uses_purchase_price(
+                single_sheet,
+                multiple_sheets,
+                csv_conf,
+                wishlist_configuration,
+            )
+            and price_unit is None
+        ):
             errors.append("price_unit est requis quand purchase_price est configure.")
 
         if errors:

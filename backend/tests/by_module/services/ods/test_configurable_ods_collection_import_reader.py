@@ -13,6 +13,8 @@
 
 import sys
 import unittest
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
@@ -122,6 +124,67 @@ class ConfigurableOdsCollectionImportReaderTest(unittest.TestCase):
         self.assertEqual("Nintendo", import_data.games[0].studio_name)
         self.assertEqual(["Nintendo"], [studio.name for studio in import_data.studios])
 
+    def test_read_wishlist_sheet_imports_its_own_private_information(self):
+        """Verifie les informations optionnelles propres a l'onglet wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'independance des layouts.
+        """
+
+        service = self._service_for_reader(
+            FakeOdsReader(
+                ["Collection", "Wishlist"],
+                {
+                    "Collection": self._dataframe([
+                        {"Nom du jeu": "Owned", "Plateforme": "Switch"}
+                    ]),
+                    "Wishlist": pd.DataFrame(
+                        [
+                            {
+                                "Nom du jeu": "Wanted",
+                                "Plateforme": "Switch",
+                                "Studio": "Nintendo",
+                                "Date de sortie": "2025-01-01",
+                                "Prix": "12,50",
+                                "Lieu": "Paris",
+                                "Date achat": "2026-01-02",
+                                "Note": "Prioritaire",
+                            }
+                        ],
+                        columns=[
+                            "Nom du jeu",
+                            "Plateforme",
+                            "Studio",
+                            "Date de sortie",
+                            "Prix",
+                            "Lieu",
+                            "Date achat",
+                            "Note",
+                        ],
+                    ),
+                },
+            )
+        )
+
+        import_data = service.read("/tmp/wishlist.ods", self._wishlist_sheet_private_description())
+
+        wanted = next(game for game in import_data.games if game.name == "Wanted")
+        owned = next(game for game in import_data.games if game.name == "Owned")
+        self.assertTrue(wanted.wishlist)
+        self.assertEqual(Decimal("12.50"), wanted.purchase_price)
+        self.assertEqual("EUR", wanted.price_unit)
+        self.assertEqual("Paris", wanted.buy_location)
+        self.assertEqual(date(2026, 1, 2), wanted.buy_date)
+        self.assertEqual("Prioritaire", wanted.grade)
+        self.assertIsNone(owned.purchase_price)
+        self.assertEqual(
+            ("Wishlist", "A1:H200", 1, "A,B,C,D,E,F,G,H"),
+            service.reader_factory("").sheet_dataframe_calls[-1],
+        )
+
     def _service_for_reader(self, fake_reader):
         return OdsCollectionImportReader(reader_factory=lambda ods_path: fake_reader)
 
@@ -205,6 +268,40 @@ class ConfigurableOdsCollectionImportReaderTest(unittest.TestCase):
                             "platform": "B",
                             "release_date": "D",
                         },
+                    },
+                },
+            }
+        )
+
+    def _wishlist_sheet_private_description(self):
+        return CollectionFileDescriptionValidator().validate(
+            {
+                "file_type": "libreoffice_ods",
+                "price_unit": "EUR",
+                "wishlist": {
+                    "mode": "sheet",
+                    "sheet_name": "Wishlist",
+                    "data_range": "A1:H200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "platform": "B",
+                        "studio": "C",
+                        "release_date": "D",
+                        "purchase_price": "E",
+                        "buy_location": "F",
+                        "buy_date": "G",
+                        "grade": "H",
+                    },
+                },
+                "single_sheet_conf": {
+                    "data_range": "A1:D200",
+                    "header_row": 1,
+                    "column_information": {
+                        "name": "A",
+                        "platform": "B",
+                        "studio": "C",
+                        "release_date": "D",
                     },
                 },
             }

@@ -13,18 +13,22 @@
  * Description : construction frontend de la description d'import de collection.
  */
 
-import { applyDataRangeDefaults } from "./importSpreadsheetColumnTools";
+import { applyDataRangeDefaults } from "./importSpreadsheetColumnTools.js";
 import {
   buildCsvImportConfigurationDescription,
   buildFrontendCsvConfiguration,
   createDefaultCsvMapping,
-} from "./csvImportConfigurationBuilder";
+} from "./csvImportConfigurationBuilder.js";
 
 const REQUIRED_FIELDS = Object.freeze(["name", "platform"]);
-const OPTIONAL_FIELDS = Object.freeze([
-  "studio", "release_date",
+const REFERENCE_OPTIONAL_FIELDS = Object.freeze(["studio", "release_date"]);
+const PRIVATE_INFORMATION_FIELDS = Object.freeze([
   "purchase_price", "buy_location", "buy_date", "grade", "condition",
   "has_manual", "is_collector", "has_steelbook", "is_digital", "region", "description",
+]);
+const OPTIONAL_FIELDS = Object.freeze([
+  ...REFERENCE_OPTIONAL_FIELDS,
+  ...PRIVATE_INFORMATION_FIELDS,
 ]);
 const SHEET_INFORMATION = "platform";
 
@@ -43,7 +47,7 @@ function createDefaultLayout(includePlatformColumn = true) {
       platform: includePlatformColumn ? "B" : "",
       studio: includePlatformColumn ? "C" : "B",
       release_date: includePlatformColumn ? "D" : "C",
-      ...Object.fromEntries(OPTIONAL_FIELDS.map((field) => [field, ""])),
+      ...Object.fromEntries(PRIVATE_INFORMATION_FIELDS.map((field) => [field, ""])),
     },
   };
 }
@@ -334,6 +338,36 @@ function collectionRequiredFields(configuration, includePlatformColumn) {
 }
 
 /**
+ * Retourne les champs colonne a afficher pour un layout de collection ODS.
+ *
+ * @param {Object} configuration - Etat frontend de configuration.
+ * @param {boolean} includePlatformColumn - Indique si la plateforme est une colonne.
+ * @returns {string[]} Champs colonnes configurables.
+ */
+function collectionColumnFields(configuration, includePlatformColumn) {
+  const fields = includePlatformColumn
+    ? [...REQUIRED_FIELDS, ...REFERENCE_OPTIONAL_FIELDS]
+    : [
+      ...REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION),
+      ...REFERENCE_OPTIONAL_FIELDS,
+    ];
+  if (configuration.wishlist.mode === "column") {
+    fields.push("wishlist");
+  }
+  fields.push(...PRIVATE_INFORMATION_FIELDS);
+  return fields;
+}
+
+/**
+ * Retourne les champs colonne a afficher pour l'onglet wishlist dedie.
+ *
+ * @returns {string[]} Champs wishlist configurables.
+ */
+function wishlistSheetColumnFields() {
+  return [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
+}
+
+/**
  * Construit la section wishlist du contrat backend.
  *
  * @param {Object} configuration - Etat frontend de configuration.
@@ -416,10 +450,13 @@ function splitSheetNames(value) {
 }
 
 export {
+  OPTIONAL_FIELDS,
   REQUIRED_FIELDS,
   applyDataRangeDefaults,
+  collectionColumnFields,
   collectionRequiredFields,
   createImportConfigurationFromDescription,
   createDefaultImportConfiguration,
   buildImportConfigurationDescription,
+  wishlistSheetColumnFields,
 };
