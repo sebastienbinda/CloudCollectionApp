@@ -150,22 +150,25 @@ function CollectionShareManagementView(props) {
               Informations de prix
             </label>
           </fieldset>
-          <label htmlFor="share-wishlist-buy-status-default-filter">
-            Filtre wishlist par defaut
-            <select
-              id="share-wishlist-buy-status-default-filter"
-              disabled={!props.isManagementAllowed || !management.form.allowWishlist}
-              value={management.form.wishlistBuyStatusDefaultFilter}
-              onChange={(event) => management.updateForm(
-                "wishlistBuyStatusDefaultFilter",
-                event.target.value
-              )}
-            >
-              <option value="all">Tous</option>
-              <option value="yes">En cours d'achat</option>
-              <option value="no">Pas en cours d'achat</option>
-            </select>
-          </label>
+          <fieldset className="collectionShareDefaultFilters">
+            <legend>Filtres par defaut</legend>
+            <label htmlFor="share-wishlist-buy-status-default-filter">
+              Liste de souhaits
+              <select
+                id="share-wishlist-buy-status-default-filter"
+                disabled={!props.isManagementAllowed}
+                value={management.form.wishlistBuyStatusDefaultFilter}
+                onChange={(event) => management.updateForm(
+                  "wishlistBuyStatusDefaultFilter",
+                  event.target.value
+                )}
+              >
+                <option value="all">Tous</option>
+                <option value="yes">En cours d'achat</option>
+                <option value="no">Pas en cours d'achat</option>
+              </select>
+            </label>
+          </fieldset>
           <button
             type="submit"
             disabled={
