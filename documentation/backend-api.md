@@ -106,6 +106,7 @@ Decoded GUEST claims have this functional shape:
     "wishlist": false,
     "prices": true
   },
+  "wishlist_buy_status_default_filter": "all",
   "iat": 1782288000,
   "exp": 1782374400
 }
@@ -227,7 +228,8 @@ Content-Type: application/json
   "duration_hours": 24,
   "allow_collection": true,
   "allow_wishlist": false,
-  "allow_prices": true
+  "allow_prices": true,
+  "wishlist_buy_status_default_filter": "all"
 }
 ```
 
@@ -236,9 +238,11 @@ characters after trimming; blank values are stored and returned as `null`.
 It is used only for owner display and backend access logs, not for
 authorization. `duration_hours` must be an integer from 1 to 240. All
 permissions must be JSON booleans, and at least collection or wishlist access
-must be enabled. Success returns `201` with a `share` containing recipient,
-dates, permissions, `ACTIVE` status and an absolute `/collection/share/<token>`
-frontend link.
+must be enabled. `wishlist_buy_status_default_filter` is optional and must be
+`all`, `yes` or `no`; it defines the initial wishlist buy-status filter for
+GUEST sessions opening `/wishlist`. Success returns `201` with a `share`
+containing recipient, dates, permissions, this default filter, `ACTIVE` status
+and an absolute `/collection/share/<token>` frontend link.
 
 Creation returns `400` for invalid duration/permissions, `404` when the Bearer
 subject no longer resolves to an owner, `503` when PostgreSQL is unavailable,
@@ -254,8 +258,9 @@ Authorization: Bearer <access_token>
 
 Returns `shares` owned by the connected user, including active, expired and
 revoked entries. Each entry contains `id`, `created_at`, `expires_at`, nullable
-`revoked_at`, nullable `recipient`, `permissions`, `status` and a reconstructed
-signed `link`. Raw tokens are not stored in PostgreSQL.
+`revoked_at`, nullable `recipient`, `permissions`,
+`wishlist_buy_status_default_filter`, `status` and a reconstructed signed
+`link`. Raw tokens are not stored in PostgreSQL.
 
 The list uses `200`, `404` for an unresolved owner, `503` for unavailable
 PostgreSQL and `500` for an unexpected failure.
@@ -909,6 +914,10 @@ Supported query parameters:
 - `wishlist`: optional boolean filter. Only `true` and `false` are accepted.
   Invalid values return `400`. The current collection page sends
   `wishlist=false`;
+- `wishlist_buy_status`: optional wishlist buy-status filter. Accepted values
+  are `all`, `yes` and `no`. `yes` keeps wishlist games whose purchase date,
+  purchase location or purchase price is defined. `no` keeps wishlist games
+  without any of these purchase fields. The default is `all`;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule.

@@ -103,6 +103,7 @@ class CollectionFileDescriptionRules:
         single_sheet: Optional[CollectionSheetLayout],
         multiple_sheets: Optional[CollectionMultipleSheetsConfiguration],
         csv_conf: Optional[CollectionCsvConfiguration] = None,
+        wishlist_configuration: Optional[WishlistImportConfiguration] = None,
     ) -> bool:
         """Indique si une configuration importe un prix d'achat.
 
@@ -110,6 +111,7 @@ class CollectionFileDescriptionRules:
             single_sheet (Optional[CollectionSheetLayout]): Layout simple.
             multiple_sheets (Optional[CollectionMultipleSheetsConfiguration]): Layouts multiples.
             csv_conf (Optional[CollectionCsvConfiguration]): Mapping CSV.
+            wishlist_configuration (Optional[WishlistImportConfiguration]): Configuration wishlist.
 
         Returns:
             bool: `True` lorsqu'un prix doit etre importe.
@@ -119,6 +121,8 @@ class CollectionFileDescriptionRules:
         if multiple_sheets is not None:
             layouts.append(multiple_sheets.shared_layout)
             layouts.extend(sheet.layout for sheet in multiple_sheets.sheets or [])
+        if wishlist_configuration is not None:
+            layouts.append(wishlist_configuration.layout)
         if (
             csv_conf is not None
             and CollectionImportField.PURCHASE_PRICE in csv_conf.column_information

@@ -15,6 +15,7 @@ const INITIAL_SHARE_FORM = Object.freeze({
   allowCollection: true,
   allowWishlist: false,
   allowPrices: false,
+  wishlistBuyStatusDefaultFilter: "all",
 });
 
 /**

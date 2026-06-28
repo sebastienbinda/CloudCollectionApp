@@ -112,6 +112,9 @@ reader architecture rules in `documentation/reader.md`.
 
 - `mode=none`: every imported row gets `wishlist=false`.
 - `mode=sheet`: valid rows from the dedicated sheet get `wishlist=true`.
+  The dedicated sheet can map the same optional fields as collection rows with
+  its own independent `column_information`; absent optional mappings are not
+  inherited from the collection configuration.
 - `mode=column`: accepted pairs are `Oui/Non`, `O/N`, `True/False`, `Yes/No`
   and `Y/N`, case-insensitively. Empty means `false`.
 - An invalid non-empty wishlist value skips that row and increments

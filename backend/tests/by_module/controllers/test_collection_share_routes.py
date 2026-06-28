@@ -42,6 +42,7 @@ class FakeCollectionShareManagementRouteService:
         allow_wishlist,
         allow_prices,
         recipient=None,
+        wishlist_buy_status_default_filter="all",
     ):
         """Retourne un partage cree factice.
 
@@ -52,6 +53,7 @@ class FakeCollectionShareManagementRouteService:
             allow_wishlist (bool): Permission wishlist.
             allow_prices (bool): Permission prix.
             recipient (str | None): Destinataire du partage.
+            wishlist_buy_status_default_filter (str): Filtre wishlist par defaut.
 
         Returns:
             dict: Partage serialisable.
@@ -65,6 +67,7 @@ class FakeCollectionShareManagementRouteService:
             allow_wishlist,
             allow_prices,
             recipient,
+            wishlist_buy_status_default_filter,
         ))
         if type(duration_hours) is not int:
             raise ValueError("duration_hours invalide.")
@@ -111,6 +114,7 @@ class FakeCollectionShareManagementRouteService:
             "revoked_at": "2030-01-01T11:00:00" if status == "REVOKED" else None,
             "permissions": {"collection": True, "wishlist": False, "prices": True},
             "recipient": "Alice",
+            "wishlist_buy_status_default_filter": "all",
             "status": status,
             "link": f"https://collection.example/collection/share/token-{share_id}",
         }
@@ -166,12 +170,14 @@ class CollectionShareRoutesTest(BaseAppRoutesTest):
                 "allow_wishlist": False,
                 "allow_prices": True,
                 "recipient": "Alice",
+                "wishlist_buy_status_default_filter": "yes",
             },
         )
 
         self.assertEqual(201, response.status_code)
         self.assertEqual("user@example.com", self.service.calls[0][1])
         self.assertEqual("Alice", self.service.calls[0][6])
+        self.assertEqual("yes", self.service.calls[0][7])
         self.assertEqual("Alice", response.get_json()["share"]["recipient"])
         self.assertIn("/collection/share/", response.get_json()["share"]["link"])
 

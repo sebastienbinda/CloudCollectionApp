@@ -13,7 +13,7 @@
  * Description : mutations de layout frontend pour l'import de collection.
  */
 
-import { applyDataRangeDefaults } from "./importSpreadsheetColumnTools";
+import { applyDataRangeDefaults } from "./importSpreadsheetColumnTools.js";
 
 /**
  * Met a jour un layout et applique les colonnes deduites si la plage change.

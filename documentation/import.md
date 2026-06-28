@@ -230,7 +230,10 @@ database structure in `documentation/database.md`, and frontend navigation in
   `wishlist=false`.
 - `wishlist.mode = "sheet"` reads a dedicated sheet with its own `sheet_name`,
   `data_range`, `header_row` and `column_information`; every valid row from
-  that sheet is imported with `wishlist=true`. This mode is ODS-only.
+  that sheet is imported with `wishlist=true`. This mode is ODS-only. Its
+  layout may configure the same optional game and private-information fields as
+  the collection layouts, but those column mappings remain independent from the
+  collection layouts and are never copied when missing.
 - `wishlist.mode = "column"` reads a `wishlist` column from every collection
   layout or from `mapping.wishlist` for CSV.
 - Accepted wishlist column values are `Oui/Non`, `O/N`, `True/False`,
@@ -269,6 +272,10 @@ database structure in `documentation/database.md`, and frontend navigation in
   optional. When one of these columns is configured, an empty cell must be
   imported as `NULL` or the field's safe empty value without rejecting the row
   or the complete import.
+- In dedicated wishlist-sheet mode, optional mappings configured under
+  `wishlist.column_information` are applied only to wishlist rows. Missing
+  wishlist optional mappings must not inherit values from the collection
+  layouts.
 - The frontend must identify the mandatory fields and reject an incomplete
   configuration before submission. The backend remains authoritative and must
   validate the same mandatory fields before accepting the configuration.

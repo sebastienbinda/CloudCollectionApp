@@ -30,6 +30,21 @@ class GuestSessionViewPolicy {
     this.canViewPrices = !this.isGuest || permissions.prices === true;
     this.canAccessConfiguration = !this.isGuest;
     this.canMutate = !this.isGuest;
+    this.wishlistBuyStatusDefaultFilter = this.normalizeWishlistBuyStatusDefaultFilter(
+      this.payload.wishlist_buy_status_default_filter
+    );
+  }
+
+  /**
+   * Normalise le filtre d'achat wishlist par defaut du partage.
+   *
+   * @param {string} value - Valeur brute issue du token signe.
+   * @returns {"all"|"yes"|"no"} Filtre supporte par la page wishlist.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  normalizeWishlistBuyStatusDefaultFilter(value) {
+    const normalizedValue = String(value || "").trim().toLowerCase();
+    return ["all", "yes", "no"].includes(normalizedValue) ? normalizedValue : "all";
   }
 
   /**
@@ -80,6 +95,7 @@ class GuestSessionViewPolicy {
       canViewPrices: this.canViewPrices,
       canAccessConfiguration: this.canAccessConfiguration,
       canMutate: this.canMutate,
+      wishlistBuyStatusDefaultFilter: this.wishlistBuyStatusDefaultFilter,
     });
   }
 }

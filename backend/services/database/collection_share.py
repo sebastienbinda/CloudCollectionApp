@@ -33,6 +33,7 @@ class CollectionShare(DatabaseModelBase):
         allow_collection (bool): Autorisation de consulter la collection.
         allow_wishlist (bool): Autorisation de consulter la liste de souhaits.
         allow_prices (bool): Autorisation de consulter les prix.
+        wishlist_buy_status_default_filter (str): Filtre d'achat wishlist par defaut.
     """
 
     __tablename__ = "t_collection_share"
@@ -40,6 +41,10 @@ class CollectionShare(DatabaseModelBase):
         CheckConstraint(
             "expires_at > created_at",
             name="ck_t_collection_share_expiration",
+        ),
+        CheckConstraint(
+            "wishlist_buy_status_default_filter IN ('all', 'yes', 'no')",
+            name="ck_t_collection_share_wishlist_buy_status_default_filter",
         ),
         Index("ix_t_collection_share_owner_user_id", "owner_user_id"),
     )
@@ -61,3 +66,8 @@ class CollectionShare(DatabaseModelBase):
     allow_collection: Mapped[bool] = mapped_column(Boolean, nullable=False)
     allow_wishlist: Mapped[bool] = mapped_column(Boolean, nullable=False)
     allow_prices: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    wishlist_buy_status_default_filter: Mapped[str] = mapped_column(
+        String(8),
+        nullable=False,
+        default="all",
+    )

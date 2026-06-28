@@ -26,7 +26,8 @@ La version publique est disponible sur <https://www.cloud-collection.fr>.
 - Import de collection utilisateur depuis LibreOffice Calc `.ods` ou CSV.
 - Consultation de la collection personnelle avec statistiques, filtres, tris,
   details de jeux, prix, etats, regions, notes et descriptions privees.
-- Liste de souhaits alimentee par les imports utilisateur.
+- Liste de souhaits alimentee par les imports utilisateur, avec filtrage des
+  jeux en cours d'achat.
 - Bibliotheque commune de plateformes, studios et jeux, avec recherche et pages
   de detail.
 - Proposition et moderation d'images de plateformes.

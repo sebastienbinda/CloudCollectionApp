@@ -15,6 +15,9 @@ rules in `documentation/authentication.md`, collection filtering in
 - A share must allow the owned collection, the wishlist, or both. Price access
   is independent and never grants access to a category by itself.
 - Share duration is an integer from 1 to 240 hours.
+- A share stores a wishlist buy-status default filter, `all`, `yes` or `no`.
+  It only initializes the GUEST wishlist view and never restricts backend
+  authorization.
 - PostgreSQL stores the share identifier, owner, dates, optional recipient and
   permissions, never a raw link token or GUEST Bearer token.
 - Backend checks remain authoritative. Frontend menu and page restrictions are
@@ -24,8 +27,9 @@ rules in `documentation/authentication.md`, collection filtering in
 
 1. The owner creates a share with `POST /api/collection-shares`.
 2. Backend persists `t_collection_share`, including the optional recipient
-   label used for owner display and access logs, signs a link token and returns
-   an absolute `<FRONTEND_PUBLIC_URL>/collection/share/<token>` link.
+   label used for owner display and access logs and the GUEST wishlist default
+   filter, signs a link token and returns an absolute
+   `<FRONTEND_PUBLIC_URL>/collection/share/<token>` link.
 3. The visitor opens the transient public frontend route. Any existing local
    session is cleared and the link token is exchanged without Authorization at
    `POST /api/auth/collection-share/session`.
@@ -51,8 +55,9 @@ The link token and the GUEST Bearer are distinct signed credentials:
   `profile=GUEST`, `iat`, `exp`; it is accepted only by the public exchange
   endpoint and is rejected as a Bearer;
 - GUEST Bearer: standard `sub`, `display_name`, `profile`, `iat`, `exp`, plus
-  `collection_share_id`, `owner_user_id`, `owner_pseudonym`, and
-  `permissions.collection`, `permissions.wishlist`, `permissions.prices`.
+  `collection_share_id`, `owner_user_id`, `owner_pseudonym`,
+  `wishlist_buy_status_default_filter`, and `permissions.collection`,
+  `permissions.wishlist`, `permissions.prices`.
 
 The GUEST Bearer expires no later than the persisted share. Link and Bearer
 signatures use the existing `AuthTokenService`; neither credential is logged.
@@ -97,6 +102,9 @@ upload remain unavailable to GUEST.
   a `USER` with an imported collection and discovered share-management rights.
 - Owner management lets the owner set an optional recipient label when creating
   a share and displays that label in the existing-share list.
+- Owner management lets the owner choose the initial GUEST wishlist buy-status
+  filter: all wished games, games with at least one purchase-in-progress field,
+  or games without any purchase-in-progress field.
 - GUEST identity is `Invité de <pseudonyme>` with the yellow desktop/mobile
   treatment.
 - Collection and Wishlist menu entries are omitted when their respective claim
@@ -104,6 +112,10 @@ upload remain unavailable to GUEST.
 - Configuration, all Configuration subpages, add/edit/delete, import,
   reinitialization and image proposal are hidden from GUEST; direct navigation
   redirects to the first allowed category, otherwise About.
+- When a GUEST opens `/wishlist` without an explicit
+  `wishlist_buy_status` query parameter, frontend initializes the filter from
+  the signed `wishlist_buy_status_default_filter` claim. The GUEST can then
+  change it, and the selected value is kept in the URL.
 - The public link route is transient: the raw link token must be removed from
   browser history before any shared page is rendered.
 

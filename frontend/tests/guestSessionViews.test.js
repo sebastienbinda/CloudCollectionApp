@@ -17,6 +17,7 @@ test("derive l'identite et les sous-titres GUEST avec le pseudonyme proprietaire
     profile: "GUEST",
     owner_pseudonym: "Sébastien",
     permissions: { collection: true, wishlist: true, prices: false },
+    wishlist_buy_status_default_filter: "yes",
   }).toViewModel("ignored");
 
   assert.equal(policy.identityLabel, "Invité de Sébastien");
@@ -25,6 +26,7 @@ test("derive l'identite et les sous-titres GUEST avec le pseudonyme proprietaire
   assert.equal(policy.canViewPrices, false);
   assert.equal(policy.canAccessConfiguration, false);
   assert.equal(policy.canMutate, false);
+  assert.equal(policy.wishlistBuyStatusDefaultFilter, "yes");
 });
 
 test("reproduit exactement les combinaisons de menus collection et wishlist", () => {
@@ -92,4 +94,28 @@ test("ne recree pas les champs de prix absents du payload GUEST", () => {
 
   assert.equal(Object.hasOwn(game, "Prix d'achat"), false);
   assert.equal(Object.hasOwn(game, "priceUnit"), false);
+});
+
+test("normalise le filtre en cours d'achat de la wishlist", () => {
+  assert.equal(
+    new GuestSessionViewPolicy({
+      profile: "GUEST",
+      wishlist_buy_status_default_filter: "yes",
+    }).wishlistBuyStatusDefaultFilter,
+    "yes"
+  );
+  assert.equal(
+    new GuestSessionViewPolicy({
+      profile: "GUEST",
+      wishlist_buy_status_default_filter: "no",
+    }).wishlistBuyStatusDefaultFilter,
+    "no"
+  );
+  assert.equal(
+    new GuestSessionViewPolicy({
+      profile: "GUEST",
+      wishlist_buy_status_default_filter: "unexpected",
+    }).wishlistBuyStatusDefaultFilter,
+    "all"
+  );
 });

@@ -17,6 +17,7 @@ from typing import Any, Callable
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
+from .user_collection_query_contract import WISHLIST_BUY_STATUS_VALUES
 from .collection_share_not_found_error import CollectionShareNotFoundError
 from .collection_share_owner_not_found_error import CollectionShareOwnerNotFoundError
 
@@ -73,6 +74,7 @@ class CollectionShareManagementService:
         allow_wishlist: Any,
         allow_prices: Any,
         recipient: Any = None,
+        wishlist_buy_status_default_filter: Any = "all",
     ) -> dict[str, Any]:
         """Cree un partage valide pour le proprietaire connecte.
 
@@ -83,6 +85,7 @@ class CollectionShareManagementService:
             allow_wishlist (Any): Permission wishlist brute.
             allow_prices (Any): Permission prix brute.
             recipient (Any): Destinataire brut du partage.
+            wishlist_buy_status_default_filter (Any): Filtre wishlist par defaut.
 
         Returns:
             dict[str, Any]: Partage serialise avec son lien signe.
@@ -100,6 +103,11 @@ class CollectionShareManagementService:
             allow_prices,
         )
         normalized_recipient = self._normalize_recipient(recipient)
+        normalized_wishlist_buy_status_default_filter = (
+            self._normalize_wishlist_buy_status_default_filter(
+                wishlist_buy_status_default_filter,
+            )
+        )
         engine = self._require_engine()
         owner_user_id = self._resolve_owner_user_id(owner_subject)
         created_at = self.clock()
@@ -113,6 +121,7 @@ class CollectionShareManagementService:
                 permissions["collection"],
                 permissions["wishlist"],
                 permissions["prices"],
+                normalized_wishlist_buy_status_default_filter,
                 normalized_recipient,
             )
         return self._serialize_share(row, "ACTIVE")
@@ -221,6 +230,23 @@ class CollectionShareManagementService:
             raise ValueError("recipient doit contenir 256 caracteres maximum.")
         return normalized_recipient
 
+    def _normalize_wishlist_buy_status_default_filter(self, value: Any) -> str:
+        normalized_value = str(value or "all").strip().lower()
+        aliases = {
+            "all": "all",
+            "tous": "all",
+            "yes": "yes",
+            "oui": "yes",
+            "no": "no",
+            "non": "no",
+        }
+        resolved_value = aliases.get(normalized_value)
+        if resolved_value not in WISHLIST_BUY_STATUS_VALUES:
+            raise ValueError(
+                "wishlist_buy_status_default_filter doit valoir all, yes ou no."
+            )
+        return resolved_value
+
     def _serialize_share(self, row: dict[str, Any], status: str) -> dict[str, Any]:
         share_token = self.guest_authentication_service.create_share_link_token(
             int(row["id"]),
@@ -237,6 +263,9 @@ class CollectionShareManagementService:
                 "wishlist": bool(row["allow_wishlist"]),
                 "prices": bool(row["allow_prices"]),
             },
+            "wishlist_buy_status_default_filter": (
+                row.get("wishlist_buy_status_default_filter") or "all"
+            ),
             "status": status,
             "link": f"{self.frontend_public_url}/collection/share/{share_token}",
         }

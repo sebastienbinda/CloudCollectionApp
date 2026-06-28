@@ -158,12 +158,17 @@ class CollectionShareRepositoryTest(unittest.TestCase):
                 "allow_collection",
                 "allow_wishlist",
                 "allow_prices",
+                "wishlist_buy_status_default_filter",
             },
             column_names,
         )
         self.assertNotIn("token", column_names)
         self.assertIn("ix_t_collection_share_owner_user_id", index_names)
         self.assertIn("ck_t_collection_share_expiration", constraint_names)
+        self.assertIn(
+            "ck_t_collection_share_wishlist_buy_status_default_filter",
+            constraint_names,
+        )
         owner_foreign_key = next(iter(table.c.owner_user_id.foreign_keys))
         self.assertEqual("CASCADE", owner_foreign_key.ondelete)
 
@@ -197,6 +202,7 @@ class CollectionShareRepositoryTest(unittest.TestCase):
         self.assertIn("t_collection_share", sql)
         self.assertNotIn("token", sql.lower())
         self.assertNotIn("token", parameters)
+        self.assertEqual("all", parameters["wishlist_buy_status_default_filter"])
         self.assertEqual("Famille", parameters["recipient"])
         self.assertEqual(12, parameters["owner_user_id"])
         self.assertTrue(parameters["allow_collection"])
@@ -337,6 +343,7 @@ class CollectionShareRepositoryTest(unittest.TestCase):
             "allow_collection": True,
             "allow_wishlist": False,
             "allow_prices": True,
+            "wishlist_buy_status_default_filter": "all",
         }
 
 

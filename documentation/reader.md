@@ -81,6 +81,9 @@ Game rows follow these rules:
 - optional private fields may map purchase price, location/date, note,
   condition, manual, collector, steelbook, digital version, region and
   description into `CollectionImportGame`;
+- when a dedicated wishlist sheet is configured, it may map the same optional
+  fields with its own `column_information`; missing wishlist mappings are not
+  inferred from collection layouts;
 - purchase price must be non-negative, accepts `,` or `.` as decimal separator,
   truncates additional decimal digits toward the lower value to two digits, and
   keeps the file-level ISO `price_unit` without conversion; a negative or

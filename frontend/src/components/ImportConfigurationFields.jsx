@@ -14,6 +14,10 @@
  */
 import ImportLayoutFields from "./ImportLayoutFields";
 import ImportCsvConfigurationFields from "./ImportCsvConfigurationFields";
+import {
+  collectionColumnFields,
+  wishlistSheetColumnFields,
+} from "../hooks/collection/importConfigurationBuilder";
 
 /**
  * Affiche les champs frontend de configuration d'import.
@@ -175,7 +179,7 @@ function WishlistFields({
           </label>
           <ImportLayoutFields
             layout={configuration.wishlist.layout}
-            columnFields={["name", "platform", "studio", "release_date"]}
+            columnFields={wishlistSheetColumnFields()}
             requiredFields={["name", "platform"]}
             onLayoutChange={onWishlistLayoutChange}
             onLayoutColumnChange={onWishlistLayoutColumnChange}
@@ -191,27 +195,6 @@ const modeLabels = Object.freeze({
   sheet: "Onglet dedie",
   column: "Colonne",
 });
-
-/**
- * Retourne les colonnes de collection a afficher.
- *
- * @param {Object} configuration - Configuration d'import courante.
- * @param {boolean} includePlatformColumn - Indique si la plateforme est une colonne.
- * @returns {string[]} Champs colonnes.
- */
-function collectionColumnFields(configuration, includePlatformColumn) {
-  const fields = includePlatformColumn
-    ? ["name", "platform", "studio", "release_date"]
-    : ["name", "studio", "release_date"];
-  if (configuration.wishlist.mode === "column") {
-    fields.push("wishlist");
-  }
-  fields.push(
-    "purchase_price", "buy_location", "buy_date", "grade", "condition",
-    "has_manual", "is_collector", "has_steelbook", "is_digital", "region", "description"
-  );
-  return fields;
-}
 
 /**
  * Affiche une selection d'onglet simple.

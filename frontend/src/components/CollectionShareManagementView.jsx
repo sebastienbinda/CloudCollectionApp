@@ -40,6 +40,22 @@ function formatSharePermissions(permissions = {}) {
 }
 
 /**
+ * Retourne le libelle lisible du filtre wishlist par defaut.
+ *
+ * @param {string} value - Valeur backend du filtre.
+ * @returns {string} Libelle francais du filtre.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatWishlistBuyStatusDefaultFilter(value) {
+  const labels = {
+    all: "Tous",
+    yes: "En cours d'achat",
+    no: "Pas en cours d'achat",
+  };
+  return labels[String(value || "all").trim().toLowerCase()] || labels.all;
+}
+
+/**
  * Affiche le formulaire et les partages du proprietaire connecte.
  *
  * @param {Object} props - Session, navigation et etat du hook de partage.
@@ -134,6 +150,25 @@ function CollectionShareManagementView(props) {
               Informations de prix
             </label>
           </fieldset>
+          <fieldset className="collectionShareDefaultFilters">
+            <legend>Filtres par defaut</legend>
+            <label htmlFor="share-wishlist-buy-status-default-filter">
+              Liste de souhaits
+              <select
+                id="share-wishlist-buy-status-default-filter"
+                disabled={!props.isManagementAllowed}
+                value={management.form.wishlistBuyStatusDefaultFilter}
+                onChange={(event) => management.updateForm(
+                  "wishlistBuyStatusDefaultFilter",
+                  event.target.value
+                )}
+              >
+                <option value="all">Tous</option>
+                <option value="yes">En cours d'achat</option>
+                <option value="no">Pas en cours d'achat</option>
+              </select>
+            </label>
+          </fieldset>
           <button
             type="submit"
             disabled={
@@ -173,6 +208,12 @@ function CollectionShareManagementView(props) {
                   <div><dt>Cree le</dt><dd>{formatShareDate(share.created_at)}</dd></div>
                   <div><dt>Expire le</dt><dd>{formatShareDate(share.expires_at)}</dd></div>
                   <div><dt>Permissions</dt><dd>{formatSharePermissions(share.permissions)}</dd></div>
+                  <div>
+                    <dt>Filtre wishlist</dt>
+                    <dd>{formatWishlistBuyStatusDefaultFilter(
+                      share.wishlist_buy_status_default_filter
+                    )}</dd>
+                  </div>
                 </dl>
                 <div className="collectionShareActions">
                   <button
@@ -200,5 +241,5 @@ function CollectionShareManagementView(props) {
   );
 }
 
-export { formatShareDate, formatSharePermissions };
+export { formatShareDate, formatSharePermissions, formatWishlistBuyStatusDefaultFilter };
 export default CollectionShareManagementView;

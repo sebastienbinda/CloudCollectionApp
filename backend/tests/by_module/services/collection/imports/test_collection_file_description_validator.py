@@ -83,6 +83,43 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
         self.assertEqual("EUR", description.price_unit)
         self.assertEqual("EUR", description.to_dict()["price_unit"])
 
+    def test_wishlist_sheet_purchase_price_requires_price_unit(self):
+        """Verifie l'unite globale quand seul l'onglet wishlist configure un prix.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le controle de l'onglet wishlist.
+        """
+
+        payload = self._single_sheet_payload()
+        payload["wishlist"] = {
+            "mode": "sheet",
+            "sheet_name": "Wishlist",
+            "data_range": "A1:E200",
+            "header_row": 1,
+            "column_information": {
+                "name": "A",
+                "platform": "B",
+                "studio": "C",
+                "release_date": "D",
+                "purchase_price": "E",
+            },
+        }
+
+        with self.assertRaises(CollectionFileDescriptionValidationError) as context:
+            self.validator.validate(payload)
+        self.assertIn("price_unit est requis", " ".join(context.exception.details))
+
+        payload["price_unit"] = "EUR"
+        description = self.validator.validate(payload)
+
+        self.assertEqual("E", description.wishlist.layout.column_information[
+            CollectionImportField.PURCHASE_PRICE
+        ])
+        self.assertEqual("EUR", description.price_unit)
+
     def test_valid_csv_configuration(self):
         """Verifie une configuration CSV valide.
 
