@@ -34,10 +34,13 @@ trap cleanup EXIT
 
 mkdir -p "$OUTPUT_DIR"
 mkdir -p "${PACKAGE_DIR}/runtime"
+mkdir -p "${PACKAGE_DIR}/runtime/.age"
+mkdir -p "${PACKAGE_DIR}/runtime/env"
 
 install -m 0755 "${PROJECT_ROOT}/runtime/start.sh" "${PACKAGE_DIR}/runtime/start.sh"
 install -m 0755 "${PROJECT_ROOT}/runtime/stop.sh" "${PACKAGE_DIR}/runtime/stop.sh"
 install -m 0755 "${PROJECT_ROOT}/runtime/secure.sh" "${PACKAGE_DIR}/runtime/secure.sh"
+install -m 0644 "${PROJECT_ROOT}/runtime/age_identity_cleanup.sh" "${PACKAGE_DIR}/runtime/age_identity_cleanup.sh"
 install -m 0755 "${PROJECT_ROOT}/runtime/prepare_directories.sh" "${PACKAGE_DIR}/runtime/prepare_directories.sh"
 install -m 0644 "${PROJECT_ROOT}/runtime/docker-compose.online.yml" "${PACKAGE_DIR}/runtime/docker-compose.online.yml"
 install -m 0644 "${PROJECT_ROOT}/runtime/.env.production.example" "${PACKAGE_DIR}/runtime/.env.production.example"

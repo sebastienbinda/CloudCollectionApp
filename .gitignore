@@ -18,7 +18,6 @@ runtime-data/
 cloud-application-deploy.zip
 runtime/.runtime/
 runtime/.env
-runtime/secrets-src/
-runtime/secrets-out/
-runtime/secrets.tar.gz.age
+runtime/.age/
+runtime/env/
 age-identity*.txt

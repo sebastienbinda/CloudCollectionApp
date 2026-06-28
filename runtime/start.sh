@@ -23,8 +23,10 @@ ENV_PRODUCTION_EXAMPLE_FILE="${RUNTIME_DIR}/.env.production.example"
 ENV_EXAMPLE_FILE="$ENV_LOCAL_EXAMPLE_FILE"
 ENV_FILE="${RUNTIME_DIR}/.env"
 PREPARE_DIRECTORIES_SCRIPT="${RUNTIME_DIR}/prepare_directories.sh"
-DEFAULT_AGE_SECRETS_ARCHIVE_FILE="${RUNTIME_DIR}/secrets.tar.gz.age"
-PRODUCTION_SECRETS_TMP_PARENT="${PRODUCTION_SECRETS_TMP_PARENT:-/dev/shm}"
+AGE_IDENTITY_CLEANUP_SCRIPT="${RUNTIME_DIR}/age_identity_cleanup.sh"
+AGE_SECRETS_ARCHIVE_FILE="${RUNTIME_DIR}/env/secrets.tar.gz.age"
+AGE_SECRETS_IDENTITY_FILE="${RUNTIME_DIR}/.age/identity.txt"
+PRODUCTION_SECRETS_TMP_PARENT="/dev/shm"
 PRODUCTION_SECRETS_DIR=""
 
 START_MODE="local"
@@ -110,8 +112,12 @@ start_docker() {
 
   if [ "$DEPLOY_ENV" = "online" ]; then
     echo "Starting online Docker stack..."
-    DOCKER_SECRETS_DIR="$PRODUCTION_SECRETS_DIR" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" up -d "${docker_options[@]}"
+    if ! DOCKER_SECRETS_DIR="$PRODUCTION_SECRETS_DIR" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" up -d "${docker_options[@]}"; then
+      cleanup_production_secrets
+      abort_start "Le demarrage Docker Compose de production a echoue."
+    fi
     cleanup_production_secrets
+    prompt_remove_age_identity_after_start "$AGE_SECRETS_IDENTITY_FILE"
   else
     echo "Starting local Docker stack on web port ${WEB_PORT}..."
     WEB_PORT="$WEB_PORT" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_LOCAL_FILE" up -d "${docker_options[@]}"
@@ -128,57 +134,10 @@ abort_start() {
   exit 1
 }
 
-update_repository_before_docker_start() {
-  # Description : synchronise le depot Git avant le demarrage Docker.
-  # Parametres : aucun.
-  # Retour : void, annule le demarrage si un merge est necessaire.
-  local upstream_ref
-  local local_revision
-  local remote_revision
-  local common_revision
-
-  echo "Verification du depot Git..."
-
-  if ! git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    echo "Archive de deploiement detectee: synchronisation Git ignoree."
-    return
-  fi
-
-  upstream_ref="$(git -C "$PROJECT_ROOT" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"
-  if [ -z "$upstream_ref" ]; then
-    abort_start "Aucune branche distante de suivi n'est configuree. Impossible de faire le pull avant Docker."
-  fi
-
-  echo "Recuperation des dernieres informations depuis ${upstream_ref}..."
-  if ! git -C "$PROJECT_ROOT" fetch --prune; then
-    abort_start "La recuperation du depot distant a echoue. Verifiez le reseau ou vos droits Git."
-  fi
-
-  local_revision="$(git -C "$PROJECT_ROOT" rev-parse HEAD)"
-  remote_revision="$(git -C "$PROJECT_ROOT" rev-parse '@{u}')"
-  common_revision="$(git -C "$PROJECT_ROOT" merge-base HEAD '@{u}')"
-
-  if [ "$local_revision" = "$remote_revision" ]; then
-    echo "Depot Git deja a jour."
-    return
-  fi
-
-  if [ "$local_revision" = "$common_revision" ]; then
-    echo "Mise a jour du depot par fast-forward..."
-    if ! git -C "$PROJECT_ROOT" pull --ff-only; then
-      abort_start "Le pull fast-forward a echoue. Verifiez les modifications locales avant de relancer."
-    fi
-    echo "Depot Git mis a jour."
-    return
-  fi
-
-  if [ "$remote_revision" = "$common_revision" ]; then
-    echo "La branche locale contient des commits non presents sur le distant. Aucun pull necessaire."
-    return
-  fi
-
-  abort_start "La branche locale et ${upstream_ref} ont diverge. Un merge ou rebase manuel est necessaire."
-}
+if [ ! -f "$AGE_IDENTITY_CLEANUP_SCRIPT" ]; then
+  abort_start "Le script ${AGE_IDENTITY_CLEANUP_SCRIPT} est introuvable."
+fi
+source "$AGE_IDENTITY_CLEANUP_SCRIPT"
 
 env_variable_exists() {
   # Description : indique si une variable est deja presente dans runtime/.env.
@@ -293,20 +252,6 @@ read_env_value_or_default() {
   printf '%s\n' "$default_value"
 }
 
-resolve_project_path() {
-  # Description : transforme un chemin relatif en chemin ancre sur la racine du projet.
-  # Parametres : $1 chemin absolu ou relatif.
-  # Retour : ecrit le chemin resolu sur stdout.
-  local configured_path="$1"
-
-  if [ -z "$configured_path" ] || [[ "$configured_path" = /* ]]; then
-    printf '%s\n' "$configured_path"
-    return
-  fi
-
-  printf '%s\n' "${PROJECT_ROOT}/${configured_path#./}"
-}
-
 read_required_secret_file() {
   # Description : lit un fichier de secret prepare depuis l'archive age.
   # Parametres : $1 nom du fichier secret.
@@ -324,17 +269,25 @@ read_required_secret_file() {
 }
 
 validate_runtime_user() {
-  # Description : valide l'UID/GID utilises par les conteneurs applicatifs.
+  # Description : valide les UID/GID utilises par les conteneurs et les bind mounts hotes.
   # Parametres : aucun.
   # Retour : void, annule si les valeurs ne sont pas numeriques.
   local runtime_uid
   local runtime_gid
+  local runtime_host_uid
+  local runtime_host_gid
 
   runtime_uid="$(read_env_value_or_default "RUNTIME_UID" "10001")"
   runtime_gid="$(read_env_value_or_default "RUNTIME_GID" "10001")"
+  runtime_host_uid="$(read_env_value_or_default "RUNTIME_HOST_UID" "$runtime_uid")"
+  runtime_host_gid="$(read_env_value_or_default "RUNTIME_HOST_GID" "$runtime_gid")"
 
   if [[ ! "$runtime_uid" =~ ^[0-9]+$ ]] || [[ ! "$runtime_gid" =~ ^[0-9]+$ ]]; then
     abort_start "RUNTIME_UID et RUNTIME_GID doivent etre des identifiants numeriques."
+  fi
+
+  if [[ ! "$runtime_host_uid" =~ ^[0-9]+$ ]] || [[ ! "$runtime_host_gid" =~ ^[0-9]+$ ]]; then
+    abort_start "RUNTIME_HOST_UID et RUNTIME_HOST_GID doivent etre des identifiants numeriques."
   fi
 }
 
@@ -353,36 +306,29 @@ decrypt_age_secrets_archive() {
   # Description : dechiffre l'archive age dans un repertoire temporaire de secrets.
   # Parametres : aucun.
   # Retour : void, prepare les fichiers de secrets pour Docker Compose.
-  local archive_file
-  local identity_file
   local age_command=("age" "--decrypt")
-
-  archive_file="$(resolve_project_path "$(read_env_value_or_default "AGE_SECRETS_ARCHIVE_FILE" "$DEFAULT_AGE_SECRETS_ARCHIVE_FILE")")"
-  identity_file="$(resolve_project_path "$(read_env_value_or_default "AGE_SECRETS_IDENTITY_FILE" "")")"
 
   if ! command -v age >/dev/null 2>&1; then
     abort_start "La commande age est requise pour dechiffrer les secrets de production."
   fi
 
-  if [ ! -f "$archive_file" ]; then
-    abort_start "Archive de secrets age introuvable: ${archive_file}"
+  if [ ! -f "$AGE_SECRETS_ARCHIVE_FILE" ]; then
+    abort_start "Archive de secrets age introuvable: ${AGE_SECRETS_ARCHIVE_FILE}"
   fi
 
-  if [ -n "$identity_file" ]; then
-    if [ ! -f "$identity_file" ]; then
-      abort_start "Cle privee age introuvable: ${identity_file}"
-    fi
-    age_command+=("--identity" "$identity_file")
+  if [ ! -f "$AGE_SECRETS_IDENTITY_FILE" ]; then
+    abort_start "Cle privee age introuvable: ${AGE_SECRETS_IDENTITY_FILE}"
   fi
+  age_command+=("--identity" "$AGE_SECRETS_IDENTITY_FILE")
 
   if [ ! -d "$PRODUCTION_SECRETS_TMP_PARENT" ]; then
-    abort_start "Le repertoire temporaire ${PRODUCTION_SECRETS_TMP_PARENT} est introuvable. Configurez PRODUCTION_SECRETS_TMP_PARENT vers un tmpfs prive."
+    abort_start "Le repertoire temporaire ${PRODUCTION_SECRETS_TMP_PARENT} est introuvable."
   fi
 
   PRODUCTION_SECRETS_DIR="$(mktemp -d "${PRODUCTION_SECRETS_TMP_PARENT}/cloudcollectionapp-secrets.XXXXXX")"
   chmod 700 "$PRODUCTION_SECRETS_DIR"
 
-  if ! "${age_command[@]}" "$archive_file" | tar -xzf - -C "$PRODUCTION_SECRETS_DIR"; then
+  if ! "${age_command[@]}" "$AGE_SECRETS_ARCHIVE_FILE" | tar -xzf - -C "$PRODUCTION_SECRETS_DIR"; then
     abort_start "Le dechiffrement ou l'extraction de l'archive de secrets a echoue."
   fi
 
@@ -532,7 +478,6 @@ validate_production_environment_before_docker_start() {
 
 if [ "$START_MODE" = "docker" ]; then
   if [ "$DEPLOY_ENV" = "online" ]; then
-    update_repository_before_docker_start
     validate_production_environment_before_docker_start
     validate_runtime_user
     prepare_runtime_directories

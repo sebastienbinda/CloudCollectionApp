@@ -160,15 +160,18 @@ docker compose -f docker/docker-compose.local.yml build web
 ## Deploiement Production
 
 La production utilise les images publiees dans GitHub Container Registry et une
-archive de deploiement minimale `cloud-application-deploy.zip`. Cette archive est
-generee par la CI sur les tags de release `X.Y.Z` et contient uniquement :
+archive de deploiement minimale `cloud-application-deploy-<version>.zip`. Cette
+archive est generee par la CI sur les tags de release `X.Y.Z`, publiee comme
+asset de release GitHub, et contient uniquement :
 
 - `runtime/start.sh`
 - `runtime/stop.sh`
 - `runtime/secure.sh`
+- `runtime/age_identity_cleanup.sh`
 - `runtime/prepare_directories.sh`
 - `runtime/docker-compose.online.yml`
 - `runtime/.env.production.example`
+- les dossiers vides `runtime/.age/` et `runtime/env/`
 
 Images publiees :
 
@@ -180,12 +183,19 @@ ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest
 
 ### 1. Telecharger Et Extraire L'Archive
 
-Depuis la page de pipeline GitHub Actions ou GitLab CI du tag de release,
-telecharger l'artefact `cloud-application-deploy.zip`, puis l'extraire sur le
-serveur :
+Depuis le serveur de production, telecharger la derniere archive de deploiement
+publiee en release GitHub, puis l'extraire :
 
 ```bash
-unzip cloud-application-deploy.zip
+REPOSITORY="sebastienbinda/cloudcollectionapp"
+LATEST_RELEASE_URL="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/${REPOSITORY}/releases/latest")"
+APP_VERSION="${LATEST_RELEASE_URL##*/}"
+
+curl -fL \
+  -o "cloud-application-deploy-${APP_VERSION}.zip" \
+  "https://github.com/${REPOSITORY}/releases/download/${APP_VERSION}/cloud-application-deploy-${APP_VERSION}.zip"
+
+unzip -o "cloud-application-deploy-${APP_VERSION}.zip"
 cd cloud-application-deploy
 cp runtime/.env.production.example runtime/.env
 ```
@@ -195,6 +205,10 @@ Configurer ensuite `runtime/.env`, notamment :
 - `APP_VERSION` avec le tag applicatif a deployer.
 - `RUNTIME_UID` et `RUNTIME_GID` avec l'identite Unix non-root utilisee par les
   conteneurs applicatifs `backend` et `web`.
+- `RUNTIME_HOST_UID` et `RUNTIME_HOST_GID` avec l'identite Unix vue par l'hote
+  pour les repertoires bind mountes. Sans Docker `userns-remap`, garder les
+  memes valeurs que `RUNTIME_UID` et `RUNTIME_GID`. Avec Docker `userns-remap`,
+  renseigner les UID/GID remappes de l'hote.
 - `DNS_NAME`, `BACKEND_PUBLIC_URL`, `FRONTEND_PUBLIC_URL`.
 - `APPLICATION_WORKDIR` avec le repertoire parent commun des donnees de travail
   de l'application.
@@ -202,8 +216,6 @@ Configurer ensuite `runtime/.env`, notamment :
   `POSTGRES_DATA_HOST_DIR` et `TRAEFIK_LETSENCRYPT_HOST_DIR` si les sous-dossiers
   par defaut de `APPLICATION_WORKDIR` ne conviennent pas.
 - les variables SMTP non secretes.
-- `AGE_SECRETS_ARCHIVE_FILE` et `AGE_SECRETS_IDENTITY_FILE` si les chemins par
-  defaut ne conviennent pas.
 
 Le demarrage cree et valide automatiquement l'arborescence hote via
 `runtime/prepare_directories.sh`. Avec les valeurs par defaut, tous les
@@ -217,10 +229,10 @@ repertoires persistants sont sous `/var/lib/cloudcollectionapp` :
 /var/lib/cloudcollectionapp/letsencrypt
 ```
 
-Les repertoires ecrits par `backend` sont verifies avec le proprietaire
-`RUNTIME_UID:RUNTIME_GID`. Si le script ne peut pas creer ou corriger les
-proprietaires, relancer le demarrage avec des droits suffisants ou preparer les
-droits manuellement.
+Les repertoires ecrits par `backend` sont verifies avec le proprietaire hote
+`RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Si le script ne peut pas creer ou corriger
+les proprietaires, relancer le demarrage avec des droits suffisants ou preparer
+les droits manuellement.
 
 `backend` et `web` sont lances avec `user: RUNTIME_UID:RUNTIME_GID`. `web`
 ecoute donc sur le port interne non privilegie `8080`, relaye par Traefik.
@@ -228,59 +240,58 @@ PostgreSQL et Traefik gardent le comportement non-root/root controle par leurs
 images officielles, car forcer ces services au meme UID runtime peut casser
 l'initialisation de la base, les certificats ou l'ecoute des ports 80/443.
 
-### 2. Creer Ou Reutiliser Les Secrets Age
+### 2. Preparer Les Secrets Age
 
 En production, les secrets ne doivent pas etre stockes en clair dans
 `runtime/.env` ni durablement sur disque. `./runtime/start.sh -p` decrypte
 l'archive age dans un repertoire temporaire en memoire sous `/dev/shm`, prepare
 les fichiers Docker secrets, genere `DATABASE_URL`, lance Docker Compose, puis
-supprime les fichiers dechiffres. Si `/dev/shm` n'existe pas sur le serveur,
-configurer `PRODUCTION_SECRETS_TMP_PARENT` vers un autre tmpfs prive.
+supprime les fichiers dechiffres.
 
-Par defaut, l'archive attendue est :
+Deux cas sont possibles.
 
-```text
-runtime/secrets.tar.gz.age
-```
+#### Cas 1 : premiere installation, creer l'archive
 
-Elle doit contenir ces fichiers a sa racine :
-
-```text
-AUTH_ENV_ENCRYPTION_KEY
-AUTH_PASSWORD_ENCRYPTED
-AUTH_SECRET_KEY_ENCRYPTED
-POSTGRES_PASSWORD
-SMTP_PASSWORD
-```
-
-Si une archive existe deja, copier `secrets.tar.gz.age` sur le serveur et
-renseigner l'identite age privee via `AGE_SECRETS_IDENTITY_FILE` ou avec la
-configuration age de l'utilisateur systeme.
-
-Pour creer une nouvelle archive, preparer un dossier local avec les cinq fichiers
-ci-dessus, puis chiffrer :
+Generer la cle age et l'archive des secrets :
 
 ```bash
-./runtime/secure.sh encrypt \
-  --source-dir runtime/secrets-src \
-  --archive runtime/secrets.tar.gz.age \
-  --recipient age1...
+./runtime/secure.sh bootstrap
 ```
+
+La commande demande les valeurs des secrets, cree l'archive chiffree et supprime
+les fichiers temporaires en clair. Elle produit :
+
+```text
+runtime/.age/identity.txt          # cle privee age a conserver dans un lieu protege
+runtime/env/secrets.tar.gz.age     # archive chiffree utilisee au demarrage
+```
+
+`runtime/.age/identity.txt` est indispensable pour modifier ou regenerer
+l'archive. Conserver une copie de cette cle hors depot et hors serveur avant
+toute suppression.
+
+#### Cas 2 : archive deja generee
+
+Deposer l'archive age et la cle privee age aux emplacements attendus :
+
+```bash
+mkdir -p runtime/.age runtime/env
+cp /chemin/securise/identity.txt runtime/.age/identity.txt
+cp /chemin/securise/secrets.tar.gz.age runtime/env/secrets.tar.gz.age
+chmod 600 runtime/.age/identity.txt runtime/env/secrets.tar.gz.age
+```
+
+Apres un demarrage production reussi, `runtime/start.sh -p` propose de supprimer
+`runtime/.age/identity.txt` du serveur de deploiement. Ne confirmer la
+suppression que si une copie de la cle est conservee ailleurs.
 
 Pour lire ou mettre a jour un secret existant :
 
 ```bash
-./runtime/secure.sh read \
-  --archive runtime/secrets.tar.gz.age \
-  --name POSTGRES_PASSWORD \
-  --identity age-identity.txt
-
+./runtime/secure.sh read --name POSTGRES_PASSWORD
 ./runtime/secure.sh set \
-  --archive runtime/secrets.tar.gz.age \
   --name SMTP_PASSWORD \
-  --value "nouveau-secret" \
-  --identity age-identity.txt \
-  --recipient age1...
+  --value "nouveau-secret"
 ```
 
 ### 3. Demarrer La Production
@@ -294,7 +305,8 @@ Depuis le repertoire extrait :
 Le script :
 
 - aligne `runtime/.env` sur le modele `runtime/.env.production.example` ;
-- verifie que `RUNTIME_UID` et `RUNTIME_GID` sont numeriques ;
+- verifie que `RUNTIME_UID`, `RUNTIME_GID`, `RUNTIME_HOST_UID` et
+  `RUNTIME_HOST_GID` sont numeriques ;
 - refuse de continuer si des variables obligatoires viennent d'etre ajoutees ;
 - cree et valide l'arborescence configuree sous `APPLICATION_WORKDIR` ;
 - decrypte les secrets age dans un repertoire temporaire en memoire ;

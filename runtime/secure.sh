@@ -18,7 +18,17 @@ RUNTIME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${RUNTIME_DIR}/.." && pwd)"
 SECURE_IMAGE_NAME="${SECURE_IMAGE_NAME:-cloudcollectionapp-age-secrets:latest}"
 SECURE_DOCKERFILE="${PROJECT_ROOT}/docker/age-secrets.Dockerfile"
-DEFAULT_ARCHIVE_FILE="${RUNTIME_DIR}/secrets.tar.gz.age"
+AGE_DIRECTORY="${RUNTIME_DIR}/.age"
+ENV_DIRECTORY="${RUNTIME_DIR}/env"
+IDENTITY_FILE="${AGE_DIRECTORY}/identity.txt"
+ARCHIVE_FILE="${ENV_DIRECTORY}/secrets.tar.gz.age"
+REQUIRED_SECRETS=(
+  "AUTH_ENV_ENCRYPTION_KEY"
+  "AUTH_PASSWORD_ENCRYPTED"
+  "AUTH_SECRET_KEY_ENCRYPTED"
+  "POSTGRES_PASSWORD"
+  "SMTP_PASSWORD"
+)
 
 TEMP_DIRECTORIES=()
 
@@ -29,16 +39,23 @@ show_usage() {
   cat <<'USAGE'
 Usage:
   ./runtime/secure.sh build
-  ./runtime/secure.sh encrypt --source-dir <dossier> --archive <archive.age> --recipient <age1...> [--recipient <age1...>]
-  ./runtime/secure.sh decrypt --archive <archive.age> --output-dir <dossier> --identity <identity.txt>
-  ./runtime/secure.sh read --archive <archive.age> --name <SECRET_NAME> --identity <identity.txt>
-  ./runtime/secure.sh set --archive <archive.age> --name <SECRET_NAME> --value <valeur> --identity <identity.txt> --recipient <age1...>
-  ./runtime/secure.sh set --archive <archive.age> --name <SECRET_NAME> --value-file <fichier> --identity <identity.txt> --recipient <age1...>
+  ./runtime/secure.sh bootstrap
+  ./runtime/secure.sh keygen
+  ./runtime/secure.sh encrypt
+  ./runtime/secure.sh decrypt
+  ./runtime/secure.sh read --name <SECRET_NAME>
+  ./runtime/secure.sh set --name <SECRET_NAME> --value <valeur>
+  ./runtime/secure.sh set --name <SECRET_NAME> --value-file <fichier>
 
-Options communes:
-  --archive <archive.age>       Archive age cible. Defaut: runtime/secrets.tar.gz.age.
-  --identity <identity.txt>     Cle privee age pour dechiffrer.
-  --recipient <age1...>         Destinataire age utilise au chiffrement. Repetable.
+Chemins fixes:
+  Cle privee age:              runtime/.age/identity.txt
+  Dossier des secrets:         runtime/env/
+  Archive age:                 runtime/env/secrets.tar.gz.age
+
+Options:
+  --name <SECRET_NAME>          Nom du secret a lire ou modifier.
+  --value <valeur>              Valeur du secret a enregistrer.
+  --value-file <fichier>        Fichier contenant la valeur du secret.
   --build                       Reconstruit l'image utilitaire avant l'action.
 
 Secrets attendus par ./runtime/start.sh -p:
@@ -84,17 +101,15 @@ create_temp_directory() {
   printf '%s\n' "$directory_path"
 }
 
-resolve_path() {
-  # Description : resout un chemin relatif depuis la racine du projet.
-  # Parametres : $1 chemin absolu ou relatif.
-  # Retour : ecrit le chemin absolu sur stdout.
-  local path_value="$1"
+create_secure_workspace() {
+  # Description : cree un dossier temporaire prive suivi pour nettoyage.
+  # Parametres : aucun.
+  # Retour : ecrit le chemin cree sur stdout.
+  local directory_path
 
-  if [[ "$path_value" = /* ]]; then
-    printf '%s\n' "$path_value"
-  else
-    printf '%s\n' "${PROJECT_ROOT}/${path_value#./}"
-  fi
+  directory_path="$(create_temp_directory)"
+  chmod 700 "$directory_path"
+  printf '%s\n' "$directory_path"
 }
 
 ensure_secure_image() {
@@ -156,31 +171,55 @@ validate_secret_name() {
   fi
 }
 
+validate_required_secret_files() {
+  # Description : verifie que les secrets requis sont presents avant chiffrement.
+  # Parametres : $1 dossier contenant les fichiers de secrets.
+  # Retour : void, echoue si un secret obligatoire manque.
+  local source_dir="$1"
+  local required_secret
+
+  for required_secret in "${REQUIRED_SECRETS[@]}"; do
+    [ -f "${source_dir}/${required_secret}" ] || abort_secure_action "Secret obligatoire absent: ${source_dir}/${required_secret}"
+  done
+}
+
+ensure_identity_file() {
+  # Description : verifie que l'identite age fixe existe.
+  # Parametres : aucun.
+  # Retour : void, echoue si la cle privee est absente.
+  [ -f "$IDENTITY_FILE" ] || abort_secure_action "Cle privee age introuvable: ${IDENTITY_FILE}. Lancez ./runtime/secure.sh keygen."
+}
+
+age_recipient_from_identity() {
+  # Description : extrait le destinataire age public depuis l'identite fixe.
+  # Parametres : aucun.
+  # Retour : ecrit le destinataire age sur stdout.
+  local container_identity_file
+
+  ensure_identity_file
+  container_identity_file="$(container_path_for "$IDENTITY_FILE")"
+  run_age_container -lc 'set -euo pipefail; age-keygen -y "$1"' -- "$container_identity_file"
+}
+
 encrypt_directory() {
   # Description : chiffre un dossier de secrets en archive tar.gz age.
-  # Parametres : dossier source, archive cible, destinataires age.
+  # Parametres : dossier source, archive cible, destinataire age.
   # Retour : void.
   local source_dir="$1"
   local archive_file="$2"
-  shift 2
-  local recipients=("$@")
-  local recipient_args=()
-  local recipient
+  local recipient="$3"
   local container_archive_file
   local container_source_dir
+  local excluded_archive_name
 
   [ -d "$source_dir" ] || abort_secure_action "Dossier source introuvable: ${source_dir}"
-  [ "${#recipients[@]}" -gt 0 ] || abort_secure_action "Au moins un destinataire age est requis."
-
-  for recipient in "${recipients[@]}"; do
-    recipient_args+=("-r" "$recipient")
-  done
 
   mkdir -p "$(dirname "$archive_file")"
+  excluded_archive_name="$(basename "$archive_file")"
   container_source_dir="$(container_path_for "$source_dir")"
   container_archive_file="$(container_path_for "$archive_file")"
-  run_age_container -lc 'set -euo pipefail; tar -czf - -C "$1" . | age "${@:3}" -o "$2"' \
-    -- "$container_source_dir" "$container_archive_file" "${recipient_args[@]}"
+  run_age_container -lc 'set -euo pipefail; tar --exclude="./$3" -czf - -C "$1" . | age -r "$4" -o "$2"' \
+    -- "$container_source_dir" "$container_archive_file" "$excluded_archive_name" "$recipient"
 }
 
 decrypt_archive() {
@@ -205,6 +244,88 @@ decrypt_archive() {
     -- "$container_archive_file" "$container_output_dir" "$container_identity_file"
 }
 
+generate_age_identity() {
+  # Description : genere une nouvelle identite age et affiche le destinataire public.
+  # Parametres : aucun.
+  # Retour : void, ecrit l'identite dans le fichier fixe.
+  local container_output_file
+
+  mkdir -p "$AGE_DIRECTORY"
+  container_output_file="$(container_path_for "$IDENTITY_FILE")"
+  run_age_container -lc 'set -euo pipefail; age-keygen -o "$1"' -- "$container_output_file"
+  chmod 600 "$IDENTITY_FILE"
+}
+
+prompt_secret_value() {
+  # Description : demande interactivement la valeur d'un secret obligatoire.
+  # Parametres : $1 nom du secret.
+  # Retour : ecrit la valeur saisie sur stdout.
+  local secret_name="$1"
+  local entered_value=""
+
+  while [ -z "$entered_value" ]; do
+    if [ -t 0 ]; then
+      read -r -s -p "Valeur pour ${secret_name}: " entered_value </dev/tty
+      echo "" >/dev/tty
+    else
+      printf 'Valeur pour %s: ' "$secret_name" >&2
+      read -r entered_value || abort_secure_action "Saisie interrompue pour ${secret_name}."
+    fi
+    if [ -z "$entered_value" ]; then
+      echo "Le secret ${secret_name} est obligatoire." >&2
+    fi
+  done
+
+  printf '%s\n' "$entered_value"
+}
+
+create_interactive_secret_files() {
+  # Description : cree les fichiers de secrets depuis une saisie interactive.
+  # Parametres : $1 dossier temporaire de creation.
+  # Retour : void.
+  local output_dir="$1"
+  local required_secret
+  local secret_value
+
+  for required_secret in "${REQUIRED_SECRETS[@]}"; do
+    secret_value="$(prompt_secret_value "$required_secret")"
+    printf '%s\n' "$secret_value" >"${output_dir}/${required_secret}"
+    chmod 600 "${output_dir}/${required_secret}"
+  done
+}
+
+bootstrap_secure_archive() {
+  # Description : initialise la cle age, les secrets temporaires et l'archive chiffree.
+  # Parametres : aucun.
+  # Retour : void.
+  local temp_secret_dir
+
+  [ ! -e "$IDENTITY_FILE" ] || abort_secure_action "La cle existe deja: ${IDENTITY_FILE}"
+  [ ! -e "$ARCHIVE_FILE" ] || abort_secure_action "L'archive existe deja: ${ARCHIVE_FILE}"
+
+  mkdir -p "$AGE_DIRECTORY" "$ENV_DIRECTORY"
+  temp_secret_dir="$(create_secure_workspace)"
+
+  echo "Creation de la cle privee age: ${IDENTITY_FILE}"
+  generate_age_identity
+  echo ""
+  echo "Saisie des secrets de production. Les fichiers en clair sont crees uniquement dans: ${temp_secret_dir}"
+  create_interactive_secret_files "$temp_secret_dir"
+  validate_required_secret_files "$temp_secret_dir"
+
+  echo "Creation de l'archive chiffree: ${ARCHIVE_FILE}"
+  encrypt_directory "$temp_secret_dir" "$ARCHIVE_FILE" "$(age_recipient_from_identity)"
+  rm -rf "$temp_secret_dir"
+
+  echo ""
+  echo "Initialisation terminee."
+  echo "A conserver:"
+  echo "  - ${IDENTITY_FILE} (cle privee age, hors depot)"
+  echo "  - ${ARCHIVE_FILE} (archive chiffree age)"
+  echo "A supprimer:"
+  echo "  - aucun fichier en clair: le dossier temporaire de creation a ete supprime."
+}
+
 read_secret() {
   # Description : lit un secret depuis l'archive sans extraire durablement les autres fichiers.
   # Parametres : archive, nom de secret, identite age.
@@ -223,15 +344,14 @@ read_secret() {
 
 set_secret() {
   # Description : modifie ou cree un secret dans l'archive age.
-  # Parametres : archive, nom, valeur, fichier valeur, identite, destinataires age.
+  # Parametres : archive, nom, valeur, fichier valeur, identite, destinataire age.
   # Retour : void.
   local archive_file="$1"
   local secret_name="$2"
   local secret_value="$3"
   local secret_value_file="$4"
   local identity_file="$5"
-  shift 5
-  local recipients=("$@")
+  local recipient="$6"
   local temp_dir
 
   validate_secret_name "$secret_name"
@@ -245,7 +365,7 @@ set_secret() {
     printf '%s\n' "$secret_value" >"${temp_dir}/${secret_name}"
   fi
 
-  encrypt_directory "$temp_dir" "$archive_file" "${recipients[@]}"
+  encrypt_directory "$temp_dir" "$archive_file" "$recipient"
 }
 
 command_name="${1:-}"
@@ -256,35 +376,14 @@ fi
 shift
 
 force_build="false"
-archive_file="$DEFAULT_ARCHIVE_FILE"
-source_dir=""
-output_dir=""
-identity_file=""
 secret_name=""
 secret_value=""
 secret_value_file=""
 secret_value_was_provided="false"
 secret_value_file_was_provided="false"
-recipients=()
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --archive)
-      archive_file="$(resolve_path "${2:-}")"
-      shift 2
-      ;;
-    --source-dir)
-      source_dir="$(resolve_path "${2:-}")"
-      shift 2
-      ;;
-    --output-dir)
-      output_dir="$(resolve_path "${2:-}")"
-      shift 2
-      ;;
-    --identity)
-      identity_file="$(resolve_path "${2:-}")"
-      shift 2
-      ;;
     --name)
       secret_name="${2:-}"
       shift 2
@@ -295,12 +394,8 @@ while [ "$#" -gt 0 ]; do
       shift 2
       ;;
     --value-file)
-      secret_value_file="$(resolve_path "${2:-}")"
+      secret_value_file="${2:-}"
       secret_value_file_was_provided="true"
-      shift 2
-      ;;
-    --recipient)
-      recipients+=("${2:-}")
       shift 2
       ;;
     --build)
@@ -313,8 +408,6 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-archive_file="$(resolve_path "$archive_file")"
-
 if [ "$command_name" != "build" ]; then
   ensure_secure_image "$force_build"
 fi
@@ -323,30 +416,34 @@ case "$command_name" in
   build)
     ensure_secure_image "true"
     ;;
+  bootstrap)
+    bootstrap_secure_archive
+    ;;
+  keygen)
+    generate_age_identity
+    ;;
   encrypt)
-    [ -n "$source_dir" ] || abort_secure_action "--source-dir est requis."
-    encrypt_directory "$source_dir" "$archive_file" "${recipients[@]}"
+    mkdir -p "$ENV_DIRECTORY"
+    validate_required_secret_files "$ENV_DIRECTORY"
+    encrypt_directory "$ENV_DIRECTORY" "$ARCHIVE_FILE" "$(age_recipient_from_identity)"
     ;;
   decrypt)
-    [ -n "$output_dir" ] || abort_secure_action "--output-dir est requis."
-    [ -n "$identity_file" ] || abort_secure_action "--identity est requis."
-    decrypt_archive "$archive_file" "$output_dir" "$identity_file"
+    mkdir -p "$ENV_DIRECTORY"
+    decrypt_archive "$ARCHIVE_FILE" "$ENV_DIRECTORY" "$IDENTITY_FILE"
     ;;
   read)
     [ -n "$secret_name" ] || abort_secure_action "--name est requis."
-    [ -n "$identity_file" ] || abort_secure_action "--identity est requis."
-    read_secret "$archive_file" "$secret_name" "$identity_file"
+    read_secret "$ARCHIVE_FILE" "$secret_name" "$IDENTITY_FILE"
     ;;
   set)
     [ -n "$secret_name" ] || abort_secure_action "--name est requis."
-    [ -n "$identity_file" ] || abort_secure_action "--identity est requis."
     if [ "$secret_value_was_provided" = "true" ] && [ "$secret_value_file_was_provided" = "true" ]; then
       abort_secure_action "--value et --value-file sont exclusifs."
     fi
     if [ "$secret_value_was_provided" = "false" ] && [ "$secret_value_file_was_provided" = "false" ]; then
       abort_secure_action "--value ou --value-file est requis."
     fi
-    set_secret "$archive_file" "$secret_name" "$secret_value" "$secret_value_file" "$identity_file" "${recipients[@]}"
+    set_secret "$ARCHIVE_FILE" "$secret_name" "$secret_value" "$secret_value_file" "$IDENTITY_FILE" "$(age_recipient_from_identity)"
     ;;
   *)
     abort_secure_action "Commande inconnue: ${command_name}"
