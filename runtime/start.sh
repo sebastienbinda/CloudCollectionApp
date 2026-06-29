@@ -27,7 +27,7 @@ AGE_IDENTITY_CLEANUP_SCRIPT="${RUNTIME_DIR}/age_identity_cleanup.sh"
 AGE_SECRETS_ARCHIVE_FILE="${RUNTIME_DIR}/env/secrets.tar.gz.age"
 AGE_SECRETS_IDENTITY_FILE="${RUNTIME_DIR}/.age/identity.txt"
 AGE_SECRETS_IMAGE="${AGE_SECRETS_IMAGE:-ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest}"
-PRODUCTION_SECRETS_TMP_PARENT="/dev/shm"
+PRODUCTION_SECRETS_TMP_PARENT="${PRODUCTION_SECRETS_TMP_PARENT:-}"
 PRODUCTION_SECRETS_DIR=""
 
 START_MODE="local"
@@ -116,6 +116,7 @@ start_docker() {
   fi
 
   if [ "$DEPLOY_ENV" = "online" ]; then
+    docker_options+=("--force-recreate")
     echo "Starting online Docker stack..."
     if ! DOCKER_SECRETS_DIR="$PRODUCTION_SECRETS_DIR" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" up -d "${docker_options[@]}"; then
       cleanup_production_secrets
@@ -358,13 +359,72 @@ ensure_age_secrets_image() {
   fi
 }
 
+docker_can_bind_file_from_directory() {
+  # Description : indique si le daemon Docker voit un fichier hote depuis un repertoire.
+  # Parametres : $1 repertoire parent teste.
+  # Retour : 0 si Docker peut monter le fichier, 1 sinon.
+  local parent_directory="$1"
+  local test_directory
+  local test_file
+  local can_bind=false
+
+  if [ ! -d "$parent_directory" ]; then
+    return 1
+  fi
+
+  test_directory="$(mktemp -d "${parent_directory}/cloudcollectionapp-docker-bind-test.XXXXXX" 2>/dev/null)" || return 1
+  test_file="${test_directory}/secret-test"
+  printf 'ok\n' >"$test_file" || {
+    rm -rf "$test_directory"
+    return 1
+  }
+  chmod 444 "$test_file"
+
+  if docker run --rm \
+    --volume "${test_file}:/secret-test:ro" \
+    "$AGE_SECRETS_IMAGE" \
+    -lc 'test -f /secret-test && test "$(cat /secret-test)" = "ok"' >/dev/null 2>&1; then
+    can_bind=true
+  fi
+
+  rm -rf "$test_directory"
+  [ "$can_bind" = true ]
+}
+
+select_production_secrets_tmp_parent() {
+  # Description : choisit un repertoire temporaire visible par le daemon Docker.
+  # Parametres : aucun.
+  # Retour : void, definit PRODUCTION_SECRETS_TMP_PARENT.
+  local configured_parent="$PRODUCTION_SECRETS_TMP_PARENT"
+
+  if [ -n "$configured_parent" ]; then
+    if ! docker_can_bind_file_from_directory "$configured_parent"; then
+      abort_start "Le daemon Docker ne peut pas monter les secrets depuis PRODUCTION_SECRETS_TMP_PARENT=${configured_parent}."
+    fi
+    return
+  fi
+
+  if docker_can_bind_file_from_directory "/tmp"; then
+    PRODUCTION_SECRETS_TMP_PARENT="/tmp"
+    echo "Utilisation temporaire de /tmp pour les secrets Docker."
+    return
+  fi
+
+  if docker_can_bind_file_from_directory "/dev/shm"; then
+    PRODUCTION_SECRETS_TMP_PARENT="/dev/shm"
+    echo "Utilisation temporaire de /dev/shm pour les secrets Docker."
+    return
+  fi
+
+  abort_start "Aucun repertoire temporaire compatible Docker trouve pour preparer les secrets."
+}
+
 decrypt_age_secrets_archive() {
   # Description : dechiffre l'archive age dans un repertoire temporaire de secrets.
   # Parametres : aucun.
   # Retour : void, prepare les fichiers de secrets pour Docker Compose.
   local container_archive_file
   local container_identity_file
-  local container_secrets_dir
 
   if [ ! -f "$AGE_SECRETS_ARCHIVE_FILE" ]; then
     abort_start "Archive de secrets age introuvable: ${AGE_SECRETS_ARCHIVE_FILE}"
@@ -374,29 +434,25 @@ decrypt_age_secrets_archive() {
     abort_start "Cle privee age introuvable: ${AGE_SECRETS_IDENTITY_FILE}"
   fi
 
-  if [ ! -d "$PRODUCTION_SECRETS_TMP_PARENT" ]; then
-    abort_start "Le repertoire temporaire ${PRODUCTION_SECRETS_TMP_PARENT} est introuvable."
-  fi
-
   ensure_age_secrets_image
+  select_production_secrets_tmp_parent
   PRODUCTION_SECRETS_DIR="$(mktemp -d "${PRODUCTION_SECRETS_TMP_PARENT}/cloudcollectionapp-secrets.XXXXXX")"
   chmod 700 "$PRODUCTION_SECRETS_DIR"
   container_archive_file="$(container_path_for_age_secret "$AGE_SECRETS_ARCHIVE_FILE")"
   container_identity_file="$(container_path_for_age_secret "$AGE_SECRETS_IDENTITY_FILE")"
-  container_secrets_dir="$(container_path_for_age_secret "$PRODUCTION_SECRETS_DIR")"
 
   if ! docker run --rm \
     --user "$(id -u):$(id -g)" \
     --workdir /workspace \
     --volume "${PROJECT_ROOT}:/workspace:ro" \
-    --volume "${PRODUCTION_SECRETS_TMP_PARENT}:${PRODUCTION_SECRETS_TMP_PARENT}" \
     "$AGE_SECRETS_IMAGE" \
-    -lc 'set -euo pipefail; age --decrypt --identity "$2" "$1" | tar -xzf - -C "$3"' \
-    -- "$container_archive_file" "$container_identity_file" "$container_secrets_dir"; then
+    -lc 'set -euo pipefail; age --decrypt --identity "$2" "$1"' \
+    -- "$container_archive_file" "$container_identity_file" \
+    | tar -xzf - -C "$PRODUCTION_SECRETS_DIR"; then
     abort_start "Le dechiffrement ou l'extraction de l'archive de secrets a echoue."
   fi
 
-  chmod 600 "$PRODUCTION_SECRETS_DIR"/* 2>/dev/null || true
+  chmod 444 "$PRODUCTION_SECRETS_DIR"/* 2>/dev/null || true
 }
 
 prepare_production_docker_secrets() {
@@ -429,7 +485,7 @@ prepare_production_docker_secrets() {
   postgres_password="$(read_required_secret_file "POSTGRES_PASSWORD")"
   printf 'postgresql://%s:%s@database:5432/%s\n' "$postgres_user" "$postgres_password" "$postgres_db" \
     >"${PRODUCTION_SECRETS_DIR}/DATABASE_URL"
-  chmod 600 "${PRODUCTION_SECRETS_DIR}/DATABASE_URL"
+  chmod 444 "${PRODUCTION_SECRETS_DIR}/DATABASE_URL"
 
   echo "Secrets Docker de production prets dans un repertoire temporaire en memoire."
 }

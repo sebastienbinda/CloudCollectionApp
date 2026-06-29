@@ -169,6 +169,7 @@ asset de release GitHub, et contient uniquement :
 - `runtime/secure.sh`
 - `runtime/age_identity_cleanup.sh`
 - `runtime/prepare_directories.sh`
+- `runtime/userns_remap_detection.sh`
 - `runtime/docker-compose.online.yml`
 - `runtime/.env.production.example`
 - les dossiers vides `runtime/.age/` et `runtime/env/`
@@ -208,7 +209,13 @@ Configurer ensuite `runtime/.env`, notamment :
 - `RUNTIME_HOST_UID` et `RUNTIME_HOST_GID` avec l'identite Unix vue par l'hote
   pour les repertoires bind mountes. Sans Docker `userns-remap`, garder les
   memes valeurs que `RUNTIME_UID` et `RUNTIME_GID`. Avec Docker `userns-remap`,
-  renseigner les UID/GID remappes de l'hote.
+  renseigner les UID/GID remappes de l'hote: debut de plage `/etc/subuid` ou
+  `/etc/subgid` plus `RUNTIME_UID` ou `RUNTIME_GID`. Par exemple, avec une plage
+  `dockremap:100000:65536` et `RUNTIME_UID=10001`, `RUNTIME_HOST_UID=110001`.
+- `POSTGRES_HOST_ROOT_UID` et `POSTGRES_HOST_ROOT_GID`. Sans Docker
+  `userns-remap`, conserver `0:0`. Avec Docker `userns-remap`, renseigner les
+  UID/GID hotes correspondant au root du conteneur PostgreSQL, souvent le debut
+  des plages `dockremap` dans `/etc/subuid` et `/etc/subgid`.
 - `DNS_NAME`, `BACKEND_PUBLIC_URL`, `FRONTEND_PUBLIC_URL`.
 - `APPLICATION_WORKDIR` avec le repertoire parent commun des donnees de travail
   de l'application.
@@ -230,25 +237,39 @@ repertoires persistants sont sous `/var/lib/cloudcollectionapp` :
 ```
 
 Les repertoires ecrits par `backend` sont verifies avec le proprietaire hote
-`RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Si le script ne peut pas creer ou corriger
+`RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Le repertoire PostgreSQL
+`POSTGRES_DATA_HOST_DIR` est prepare avec
+`POSTGRES_HOST_ROOT_UID:POSTGRES_HOST_ROOT_GID`, afin que le root remappe du
+conteneur PostgreSQL puisse initialiser puis corriger les droits internes de la
+base. Quand Docker `userns-remap` est actif et que les plages de remap sont
+lisibles, le script verifie que ces identifiants correspondent au remap Docker
+avant de preparer les repertoires. Si le script ne peut pas creer ou corriger
 les proprietaires, relancer le demarrage avec des droits suffisants ou preparer
-les droits manuellement. Avec le chemin par defaut `/var/lib/cloudcollectionapp`,
-`./runtime/start.sh -p` peut demander le mot de passe `sudo` uniquement pour
-creer l'arborescence hote et appliquer les proprietaires attendus.
+les droits manuellement. Avec le chemin par defaut
+`/var/lib/cloudcollectionapp`, `./runtime/start.sh -p` peut demander le mot de
+passe `sudo` uniquement pour creer l'arborescence hote et appliquer les
+proprietaires attendus.
 
 `backend` et `web` sont lances avec `user: RUNTIME_UID:RUNTIME_GID`. `web`
 ecoute donc sur le port interne non privilegie `8080`, relaye par Traefik.
-PostgreSQL et Traefik gardent le comportement non-root/root controle par leurs
-images officielles, car forcer ces services au meme UID runtime peut casser
-l'initialisation de la base, les certificats ou l'ecoute des ports 80/443.
+PostgreSQL garde le comportement non-root/root controle par son image
+officielle, car forcer ce service au meme UID runtime peut casser
+l'initialisation de la base. Traefik garde aussi son comportement officiel et
+utilise `userns_mode: host` en production, car le provider Docker doit lire
+`/var/run/docker.sock`; ce socket donne deja des privileges eleves sur le daemon
+Docker et ne peut pas etre lu par un root remappe.
 
 ### 2. Preparer Les Secrets Age
 
 En production, les secrets ne doivent pas etre stockes en clair dans
 `runtime/.env` ni durablement sur disque. `./runtime/start.sh -p` decrypte
-l'archive age dans un repertoire temporaire en memoire sous `/dev/shm`, prepare
-les fichiers Docker secrets, genere `DATABASE_URL`, lance Docker Compose, puis
-supprime les fichiers dechiffres. Le dechiffrement utilise l'image Docker
+l'archive age dans un repertoire temporaire compatible avec les bind mounts
+Docker, prepare les fichiers Docker secrets, genere `DATABASE_URL`, lance
+Docker Compose, puis supprime les fichiers dechiffres. Par defaut, le script
+utilise `/tmp` si le daemon Docker peut y monter un fichier secret. Pour forcer
+un autre emplacement, definir `PRODUCTION_SECRETS_TMP_PARENT`, par exemple
+`PRODUCTION_SECRETS_TMP_PARENT=/dev/shm` si ce chemin est visible par Docker
+Compose sur l'hote. Le dechiffrement utilise l'image Docker
 `ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest`; la commande
 `age` n'a pas besoin d'etre installee sur l'hote.
 

@@ -42,6 +42,7 @@ install -m 0755 "${PROJECT_ROOT}/runtime/stop.sh" "${PACKAGE_DIR}/runtime/stop.s
 install -m 0755 "${PROJECT_ROOT}/runtime/secure.sh" "${PACKAGE_DIR}/runtime/secure.sh"
 install -m 0644 "${PROJECT_ROOT}/runtime/age_identity_cleanup.sh" "${PACKAGE_DIR}/runtime/age_identity_cleanup.sh"
 install -m 0755 "${PROJECT_ROOT}/runtime/prepare_directories.sh" "${PACKAGE_DIR}/runtime/prepare_directories.sh"
+install -m 0644 "${PROJECT_ROOT}/runtime/userns_remap_detection.sh" "${PACKAGE_DIR}/runtime/userns_remap_detection.sh"
 install -m 0644 "${PROJECT_ROOT}/runtime/docker-compose.online.yml" "${PACKAGE_DIR}/runtime/docker-compose.online.yml"
 install -m 0644 "${PROJECT_ROOT}/runtime/.env.production.example" "${PACKAGE_DIR}/runtime/.env.production.example"
 

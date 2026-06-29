@@ -216,18 +216,26 @@ internal Docker network. In production deployment, `./runtime/start.sh -p`
 calls `runtime/prepare_directories.sh` to create and validate the configured
 host directory tree, then
 decrypts the age secrets archive with the published `age-secrets` Docker image
-into a temporary tmpfs directory, passes `POSTGRES_PASSWORD_FILE` to PostgreSQL,
-generates `DATABASE_URL` as a Docker secret file, exposes it to the backend
-through `DATABASE_URL_FILE`, starts Docker Compose, then removes the decrypted
-files from the host. The backend must wait for the database healthcheck before
-starting.
+into a temporary Docker-bind-compatible directory, passes
+`POSTGRES_PASSWORD_FILE` to PostgreSQL, generates `DATABASE_URL` as a Docker
+secret file, exposes it to the backend through `DATABASE_URL_FILE`, starts
+Docker Compose, then removes the decrypted files from the host. The backend
+must wait for the database healthcheck before starting.
 
 The application containers `backend` and `web` run with the numeric
 `RUNTIME_UID:RUNTIME_GID` configured in `runtime/.env`. The frontend image must
 listen on the unprivileged internal port `8080`, and Traefik must route traffic
 to that port. Host directories mounted by the backend must be writable by
 `RUNTIME_HOST_UID:RUNTIME_HOST_GID`, which may differ from the container
-runtime UID/GID when Docker `userns-remap` is enabled.
+runtime UID/GID when Docker `userns-remap` is enabled. With `userns-remap`,
+these host IDs must be computed from the subordinate range start in `/etc/subuid`
+or `/etc/subgid` plus `RUNTIME_UID` or `RUNTIME_GID`. When Docker reports active
+`userns-remap` and those ranges are readable, `runtime/prepare_directories.sh`
+must reject inconsistent host owner configuration before preparing writable
+backend bind mounts.
+Traefik uses `userns_mode: host` in production because the Docker provider
+mounts `/var/run/docker.sock`; a remapped root user cannot read that host
+socket, and the socket already grants elevated access to the Docker daemon.
 
 Production PostgreSQL data must be persisted through the host bind mount
 configured by `POSTGRES_DATA_HOST_DIR`. Deployment `.env` files must set
@@ -236,10 +244,15 @@ and the default production paths derive from it:
 `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
 `POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`. Production host
 paths must be absolute. Do not replace the production database persistence path
-with a transient anonymous volume. When the default `/var/lib/cloudcollectionapp`
-tree is used, `runtime/prepare_directories.sh` may use `sudo` during
-`./runtime/start.sh -p` to create host directories and apply the expected owners,
-while Docker Compose still starts from the current deployment user.
+with a transient anonymous volume. The PostgreSQL data directory must be owned
+by `POSTGRES_HOST_ROOT_UID:POSTGRES_HOST_ROOT_GID`, the host identity
+corresponding to root inside the PostgreSQL container. Without Docker
+`userns-remap`, these values are `0:0`; with `userns-remap`, they must be the
+host remapped IDs for container root. When the default
+`/var/lib/cloudcollectionapp` tree is used, `runtime/prepare_directories.sh` may
+use `sudo` during `./runtime/start.sh -p` to create host directories and apply
+the expected owners, while Docker Compose still starts from the current
+deployment user.
 
 ## Required GitHub Permissions
 
