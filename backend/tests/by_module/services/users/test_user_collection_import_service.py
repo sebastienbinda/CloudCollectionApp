@@ -434,6 +434,40 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
 
+    def test_upload_import_file_replaces_read_only_temporary_file(self):
+        """Verifie le remplacement d'un upload temporaire deja verrouille en lecture.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident que le second upload remplace le fichier.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(directory)
+
+            service.upload_import_file(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description().file_type,
+            )
+            source_file.write_bytes(b"new-ods-content")
+
+            service.upload_import_file(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description().file_type,
+            )
+
+            temporary_file = Path(directory) / "workspace" / "7" / "current-import.ods"
+            self.assertEqual(b"new-ods-content", temporary_file.read_bytes())
+            self.assertEqual(0o440, temporary_file.stat().st_mode & 0o777)
+            self.assertEqual([], repository.import_calls)
+            self.assertEqual([], reader.read_paths)
+
     def test_import_collection_rejects_invalid_file_type(self):
         """Verifie le refus d'un fichier non ODS.
 
