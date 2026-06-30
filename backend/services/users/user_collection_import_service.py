@@ -348,6 +348,7 @@ class UserCollectionImportService:
     def _copy_file(self, source_file_path: Path, target_file_path: Path) -> Path:
         try:
             target_file_path.parent.mkdir(parents=True, exist_ok=True)
+            target_file_path.unlink(missing_ok=True)
             shutil.copyfile(source_file_path, target_file_path)
             target_file_path.chmod(0o440)
         except OSError as exc:

@@ -294,11 +294,7 @@ Main variables:
 - `AUTH_ENV_ENCRYPTION_KEY`: Fernet key used to decrypt secrets.
 - `AUTH_TOKEN_TTL_SECONDS`: Bearer token lifetime.
 
-In Docker production, these sensitive values may be provided through
-`AUTH_PASSWORD_ENCRYPTED_FILE`, `AUTH_SECRET_KEY_ENCRYPTED_FILE` and
-`AUTH_ENV_ENCRYPTION_KEY_FILE`. File-based values are read before direct
-environment variables so Docker secrets can be used without exposing the values
-in the process environment.
+Runtime environment conventions are documented in `documentation/deploy.md`.
 
 The plaintext variables `AUTH_PASSWORD` and `AUTH_SECRET_KEY` exist as
 development fallbacks, but no hardcoded secret must be introduced in code,

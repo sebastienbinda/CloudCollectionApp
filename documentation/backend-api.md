@@ -1395,23 +1395,8 @@ Reinitialization errors use:
 
 ## Email Configuration
 
-Registration sends verification emails. Useful variables:
-
-```bash
-BACKEND_PUBLIC_URL=https://api.example.com
-FRONTEND_PUBLIC_URL=https://app.example.com
-EMAIL_DELIVERY_MODE=smtp
-ADMIN_NOTIFICATION_EMAIL=admin@example.com
-ADMIN_ACCOUNT_VALIDATION_ENABLED=true
-EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
-GAME_DUPLICATE_DAILY_NOTIFICATION_TIME=04:00
-SMTP_FROM_EMAIL=noreply@example.com
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USERNAME=...
-SMTP_PASSWORD=...
-SMTP_USE_TLS=true
-```
+Registration sends verification emails. Runtime email configuration is
+documented in `documentation/deploy.md`.
 
 `ADMIN_NOTIFICATION_EMAIL` receives a message after every successful user email
 verification, even when administrator validation is disabled. The message links
@@ -1443,17 +1428,8 @@ separate templated email. The message names the removed game, the kept game,
 the platform and explains whether their existing collection entry was remapped
 or merged with an entry they already had for the kept game.
 
-In local development, `EMAIL_DELIVERY_MODE=console` logs the generated email and
-the Docker local stack can use Mailpit.
-
 Test email delivery with:
 
 ```bash
 ./scripts/test_email.sh --to destinataire@example.com
-```
-
-For the production compose stack:
-
-```bash
-./scripts/test_email.sh -p --to destinataire@example.com
 ```

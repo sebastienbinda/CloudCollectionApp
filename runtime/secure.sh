@@ -58,7 +58,7 @@ Options:
   --value-file <fichier>        Fichier contenant la valeur du secret.
   --build                       Reconstruit l'image utilitaire avant l'action.
 
-Secrets attendus par ./runtime/start.sh -p:
+Secrets attendus par ./runtime/deploy.sh -p:
   AUTH_ENV_ENCRYPTION_KEY
   AUTH_PASSWORD_ENCRYPTED
   AUTH_SECRET_KEY_ENCRYPTED

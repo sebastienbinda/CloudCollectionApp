@@ -7,8 +7,11 @@
 #                                                                            |_|   |_|
 # Projet : CloudCollectionApp
 # Date de creation : 2026-05-03
-# Auteurs : Codex et Binda Sébastien
+# Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+# Licence : Apache 2.0
 #
+# Description : point d'entree de demarrage et d'arret des environnements.
+
 set -o pipefail
 
 BACKEND_PORT="${BACKEND_PORT:-7777}"
@@ -16,21 +19,24 @@ FRONTEND_PORT="${FRONTEND_PORT:-7778}"
 WEB_PORT="${WEB_PORT:-8080}"
 RUNTIME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${RUNTIME_DIR}/.." && pwd)"
+START_WORKDIR="$(pwd)"
 DOCKER_COMPOSE_LOCAL_FILE="${PROJECT_ROOT}/docker/docker-compose.local.yml"
 DOCKER_COMPOSE_ONLINE_FILE="${RUNTIME_DIR}/docker-compose.online.yml"
 ENV_LOCAL_EXAMPLE_FILE="${RUNTIME_DIR}/.env.local.example"
 ENV_PRODUCTION_EXAMPLE_FILE="${RUNTIME_DIR}/.env.production.example"
 ENV_EXAMPLE_FILE="$ENV_LOCAL_EXAMPLE_FILE"
 ENV_FILE="${RUNTIME_DIR}/.env"
+ENV_DIRECTORY=""
 PREPARE_DIRECTORIES_SCRIPT="${RUNTIME_DIR}/prepare_directories.sh"
 AGE_IDENTITY_CLEANUP_SCRIPT="${RUNTIME_DIR}/age_identity_cleanup.sh"
 AGE_SECRETS_ARCHIVE_FILE="${RUNTIME_DIR}/env/secrets.tar.gz.age"
 AGE_SECRETS_IDENTITY_FILE="${RUNTIME_DIR}/.age/identity.txt"
 AGE_SECRETS_IMAGE="${AGE_SECRETS_IMAGE:-ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest}"
-PRODUCTION_SECRETS_TMP_PARENT="/dev/shm"
+PRODUCTION_SECRETS_TMP_PARENT="${PRODUCTION_SECRETS_TMP_PARENT:-}"
 PRODUCTION_SECRETS_DIR=""
 
 START_MODE="local"
+DEPLOY_ACTION="start"
 DEPLOY_ENV="local"
 RECREATE_DOCKER_STACK=false
 
@@ -47,14 +53,15 @@ cleanup_production_secrets() {
 trap cleanup_production_secrets EXIT
 
 print_usage() {
-  echo "Usage: ./runtime/start.sh [-d] [-p] [-r] [-e <env-file>]"
+  echo "Usage: ./runtime/deploy.sh [-d] [-p] [-r] [-s] [-e <env-directory>]"
   echo "  -d  Demarre la stack Docker locale."
   echo "  -p  Demarre la stack Docker de production online."
   echo "  -r  Reconstruit les images Docker et force la recreation des conteneurs."
-  echo "  -e  Utilise un fichier d'environnement Docker explicite."
+  echo "  -s  Arrete la cible selectionnee au lieu de la demarrer."
+  echo "  -e  Utilise un repertoire d'environnement contenant .env, identity.txt et secrets.tar.gz.age."
 }
 
-while getopts "dpre:h" option; do
+while getopts "dprse:h" option; do
   case "$option" in
     d)
       START_MODE="docker"
@@ -66,8 +73,11 @@ while getopts "dpre:h" option; do
     r)
       RECREATE_DOCKER_STACK=true
       ;;
+    s)
+      DEPLOY_ACTION="stop"
+      ;;
     e)
-      ENV_FILE="$OPTARG"
+      ENV_DIRECTORY="$OPTARG"
       ;;
     h)
       print_usage
@@ -79,6 +89,41 @@ while getopts "dpre:h" option; do
       ;;
   esac
 done
+
+resolve_environment_directory() {
+  # Description : resout un repertoire d'environnement passe a deploy.sh -e.
+  # Parametres : $1 chemin du repertoire d'environnement.
+  # Retour : ecrit un chemin absolu.
+  local configured_directory="$1"
+
+  if [ -z "$configured_directory" ]; then
+    abort_start "Le repertoire d'environnement passe avec -e ne doit pas etre vide."
+  fi
+
+  if [[ "$configured_directory" = /* ]]; then
+    printf '%s\n' "$configured_directory"
+  else
+    printf '%s\n' "${START_WORKDIR}/${configured_directory#./}"
+  fi
+}
+
+configure_environment_directory() {
+  # Description : configure les chemins .env et age depuis un repertoire optionnel.
+  # Parametres : aucun.
+  # Retour : void.
+  if [ -z "$ENV_DIRECTORY" ]; then
+    return
+  fi
+
+  ENV_DIRECTORY="$(resolve_environment_directory "$ENV_DIRECTORY")"
+  if [ ! -d "$ENV_DIRECTORY" ]; then
+    abort_start "Le repertoire d'environnement est introuvable: ${ENV_DIRECTORY}"
+  fi
+
+  ENV_FILE="${ENV_DIRECTORY}/.env"
+  AGE_SECRETS_ARCHIVE_FILE="${ENV_DIRECTORY}/secrets.tar.gz.age"
+  AGE_SECRETS_IDENTITY_FILE="${ENV_DIRECTORY}/identity.txt"
+}
 
 if [ "$DEPLOY_ENV" = "online" ]; then
   ENV_EXAMPLE_FILE="$ENV_PRODUCTION_EXAMPLE_FILE"
@@ -116,6 +161,7 @@ start_docker() {
   fi
 
   if [ "$DEPLOY_ENV" = "online" ]; then
+    docker_options+=("--force-recreate")
     echo "Starting online Docker stack..."
     if ! DOCKER_SECRETS_DIR="$PRODUCTION_SECRETS_DIR" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" up -d "${docker_options[@]}"; then
       cleanup_production_secrets
@@ -129,6 +175,47 @@ start_docker() {
   fi
 }
 
+stop_local() {
+  # Description : arrete les processus locaux ecouteurs des ports backend et frontend.
+  # Parametres : aucun.
+  # Retour : void, termine les processus detectes.
+  local backend_pids
+  local frontend_pids
+
+  echo "Stopping backend (port ${BACKEND_PORT})..."
+  backend_pids="$(lsof -ti :"$BACKEND_PORT")"
+  if [ -n "$backend_pids" ]; then
+    echo "$backend_pids" | xargs kill
+    echo "Backend stopped."
+  else
+    echo "No backend process found on port ${BACKEND_PORT}."
+  fi
+
+  echo "Stopping frontend (port ${FRONTEND_PORT})..."
+  frontend_pids="$(lsof -ti :"$FRONTEND_PORT")"
+  if [ -n "$frontend_pids" ]; then
+    echo "$frontend_pids" | xargs kill
+    echo "Frontend stopped."
+  else
+    echo "No frontend process found on port ${FRONTEND_PORT}."
+  fi
+}
+
+stop_docker() {
+  # Description : arrete et supprime les conteneurs Docker Compose du projet.
+  # Parametres : aucun.
+  # Retour : void, arrete la stack Docker Compose.
+  local production_secrets_placeholder="${PRODUCTION_SECRETS_TMP_PARENT:-/dev/shm}/cloudcollectionapp-secrets-placeholder"
+
+  if [ "$DEPLOY_ENV" = "online" ]; then
+    echo "Stopping online Docker stack..."
+    DOCKER_SECRETS_DIR="$production_secrets_placeholder" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" down --remove-orphans
+  else
+    echo "Stopping local Docker stack..."
+    docker compose -f "$DOCKER_COMPOSE_LOCAL_FILE" down --remove-orphans
+  fi
+}
+
 abort_start() {
   # Description : affiche un message d'arret explicite et annule le lancement.
   # Parametres : $1 message utilisateur.
@@ -138,6 +225,8 @@ abort_start() {
   echo "$1"
   exit 1
 }
+
+configure_environment_directory
 
 if [ ! -f "$AGE_IDENTITY_CLEANUP_SCRIPT" ]; then
   abort_start "Le script ${AGE_IDENTITY_CLEANUP_SCRIPT} est introuvable."
@@ -317,6 +406,13 @@ prepare_runtime_directories() {
     abort_start "Le script ${PREPARE_DIRECTORIES_SCRIPT} est introuvable ou non executable."
   fi
 
+  if [ -n "$ENV_DIRECTORY" ]; then
+    if ! "$PREPARE_DIRECTORIES_SCRIPT" --env-directory "$ENV_DIRECTORY" --mode "$DEPLOY_ENV"; then
+      abort_start "La preparation de l'arborescence runtime a echoue."
+    fi
+    return
+  fi
+
   if ! "$PREPARE_DIRECTORIES_SCRIPT" --env-file "$ENV_FILE" --mode "$DEPLOY_ENV"; then
     abort_start "La preparation de l'arborescence runtime a echoue."
   fi
@@ -335,6 +431,16 @@ container_path_for_age_secret() {
 
   if [[ "$host_path" == "$PROJECT_ROOT"/* ]]; then
     printf '/workspace/%s\n' "${host_path#"$PROJECT_ROOT"/}"
+    return
+  fi
+
+  if [ -n "$ENV_DIRECTORY" ] && [[ "$host_path" == "$ENV_DIRECTORY" ]]; then
+    printf '/env-directory\n'
+    return
+  fi
+
+  if [ -n "$ENV_DIRECTORY" ] && [[ "$host_path" == "$ENV_DIRECTORY"/* ]]; then
+    printf '/env-directory/%s\n' "${host_path#"$ENV_DIRECTORY"/}"
     return
   fi
 
@@ -358,13 +464,73 @@ ensure_age_secrets_image() {
   fi
 }
 
+docker_can_bind_file_from_directory() {
+  # Description : indique si le daemon Docker voit un fichier hote depuis un repertoire.
+  # Parametres : $1 repertoire parent teste.
+  # Retour : 0 si Docker peut monter le fichier, 1 sinon.
+  local parent_directory="$1"
+  local test_directory
+  local test_file
+  local can_bind=false
+
+  if [ ! -d "$parent_directory" ]; then
+    return 1
+  fi
+
+  test_directory="$(mktemp -d "${parent_directory}/cloudcollectionapp-docker-bind-test.XXXXXX" 2>/dev/null)" || return 1
+  test_file="${test_directory}/secret-test"
+  printf 'ok\n' >"$test_file" || {
+    rm -rf "$test_directory"
+    return 1
+  }
+  chmod 444 "$test_file"
+
+  if docker run --rm \
+    --volume "${test_file}:/secret-test:ro" \
+    "$AGE_SECRETS_IMAGE" \
+    -lc 'test -f /secret-test && test "$(cat /secret-test)" = "ok"' >/dev/null 2>&1; then
+    can_bind=true
+  fi
+
+  rm -rf "$test_directory"
+  [ "$can_bind" = true ]
+}
+
+select_production_secrets_tmp_parent() {
+  # Description : choisit un repertoire temporaire visible par le daemon Docker.
+  # Parametres : aucun.
+  # Retour : void, definit PRODUCTION_SECRETS_TMP_PARENT.
+  local configured_parent="$PRODUCTION_SECRETS_TMP_PARENT"
+
+  if [ -n "$configured_parent" ]; then
+    if ! docker_can_bind_file_from_directory "$configured_parent"; then
+      abort_start "Le daemon Docker ne peut pas monter les secrets depuis PRODUCTION_SECRETS_TMP_PARENT=${configured_parent}."
+    fi
+    return
+  fi
+
+  if docker_can_bind_file_from_directory "/tmp"; then
+    PRODUCTION_SECRETS_TMP_PARENT="/tmp"
+    echo "Utilisation temporaire de /tmp pour les secrets Docker."
+    return
+  fi
+
+  if docker_can_bind_file_from_directory "/dev/shm"; then
+    PRODUCTION_SECRETS_TMP_PARENT="/dev/shm"
+    echo "Utilisation temporaire de /dev/shm pour les secrets Docker."
+    return
+  fi
+
+  abort_start "Aucun repertoire temporaire compatible Docker trouve pour preparer les secrets."
+}
+
 decrypt_age_secrets_archive() {
   # Description : dechiffre l'archive age dans un repertoire temporaire de secrets.
   # Parametres : aucun.
   # Retour : void, prepare les fichiers de secrets pour Docker Compose.
   local container_archive_file
   local container_identity_file
-  local container_secrets_dir
+  local environment_volume_options=()
 
   if [ ! -f "$AGE_SECRETS_ARCHIVE_FILE" ]; then
     abort_start "Archive de secrets age introuvable: ${AGE_SECRETS_ARCHIVE_FILE}"
@@ -374,29 +540,29 @@ decrypt_age_secrets_archive() {
     abort_start "Cle privee age introuvable: ${AGE_SECRETS_IDENTITY_FILE}"
   fi
 
-  if [ ! -d "$PRODUCTION_SECRETS_TMP_PARENT" ]; then
-    abort_start "Le repertoire temporaire ${PRODUCTION_SECRETS_TMP_PARENT} est introuvable."
-  fi
-
   ensure_age_secrets_image
+  select_production_secrets_tmp_parent
   PRODUCTION_SECRETS_DIR="$(mktemp -d "${PRODUCTION_SECRETS_TMP_PARENT}/cloudcollectionapp-secrets.XXXXXX")"
   chmod 700 "$PRODUCTION_SECRETS_DIR"
   container_archive_file="$(container_path_for_age_secret "$AGE_SECRETS_ARCHIVE_FILE")"
   container_identity_file="$(container_path_for_age_secret "$AGE_SECRETS_IDENTITY_FILE")"
-  container_secrets_dir="$(container_path_for_age_secret "$PRODUCTION_SECRETS_DIR")"
+  if [ -n "$ENV_DIRECTORY" ]; then
+    environment_volume_options=("--volume" "${ENV_DIRECTORY}:/env-directory:ro")
+  fi
 
   if ! docker run --rm \
     --user "$(id -u):$(id -g)" \
     --workdir /workspace \
     --volume "${PROJECT_ROOT}:/workspace:ro" \
-    --volume "${PRODUCTION_SECRETS_TMP_PARENT}:${PRODUCTION_SECRETS_TMP_PARENT}" \
+    "${environment_volume_options[@]}" \
     "$AGE_SECRETS_IMAGE" \
-    -lc 'set -euo pipefail; age --decrypt --identity "$2" "$1" | tar -xzf - -C "$3"' \
-    -- "$container_archive_file" "$container_identity_file" "$container_secrets_dir"; then
+    -lc 'set -euo pipefail; age --decrypt --identity "$2" "$1"' \
+    -- "$container_archive_file" "$container_identity_file" \
+    | tar -xzf - -C "$PRODUCTION_SECRETS_DIR"; then
     abort_start "Le dechiffrement ou l'extraction de l'archive de secrets a echoue."
   fi
 
-  chmod 600 "$PRODUCTION_SECRETS_DIR"/* 2>/dev/null || true
+  chmod 444 "$PRODUCTION_SECRETS_DIR"/* 2>/dev/null || true
 }
 
 prepare_production_docker_secrets() {
@@ -429,7 +595,7 @@ prepare_production_docker_secrets() {
   postgres_password="$(read_required_secret_file "POSTGRES_PASSWORD")"
   printf 'postgresql://%s:%s@database:5432/%s\n' "$postgres_user" "$postgres_password" "$postgres_db" \
     >"${PRODUCTION_SECRETS_DIR}/DATABASE_URL"
-  chmod 600 "${PRODUCTION_SECRETS_DIR}/DATABASE_URL"
+  chmod 444 "${PRODUCTION_SECRETS_DIR}/DATABASE_URL"
 
   echo "Secrets Docker de production prets dans un repertoire temporaire en memoire."
 }
@@ -542,16 +708,24 @@ validate_production_environment_before_docker_start() {
   echo "Fichier d'environnement Docker de production complet."
 }
 
-if [ "$START_MODE" = "docker" ]; then
-  if [ "$DEPLOY_ENV" = "online" ]; then
-    validate_production_environment_before_docker_start
-    validate_runtime_user
-    prepare_runtime_directories
-    prepare_production_docker_secrets
+if [ "$DEPLOY_ACTION" = "stop" ]; then
+  if [ "$START_MODE" = "docker" ]; then
+    stop_docker
   else
-    prepare_runtime_directories
+    stop_local
   fi
-  start_docker
 else
-  start_local
+  if [ "$START_MODE" = "docker" ]; then
+    if [ "$DEPLOY_ENV" = "online" ]; then
+      validate_production_environment_before_docker_start
+      validate_runtime_user
+      prepare_runtime_directories
+      prepare_production_docker_secrets
+    else
+      prepare_runtime_directories
+    fi
+    start_docker
+  else
+    start_local
+  fi
 fi

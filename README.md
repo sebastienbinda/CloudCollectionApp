@@ -53,6 +53,8 @@ fonctionnels et techniques sont dans `documentation/` :
   frontend React/Vite.
 - [documentation/database.md](documentation/database.md) : schema PostgreSQL,
   migrations et persistance production.
+- [documentation/deploy.md](documentation/deploy.md) : deploiement, archive de
+  livraison, Docker Compose runtime et secrets production.
 - [documentation/authentication.md](documentation/authentication.md) :
   authentification, profils et sessions.
 - [documentation/register.md](documentation/register.md) : inscription et
@@ -94,7 +96,7 @@ Depuis la racine du projet :
 
 ```bash
 cp runtime/.env.local.example runtime/.env
-./runtime/start.sh -d
+./runtime/deploy.sh -d
 ```
 
 Services locaux :
@@ -106,7 +108,7 @@ Services locaux :
 Arret :
 
 ```bash
-./runtime/stop.sh -d
+./runtime/deploy.sh -d -s
 ```
 
 Le mode local utilise `docker/docker-compose.local.yml` et construit les images
@@ -164,14 +166,13 @@ archive de deploiement minimale `cloud-application-deploy-<version>.zip`. Cette
 archive est generee par la CI sur les tags de release `X.Y.Z`, publiee comme
 asset de release GitHub, et contient uniquement :
 
-- `runtime/start.sh`
-- `runtime/stop.sh`
-- `runtime/secure.sh`
-- `runtime/age_identity_cleanup.sh`
-- `runtime/prepare_directories.sh`
-- `runtime/docker-compose.online.yml`
-- `runtime/.env.production.example`
-- les dossiers vides `runtime/.age/` et `runtime/env/`
+- `deploy.sh`
+- `secure.sh`
+- `age_identity_cleanup.sh`
+- `prepare_directories.sh`
+- `userns_remap_detection.sh`
+- `docker-compose.online.yml`
+- `.env.production.example`
 
 Images publiees :
 
@@ -195,12 +196,14 @@ curl -fL \
   -o "cloud-application-deploy-${APP_VERSION}.zip" \
   "https://github.com/${REPOSITORY}/releases/download/${APP_VERSION}/cloud-application-deploy-${APP_VERSION}.zip"
 
-unzip -o "cloud-application-deploy-${APP_VERSION}.zip"
+mkdir -p cloud-application-deploy
+unzip -o "cloud-application-deploy-${APP_VERSION}.zip" -d cloud-application-deploy
 cd cloud-application-deploy
-cp runtime/.env.production.example runtime/.env
+mkdir -p /etc/cloudcollectionapp/deploy-env
+cp .env.production.example /etc/cloudcollectionapp/deploy-env/.env
 ```
 
-Configurer ensuite `runtime/.env`, notamment :
+Configurer ensuite `/etc/cloudcollectionapp/deploy-env/.env`, notamment :
 
 - `APP_VERSION` avec le tag applicatif a deployer.
 - `RUNTIME_UID` et `RUNTIME_GID` avec l'identite Unix non-root utilisee par les
@@ -208,7 +211,13 @@ Configurer ensuite `runtime/.env`, notamment :
 - `RUNTIME_HOST_UID` et `RUNTIME_HOST_GID` avec l'identite Unix vue par l'hote
   pour les repertoires bind mountes. Sans Docker `userns-remap`, garder les
   memes valeurs que `RUNTIME_UID` et `RUNTIME_GID`. Avec Docker `userns-remap`,
-  renseigner les UID/GID remappes de l'hote.
+  renseigner les UID/GID remappes de l'hote: debut de plage `/etc/subuid` ou
+  `/etc/subgid` plus `RUNTIME_UID` ou `RUNTIME_GID`. Par exemple, avec une plage
+  `dockremap:100000:65536` et `RUNTIME_UID=10001`, `RUNTIME_HOST_UID=110001`.
+- `POSTGRES_HOST_ROOT_UID` et `POSTGRES_HOST_ROOT_GID`. Sans Docker
+  `userns-remap`, conserver `0:0`. Avec Docker `userns-remap`, renseigner les
+  UID/GID hotes correspondant au root du conteneur PostgreSQL, souvent le debut
+  des plages `dockremap` dans `/etc/subuid` et `/etc/subgid`.
 - `DNS_NAME`, `BACKEND_PUBLIC_URL`, `FRONTEND_PUBLIC_URL`.
 - `APPLICATION_WORKDIR` avec le repertoire parent commun des donnees de travail
   de l'application.
@@ -218,7 +227,7 @@ Configurer ensuite `runtime/.env`, notamment :
 - les variables SMTP non secretes.
 
 Le demarrage cree et valide automatiquement l'arborescence hote via
-`runtime/prepare_directories.sh`. Avec les valeurs par defaut, tous les
+`prepare_directories.sh`. Avec les valeurs par defaut, tous les
 repertoires persistants sont sous `/var/lib/cloudcollectionapp` :
 
 ```text
@@ -230,25 +239,39 @@ repertoires persistants sont sous `/var/lib/cloudcollectionapp` :
 ```
 
 Les repertoires ecrits par `backend` sont verifies avec le proprietaire hote
-`RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Si le script ne peut pas creer ou corriger
+`RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Le repertoire PostgreSQL
+`POSTGRES_DATA_HOST_DIR` est prepare avec
+`POSTGRES_HOST_ROOT_UID:POSTGRES_HOST_ROOT_GID`, afin que le root remappe du
+conteneur PostgreSQL puisse initialiser puis corriger les droits internes de la
+base. Quand Docker `userns-remap` est actif et que les plages de remap sont
+lisibles, le script verifie que ces identifiants correspondent au remap Docker
+avant de preparer les repertoires. Si le script ne peut pas creer ou corriger
 les proprietaires, relancer le demarrage avec des droits suffisants ou preparer
-les droits manuellement. Avec le chemin par defaut `/var/lib/cloudcollectionapp`,
-`./runtime/start.sh -p` peut demander le mot de passe `sudo` uniquement pour
-creer l'arborescence hote et appliquer les proprietaires attendus.
+les droits manuellement. Avec le chemin par defaut
+`/var/lib/cloudcollectionapp`, `./deploy.sh -p -e <repertoire-env>` peut demander le mot de
+passe `sudo` uniquement pour creer l'arborescence hote et appliquer les
+proprietaires attendus.
 
 `backend` et `web` sont lances avec `user: RUNTIME_UID:RUNTIME_GID`. `web`
 ecoute donc sur le port interne non privilegie `8080`, relaye par Traefik.
-PostgreSQL et Traefik gardent le comportement non-root/root controle par leurs
-images officielles, car forcer ces services au meme UID runtime peut casser
-l'initialisation de la base, les certificats ou l'ecoute des ports 80/443.
+PostgreSQL garde le comportement non-root/root controle par son image
+officielle, car forcer ce service au meme UID runtime peut casser
+l'initialisation de la base. Traefik garde aussi son comportement officiel et
+utilise `userns_mode: host` en production, car le provider Docker doit lire
+`/var/run/docker.sock`; ce socket donne deja des privileges eleves sur le daemon
+Docker et ne peut pas etre lu par un root remappe.
 
 ### 2. Preparer Les Secrets Age
 
 En production, les secrets ne doivent pas etre stockes en clair dans
-`runtime/.env` ni durablement sur disque. `./runtime/start.sh -p` decrypte
-l'archive age dans un repertoire temporaire en memoire sous `/dev/shm`, prepare
-les fichiers Docker secrets, genere `DATABASE_URL`, lance Docker Compose, puis
-supprime les fichiers dechiffres. Le dechiffrement utilise l'image Docker
+le fichier `.env` ni durablement sur disque. `./deploy.sh -p -e <repertoire-env>` decrypte
+l'archive age dans un repertoire temporaire compatible avec les bind mounts
+Docker, prepare les fichiers Docker secrets, genere `DATABASE_URL`, lance
+Docker Compose, puis supprime les fichiers dechiffres. Par defaut, le script
+utilise `/tmp` si le daemon Docker peut y monter un fichier secret. Pour forcer
+un autre emplacement, definir `PRODUCTION_SECRETS_TMP_PARENT`, par exemple
+`PRODUCTION_SECRETS_TMP_PARENT=/dev/shm` si ce chemin est visible par Docker
+Compose sur l'hote. Le dechiffrement utilise l'image Docker
 `ghcr.io/sebastienbinda/cloudcollectionapp/age-secrets:latest`; la commande
 `age` n'a pas besoin d'etre installee sur l'hote.
 
@@ -259,41 +282,53 @@ Deux cas sont possibles.
 Generer la cle age et l'archive des secrets :
 
 ```bash
-./runtime/secure.sh bootstrap
+./secure.sh bootstrap
 ```
 
 La commande demande les valeurs des secrets, cree l'archive chiffree et supprime
 les fichiers temporaires en clair. Elle produit :
 
 ```text
-runtime/.age/identity.txt          # cle privee age a conserver dans un lieu protege
-runtime/env/secrets.tar.gz.age     # archive chiffree utilisee au demarrage
+.age/identity.txt          # cle privee age a conserver dans un lieu protege
+env/secrets.tar.gz.age     # archive chiffree utilisee au demarrage
 ```
 
-`runtime/.age/identity.txt` est indispensable pour modifier ou regenerer
-l'archive. Conserver une copie de cette cle hors depot et hors serveur avant
-toute suppression.
+`identity.txt` est indispensable pour modifier ou regenerer l'archive.
+Conserver une copie de cette cle hors depot et hors serveur avant toute
+suppression. Pour utiliser le repertoire d'environnement externe, copier ensuite
+`.age/identity.txt` vers `deploy-env/identity.txt` et
+`env/secrets.tar.gz.age` vers `deploy-env/secrets.tar.gz.age`.
 
 #### Cas 2 : archive deja generee
 
-Deposer l'archive age et la cle privee age aux emplacements attendus :
+Deposer l'archive age et la cle privee age dans le repertoire d'environnement :
 
 ```bash
-mkdir -p runtime/.age runtime/env
-cp /chemin/securise/identity.txt runtime/.age/identity.txt
-cp /chemin/securise/secrets.tar.gz.age runtime/env/secrets.tar.gz.age
-chmod 600 runtime/.age/identity.txt runtime/env/secrets.tar.gz.age
+cp /chemin/securise/identity.txt /etc/cloudcollectionapp/deploy-env/identity.txt
+cp /chemin/securise/secrets.tar.gz.age /etc/cloudcollectionapp/deploy-env/secrets.tar.gz.age
+chmod 600 /etc/cloudcollectionapp/deploy-env/identity.txt /etc/cloudcollectionapp/deploy-env/secrets.tar.gz.age
 ```
 
-Apres un demarrage production reussi, `runtime/start.sh -p` propose de supprimer
-`runtime/.age/identity.txt` du serveur de deploiement. Ne confirmer la
-suppression que si une copie de la cle est conservee ailleurs.
+Pour regrouper la configuration de deploiement dans un repertoire externe, ce
+repertoire peut contenir directement les trois fichiers attendus par
+`./deploy.sh -p -e <repertoire-env>` :
+
+```text
+deploy-env/.env
+deploy-env/identity.txt
+deploy-env/secrets.tar.gz.age
+```
+
+Apres un demarrage production reussi, `deploy.sh` propose de supprimer
+la cle `identity.txt` utilisee depuis son emplacement par defaut ou depuis le
+repertoire `-e`. Ne confirmer la suppression que si une copie de la cle est
+conservee ailleurs.
 
 Pour lire ou mettre a jour un secret existant :
 
 ```bash
-./runtime/secure.sh read --name POSTGRES_PASSWORD
-./runtime/secure.sh set \
+./secure.sh read --name POSTGRES_PASSWORD
+./secure.sh set \
   --name SMTP_PASSWORD \
   --value "nouveau-secret"
 ```
@@ -303,40 +338,39 @@ Pour lire ou mettre a jour un secret existant :
 Depuis le repertoire extrait :
 
 ```bash
-./runtime/start.sh -p
+./deploy.sh -p -e /etc/cloudcollectionapp/deploy-env
 ```
 
-Si le fichier de production conserve un autre nom, par exemple
-`runtime/.env-prod`, le passer explicitement :
-
-```bash
-./runtime/start.sh -p -e runtime/.env-prod
-```
+Si les fichiers d'environnement et de secrets sont regroupes dans un autre
+repertoire, remplacer `/etc/cloudcollectionapp/deploy-env` par ce chemin.
 
 Le script :
 
-- aligne le fichier d'environnement selectionne sur le modele
-  `runtime/.env.production.example` en conservant les valeurs deja configurees ;
+- aligne le fichier `.env` selectionne sur le modele
+  `.env.production.example` en conservant les valeurs deja configurees ;
 - verifie que `RUNTIME_UID`, `RUNTIME_GID`, `RUNTIME_HOST_UID` et
   `RUNTIME_HOST_GID` sont numeriques ;
 - refuse de continuer si des variables obligatoires viennent d'etre ajoutees ;
 - cree et valide l'arborescence configuree sous `APPLICATION_WORKDIR`, avec
   `sudo` si le chemin de production le necessite ;
-- decrypte les secrets age dans un repertoire temporaire en memoire ;
+- decrypte l'archive `secrets.tar.gz.age` avec `identity.txt` depuis les chemins
+  par defaut ou depuis le repertoire `-e` ;
 - prepare les fichiers Docker secrets et supprime les fichiers dechiffres apres
   le lancement ;
-- lance `runtime/docker-compose.online.yml`.
+- lance `docker-compose.online.yml`.
 
 Toute mise a jour ou recreation des conteneurs doit repasser par
-`./runtime/start.sh -p`, afin que les secrets soient redéchiffrés temporairement
-le temps du lancement Compose.
+`./deploy.sh -p -e <repertoire-env>`, afin que les secrets soient redéchiffrés
+temporairement le temps du lancement Compose.
 
 Arret :
 
 ```bash
-./runtime/stop.sh -p
+./deploy.sh -p -s -e /etc/cloudcollectionapp/deploy-env
 ```
 
-Les details de CI, d'images, d'archive et de compose production sont dans
-[documentation/ci.md](documentation/ci.md). Les regles de persistance PostgreSQL
-et migrations sont dans [documentation/database.md](documentation/database.md).
+Les details complets de deploiement sont dans
+[documentation/deploy.md](documentation/deploy.md). Les details de CI et
+d'images publiees sont dans [documentation/ci.md](documentation/ci.md). Les
+regles de persistance PostgreSQL et migrations sont dans
+[documentation/database.md](documentation/database.md).
