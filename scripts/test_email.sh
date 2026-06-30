@@ -72,7 +72,7 @@ fi
 
 if ! docker compose -f "$COMPOSE_FILE" ps --status running backend >/dev/null 2>&1; then
   echo "Le conteneur backend ne semble pas demarre pour ${COMPOSE_FILE}." >&2
-  echo "Demarrez-le avec ./runtime/start.sh -d ou ./runtime/start.sh -p." >&2
+  echo "Demarrez-le avec ./runtime/deploy.sh -d ou ./runtime/deploy.sh -p -e <repertoire-env>." >&2
   exit 1
 fi
 

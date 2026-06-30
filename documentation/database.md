@@ -366,42 +366,8 @@ platforms.
 ## Migration Rules
 
 - Use Alembic migrations for every database structure change.
-- The production Docker stack must provide PostgreSQL through the
-  `database` service in `runtime/docker-compose.online.yml` and must keep it on
-  an internal Docker network.
-- Production PostgreSQL credentials must be passed through Docker secrets:
-  `POSTGRES_PASSWORD_FILE` for the `database` service and `DATABASE_URL_FILE`
-  for the backend. `./runtime/start.sh -p` decrypts the age archive with the
-  published `age-secrets` Docker image, prepares the secret files in a temporary
-  Docker-bind-compatible directory, derives `DATABASE_URL` as a secret file from
-  `POSTGRES_DB`, `POSTGRES_USER` and the decrypted
-  `POSTGRES_PASSWORD`, starts Docker Compose, then removes the decrypted files
-  from the host.
-- Production runtime directories must share the common parent configured by
-  `APPLICATION_WORKDIR`. `./runtime/start.sh -p` calls
-  `runtime/prepare_directories.sh` before Docker Compose startup to create and
-  validate `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
-  `POSTGRES_DATA_HOST_DIR` and `TRAEFIK_LETSENCRYPT_HOST_DIR`. When the
-  configured paths require administrator privileges on the host, the preparation
-  script may use `sudo` for directory creation and ownership changes.
-- Production PostgreSQL data must be persisted through `POSTGRES_DATA_HOST_DIR`,
-  an absolute host directory mounted to `/var/lib/postgresql/data` by the
-  online Docker Compose file. This directory must be owned on the host by
-  `POSTGRES_HOST_ROOT_UID:POSTGRES_HOST_ROOT_GID`, the host identity
-  corresponding to root inside the PostgreSQL container. Without Docker
-  `userns-remap`, these values are `0:0`; with `userns-remap`, they must be the
-  host remapped IDs for container root.
-- Backend production bind mounts such as `USERS_WORKSPACE`,
-  `BACKEND_IMG_HOST_DIR` and `BACKEND_LOG_HOST_DIR` must be writable on the
-  host by `RUNTIME_HOST_UID:RUNTIME_HOST_GID`. Without Docker `userns-remap`,
-  these values usually match `RUNTIME_UID:RUNTIME_GID`; with `userns-remap`,
-  they must be the host remapped IDs corresponding to the non-root backend
-  container user, computed as the subordinate range start from `/etc/subuid` or
-  `/etc/subgid` plus `RUNTIME_UID` or `RUNTIME_GID`. When Docker reports active
-  `userns-remap` and the subordinate ranges are readable,
-  `runtime/prepare_directories.sh` must reject inconsistent host owner
-  configuration before preparing the production directory tree.
-- Never rely on manual SQL execution as the normal deployment path.
+- Deployment runtime rules are owned by `documentation/deploy.md`.
+- Never rely on manual SQL execution as the normal migration path.
 - New migrations must be forward-only fixes for production data: they must not
   require emptying, recreating or resetting a production database.
 - Prefer idempotent SQL for corrective migrations when rerun safety is useful,

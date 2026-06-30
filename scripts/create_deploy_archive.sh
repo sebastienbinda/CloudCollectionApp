@@ -23,7 +23,7 @@ fi
 OUTPUT_DIR="$(dirname "$OUTPUT_FILE")"
 OUTPUT_NAME="$(basename "$OUTPUT_FILE")"
 TEMP_DIR="$(mktemp -d)"
-PACKAGE_DIR="${TEMP_DIR}/cloud-application-deploy"
+PACKAGE_DIR="${TEMP_DIR}/package"
 TEMP_OUTPUT_FILE="${TEMP_DIR}/${OUTPUT_NAME}"
 
 cleanup() {
@@ -33,22 +33,19 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$OUTPUT_DIR"
-mkdir -p "${PACKAGE_DIR}/runtime"
-mkdir -p "${PACKAGE_DIR}/runtime/.age"
-mkdir -p "${PACKAGE_DIR}/runtime/env"
+mkdir -p "$PACKAGE_DIR"
 
-install -m 0755 "${PROJECT_ROOT}/runtime/start.sh" "${PACKAGE_DIR}/runtime/start.sh"
-install -m 0755 "${PROJECT_ROOT}/runtime/stop.sh" "${PACKAGE_DIR}/runtime/stop.sh"
-install -m 0755 "${PROJECT_ROOT}/runtime/secure.sh" "${PACKAGE_DIR}/runtime/secure.sh"
-install -m 0644 "${PROJECT_ROOT}/runtime/age_identity_cleanup.sh" "${PACKAGE_DIR}/runtime/age_identity_cleanup.sh"
-install -m 0755 "${PROJECT_ROOT}/runtime/prepare_directories.sh" "${PACKAGE_DIR}/runtime/prepare_directories.sh"
-install -m 0644 "${PROJECT_ROOT}/runtime/userns_remap_detection.sh" "${PACKAGE_DIR}/runtime/userns_remap_detection.sh"
-install -m 0644 "${PROJECT_ROOT}/runtime/docker-compose.online.yml" "${PACKAGE_DIR}/runtime/docker-compose.online.yml"
-install -m 0644 "${PROJECT_ROOT}/runtime/.env.production.example" "${PACKAGE_DIR}/runtime/.env.production.example"
+install -m 0755 "${PROJECT_ROOT}/runtime/deploy.sh" "${PACKAGE_DIR}/deploy.sh"
+install -m 0755 "${PROJECT_ROOT}/runtime/secure.sh" "${PACKAGE_DIR}/secure.sh"
+install -m 0644 "${PROJECT_ROOT}/runtime/age_identity_cleanup.sh" "${PACKAGE_DIR}/age_identity_cleanup.sh"
+install -m 0755 "${PROJECT_ROOT}/runtime/prepare_directories.sh" "${PACKAGE_DIR}/prepare_directories.sh"
+install -m 0644 "${PROJECT_ROOT}/runtime/userns_remap_detection.sh" "${PACKAGE_DIR}/userns_remap_detection.sh"
+install -m 0644 "${PROJECT_ROOT}/runtime/docker-compose.online.yml" "${PACKAGE_DIR}/docker-compose.online.yml"
+install -m 0644 "${PROJECT_ROOT}/runtime/.env.production.example" "${PACKAGE_DIR}/.env.production.example"
 
 (
-  cd "$TEMP_DIR"
-  zip -qr "$TEMP_OUTPUT_FILE" cloud-application-deploy
+  cd "$PACKAGE_DIR"
+  zip -qr "$TEMP_OUTPUT_FILE" .
 )
 
 mv "$TEMP_OUTPUT_FILE" "${OUTPUT_DIR}/${OUTPUT_NAME}"

@@ -75,9 +75,9 @@ without a real SMTP account or production domain.
   must wait for administrator validation before sign-in. It defaults to `true`.
 - `ADMIN_NOTIFICATION_EMAIL` configures the administrator recipient for new user
   email validation notifications.
-- The production SMTP variables (`SMTP_HOST`, `SMTP_FROM_EMAIL`,
-  `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`) remain reserved for the
-  online Docker stack and must not be required to test registration locally.
+- Production email runtime configuration is documented in
+  `documentation/deploy.md` and must not be required to test registration
+  locally.
 - Mailpit is a development-only mailbox and must not be added to the online
   Docker stack.
 

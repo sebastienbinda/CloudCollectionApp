@@ -16,6 +16,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+START_WORKDIR="$(pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
 DEPLOY_ENV="local"
 
@@ -23,13 +24,36 @@ DEPLOY_ENV="local"
 source "${SCRIPT_DIR}/userns_remap_detection.sh"
 
 print_usage() {
-  echo "Usage: ./runtime/prepare_directories.sh [--env-file <path>] [--mode local|online]"
+  echo "Usage: ./runtime/prepare_directories.sh [--env-file <path>] [--env-directory <path>] [--mode local|online]"
+}
+
+resolve_environment_directory() {
+  # Description : resout un repertoire d'environnement relatif au repertoire courant.
+  # Parametres : $1 chemin du repertoire d'environnement.
+  # Retour : ecrit un chemin absolu.
+  local configured_directory="$1"
+
+  if [ -z "$configured_directory" ]; then
+    echo "Le repertoire d'environnement ne doit pas etre vide."
+    exit 1
+  fi
+
+  if [[ "$configured_directory" = /* ]]; then
+    printf '%s\n' "$configured_directory"
+  else
+    printf '%s\n' "${START_WORKDIR}/${configured_directory#./}"
+  fi
 }
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --env-file)
       ENV_FILE="${2:-}"
+      shift 2
+      ;;
+    --env-directory)
+      ENV_DIRECTORY="$(resolve_environment_directory "${2:-}")"
+      ENV_FILE="${ENV_DIRECTORY}/.env"
       shift 2
       ;;
     --mode)
@@ -269,7 +293,7 @@ ensure_directory() {
     echo "Impossible de creer ${label}: ${resolved_path}"
     if [ "$DEPLOY_ENV" = "online" ] && [ "$(id -u)" -ne 0 ]; then
       echo "Ce chemin necessite probablement des privileges administrateur."
-      echo "Installez sudo ou creez le repertoire avec un utilisateur autorise, puis relancez ./runtime/start.sh -p."
+      echo "Installez sudo ou creez le repertoire avec un utilisateur autorise, puis relancez ./runtime/deploy.sh -p."
     fi
     exit 1
   fi
@@ -315,7 +339,7 @@ ensure_postgres_data_directory() {
     echo "Impossible de creer POSTGRES_DATA_HOST_DIR: ${resolved_path}"
     if [ "$DEPLOY_ENV" = "online" ] && [ "$(id -u)" -ne 0 ]; then
       echo "Ce chemin necessite probablement des privileges administrateur."
-      echo "Installez sudo ou creez le repertoire avec un utilisateur autorise, puis relancez ./runtime/start.sh -p."
+      echo "Installez sudo ou creez le repertoire avec un utilisateur autorise, puis relancez ./runtime/deploy.sh -p."
     fi
     exit 1
   fi
@@ -351,19 +375,19 @@ ensure_shared_memory_directory() {
 
   if ! run_privileged_command mkdir -p "$shared_memory_directory"; then
     echo "Impossible de creer SHARED_MEMORY_TMPFS: ${shared_memory_directory}"
-    echo "Creez ${shared_memory_directory} avec des droits administrateur, puis relancez ./runtime/start.sh -p."
+    echo "Creez ${shared_memory_directory} avec des droits administrateur, puis relancez ./runtime/deploy.sh -p."
     exit 1
   fi
 
   if ! run_privileged_command chown 0:0 "$shared_memory_directory"; then
     echo "Impossible d'appliquer le proprietaire root:root sur ${shared_memory_directory}."
-    echo "Corrigez le proprietaire du repertoire, puis relancez ./runtime/start.sh -p."
+    echo "Corrigez le proprietaire du repertoire, puis relancez ./runtime/deploy.sh -p."
     exit 1
   fi
 
   if ! run_privileged_command chmod 1777 "$shared_memory_directory"; then
     echo "Impossible d'appliquer le mode 1777 sur ${shared_memory_directory}."
-    echo "Corrigez les permissions du repertoire, puis relancez ./runtime/start.sh -p."
+    echo "Corrigez les permissions du repertoire, puis relancez ./runtime/deploy.sh -p."
     exit 1
   fi
 
