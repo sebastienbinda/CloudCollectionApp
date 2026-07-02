@@ -406,6 +406,40 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(1, len(repository.import_calls))
             self.assertEqual(1, len(reader.read_paths))
 
+    def test_import_collection_replaces_read_only_collection_file(self):
+        """Verifie le remplacement du fichier collection deja verrouille.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident que le second import remplace le fichier.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(directory)
+
+            service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
+            source_file.write_bytes(b"new-ods-content")
+
+            service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
+
+            target_file = Path(directory) / "workspace" / "7" / "7-collection.ods"
+            self.assertEqual(b"new-ods-content", target_file.read_bytes())
+            self.assertEqual(0o440, target_file.stat().st_mode & 0o777)
+            self.assertEqual(str(target_file), reader.read_paths[-1])
+            self.assertEqual(2, len(repository.import_calls))
+
     def test_upload_import_file_accepts_existing_collection(self):
         """Verifie le depot temporaire pour ajouter a une collection existante.
 

@@ -171,7 +171,7 @@ Start production:
 ./deploy.sh -p -e /etc/cloudcollectionapp/deploy-env
 ```
 
-Rebuild/recreate containers:
+Pull published images and recreate containers:
 
 ```bash
 ./deploy.sh -p -r -e /etc/cloudcollectionapp/deploy-env
@@ -221,6 +221,9 @@ images:
 
 - `ghcr.io/sebastienbinda/cloudcollectionapp/backend:${APP_VERSION:-latest}`
 - `ghcr.io/sebastienbinda/cloudcollectionapp/frontend:${APP_VERSION:-latest}`
+
+In production, `deploy.sh -p -r` pulls the published backend and frontend
+images before recreating containers. It does not build images locally.
 
 The stack runs PostgreSQL as an internal `database` service. The backend waits
 for the PostgreSQL healthcheck before starting.

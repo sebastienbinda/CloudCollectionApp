@@ -163,6 +163,13 @@ start_docker() {
   if [ "$DEPLOY_ENV" = "online" ]; then
     docker_options+=("--force-recreate")
     echo "Starting online Docker stack..."
+    if [ "$RECREATE_DOCKER_STACK" = true ]; then
+      echo "Pulling online Docker images..."
+      if ! DOCKER_SECRETS_DIR="$PRODUCTION_SECRETS_DIR" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" pull backend web; then
+        cleanup_production_secrets
+        abort_start "Le telechargement des images Docker de production a echoue."
+      fi
+    fi
     if ! DOCKER_SECRETS_DIR="$PRODUCTION_SECRETS_DIR" docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_ONLINE_FILE" up -d "${docker_options[@]}"; then
       cleanup_production_secrets
       abort_start "Le demarrage Docker Compose de production a echoue."
