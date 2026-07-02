@@ -359,6 +359,10 @@ Le script :
   le lancement ;
 - lance `docker-compose.online.yml`.
 
+Avec `-p -r`, le script telecharge les images publiees `backend` et `web`
+referencees par `APP_VERSION`, puis force la recreation des conteneurs. Il ne
+construit pas les images localement en production.
+
 Toute mise a jour ou recreation des conteneurs doit repasser par
 `./deploy.sh -p -e <repertoire-env>`, afin que les secrets soient redéchiffrés
 temporairement le temps du lancement Compose.
