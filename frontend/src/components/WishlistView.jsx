@@ -134,6 +134,7 @@ function WishlistView({
           </form>
         )}
         sortableColumns={wishlistPage?.wishlistSortableColumns || []}
+        tableClassName="wishlistGamesTable"
         onToggleSort={wishlistPage?.toggleWishlistSort}
         onRowClick={onOpenGameDetail}
       />
