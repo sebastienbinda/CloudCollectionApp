@@ -70,6 +70,25 @@
   font-size: 0.82rem;
 }
 
+@media (min-width: 761px) {
+  .tableWrapper table.collectionGamesTable td.gameNameColumn,
+  .tableWrapper table.libraryGamesTable td.gameNameColumn,
+  .tableWrapper table.wishlistGamesTable td.gameNameColumn {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: normal;
+  }
+
+  .tableWrapper table.wishlistGamesTable .gameNameColumn {
+    width: 30%;
+  }
+
+  .tableWrapper table.wishlistGamesTable th[data-column="Studio"],
+  .tableWrapper table.wishlistGamesTable td[data-column="Studio"] {
+    width: 20%;
+  }
+}
+
 @media (max-width: 760px) {
   .tableWrapper table:has(.clickableTableRow) {
     border-collapse: separate;
