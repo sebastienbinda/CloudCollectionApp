@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 
 from services.collection.imports import CollectionImportWarnings
-from services.database.user_collection_import_repository import CreatedGameMatchReport
+from services.database import CreatedGameMatchReport, ImportedGameMatchReport
 from services.users import UserCollectionImportAdminNotifier, UserCollectionImportReportContext
 from tests.support.fake_platform_matching_email_sender import FakePlatformMatchingEmailSender
 
@@ -44,8 +44,9 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertIn("Email utilisateur: importer@example.com", body)
         self.assertIn("Type de fichier: libreoffice_ods", body)
         self.assertIn("Jeux associes: 4", body)
-        self.assertIn("Aucun jeu cree faute de matching.", body)
+        self.assertIn("Aucun jeu importe.", body)
         self.assertIn("Warnings: aucun warning detecte.", body)
+        self.assertEqual("html", sender.sent_emails[0]["content_subtype"])
 
     def test_notify_import_report_uses_backend_resource_template(self):
         """Verifie que le rapport utilise le template texte des ressources backend.
@@ -129,8 +130,8 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertIn("Chrono", body)
         self.assertIn("Peut etre", body)
 
-    def test_notify_import_report_sends_created_game_match_reports(self):
-        """Verifie le detail des jeux crees faute de rattachement.
+    def test_notify_import_report_sends_imported_game_match_reports_table(self):
+        """Verifie le tableau HTML de diagnostic des jeux importes.
 
         Args:
             Aucun.
@@ -149,18 +150,44 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
                     CreatedGameMatchReport("Zelda", "Switch", "Mario Kart", 33),
                     CreatedGameMatchReport("Chrono", "SNES", "", 0),
                 ),
+                imported_game_match_reports=(
+                    ImportedGameMatchReport(
+                        "Zelda <DX>",
+                        True,
+                        "",
+                        33,
+                        "scored",
+                        "fuzzy_similarity",
+                        "Score de similarite textuelle generique.",
+                    ),
+                    ImportedGameMatchReport(
+                        "Mario Kart",
+                        False,
+                        "Mario Kart 8 Deluxe",
+                        100,
+                        "accepted",
+                        "exact_normalized_key",
+                        "Cle plateforme/jeu normalisee deja presente.",
+                    ),
+                ),
             )
         )
 
         body = sender.sent_emails[0]["body"]
-        self.assertIn("Jeux crees faute de rattachement", body)
-        self.assertIn("Jeu cree: Zelda", body)
-        self.assertIn("Meilleur candidat existant: Mario Kart", body)
-        self.assertIn("Score: 33", body)
-        self.assertIn("Jeu cree: Chrono", body)
-        self.assertIn("Meilleur candidat existant: aucun candidat", body)
+        self.assertIn("<td>Zelda &lt;DX&gt;</td>", body)
+        self.assertIn("<td>Oui</td>", body)
+        self.assertIn("<td>&nbsp;</td>", body)
+        self.assertIn("<td>33</td>", body)
+        self.assertIn("<td>fuzzy_similarity</td>", body)
+        self.assertIn("<td>Mario Kart 8 Deluxe</td>", body)
+        self.assertIn("<td>exact_normalized_key</td>", body)
 
-    def _context(self, warnings, created_game_match_reports=()):
+    def _context(
+        self,
+        warnings,
+        created_game_match_reports=(),
+        imported_game_match_reports=(),
+    ):
         return UserCollectionImportReportContext(
             user_id=7,
             user_email="importer@example.com",
@@ -176,6 +203,7 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
             warnings=warnings,
             collection_file_description={"file_type": "libreoffice_ods"},
             created_game_match_reports=created_game_match_reports,
+            imported_game_match_reports=imported_game_match_reports,
         )
 
 

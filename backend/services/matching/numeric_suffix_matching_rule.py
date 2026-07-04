@@ -38,8 +38,9 @@ class NumericSuffixMatchingRule:
         r"^(?P<base>.+?) (?P<suffix>(?:\d+|[ivxlcdm]+)(?:-(?:\d+|[ivxlcdm]+))*)$"
     )
     _SEQUEL_PREFIX_PATTERN = re.compile(
-        r"^(?P<base>.+?) (?P<suffix>(?:\d+|[ivxlcdm]+)(?:-(?:\d+|[ivxlcdm]+))*)(?:\s+.+)?$"
+        r"^(?P<base>.+?) (?P<suffix>(?:\d+|[ivxlcdm]+)(?:-(?:\d+|[ivxlcdm]+))*)(?P<extra>\s+.+)?$"
     )
+    _EQUIVALENT_SUFFIX_WITH_EXTRA_TEXT_SCORE = 85
     _SERIES_BASE_MINIMUM_SCORE = 90
     _ROMAN_VALUES = {
         "i": 1,
@@ -83,12 +84,7 @@ class NumericSuffixMatchingRule:
         if imported_suffix is None or candidate_suffix is None:
             return self._rejected("missing_numeric_suffix")
         if imported_suffix == candidate_suffix:
-            return GameTitleMatchingResult(
-                100,
-                GameTitleMatchingDecision.ACCEPTED,
-                "equivalent_numeric_suffix",
-                "Les suffixes numeriques des titres sont equivalents.",
-            )
+            return self._accepted_equivalent_suffix()
         return self._rejected("different_numeric_suffix")
 
     def _rejected(self, rule: str) -> GameTitleMatchingResult:
@@ -130,20 +126,41 @@ class NumericSuffixMatchingRule:
         first_key: str,
         second_key: str,
     ) -> GameTitleMatchingResult | None:
-        first_base, first_suffix = self._split_leading_sequel_number(first_key)
-        second_base, second_suffix = self._split_leading_sequel_number(second_key)
+        (
+            first_base,
+            first_suffix,
+            first_has_extra_text,
+        ) = self._split_leading_sequel_number(first_key)
+        (
+            second_base,
+            second_suffix,
+            second_has_extra_text,
+        ) = self._split_leading_sequel_number(second_key)
         if not self._has_same_series_base(first_base, second_base):
             return None
         if first_suffix is None or second_suffix is None:
             return None
         if first_suffix == second_suffix:
-            return GameTitleMatchingResult(
-                100,
-                GameTitleMatchingDecision.ACCEPTED,
-                "equivalent_numeric_suffix",
-                "Les suffixes numeriques des titres sont equivalents.",
-            )
+            if first_has_extra_text or second_has_extra_text:
+                return self._scored_equivalent_suffix_with_extra_text()
+            return self._accepted_equivalent_suffix()
         return self._rejected("different_numeric_suffix")
+
+    def _accepted_equivalent_suffix(self) -> GameTitleMatchingResult:
+        return GameTitleMatchingResult(
+            100,
+            GameTitleMatchingDecision.ACCEPTED,
+            "equivalent_numeric_suffix",
+            "Les suffixes numeriques des titres sont equivalents.",
+        )
+
+    def _scored_equivalent_suffix_with_extra_text(self) -> GameTitleMatchingResult:
+        return GameTitleMatchingResult(
+            self._EQUIVALENT_SUFFIX_WITH_EXTRA_TEXT_SCORE,
+            GameTitleMatchingDecision.SCORED,
+            "equivalent_numeric_suffix_with_extra_text",
+            "Les suffixes numeriques sont equivalents mais un titre contient un complement.",
+        )
 
     def _has_same_series_base(self, first_base: str, second_base: str) -> bool:
         if first_base == second_base:
@@ -156,14 +173,14 @@ class NumericSuffixMatchingRule:
     def _split_leading_sequel_number(
         self,
         game_name_key: str,
-    ) -> tuple[str, tuple[int, ...] | None]:
+    ) -> tuple[str, tuple[int, ...] | None, bool]:
         suffix_match = self._SEQUEL_PREFIX_PATTERN.match(game_name_key)
         if suffix_match is None:
-            return game_name_key, None
+            return game_name_key, None, False
         suffix = self._numeric_suffix(suffix_match.group("suffix"))
         if suffix is None:
-            return game_name_key, None
-        return suffix_match.group("base"), suffix
+            return game_name_key, None, False
+        return suffix_match.group("base"), suffix, bool(suffix_match.group("extra"))
 
     def _numeric_suffix(self, suffix: str) -> tuple[int, ...] | None:
         values = []

@@ -20,6 +20,7 @@ sys.path.insert(0, str(next(parent for parent in Path(__file__).resolve().parent
 
 from services.database.user_collection_import_repository import (
     CreatedGameMatchReport,
+    ImportedGameMatchReport,
     UserCollectionImportPersistenceResult,
 )
 from services.collection.imports import (
@@ -318,6 +319,17 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 created_game_match_reports=(
                     CreatedGameMatchReport("Zelda", "Switch", "Mario Kart", 33),
                 ),
+                imported_game_match_reports=(
+                    ImportedGameMatchReport(
+                        "Zelda",
+                        True,
+                        "",
+                        33,
+                        "scored",
+                        "fuzzy_similarity",
+                        "Score de similarite textuelle generique.",
+                    ),
+                ),
             )
             service, repository, reader, source_file = self._build_service(
                 directory,
@@ -345,6 +357,10 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(
                 repository.result.created_game_match_reports,
                 context.created_game_match_reports,
+            )
+            self.assertEqual(
+                repository.result.imported_game_match_reports,
+                context.imported_game_match_reports,
             )
             self.assertEqual(
                 self._valid_description().to_dict(),

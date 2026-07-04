@@ -251,13 +251,24 @@ class GameRepositoryTest(unittest.TestCase):
         connection = FakeConnection()
         connection.mapping_results = [
             [
-                {"id": 1, "name": "Sonic", "platform_name": "Mega Drive"},
-                {"id": 2, "name": "Sonic the edgedog", "platform_name": "Mega Drive"},
+                {
+                    "id": 1,
+                    "name": "Sonic",
+                    "release_date": date(1991, 6, 23),
+                    "platform_name": "Mega Drive",
+                },
+                {
+                    "id": 2,
+                    "name": "Sonic the edgedog",
+                    "release_date": date(1992, 11, 21),
+                    "platform_name": "Mega Drive",
+                },
             ],
             [
                 {
                     "id": 1,
                     "name": "Sonic",
+                    "release_date": date(1991, 6, 23),
                     "alias_name": "Sonic the edgedog",
                     "platform_name": "Mega Drive",
                 }
@@ -270,9 +281,12 @@ class GameRepositoryTest(unittest.TestCase):
 
         references = repository.load_references_by_key(connection)
 
-        self.assertEqual((1, "Sonic"), references[("mega drive", "sonic")])
         self.assertEqual(
-            (2, "Sonic the edgedog"),
+            (1, "Sonic", date(1991, 6, 23)),
+            references[("mega drive", "sonic")],
+        )
+        self.assertEqual(
+            (2, "Sonic the edgedog", date(1992, 11, 21)),
             references[("mega drive", "sonic the edgedog")],
         )
 

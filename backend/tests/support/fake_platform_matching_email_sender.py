@@ -27,18 +27,30 @@ class FakePlatformMatchingEmailSender:
 
         self.sent_emails = []
 
-    def send_email(self, recipient_email: str, subject: str, body: str) -> None:
+    def send_email(
+        self,
+        recipient_email: str,
+        subject: str,
+        body: str,
+        content_subtype: str = "plain",
+    ) -> None:
         """Memorise un email envoye.
 
         Args:
             recipient_email (str): Adresse destinataire.
             subject (str): Sujet de l'email.
             body (str): Corps texte.
+            content_subtype (str): Sous-type MIME du contenu.
 
         Returns:
             None: La methode ne retourne aucune valeur.
         """
 
         self.sent_emails.append(
-            {"recipient_email": recipient_email, "subject": subject, "body": body}
+            {
+                "recipient_email": recipient_email,
+                "subject": subject,
+                "body": body,
+                "content_subtype": content_subtype,
+            }
         )

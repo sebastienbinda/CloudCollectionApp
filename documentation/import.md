@@ -156,12 +156,15 @@ database structure in `documentation/database.md`, and frontend navigation in
   complete backend import execution after the user lock is acquired.
 - At the end of each import, the backend sends exactly one administrator report
   when `ADMIN_NOTIFICATION_EMAIL` is configured, even when the import has no
-  warning. The report is sent outside the reader layer and includes the import
-  context, counters, validated configuration, total duration, platform mappings
-  and every import warning. When a game reference is created because no exact or
-  high-confidence existing game match was accepted, this same report lists the
-  created game with its platform, the best existing same-platform candidate and
-  the score obtained by the matching algorithm.
+  warning. The report is sent outside the reader layer as an HTML email and
+  includes the import context, counters, validated configuration, total
+  duration, platform mappings and every import warning. The game section is an
+  HTML table listing every imported game with the original file name, whether a
+  reference game was created, the associated existing game when one was
+  accepted, the final matching score, the matching decision, the applied rule
+  and the explanatory reason. When a game reference is created because no exact
+  or high-confidence existing game match was accepted, the same diagnostic
+  table keeps the best existing same-platform candidate score and explanation.
 - Studios are matched by normalized studio name.
 - Games are first matched by exact normalized `(platform, name)` key. When no
   exact key exists, the backend computes the normalized name similarity score
@@ -178,12 +181,21 @@ database structure in `documentation/database.md`, and frontend navigation in
   number has only a light typo and remains highly similar, such as
   `Final Fantasy 10` vs `Final Fantsy 11 le`. Equivalent Arabic and Roman
   series numbers still force a score of `100` with the same light-typo
-  tolerance on the base, for example `Final Fantasy 10` vs `Final Fantsy X`.
-  Titles from the same word-prefix series with a different final word suffix,
-  such as `Monster Hunter Wild` and `Monster Hunter World`, also force the score
-  to `0`. The game-name matching engine returns an explainable result with the
-  applied decision, rule name and reason before exposing the integer score used
-  by import.
+  tolerance on the base when no extra title text follows the number, for example
+  `Final Fantasy 10` vs `Final Fantsy X`. When the same number is followed by
+  extra title text such as `Persona 5` vs `Persona 5 Royal`, the score is set to
+  `85` so release dates can arbitrate the match. Titles from the same
+  word-prefix series with a different final word suffix, such as
+  `Monster Hunter Wild` and `Monster Hunter World`, also force the score to `0`.
+  The game-name matching engine returns an explainable result with the applied
+  decision, rule name and reason before exposing the integer score used by
+  import. When the name score is greater than or equal to `85` and strictly lower
+  than `95`, and both the imported game and the existing candidate have a release
+  date, the backend compares release dates as a secondary confidence factor: an
+  absolute gap greater than six months subtracts `10` points, a gap greater than
+  eighteen months subtracts `20` points, and a gap greater than thirty-six months
+  subtracts `35` points. Missing dates, scores `< 85` and scores `>= 95` are not
+  adjusted.
 - Newly created reference games store a standardized display name: title words
   are capitalized, joining words remain lowercase inside a title segment, Roman
   numerals are uppercased only when they are complete words or complete `-`

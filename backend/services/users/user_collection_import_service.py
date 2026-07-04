@@ -26,8 +26,10 @@ from services.collection.imports import (
     CollectionFileValidationError,
     CollectionImportData,
 )
-from services.database.user_collection_import_repository import (
+from services.database.user_collection_import_persistence_result import (
     UserCollectionImportPersistenceResult,
+)
+from services.database.user_collection_import_repository import (
     UserCollectionImportUserNotFoundError,
     UserCollectionReinitializationNotFoundError,
 )
@@ -450,6 +452,7 @@ class UserCollectionImportService:
             warnings=import_data.warnings,
             collection_file_description=file_description.to_dict(),
             created_game_match_reports=persistence_result.created_game_match_reports,
+            imported_game_match_reports=persistence_result.imported_game_match_reports,
         )
 
     def _notify_import_report(self, context: UserCollectionImportReportContext) -> None:

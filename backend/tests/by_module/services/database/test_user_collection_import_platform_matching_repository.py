@@ -266,7 +266,12 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             insert=lambda connection, game, platform_id, studio_id: insert_calls.append(game),
         )
 
-        associations, created_games, created_game_match_reports = repository._ensure_games(
+        (
+            associations,
+            created_games,
+            created_game_match_reports,
+            imported_game_match_reports,
+        ) = repository._ensure_games(
             object(),
             CollectionImportData(
                 platforms=[CollectionImportPlatform("Switch")],
@@ -279,6 +284,10 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
 
         self.assertEqual(0, created_games)
         self.assertEqual([], created_game_match_reports)
+        self.assertEqual(1, len(imported_game_match_reports))
+        self.assertFalse(imported_game_match_reports[0].created)
+        self.assertEqual("The Legend of Zelda", imported_game_match_reports[0].associated_game_name)
+        self.assertGreaterEqual(imported_game_match_reports[0].score, 75)
         self.assertEqual([], insert_calls)
         self.assertEqual(31, associations[0].game_id)
 
@@ -309,7 +318,12 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             insert=lambda connection, game, platform_id, studio_id: 41,
         )
 
-        associations, created_games, created_game_match_reports = repository._ensure_games(
+        (
+            associations,
+            created_games,
+            created_game_match_reports,
+            imported_game_match_reports,
+        ) = repository._ensure_games(
             object(),
             CollectionImportData(
                 platforms=[CollectionImportPlatform("Switch")],
@@ -327,6 +341,11 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual("Switch", created_game_match_reports[0].platform_name)
         self.assertEqual("Mario Kart", created_game_match_reports[0].best_existing_game_name)
         self.assertGreaterEqual(created_game_match_reports[0].best_score, 0)
+        self.assertEqual(1, len(imported_game_match_reports))
+        self.assertTrue(imported_game_match_reports[0].created)
+        self.assertEqual("Zelda", imported_game_match_reports[0].imported_game_name)
+        self.assertEqual("", imported_game_match_reports[0].associated_game_name)
+        self.assertEqual("fuzzy_similarity", imported_game_match_reports[0].rule)
 
 
 class AdminLibraryImportRepositoryTest(unittest.TestCase):

@@ -13,6 +13,7 @@
 
 import json
 import os
+from html import escape
 from pathlib import Path
 
 from services.email import EmailConfiguration, EmailSenderFactory, EmailTemplateRenderer
@@ -97,6 +98,7 @@ class UserCollectionImportAdminNotifier:
             recipient_email=self.admin_notification_email,
             subject="Rapport d'import de collection utilisateur",
             body=self._build_email_body(context),
+            content_subtype="html",
         )
 
     def _build_email_body(self, context: UserCollectionImportReportContext) -> str:
@@ -106,18 +108,18 @@ class UserCollectionImportAdminNotifier:
             self.template_path,
             {
                 "user_id": context.user_id,
-                "user_email": context.user_email,
-                "file_type": context.file_type,
-                "original_filename": context.original_filename,
-                "source_mode": context.source_mode,
+                "user_email": escape(str(context.user_email)),
+                "file_type": escape(str(context.file_type)),
+                "original_filename": escape(str(context.original_filename)),
+                "source_mode": escape(str(context.source_mode)),
                 "copied_to_workspace": "oui" if context.copied_to_workspace else "non",
                 "linked_platforms": context.linked_platforms,
                 "created_studios": context.created_studios,
                 "created_games": context.created_games,
                 "associated_games": context.associated_games,
                 "wishlisted_games": context.wishlisted_games,
-                "created_game_match_reports": self._created_game_match_reports_text(
-                    context.created_game_match_reports,
+                "imported_game_match_reports": self._imported_game_match_reports_html(
+                    context.imported_game_match_reports,
                 ),
                 "total_import_duration_seconds": "{duration:.3f}".format(
                     duration=float(
@@ -125,31 +127,51 @@ class UserCollectionImportAdminNotifier:
                         or 0.0
                     ),
                 ),
-                "collection_file_description": json.dumps(
-                    context.collection_file_description,
-                    ensure_ascii=False,
-                    sort_keys=True,
+                "collection_file_description": escape(
+                    json.dumps(
+                        context.collection_file_description,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
                 ),
-                "warnings": "\n".join(warnings_lines),
+                "warnings": escape("\n".join(warnings_lines)),
             },
         )
 
-    def _created_game_match_reports_text(self, created_game_match_reports: tuple) -> str:
-        if not created_game_match_reports:
-            return "Aucun jeu cree faute de matching."
-        lines = ["Jeux crees faute de rattachement a un jeu existant:"]
-        for report in created_game_match_reports:
-            best_name = getattr(report, "best_existing_game_name", "") or "aucun candidat"
-            lines.append(
-                "- Jeu cree: {imported_game_name} | Plateforme: {platform_name} | "
-                "Meilleur candidat existant: {best_name} | Score: {best_score}".format(
-                    imported_game_name=getattr(report, "imported_game_name", ""),
-                    platform_name=getattr(report, "platform_name", ""),
-                    best_name=best_name,
-                    best_score=int(getattr(report, "best_score", 0) or 0),
-                )
+    def _imported_game_match_reports_html(self, imported_game_match_reports: tuple) -> str:
+        if not imported_game_match_reports:
+            return "<p>Aucun jeu importe.</p>"
+        rows = []
+        for report in imported_game_match_reports:
+            rows.append(
+                "<tr>"
+                f"<td>{self._html_value(getattr(report, 'imported_game_name', ''))}</td>"
+                f"<td>{'Oui' if getattr(report, 'created', False) else 'Non'}</td>"
+                f"<td>{self._html_value(getattr(report, 'associated_game_name', ''))}</td>"
+                f"<td>{int(getattr(report, 'score', 0) or 0)}</td>"
+                f"<td>{self._html_value(getattr(report, 'decision', ''))}</td>"
+                f"<td>{self._html_value(getattr(report, 'rule', ''))}</td>"
+                f"<td>{self._html_value(getattr(report, 'reason', ''))}</td>"
+                "</tr>"
             )
-        return "\n".join(lines)
+        return (
+            '<table border="1" cellpadding="6" cellspacing="0">'
+            "<thead><tr>"
+            "<th>Nom</th>"
+            "<th>Créé</th>"
+            "<th>Jeu associé</th>"
+            "<th>Score</th>"
+            "<th>Decision</th>"
+            "<th>Rule</th>"
+            "<th>Raison</th>"
+            "</tr></thead><tbody>"
+            + "".join(rows)
+            + "</tbody></table>"
+        )
+
+    def _html_value(self, value) -> str:
+        text = str(value or "")
+        return escape(text) if text else "&nbsp;"
 
     def _append_warnings(self, lines: list[str], warnings: object) -> None:
         platform_mappings = list(getattr(warnings, "platform_mappings", []) or [])

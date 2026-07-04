@@ -1,25 +1,40 @@
-Rapport d'import de collection utilisateur.
+<!doctype html>
+<html lang="fr">
+<body>
+<h1>Rapport d'import de collection utilisateur</h1>
 
-Contexte:
-- Utilisateur: ${user_id}
-- Email utilisateur: ${user_email}
-- Type de fichier: ${file_type}
-- Fichier: ${original_filename}
-- Source: ${source_mode}
-- Copie workspace: ${copied_to_workspace}
+<h2>Contexte</h2>
+<ul>
+<li>Utilisateur: ${user_id}</li>
+<li>Email utilisateur: ${user_email}</li>
+<li>Type de fichier: ${file_type}</li>
+<li>Fichier: ${original_filename}</li>
+<li>Source: ${source_mode}</li>
+<li>Copie workspace: ${copied_to_workspace}</li>
+</ul>
 
-Compteurs:
-- Plateformes rattachees: ${linked_platforms}
-- Studios crees: ${created_studios}
-- Jeux crees: ${created_games}
-- Jeux associes: ${associated_games}
-- Jeux en liste de souhaits: ${wishlisted_games}
+<h2>Compteurs</h2>
+<ul>
+<li>Plateformes rattachees: ${linked_platforms}</li>
+<li>Studios crees: ${created_studios}</li>
+<li>Jeux crees: ${created_games}</li>
+<li>Jeux associes: ${associated_games}</li>
+<li>Jeux en liste de souhaits: ${wishlisted_games}</li>
+</ul>
 
-${created_game_match_reports}
+<h2>Jeux importes</h2>
+${imported_game_match_reports}
 
-Duree totale de l'import: ${total_import_duration_seconds} seconde(s).
+<p>Duree totale de l'import: ${total_import_duration_seconds} seconde(s).</p>
 
-Configuration d'import:
+<h2>Configuration d'import</h2>
+<pre>
 ${collection_file_description}
+</pre>
 
+<h2>Warnings</h2>
+<pre>
 ${warnings}
+</pre>
+</body>
+</html>

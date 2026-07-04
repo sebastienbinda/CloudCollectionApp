@@ -59,9 +59,10 @@ reader architecture rules in `documentation/reader.md`.
   imported game is attached to an existing game only when the best candidate is
   unique and reaches `GAME_MATCHING_HIGH_LEVEL_RATING` (default `75`); scores
   below `GAME_MATCHING_LOW_LVL_RATING` (default `25`) and ambiguous or medium
-  scores create a new game reference. Each created game reference is included in
-  the administrator import report with the best existing same-platform candidate
-  name and matching score.
+  scores create a new game reference. The administrator import report includes
+  an HTML table for every imported game with the original file name, creation
+  status, associated existing game when one is accepted, final matching score,
+  matching decision, applied rule and explanatory reason.
 - Game matching treats a trailing sequel number as a functional part of the
   title. When two names share the same base but only one has a trailing number,
   their score is forced to `0` (`Final Fantasy` vs `Final Fantasy 2`). When both
@@ -79,12 +80,19 @@ reader architecture rules in `documentation/reader.md`.
   base before the number when the bases remain highly similar, for example
   `Final Fantasy 10` vs `Final Fantsy 11 le`. Equivalent Arabic and Roman
   numbers still force a score of `100` with the same light-typo tolerance on the
-  base, for example `Final Fantasy 10` vs `Final Fantsy X`. When two titles have
-  at least three words, the same word prefix and a different final word suffix,
-  the score is forced to `0`, for example `Monster Hunter Wild` vs
+  base when no extra title text follows the number, for example
+  `Final Fantasy 10` vs `Final Fantsy X`. When the same number is followed by
+  extra title text such as `Persona 5` vs `Persona 5 Royal`, the score is set to
+  `85` so release dates can arbitrate the match. When two titles have at least
+  three words, the same word prefix and a different final word suffix, the score
+  is forced to `0`, for example `Monster Hunter Wild` vs
   `Monster Hunter World`. The matching engine evaluates these deterministic
   rules before the fuzzy fallback and exposes the decision, rule name and reason
-  for diagnostics such as `scripts/matching_score.sh`.
+  for diagnostics such as `scripts/matching_score.sh`. After name scoring, game
+  matching adjusts only uncertain scores (`85` to `94`) when both release dates
+  are known: date gaps greater than six, eighteen and thirty-six months subtract
+  respectively `10`, `20` and `35` points. Missing dates and scores outside this
+  uncertain range keep the name score unchanged.
 - Platforms are scored first against canonical catalog names. When the direct
   score is below `PLATFORM_MATCHING_HIGH_LEVEL_RATING`, catalog aliases are evaluated
   and used only when they improve the score.

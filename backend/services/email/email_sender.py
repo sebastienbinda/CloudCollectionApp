@@ -22,13 +22,20 @@ from .email_configuration import EmailConfiguration
 class EmailSender(Protocol):
     """Decrit le contrat d'envoi d'un email applicatif."""
 
-    def send_email(self, recipient_email: str, subject: str, body: str) -> None:
-        """Envoie un email texte.
+    def send_email(
+        self,
+        recipient_email: str,
+        subject: str,
+        body: str,
+        content_subtype: str = "plain",
+    ) -> None:
+        """Envoie un email.
 
         Args:
             recipient_email (str): Adresse destinataire.
             subject (str): Sujet du message.
-            body (str): Corps texte du message.
+            body (str): Corps du message.
+            content_subtype (str): Sous-type MIME du contenu, par exemple `plain` ou `html`.
 
         Returns:
             None: La methode ne retourne aucune valeur.
@@ -54,22 +61,30 @@ class ConsoleEmailSender:
 
         self.logger = logger or logging.getLogger(__name__)
 
-    def send_email(self, recipient_email: str, subject: str, body: str) -> None:
+    def send_email(
+        self,
+        recipient_email: str,
+        subject: str,
+        body: str,
+        content_subtype: str = "plain",
+    ) -> None:
         """Journalise un email au lieu de l'envoyer.
 
         Args:
             recipient_email (str): Adresse destinataire.
             subject (str): Sujet du message.
-            body (str): Corps texte du message.
+            body (str): Corps du message.
+            content_subtype (str): Sous-type MIME du contenu.
 
         Returns:
             None: La methode ne retourne aucune valeur.
         """
 
         self.logger.info(
-            "Email console pour %s | sujet=%s | corps=%s",
+            "Email console pour %s | sujet=%s | content_subtype=%s | corps=%s",
             recipient_email,
             subject,
+            content_subtype,
             body,
         )
 
@@ -89,13 +104,20 @@ class SmtpEmailSender:
 
         self.configuration = configuration
 
-    def send_email(self, recipient_email: str, subject: str, body: str) -> None:
-        """Envoie un email texte via SMTP.
+    def send_email(
+        self,
+        recipient_email: str,
+        subject: str,
+        body: str,
+        content_subtype: str = "plain",
+    ) -> None:
+        """Envoie un email via SMTP.
 
         Args:
             recipient_email (str): Adresse destinataire.
             subject (str): Sujet du message.
-            body (str): Corps texte du message.
+            body (str): Corps du message.
+            content_subtype (str): Sous-type MIME du contenu.
 
         Returns:
             None: La methode ne retourne aucune valeur.
@@ -109,7 +131,7 @@ class SmtpEmailSender:
         message["From"] = self.configuration.sender_email
         message["To"] = recipient_email
         message["Subject"] = subject
-        message.set_content(body)
+        message.set_content(body, subtype=content_subtype)
 
         with smtplib.SMTP(self.configuration.smtp_host, self.configuration.smtp_port) as smtp:
             if self.configuration.smtp_use_tls:

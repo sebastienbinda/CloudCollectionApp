@@ -12,12 +12,14 @@
 # Description : matching centralise des jeux importes avec le referentiel.
 
 from dataclasses import dataclass
+from datetime import date, datetime
 
 from services.collection.imports import CollectionImportGame
 from services.matching import GameTitleMatchingResult, explain_game_name_matching
 from services.users import UserCollectionNameNormalizer
 
 from .game_matching_configuration import GameMatchingConfiguration
+from .game_release_date_score_adjuster import GameReleaseDateScoreAdjuster
 
 GamePlatformIndex = dict[str, list[tuple]]
 
@@ -29,10 +31,16 @@ class GameMatchingCandidate:
     Attributes:
         game_name (str): Nom lisible du jeu existant candidat.
         score (int): Score de similarite calcule.
+        decision (str): Decision explicable du matching.
+        rule (str): Regle de matching appliquee.
+        reason (str): Raison explicative du matching.
     """
 
     game_name: str
     score: int
+    decision: str = ""
+    rule: str = ""
+    reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -55,12 +63,15 @@ class GameMatchingService:
         self,
         configuration: GameMatchingConfiguration | None = None,
         name_normalizer: UserCollectionNameNormalizer | None = None,
+        release_date_score_adjuster: GameReleaseDateScoreAdjuster | None = None,
     ):
         """Initialise le service de matching des jeux.
 
         Args:
             configuration (GameMatchingConfiguration | None): Seuils de matching des jeux.
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur metier.
+            release_date_score_adjuster (GameReleaseDateScoreAdjuster | None): Ajusteur de
+                score selon les dates de sortie.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -72,6 +83,9 @@ class GameMatchingService:
         self.configuration = configuration or GameMatchingConfiguration.from_environment()
         self.configuration.validate()
         self.name_normalizer = name_normalizer or UserCollectionNameNormalizer()
+        self.release_date_score_adjuster = (
+            release_date_score_adjuster or GameReleaseDateScoreAdjuster()
+        )
 
     def find_existing_game_id(
         self,
@@ -117,16 +131,21 @@ class GameMatchingService:
         exact_match_id = existing_game_ids.get(imported_key)
         if exact_match_id is not None:
             return GameMatchingResult(exact_match_id, None)
-        return self._evaluate_high_confidence_match(imported_key, games_by_platform)
+        return self._evaluate_high_confidence_match(
+            imported_key,
+            game.release_date,
+            games_by_platform,
+        )
 
     def build_platform_index(
         self,
-        existing_game_ids: dict[tuple[str, str], int | tuple[int, str]],
+        existing_game_ids: dict[tuple[str, str], int | tuple[int, str] | tuple[int, str, object]],
     ) -> GamePlatformIndex:
         """Indexe les jeux existants par plateforme normalisee.
 
         Args:
-            existing_game_ids (dict[tuple[str, str], int | tuple[int, str]]): Jeux par cle.
+            existing_game_ids (dict[tuple[str, str], int | tuple[int, str] |
+                tuple[int, str, object]]): Jeux par cle.
 
         Returns:
             GamePlatformIndex: Candidats fuzzy regroupes par plateforme.
@@ -136,9 +155,12 @@ class GameMatchingService:
         for (platform_key, game_name_key), game_reference in existing_game_ids.items():
             if not platform_key or not game_name_key:
                 continue
-            game_id, game_name = self._game_reference_values(game_reference, game_name_key)
+            game_id, game_name, release_date = self._game_reference_values(
+                game_reference,
+                game_name_key,
+            )
             games_by_platform.setdefault(platform_key, []).append(
-                (game_name_key, game_id, game_name)
+                (game_name_key, game_id, game_name, release_date)
             )
         return games_by_platform
 
@@ -148,6 +170,7 @@ class GameMatchingService:
         game_id: int,
         game_name: str,
         games_by_platform: GamePlatformIndex,
+        release_date: date | datetime | None = None,
     ) -> None:
         """Ajoute un jeu cree pendant l'import dans l'index par plateforme.
 
@@ -156,6 +179,7 @@ class GameMatchingService:
             game_id (int): Identifiant du jeu cree.
             game_name (str): Nom lisible du jeu cree.
             games_by_platform (GamePlatformIndex): Index a enrichir.
+            release_date (date | datetime | None): Date de sortie du jeu cree.
 
         Returns:
             None: L'index est modifie en place.
@@ -165,7 +189,7 @@ class GameMatchingService:
         if not platform_key or not game_name_key:
             return
         games_by_platform.setdefault(platform_key, []).append(
-            (game_name_key, game_id, game_name)
+            (game_name_key, game_id, game_name, release_date)
         )
 
     def game_key(self, game: CollectionImportGame) -> tuple[str, str]:
@@ -221,6 +245,7 @@ class GameMatchingService:
     def _evaluate_high_confidence_match(
         self,
         imported_key: tuple[str, str],
+        imported_release_date: date | datetime | None,
         games_by_platform: GamePlatformIndex,
     ) -> GameMatchingResult:
         platform_key, game_name_key = imported_key
@@ -228,19 +253,37 @@ class GameMatchingService:
             return GameMatchingResult(None, None)
         candidates = []
         for indexed_candidate in games_by_platform.get(platform_key, []):
-            candidate_name_key, game_id, candidate_name = self._indexed_candidate_values(
-                indexed_candidate
+            (
+                candidate_name_key,
+                game_id,
+                candidate_name,
+                candidate_release_date,
+            ) = self._indexed_candidate_values(indexed_candidate)
+            matching_explanation = self.explain_name_score(game_name_key, candidate_name_key)
+            score = self._matching_score(game_name_key, candidate_name_key)
+            adjusted_score = self.release_date_score_adjuster.adjust_score(
+                score,
+                imported_release_date,
+                candidate_release_date,
             )
             candidates.append(
                 (
-                    self._matching_score(game_name_key, candidate_name_key),
+                    adjusted_score,
                     game_id,
                     candidate_name,
+                    matching_explanation.decision.value,
+                    matching_explanation.rule,
+                    matching_explanation.reason,
                 )
             )
-        best_score = max((score for score, _game_id, _candidate_name in candidates), default=0)
+        best_score = max(
+            (score for score, _game_id, _candidate_name, _decision, _rule, _reason in candidates),
+            default=0,
+        )
         best_game_ids = {
-            game_id for score, game_id, _candidate_name in candidates if score == best_score
+            game_id
+            for score, game_id, _candidate_name, _decision, _rule, _reason in candidates
+            if score == best_score
         }
         best_candidate = self._best_candidate(candidates, best_score)
         if best_score < self.configuration.low_level_rating:
@@ -254,41 +297,79 @@ class GameMatchingService:
 
     def _best_candidate(
         self,
-        candidates: list[tuple[int, int, str]],
+        candidates: list[tuple[int, int, str, str, str, str]],
         best_score: int,
     ) -> GameMatchingCandidate | None:
         if not candidates:
             return None
+        best_details = sorted(
+            (
+                candidate_name,
+                decision,
+                rule,
+                reason,
+            )
+            for score, _game_id, candidate_name, decision, rule, reason in candidates
+            if score == best_score
+        )
         best_names = sorted(
             {
                 candidate_name
-                for score, _game_id, candidate_name in candidates
+                for score, _game_id, candidate_name, _decision, _rule, _reason in candidates
                 if score == best_score
             }
         )
-        return GameMatchingCandidate(" / ".join(best_names), best_score)
+        _candidate_name, decision, rule, reason = best_details[0]
+        return GameMatchingCandidate(" / ".join(best_names), best_score, decision, rule, reason)
 
     def _matching_score(self, imported_key: str, candidate_key: str) -> int:
         return explain_game_name_matching(imported_key, candidate_key).score
 
     def _game_reference_values(
         self,
-        game_reference: int | tuple[int, str],
+        game_reference: int | tuple[int, str] | tuple[int, str, object],
         fallback_name: str,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, date | datetime | None]:
         if isinstance(game_reference, tuple):
-            return int(game_reference[0]), str(game_reference[1] or fallback_name)
-        return int(game_reference), fallback_name
+            return (
+                int(game_reference[0]),
+                str(game_reference[1] or fallback_name),
+                self._reference_release_date(game_reference),
+            )
+        return int(game_reference), fallback_name, None
 
-    def _indexed_candidate_values(self, indexed_candidate: tuple) -> tuple[str, int, str]:
+    def _indexed_candidate_values(
+        self,
+        indexed_candidate: tuple,
+    ) -> tuple[str, int, str, date | datetime | None]:
         if len(indexed_candidate) >= 3:
             return (
                 str(indexed_candidate[0]),
                 int(indexed_candidate[1]),
                 str(indexed_candidate[2] or indexed_candidate[0]),
+                self._indexed_release_date(indexed_candidate),
             )
         return (
             str(indexed_candidate[0]),
             int(indexed_candidate[1]),
             str(indexed_candidate[0]),
+            None,
         )
+
+    def _reference_release_date(
+        self,
+        game_reference: tuple[int, str] | tuple[int, str, object],
+    ) -> date | datetime | None:
+        if len(game_reference) < 3:
+            return None
+        return self._date_value(game_reference[2])
+
+    def _indexed_release_date(self, indexed_candidate: tuple) -> date | datetime | None:
+        if len(indexed_candidate) < 4:
+            return None
+        return self._date_value(indexed_candidate[3])
+
+    def _date_value(self, value: object) -> date | datetime | None:
+        if isinstance(value, (date, datetime)):
+            return value
+        return None
