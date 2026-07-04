@@ -283,7 +283,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
 
             target_file = Path(directory) / "workspace" / "7" / "7-collection.ods"
             self.assertTrue(target_file.exists())
-            self.assertEqual(0o440, target_file.stat().st_mode & 0o777)
+            self.assertEqual(0o750, target_file.stat().st_mode & 0o777)
             self.assertEqual(str(target_file), reader.read_paths[0])
             self.assertEqual((1, 1, 1, 1), (
                 result.linked_platforms,
@@ -436,7 +436,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
 
             target_file = Path(directory) / "workspace" / "7" / "7-collection.ods"
             self.assertEqual(b"new-ods-content", target_file.read_bytes())
-            self.assertEqual(0o440, target_file.stat().st_mode & 0o777)
+            self.assertEqual(0o750, target_file.stat().st_mode & 0o777)
             self.assertEqual(str(target_file), reader.read_paths[-1])
             self.assertEqual(2, len(repository.import_calls))
 
@@ -468,8 +468,8 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
 
-    def test_upload_import_file_replaces_read_only_temporary_file(self):
-        """Verifie le remplacement d'un upload temporaire deja verrouille en lecture.
+    def test_upload_import_file_replaces_existing_temporary_file(self):
+        """Verifie le remplacement d'un upload temporaire deja present.
 
         Args:
             Aucun.
@@ -498,7 +498,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
 
             temporary_file = Path(directory) / "workspace" / "7" / "current-import.ods"
             self.assertEqual(b"new-ods-content", temporary_file.read_bytes())
-            self.assertEqual(0o440, temporary_file.stat().st_mode & 0o777)
+            self.assertEqual(0o750, temporary_file.stat().st_mode & 0o777)
             self.assertEqual([], repository.import_calls)
             self.assertEqual([], reader.read_paths)
 

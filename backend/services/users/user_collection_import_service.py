@@ -350,7 +350,7 @@ class UserCollectionImportService:
             target_file_path.parent.mkdir(parents=True, exist_ok=True)
             target_file_path.unlink(missing_ok=True)
             shutil.copyfile(source_file_path, target_file_path)
-            target_file_path.chmod(0o440)
+            target_file_path.chmod(0o750)
         except OSError as exc:
             self._delete_copied_file(target_file_path)
             raise UserCollectionImportUnexpectedError("Impossible de copier le fichier.") from exc

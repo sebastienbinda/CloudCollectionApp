@@ -121,7 +121,7 @@ class UserCollectionImportServiceGenericReaderTest(unittest.TestCase):
             )
             temporary_file = Path(directory) / "workspace" / "7" / "current-import.txt"
             self.assertTrue(temporary_file.exists())
-            self.assertEqual(0o440, temporary_file.stat().st_mode & 0o777)
+            self.assertEqual(0o750, temporary_file.stat().st_mode & 0o777)
 
             self.assertEqual(
                 ["Switch", "NES"],

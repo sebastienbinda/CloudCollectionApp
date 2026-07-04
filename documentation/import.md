@@ -97,7 +97,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 ```
 
 - The copied file must be removed when import parsing or persistence fails.
-- The copied file must be read-only for user and group: `0440`.
+- The copied file must be writable by its owner and executable by owner and group:
+  `0750`.
 - Existing platforms, studios, games and user-game associations must be reused,
   not overwritten.
 - Reused user-game associations update only private values that are non-null in
