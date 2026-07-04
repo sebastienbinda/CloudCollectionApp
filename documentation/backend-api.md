@@ -1158,7 +1158,7 @@ Field:
 The backend stores the file as
 `/users/workspace/<user_id>/current-import.<extension>`, overwriting any
 previous temporary import file for the same user. The copied file is chmod
-`0440`.
+`0750`.
 
 Upload errors use:
 
@@ -1292,7 +1292,7 @@ The backend copies the staged temporary file to
 complete path in `t_user.collection_file_path` only after a successful import,
 and removes the final copied file if the import fails. On additive import, the
 stored collection file and saved import configuration are replaced only after
-persistence succeeds. The copied file is chmod `0440`.
+persistence succeeds. The copied file is chmod `0750`.
 
 Only configured ODS sheets are imported. With a shared layout, the user may
 either provide the sheets to import or the sheets to exclude; without either
