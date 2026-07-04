@@ -172,9 +172,18 @@ database structure in `documentation/database.md`, and frontend navigation in
   non-exact results create a new reference game. Trailing sequel numbers are
   compared before fuzzy scoring, including hyphenated suffixes such as
   `Final Fantasy X-2`; different suffix sequences, or extra content after a
-  numeric suffix, force the score to `0`. Titles from the same word-prefix
-  series with a different final word suffix, such as `Monster Hunter Wild` and
-  `Monster Hunter World`, also force the score to `0`.
+  numeric suffix, force the score to `0`. A different series number also forces
+  the score to `0` when followed by text, for example `Final Fantasy 10` and
+  `Final Fantasy 11 yOs`; this rejection also applies when the base before the
+  number has only a light typo and remains highly similar, such as
+  `Final Fantasy 10` vs `Final Fantsy 11 le`. Equivalent Arabic and Roman
+  series numbers still force a score of `100` with the same light-typo
+  tolerance on the base, for example `Final Fantasy 10` vs `Final Fantsy X`.
+  Titles from the same word-prefix series with a different final word suffix,
+  such as `Monster Hunter Wild` and `Monster Hunter World`, also force the score
+  to `0`. The game-name matching engine returns an explainable result with the
+  applied decision, rule name and reason before exposing the integer score used
+  by import.
 - Newly created reference games store a standardized display name: title words
   are capitalized, joining words remain lowercase inside a title segment, Roman
   numerals are uppercased only when they are complete words or complete `-`

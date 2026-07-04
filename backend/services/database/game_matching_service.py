@@ -14,7 +14,7 @@
 from dataclasses import dataclass
 
 from services.collection.imports import CollectionImportGame
-from services.matching import game_name_matching_score
+from services.matching import GameTitleMatchingResult, explain_game_name_matching
 from services.users import UserCollectionNameNormalizer
 
 from .game_matching_configuration import GameMatchingConfiguration
@@ -194,11 +194,29 @@ class GameMatchingService:
             int: Score de matching entre `0` et `100`.
         """
 
+        return self.explain_name_score(imported_name, candidate_name).score
+
+    def explain_name_score(
+        self,
+        imported_name: str,
+        candidate_name: str,
+    ) -> GameTitleMatchingResult:
+        """Explique le score metier entre deux noms de jeux.
+
+        Args:
+            imported_name (str): Nom de jeu importe.
+            candidate_name (str): Nom de jeu candidat dans la Bibliotheque.
+
+        Returns:
+            GameTitleMatchingResult: Score, decision et regle appliquee.
+
+        Raises:
+            Aucun.
+        """
+
         imported_key = self.name_normalizer.comparison_key(imported_name) or ""
         candidate_key = self.name_normalizer.comparison_key(candidate_name) or ""
-        if not imported_key or not candidate_key:
-            return 0
-        return self._matching_score(imported_key, candidate_key)
+        return explain_game_name_matching(imported_key, candidate_key)
 
     def _evaluate_high_confidence_match(
         self,
@@ -251,7 +269,7 @@ class GameMatchingService:
         return GameMatchingCandidate(" / ".join(best_names), best_score)
 
     def _matching_score(self, imported_key: str, candidate_key: str) -> int:
-        return game_name_matching_score(imported_key, candidate_key)
+        return explain_game_name_matching(imported_key, candidate_key).score
 
     def _game_reference_values(
         self,

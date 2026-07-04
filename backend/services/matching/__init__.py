@@ -6,6 +6,20 @@
 #
 """Exports publics des utilitaires de matching textuel."""
 
-from .string_similarity import game_name_matching_score, matching_score
+from .game_title_matching_decision import GameTitleMatchingDecision
+from .game_title_matching_engine import GameTitleMatchingEngine
+from .game_title_matching_result import GameTitleMatchingResult
+from .string_similarity import (
+    explain_game_name_matching,
+    game_name_matching_score,
+    matching_score,
+)
 
-__all__ = ["game_name_matching_score", "matching_score"]
+__all__ = [
+    "GameTitleMatchingDecision",
+    "GameTitleMatchingEngine",
+    "GameTitleMatchingResult",
+    "explain_game_name_matching",
+    "game_name_matching_score",
+    "matching_score",
+]

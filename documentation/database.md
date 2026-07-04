@@ -340,7 +340,13 @@ During import:
   `GAME_MATCHING_HIGH_LEVEL_RATING`; trailing sequel suffixes, including
   hyphenated suffixes such as `X-2`, are compared before fuzzy scoring and force
   a score of `0` when they differ or when extra content follows a numeric suffix;
+  different series numbers followed by extra text also force a score of `0`,
+  including when the series base has only a light typo but remains highly similar;
+  equivalent Arabic and Roman numbers force a score of `100` with the same
+  light-typo tolerance on the series base;
   same-prefix titles with a different final word suffix also force a score of `0`;
+  the game-name matching service keeps an explainable decision and rule name for
+  diagnostics while persisting only the selected game relationship;
 - duplicate rows in the ODS file are ignored after the first normalized match;
 - invalid or empty game release dates are stored as `NULL`.
 

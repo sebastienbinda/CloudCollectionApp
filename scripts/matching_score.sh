@@ -74,6 +74,8 @@ import unicodedata
 from pathlib import Path
 
 backend_dir = Path(sys.argv[1])
+matching_dir = backend_dir / "services" / "matching"
+sys.path.insert(0, str(matching_dir))
 score_mode = sys.argv[2]
 normalize_values = sys.argv[3] == "true"
 first_value = sys.argv[4]
@@ -103,24 +105,37 @@ def comparison_key(value: str) -> str:
 
 
 matching_module = load_matching_module(
-    backend_dir / "services" / "matching" / "string_similarity.py",
+    matching_dir / "string_similarity.py",
 )
 
 if score_mode == "game":
     first_key = comparison_key(first_value)
     second_key = comparison_key(second_value)
-    score = matching_module.game_name_matching_score(first_key, second_key)
+    result = matching_module.explain_game_name_matching(first_key, second_key)
+    score = result.score
+    decision = result.decision.value
+    rule = result.rule
+    reason = result.reason
 elif normalize_values:
     first_key = comparison_key(first_value)
     second_key = comparison_key(second_value)
     score = matching_module.matching_score(first_key, second_key)
+    decision = "scored"
+    rule = "text_similarity"
+    reason = "Score de similarite textuelle generique."
 else:
     first_key = first_value
     second_key = second_value
     score = matching_module.matching_score(first_key, second_key)
+    decision = "scored"
+    rule = "text_similarity"
+    reason = "Score de similarite textuelle generique."
 
 print(f"mode={score_mode}")
 print(f"cle_1={first_key}")
 print(f"cle_2={second_key}")
 print(f"score={score}")
+print(f"decision={decision}")
+print(f"rule={rule}")
+print(f"reason={reason}")
 PY
