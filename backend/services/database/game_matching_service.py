@@ -12,10 +12,9 @@
 # Description : matching centralise des jeux importes avec le referentiel.
 
 from dataclasses import dataclass
-import re
 
 from services.collection.imports import CollectionImportGame
-from services.matching import matching_score
+from services.matching import game_name_matching_score
 from services.users import UserCollectionNameNormalizer
 
 from .game_matching_configuration import GameMatchingConfiguration
@@ -51,17 +50,6 @@ class GameMatchingResult:
 
 class GameMatchingService:
     """Rattache un jeu importe a un jeu existant de la meme plateforme."""
-
-    _SEQUEL_SUFFIX_PATTERN = re.compile(r"^(?P<base>.+?) (?P<suffix>\d+|[ivxlcdm]+)$")
-    _ROMAN_VALUES = {
-        "i": 1,
-        "v": 5,
-        "x": 10,
-        "l": 50,
-        "c": 100,
-        "d": 500,
-        "m": 1000,
-    }
 
     def __init__(
         self,
@@ -195,6 +183,23 @@ class GameMatchingService:
             self.name_normalizer.comparison_key(game.name) or "",
         )
 
+    def calculate_name_score(self, imported_name: str, candidate_name: str) -> int:
+        """Calcule le score metier entre deux noms de jeux.
+
+        Args:
+            imported_name (str): Nom de jeu importe.
+            candidate_name (str): Nom de jeu candidat dans la Bibliotheque.
+
+        Returns:
+            int: Score de matching entre `0` et `100`.
+        """
+
+        imported_key = self.name_normalizer.comparison_key(imported_name) or ""
+        candidate_key = self.name_normalizer.comparison_key(candidate_name) or ""
+        if not imported_key or not candidate_key:
+            return 0
+        return self._matching_score(imported_key, candidate_key)
+
     def _evaluate_high_confidence_match(
         self,
         imported_key: tuple[str, str],
@@ -246,71 +251,7 @@ class GameMatchingService:
         return GameMatchingCandidate(" / ".join(best_names), best_score)
 
     def _matching_score(self, imported_key: str, candidate_key: str) -> int:
-        sequel_score = self._sequel_matching_score(imported_key, candidate_key)
-        if sequel_score is not None:
-            return sequel_score
-        return matching_score(imported_key, candidate_key)
-
-    def _sequel_matching_score(self, imported_key: str, candidate_key: str) -> int | None:
-        imported_base, imported_suffix = self._split_sequel_suffix(imported_key)
-        candidate_base, candidate_suffix = self._split_sequel_suffix(candidate_key)
-        if imported_base != candidate_base:
-            return None
-        if imported_suffix is None and candidate_suffix is None:
-            return None
-        if imported_suffix is None or candidate_suffix is None:
-            return 0
-        return 100 if imported_suffix == candidate_suffix else 0
-
-    def _split_sequel_suffix(self, game_name_key: str) -> tuple[str, int | None]:
-        suffix_match = self._SEQUEL_SUFFIX_PATTERN.match(game_name_key)
-        if suffix_match is None:
-            return game_name_key, None
-        suffix = self._numeric_suffix(suffix_match.group("suffix"))
-        if suffix is None:
-            return game_name_key, None
-        return suffix_match.group("base"), suffix
-
-    def _numeric_suffix(self, suffix: str) -> int | None:
-        if suffix.isdigit():
-            return int(suffix)
-        return self._roman_to_integer(suffix)
-
-    def _roman_to_integer(self, value: str) -> int | None:
-        total = 0
-        previous_value = 0
-        for character in reversed(value):
-            current_value = self._ROMAN_VALUES.get(character)
-            if current_value is None:
-                return None
-            if current_value < previous_value:
-                total -= current_value
-            else:
-                total += current_value
-                previous_value = current_value
-        return total if self._integer_to_roman(total) == value else None
-
-    def _integer_to_roman(self, value: int) -> str:
-        parts = []
-        for roman_value, roman_label in (
-            (1000, "m"),
-            (900, "cm"),
-            (500, "d"),
-            (400, "cd"),
-            (100, "c"),
-            (90, "xc"),
-            (50, "l"),
-            (40, "xl"),
-            (10, "x"),
-            (9, "ix"),
-            (5, "v"),
-            (4, "iv"),
-            (1, "i"),
-        ):
-            while value >= roman_value:
-                parts.append(roman_label)
-                value -= roman_value
-        return "".join(parts)
+        return game_name_matching_score(imported_key, candidate_key)
 
     def _game_reference_values(
         self,

@@ -67,7 +67,15 @@ reader architecture rules in `documentation/reader.md`.
   their score is forced to `0` (`Final Fantasy` vs `Final Fantasy 2`). When both
   names have equivalent trailing Arabic or Roman numbers, their score is forced
   to `100` (`Final Fantasy 3` vs `Final Fantasy III`). Different sequel numbers
-  force a score of `0`.
+  force a score of `0`. Hyphenated sequel suffixes are compared as complete
+  numeric sequences, so `Final Fantasy X` and `Final Fantasy X-2` force a score
+  of `0`, while `Final Fantasy X-2` and `Final Fantasy 10-2` force a score of
+  `100`. When one title is the other title followed by a numeric suffix and
+  additional text, the score is also forced to `0`, for example
+  `Final Fantasy X` vs `Final Fantasy X-2.2`. When two titles have at least
+  three words, the same word prefix and a different final word suffix, the score
+  is forced to `0`, for example `Monster Hunter Wild` vs
+  `Monster Hunter World`.
 - Platforms are scored first against canonical catalog names. When the direct
   score is below `PLATFORM_MATCHING_HIGH_LEVEL_RATING`, catalog aliases are evaluated
   and used only when they improve the score.

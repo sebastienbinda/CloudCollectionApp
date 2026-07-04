@@ -6,6 +6,6 @@
 #
 """Exports publics des utilitaires de matching textuel."""
 
-from .string_similarity import matching_score
+from .string_similarity import game_name_matching_score, matching_score
 
-__all__ = ["matching_score"]
+__all__ = ["game_name_matching_score", "matching_score"]

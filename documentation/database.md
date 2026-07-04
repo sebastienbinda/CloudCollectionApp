@@ -337,7 +337,10 @@ During import:
   `t_game_alias.name` and platform; when no exact key exists, existing games on
   the same matched platform are scored with the shared normalized similarity
   function and reused only if the best score is unique and greater than or equal to
-  `GAME_MATCHING_HIGH_LEVEL_RATING`;
+  `GAME_MATCHING_HIGH_LEVEL_RATING`; trailing sequel suffixes, including
+  hyphenated suffixes such as `X-2`, are compared before fuzzy scoring and force
+  a score of `0` when they differ or when extra content follows a numeric suffix;
+  same-prefix titles with a different final word suffix also force a score of `0`;
 - duplicate rows in the ODS file are ignored after the first normalized match;
 - invalid or empty game release dates are stored as `NULL`.
 

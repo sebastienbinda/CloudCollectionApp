@@ -169,7 +169,12 @@ database structure in `documentation/database.md`, and frontend navigation in
   attached to an existing reference only when the best score is unique and
   greater than or equal to `GAME_MATCHING_HIGH_LEVEL_RATING`; scores lower than
   `GAME_MATCHING_LOW_LVL_RATING` are rejected immediately, and other
-  non-exact results create a new reference game.
+  non-exact results create a new reference game. Trailing sequel numbers are
+  compared before fuzzy scoring, including hyphenated suffixes such as
+  `Final Fantasy X-2`; different suffix sequences, or extra content after a
+  numeric suffix, force the score to `0`. Titles from the same word-prefix
+  series with a different final word suffix, such as `Monster Hunter Wild` and
+  `Monster Hunter World`, also force the score to `0`.
 - Newly created reference games store a standardized display name: title words
   are capitalized, joining words remain lowercase inside a title segment, Roman
   numerals are uppercased only when they are complete words or complete `-`

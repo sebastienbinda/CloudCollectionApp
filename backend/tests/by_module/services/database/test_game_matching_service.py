@@ -182,6 +182,106 @@ class GameMatchingServiceTest(unittest.TestCase):
         self.assertIsNone(result.existing_game_id)
         self.assertEqual(0, result.best_candidate.score)
 
+    def test_find_existing_game_id_rejects_main_episode_against_hyphenated_sequel(self):
+        """Verifie qu'un episode principal ne matche pas sa suite avec tiret.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le score force a zero.
+        """
+
+        game = CollectionImportGame("Final Fantasy X", "PS2", None, None)
+        existing_game_ids = {("ps2", "final fantasy x-2"): 17}
+
+        result = self.service.evaluate_existing_game(
+            game,
+            existing_game_ids,
+            self.service.build_platform_index(existing_game_ids),
+        )
+
+        self.assertIsNone(result.existing_game_id)
+        self.assertEqual(0, result.best_candidate.score)
+
+    def test_calculate_name_score_reuses_game_sequel_rules(self):
+        """Verifie le calcul direct du score metier entre deux noms.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les regles de suite.
+        """
+
+        score = self.service.calculate_name_score("Final X", "Final X-2")
+
+        self.assertEqual(0, score)
+
+    def test_calculate_name_score_rejects_numeric_suffix_with_extra_content(self):
+        """Verifie le refus d'un suffixe numerique suivi d'un complement.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le score force a zero.
+        """
+
+        score = self.service.calculate_name_score("Final Fantasy X", "Final Fantasy X-2.2")
+
+        self.assertEqual(0, score)
+
+    def test_calculate_name_score_rejects_different_word_suffix_in_same_series(self):
+        """Verifie le refus de deux jeux de meme serie avec suffixe different.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le score force a zero.
+        """
+
+        score = self.service.calculate_name_score("Monster Hunter Wild", "Monster Hunter World")
+
+        self.assertEqual(0, score)
+
+    def test_calculate_name_score_keeps_optional_prefix_matching_available(self):
+        """Verifie qu'un prefixe optionnel ne declenche pas le rejet par suffixe.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident un score fuzzy encore eleve.
+        """
+
+        score = self.service.calculate_name_score("Legend of Zelda", "The Legend of Zelda")
+
+        self.assertGreaterEqual(score, 75)
+
+    def test_find_existing_game_id_accepts_equivalent_hyphenated_arabic_and_roman_suffixes(self):
+        """Verifie le matching d'une suite a suffixe compose equivalent.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le rattachement de la meme suite.
+        """
+
+        game = CollectionImportGame("Final Fantasy X-2", "PS2", None, None)
+        existing_game_ids = {("ps2", "final fantasy 10-2"): 17}
+
+        result = self.service.evaluate_existing_game(
+            game,
+            existing_game_ids,
+            self.service.build_platform_index(existing_game_ids),
+        )
+
+        self.assertEqual(17, result.existing_game_id)
+        self.assertEqual(100, result.best_candidate.score)
+
     def test_platform_index_limits_fuzzy_candidates_to_imported_platform(self):
         """Verifie que le score fuzzy ne parcourt que la plateforme demandee.
 
