@@ -13,6 +13,7 @@
  * Description : page React de detail d'un jeu.
  */
 import { formatCellValue } from "../collectionUtils";
+import { buildGameDetailOwnershipIndicator } from "../gameDetailOwnershipIndicator";
 import TableColumnFormatService from "../services/TableColumnFormatService.jsx";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
@@ -50,6 +51,10 @@ function GameDetailView({
   const title = getGameName(game) || "Jeu";
   const platformName = getGamePlatform(game);
   const fields = buildGameFields(game, isCollectionSource);
+  const ownershipIndicator = buildGameDetailOwnershipIndicator(
+    Boolean(gameDetailPage?.isInCurrentUserCollection),
+    Boolean(gameDetailPage?.isInCurrentUserWishlist)
+  );
 
   return (
     <PageLayout
@@ -92,12 +97,12 @@ function GameDetailView({
               <span>{platformName || EMPTY_VALUE}</span>
               <strong>{title}</strong>
             </div>
-            {gameDetailPage.isInCurrentUserCollection ? (
-              <div className="gameCollectionOwnershipIndicator" aria-label="Jeu possede">
+            {ownershipIndicator ? (
+              <div className={ownershipIndicator.className} aria-label={ownershipIndicator.ariaLabel}>
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
                 </svg>
-                <span>Vous possedez ce jeu</span>
+                <span>{ownershipIndicator.label}</span>
               </div>
             ) : null}
           </div>

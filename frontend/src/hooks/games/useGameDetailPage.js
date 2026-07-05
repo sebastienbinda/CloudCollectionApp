@@ -30,6 +30,7 @@ function useGameDetailPage(options) {
   const [isLoadingGameDetail, setIsLoadingGameDetail] = useState(false);
   const [isReportingDuplicate, setIsReportingDuplicate] = useState(false);
   const [isInCurrentUserCollection, setIsInCurrentUserCollection] = useState(false);
+  const [isInCurrentUserWishlist, setIsInCurrentUserWishlist] = useState(false);
 
   useEffect(() => {
     const loadGameDetail = async () => {
@@ -39,6 +40,7 @@ function useGameDetailPage(options) {
         setDuplicateReportMessage("");
         setDuplicateReportError("");
         setIsInCurrentUserCollection(false);
+        setIsInCurrentUserWishlist(false);
         setIsLoadingGameDetail(false);
         return;
       }
@@ -49,6 +51,7 @@ function useGameDetailPage(options) {
         setDuplicateReportMessage("");
         setDuplicateReportError("");
         setIsInCurrentUserCollection(false);
+        setIsInCurrentUserWishlist(false);
         return;
       }
 
@@ -75,10 +78,12 @@ function useGameDetailPage(options) {
   useEffect(() => {
     if (options.currentView !== "gameDetail" || !gameDetail?.id) {
       setIsInCurrentUserCollection(false);
+      setIsInCurrentUserWishlist(false);
       return undefined;
     }
     if (options.source === "collection") {
       setIsInCurrentUserCollection(true);
+      setIsInCurrentUserWishlist(Boolean(gameDetail.wishlist));
       return undefined;
     }
     if (
@@ -88,19 +93,22 @@ function useGameDetailPage(options) {
       options.hasCollection !== true
     ) {
       setIsInCurrentUserCollection(false);
+      setIsInCurrentUserWishlist(false);
       return undefined;
     }
 
     let isCurrentCheck = true;
     VideoGamesApi.fetchGame(gameDetail.id)
-      .then(() => {
+      .then((collectionGameData) => {
         if (isCurrentCheck) {
           setIsInCurrentUserCollection(true);
+          setIsInCurrentUserWishlist(Boolean(collectionGameData?.game?.wishlist));
         }
       })
       .catch(() => {
         if (isCurrentCheck) {
           setIsInCurrentUserCollection(false);
+          setIsInCurrentUserWishlist(false);
         }
       });
     return () => {
@@ -179,6 +187,7 @@ function useGameDetailPage(options) {
     gameDetail,
     gameDetailError,
     isInCurrentUserCollection,
+    isInCurrentUserWishlist,
     isLoadingGameDetail,
     isReportingDuplicate,
     reportDuplicate,

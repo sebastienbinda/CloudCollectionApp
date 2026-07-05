@@ -65,8 +65,9 @@
   gap: 0.45rem;
   justify-self: end;
   line-height: 1.1;
+  max-width: min(100%, 16rem);
   padding: 0.45rem 0.6rem;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .gameCollectionOwnershipIndicator svg {
@@ -78,6 +79,21 @@
   stroke-linejoin: round;
   stroke-width: 1.8;
   width: 1.25rem;
+}
+
+.gameCollectionOwnershipIndicator span {
+  overflow-wrap: anywhere;
+}
+
+.gameCollectionOwnershipIndicatorWishlist {
+  background: #f0fdfa;
+  border-color: #5eead4;
+  color: #0f766e;
+}
+
+.gameCollectionOwnershipIndicatorWishlist svg {
+  fill: #14b8a6;
+  stroke: #0f766e;
 }
 
 .gameDetailGrid {
