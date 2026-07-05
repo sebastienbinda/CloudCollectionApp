@@ -204,7 +204,7 @@ class GameMatchingService:
 
         return (
             self.name_normalizer.comparison_key(game.platform_name) or "",
-            self.name_normalizer.comparison_key(game.name) or "",
+            self.name_normalizer.game_comparison_key(game.name) or "",
         )
 
     def calculate_name_score(self, imported_name: str, candidate_name: str) -> int:

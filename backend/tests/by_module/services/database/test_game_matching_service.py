@@ -61,6 +61,31 @@ class GameMatchingServiceTest(unittest.TestCase):
 
         self.assertEqual(7, game_id)
 
+    def test_find_existing_game_id_uses_stored_game_key_before_fuzzy_score(self):
+        """Verifie le rattachement exact apres standardisation du nom de jeu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'identifiant retenu sans score fuzzy.
+        """
+
+        strict_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=99),
+            UserCollectionNameNormalizer(),
+        )
+        game = CollectionImportGame("Burnout 3\xa0: Takedown", "PlayStation 2", None, None)
+
+        result = strict_service.evaluate_existing_game(
+            game,
+            {("playstation 2", "burnout 3 : takedown"): 107},
+            {"playstation 2": [("burnout 3 : takedown", 107)]},
+        )
+
+        self.assertEqual(107, result.existing_game_id)
+        self.assertIsNone(result.best_candidate)
+
     def test_find_existing_game_id_accepts_unique_high_score_on_same_platform(self):
         """Verifie le rattachement par score eleve et unique sur la meme plateforme.
 

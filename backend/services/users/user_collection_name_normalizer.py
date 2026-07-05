@@ -69,6 +69,21 @@ class UserCollectionNameNormalizer:
             for segment in colon_normalized_value.split(" : ")
         )
 
+    def game_comparison_key(self, value: Any) -> Optional[str]:
+        """Construit la cle de comparaison d'un nom de jeu standardise.
+
+        Args:
+            value (Any): Nom brut du jeu a normaliser.
+
+        Returns:
+            Optional[str]: Cle du nom tel qu'il serait stocke en referentiel, ou `None`.
+
+        Raises:
+            Aucun.
+        """
+
+        return self.comparison_key(self.stored_game_name(value))
+
     def comparison_key(self, value: Any) -> Optional[str]:
         """Construit la cle de comparaison sans accents.
 

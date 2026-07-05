@@ -70,7 +70,7 @@ class SqlAlchemyGameRepository:
         references = {
             (
                 self.name_normalizer.comparison_key(row["platform_name"]),
-                self.name_normalizer.comparison_key(row["name"]),
+                self.name_normalizer.game_comparison_key(row["name"]),
             ): (int(row["id"]), str(row["name"] or ""), row.get("release_date"))
             for row in rows
         }
@@ -87,7 +87,7 @@ class SqlAlchemyGameRepository:
             references.setdefault(
                 (
                     self.name_normalizer.comparison_key(row["platform_name"]),
-                    self.name_normalizer.comparison_key(row["alias_name"]),
+                    self.name_normalizer.game_comparison_key(row["alias_name"]),
                 ),
                 (int(row["id"]), str(row["name"] or ""), row.get("release_date")),
             )
@@ -154,7 +154,7 @@ class SqlAlchemyGameRepository:
 
         return (
             self.name_normalizer.comparison_key(game.platform_name),
-            self.name_normalizer.comparison_key(game.name),
+            self.name_normalizer.game_comparison_key(game.name),
         )
 
     def count_public_library_games(self, connection: Connection) -> int:
