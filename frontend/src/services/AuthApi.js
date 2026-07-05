@@ -15,6 +15,22 @@
 import BackendAvailabilityGuard from "./BackendAvailabilityGuard.js";
 
 /**
+ * Signale qu'une requete protegee est annulee avant reseau car le token est expire.
+ */
+class AuthSessionExpiredError extends Error {
+  /**
+   * Construit une erreur locale de session expiree.
+   *
+   * @returns {AuthSessionExpiredError} Instance d'erreur de session expiree.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  constructor() {
+    super("Session expiree.");
+    this.name = "AuthSessionExpiredError";
+  }
+}
+
+/**
  * Regroupe les appels et l'etat frontend lies a l'authentification.
  */
 class AuthApi {
@@ -208,6 +224,17 @@ class AuthApi {
   }
 
   /**
+   * Indique si le token stocke localement a depasse son expiration connue.
+   *
+   * @returns {boolean} `true` si un token existe et que son expiration locale est passee.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  static isStoredAccessTokenExpired() {
+    return Boolean(this.getAccessToken() && this.getAccessTokenExpiresAt() > 0)
+      && this.getAccessTokenTimeToLiveMs() <= 0;
+  }
+
+  /**
    * Confirme la deconnexion puis supprime le token local.
    *
    * @param {void} Aucun - Utilise `window.confirm`.
@@ -247,6 +274,38 @@ class AuthApi {
     return Object.entries(headers).some(
       ([key, value]) => key.toLowerCase() === "authorization" && String(value).startsWith("Bearer ")
     );
+  }
+
+  /**
+   * Annule localement une requete protegee si le token stocke est expire.
+   *
+   * @param {RequestInit} options - Options de requete transmises a `fetch`.
+   * @returns {void} Ne retourne aucune valeur.
+   * @throws {AuthSessionExpiredError} Si le token Bearer local est expire.
+   */
+  static ensureAuthenticatedRequestCanBeSent(options = {}) {
+    if (!this.hasBearerAuthorization(options)) {
+      return;
+    }
+    const accessToken = this.getAccessToken();
+    if (accessToken && !this.isStoredAccessTokenExpired()) {
+      return;
+    }
+    if (accessToken) {
+      this.handleExpiredSession();
+    }
+    throw new AuthSessionExpiredError();
+  }
+
+  /**
+   * Indique si une erreur correspond a une annulation locale de session expiree.
+   *
+   * @param {Error} error - Erreur interceptee par un hook ou service.
+   * @returns {boolean} `true` si l'erreur represente une session expiree locale.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  static isSessionExpiredError(error) {
+    return error instanceof AuthSessionExpiredError || error?.name === "AuthSessionExpiredError";
   }
 
   /**
@@ -321,4 +380,9 @@ class AuthApi {
   }
 }
 
+BackendAvailabilityGuard.setRequestAuthorizer((options) => {
+  AuthApi.ensureAuthenticatedRequestCanBeSent(options);
+});
+
+export { AuthSessionExpiredError };
 export default AuthApi;

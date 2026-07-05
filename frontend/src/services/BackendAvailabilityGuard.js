@@ -40,6 +40,18 @@ class BackendAvailabilityGuard {
   static unavailableStatuses = new Set([502, 503, 504]);
   static consecutiveFailures = 0;
   static blockedUntil = 0;
+  static requestAuthorizer = null;
+
+  /**
+   * Enregistre un controle execute avant chaque appel reseau.
+   *
+   * @param {Function|null} requestAuthorizer - Fonction de controle des options fetch.
+   * @returns {void} Met a jour le controle pre-requete.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  static setRequestAuthorizer(requestAuthorizer) {
+    this.requestAuthorizer = typeof requestAuthorizer === "function" ? requestAuthorizer : null;
+  }
 
   /**
    * Execute un appel `fetch` si le backend n'est pas temporairement bloque.
@@ -51,6 +63,7 @@ class BackendAvailabilityGuard {
    * @throws {Error} Si `fetch` echoue pour une autre raison.
    */
   static async fetch(url, options = {}) {
+    this.authorizeRequest(options);
     this.ensureBackendCanBeCalled();
     try {
       const response = await window.fetch(url, options);
@@ -62,6 +75,19 @@ class BackendAvailabilityGuard {
         throw new BackendUnavailableError(this.blockedUntil);
       }
       throw error;
+    }
+  }
+
+  /**
+   * Execute le controle applicatif pre-requete s'il est configure.
+   *
+   * @param {RequestInit} options - Options transmises a `fetch`.
+   * @returns {void} Ne retourne aucune valeur.
+   * @throws {Error} Si le controle refuse l'appel reseau.
+   */
+  static authorizeRequest(options = {}) {
+    if (this.requestAuthorizer) {
+      this.requestAuthorizer(options);
     }
   }
 

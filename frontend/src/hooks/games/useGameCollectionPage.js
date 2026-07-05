@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import { getStudioCount } from "../../collectionUtils";
+import AuthApi from "../../services/AuthApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import usePlatformGameMutations from "../usePlatformGameMutations";
 
@@ -82,6 +83,9 @@ function useGameCollectionPage(options) {
         const loadedGames = Array.isArray(data) ? data : [];
         setGames(loadedGames);
       } catch (e) {
+        if (AuthApi.isSessionExpiredError(e)) {
+          return;
+        }
         options.setError("Impossible de charger les jeux video pour cette plateforme.");
         setGames([]);
       } finally {

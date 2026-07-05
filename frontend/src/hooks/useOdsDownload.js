@@ -13,6 +13,7 @@
  * Description : hook objet de telechargement du fichier ODS protege.
  */
 import { useState } from "react";
+import AuthApi from "../services/AuthApi";
 import VideoGamesApi from "../services/VideoGamesApi";
 
 /**
@@ -36,6 +37,9 @@ function useOdsDownload() {
       setIsDownloadingOds(true);
       await VideoGamesApi.downloadOdsFile();
     } catch (error) {
+      if (AuthApi.isSessionExpiredError(error)) {
+        return;
+      }
       setDownloadError(error.message || "Impossible de telecharger le fichier de collection.");
     } finally {
       setIsDownloadingOds(false);
