@@ -182,7 +182,10 @@ copy files, build SQL queries or decide whether an image is public.
 - All non-public routes must be protected by `AuthGuard.protect_all_routes`.
 - Route-specific profile checks must use `AuthGuard.require_profile`.
 - Do not read or validate Bearer tokens directly in controllers except for an
-  explicitly documented exception.
+  explicitly documented exception. `GameController.list_library_games` may use
+  `AuthGuard` to resolve an optional valid `USER` Bearer for the
+  `in_current_user_collection` marker while keeping the Library games route
+  public without a token.
 
 ### Tests
 

@@ -281,9 +281,12 @@ unexpected failure returns `500`.
 
 ## Public Library Routes
 
-The routes in this section are public and read-only. They expose only global
+The routes in this section are public and read-only. They expose global
 reference data from platforms, studios and games. They must not expose connected
-user data, imported collection file paths or `t_user_collection` associations.
+user data or imported collection file paths. `GET /api/library/games` may add
+`in_current_user_collection` when a valid `USER` Bearer is provided; the boolean
+only indicates that the game is attached to the current user with
+`wishlist = false`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -292,7 +295,7 @@ user data, imported collection file paths or `t_user_collection` associations.
 | `GET` | `/api/library/platforms/<platform_id>` | Returns one global reference platform with aliases. |
 | `GET` | `/api/library/platforms/<platform_id>/image/<image_id>` | Returns one accepted platform image file. |
 | `GET` | `/api/library/studios` | Lists global reference studios. |
-| `GET` | `/api/library/games` | Lists global reference games. |
+| `GET` | `/api/library/games` | Lists global reference games, optionally enriched with the current user's non-wishlist collection marker. |
 | `GET` | `/api/library/games/<game_id>` | Returns one global reference game. |
 | `POST` | `/api/library/games/<game_id>/doublon` | Marks a Library game as a possible duplicate. Requires `USER` with an imported collection. |
 

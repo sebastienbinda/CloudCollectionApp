@@ -26,6 +26,7 @@ from services import (
     SqlAlchemyUserRepository,
     UserProfile,
 )
+from services.auth import ExpiredAccessTokenError
 
 
 class GameController:
@@ -120,7 +121,18 @@ class GameController:
         """
 
         try:
-            criteria = self.library_query_parser.parse("games", request.args)
+            current_user_id = self._optional_current_user_id()
+        except ExpiredAccessTokenError as exc:
+            return jsonify({"error": str(exc)}), 401
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 401
+
+        try:
+            criteria = self.library_query_parser.parse(
+                "games",
+                request.args,
+                current_user_id=current_user_id,
+            )
             return jsonify(self._get_library_service().list_games(criteria))
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 503
@@ -251,6 +263,33 @@ class GameController:
         if user_id is None:
             raise ValueError("Utilisateur introuvable.")
         return int(user_id)
+
+    def _optional_current_user_id(self) -> int | None:
+        """Retourne l'utilisateur USER connecte pour enrichir la liste publique.
+
+        Args:
+            Aucun.
+
+        Returns:
+            int | None: Identifiant utilisateur, ou absence d'enrichissement.
+
+        Raises:
+            ValueError: Si un Bearer fourni est invalide.
+            ExpiredAccessTokenError: Si un Bearer fourni est expire.
+        """
+
+        if self.auth_guard is None:
+            return None
+        token = self.auth_guard.extract_bearer_token()
+        if not token:
+            return None
+        payload = self.auth_guard.get_current_token_payload()
+        if UserProfile.normalize(payload.get("profile")) is not UserProfile.USER:
+            return None
+        user_id = self.user_repository_class(
+            self.database_configuration_class.from_environment()
+        ).find_user_id_by_email(payload.get("sub"))
+        return None if user_id is None else int(user_id)
 
     def _as_view(self, route_handler):
         """Transforme une methode liee en fonction Flask annotable.

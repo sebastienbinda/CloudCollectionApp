@@ -45,7 +45,9 @@ avoid unnecessary calls, but all real protection must remain on the backend side
     accepted public platform images.
   - `GET /api/library/studios`, used to expose public reference studios.
   - `GET /api/library/games` and `GET /api/library/games/<game_id>`, used to
-    expose public reference games.
+    expose public reference games. `GET /api/library/games` also accepts an
+    optional valid `USER` Bearer to expose only the boolean
+    `in_current_user_collection` for non-wishlist user collection matches.
 - CORS `OPTIONS` requests remain exempt to allow preflights.
 - Routes must be protected globally with `AuthGuard.protect_all_routes`.
 - Do not add a new public route without an explicit decision and without

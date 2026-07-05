@@ -137,8 +137,45 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual(200, response.status_code)
         self.assertEqual("Final Fantasy", game["name"])
         self.assertNotIn("collection_file_path", game)
+        self.assertFalse(game["in_current_user_collection"])
         self.assertEqual("nes", criteria.normalized_platform)
         self.assertEqual("developer", criteria.sort_rules[0].column)
+        self.assertIsNone(criteria.current_user_id)
+
+    def test_library_games_route_enriches_user_collection_status_with_user_token(self):
+        """Verifie l'enrichissement optionnel collection pour un USER connecte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le marqueur collection.
+        """
+
+        response = self.client.get("/api/library/games", headers=self.get_user_auth_headers())
+        game = response.get_json()["games"][0]
+        criteria = FakeLibraryService.last_games_criteria
+
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(game["in_current_user_collection"])
+        self.assertEqual(7, criteria.current_user_id)
+
+    def test_library_games_route_rejects_invalid_optional_bearer(self):
+        """Verifie qu'un Bearer optionnel invalide reste refuse proprement.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut d'authentification.
+        """
+
+        response = self.client.get(
+            "/api/library/games",
+            headers={"Authorization": "Bearer invalid-token"},
+        )
+
+        self.assertEqual(401, response.status_code)
 
     def test_library_platform_detail_route_is_public(self):
         """Verifie la route publique de detail d'une plateforme.

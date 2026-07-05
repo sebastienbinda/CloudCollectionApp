@@ -114,7 +114,22 @@ class FakeLibraryService:
         """
 
         self.__class__.last_games_criteria = criteria
-        return {"page": self._page(criteria), "games": [{"id": 3, "name": "Final Fantasy", "release_date": "1987-12-18", "developer": "Square", "editor": "", "status": "", "platform": "NES", "duplicate_flag": False}]}
+        return {
+            "page": self._page(criteria),
+            "games": [
+                {
+                    "id": 3,
+                    "name": "Final Fantasy",
+                    "release_date": "1987-12-18",
+                    "developer": "Square",
+                    "editor": "",
+                    "status": "",
+                    "platform": "NES",
+                    "duplicate_flag": False,
+                    "in_current_user_collection": criteria.current_user_id == 7,
+                }
+            ],
+        }
 
     def get_game(self, game_id):
         """Retourne un jeu public factice.

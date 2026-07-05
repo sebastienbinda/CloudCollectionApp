@@ -23,6 +23,7 @@ from services.database.platform_repository import SqlAlchemyPlatformRepository
 from services.database.studio_repository import SqlAlchemyStudioRepository
 from services.users import UserCollectionNameNormalizer
 
+from .current_user_collection_marker import CurrentUserCollectionMarker
 from .library_query_contract import LibraryQueryCriteria
 from .library_payload_serializer import LibraryPayloadSerializer
 
@@ -227,6 +228,26 @@ class PublicLibraryGameRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def list_current_user_collection_game_ids(
+        self,
+        connection: Connection,
+        user_id: int,
+        game_ids: list[int],
+    ) -> set[int]:
+        """Liste les jeux de la page deja presents dans la collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur connecte.
+            game_ids (list[int]): Identifiants de jeux a verifier.
+
+        Returns:
+            set[int]: Identifiants en collection hors wishlist.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
     def find_public_library_game(
         self,
         connection: Connection,
@@ -303,6 +324,7 @@ class LibraryService:
             configuration.schema_name,
             resolved_normalizer,
         )
+        self.current_user_collection_marker = CurrentUserCollectionMarker(self.game_repository)
         self.payload_serializer = payload_serializer or LibraryPayloadSerializer()
 
     def count_entities(self) -> dict[str, int]:
@@ -373,11 +395,16 @@ class LibraryService:
             "studios": [self.payload_serializer.studio_payload(row) for row in rows],
         }
 
-    def list_games(self, criteria: LibraryQueryCriteria) -> dict[str, Any]:
+    def list_games(
+        self,
+        criteria: LibraryQueryCriteria,
+        current_user_id: int | None = None,
+    ) -> dict[str, Any]:
         """Liste les jeux publics au format API Bibliotheque.
 
         Args:
             criteria (LibraryQueryCriteria): Criteres de pagination, recherche et tri.
+            current_user_id (int | None): Utilisateur connecte optionnel.
 
         Returns:
             dict[str, Any]: Payload contenant `page` et `games`.
@@ -386,12 +413,22 @@ class LibraryService:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une requete.
         """
 
+        effective_current_user_id = (
+            current_user_id
+            if current_user_id is not None
+            else criteria.current_user_id
+        )
         with self.engine.connect() as connection:
             total_elements = self.game_repository.count_public_library_games_by_criteria(
                 connection,
                 criteria,
             )
             rows = self.game_repository.list_public_library_games(connection, criteria)
+            self.current_user_collection_marker.mark_games(
+                connection,
+                rows,
+                effective_current_user_id,
+            )
         return {
             "page": self.payload_serializer.page_payload(criteria, total_elements),
             "games": [self.payload_serializer.game_payload(row) for row in rows],

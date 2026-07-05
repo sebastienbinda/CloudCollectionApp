@@ -280,6 +280,18 @@ class AuthGuard:
             return ""
         return token.strip()
 
+    def extract_bearer_token(self) -> str:
+        """Retourne le token Bearer brut de la requete courante.
+
+        Args:
+            Aucun.
+
+        Returns:
+            str: Token extrait, ou chaine vide si aucun Bearer n'est present.
+        """
+
+        return self._extract_bearer_token()
+
     def _unauthorized_response(self, message: str):
         """Construit une reponse HTTP 401 compatible OAuth2 Bearer.
 

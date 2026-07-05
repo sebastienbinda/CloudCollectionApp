@@ -12,8 +12,9 @@
  *
  * Description : hook React de la liste publique des jeux Bibliotheque.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import LibraryApi from "../../services/LibraryApi";
+import TableColumnFormatService from "../../services/TableColumnFormatService.jsx";
 import useLibraryEntityList from "./useLibraryEntityList";
 
 const GAME_CONFIGURATION = {
@@ -33,6 +34,7 @@ const GAME_CONFIGURATION = {
   defaultSortColumn: "name",
   errorMessage: "Impossible de charger les jeux Bibliotheque.",
   fetchList: (criteria) => LibraryApi.fetchGames(criteria),
+  formatCellValue: formatLibraryGameCellValue,
 };
 const PLATFORM_PAGE_SIZE = 500;
 
@@ -152,6 +154,39 @@ function filterPlatformsWithGames(platforms) {
     return [];
   }
   return platforms.filter((platform) => Number(platform.total_games || 0) > 0);
+}
+
+/**
+ * Formate les cellules de la liste publique des jeux.
+ *
+ * @param {string} column - Colonne affichee.
+ * @param {unknown} value - Valeur brute.
+ * @param {Object} row - Ligne de jeu complete.
+ * @returns {string|import("react").ReactElement} Contenu de cellule.
+ */
+function formatLibraryGameCellValue(column, value, row) {
+  if (column !== "name") {
+    return TableColumnFormatService.formatGameValue(column, value, row);
+  }
+  const formattedName = TableColumnFormatService.formatGameValue(column, value, row);
+  if (!row?.in_current_user_collection) {
+    return formattedName;
+  }
+  return createElement(
+    "span",
+    { className: "libraryGameNameWithCollectionMarker" },
+    createElement(
+      "span",
+      {
+        "aria-label": "Dans votre collection",
+        className: "libraryGameCollectionMarker",
+        role: "img",
+        title: "Dans votre collection",
+      },
+      "★"
+    ),
+    createElement("span", null, formattedName)
+  );
 }
 
 export default useLibraryGames;

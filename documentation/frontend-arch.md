@@ -178,7 +178,10 @@ Use the following domain folders for new or modified hooks:
   owns only file selection and display; the hook owns upload state and messages.
 - Provide pagination metadata and callbacks to `TableComponent`; pages must not
   render their own table pagination controls.
-- Do not add authentication headers to public Library endpoints.
+- Do not add authentication headers to public Library endpoints, except
+  `/api/library/games` may send a locally non-expired Bearer to request the
+  optional `in_current_user_collection` marker. Expired local tokens must not be
+  sent for this optional enrichment.
 - Public Library and collection game detail may show the protected
   duplicate-report action to a connected `USER` only after the
   collection-status hook confirms that the user has an imported collection. The

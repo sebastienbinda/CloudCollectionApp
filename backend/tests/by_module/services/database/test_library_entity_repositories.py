@@ -236,7 +236,7 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertNotIn("TRANSLATE(LOWER(platform.name)", sql)
         self.assertNotIn("ORDER BY", sql)
         self.assertEqual({}, parameters)
-        self.assertNotIn("t_user", sql)
+        self.assertNotIn('JOIN "collection".t_user_collection', sql)
         executed_statement_count = len(connection.executed_statements)
 
         self.platform_repository.count_public_library_platforms_by_criteria(
@@ -304,7 +304,7 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertIn("ORDER BY studio.country ASC, studio.creation_date DESC, studio.name ASC", sql)
         self.assertEqual(500, parameters["limit"])
         self.assertEqual(0, parameters["offset"])
-        self.assertNotIn("t_user", sql)
+        self.assertNotIn("t_user_collection", sql)
 
     def test_list_public_library_games_returns_related_entity_names(self):
         """Verifie la liste publique des jeux.
@@ -334,6 +334,7 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertIn("developer_studio.id = game.developer", sql)
         self.assertIn("editor_studio.id = game.editor", sql)
         self.assertIn("platform.id = game.platform", sql)
+        self.assertNotIn("in_current_user_collection", sql)
         self.assertIn("TRANSLATE(LOWER(game.name)", sql)
         self.assertIn("REPLACE(TRANSLATE(LOWER(platform.name)", sql)
         self.assertIn("= :platform_key", sql)
@@ -341,7 +342,34 @@ class LibraryEntityRepositoriesTest(unittest.TestCase):
         self.assertIn("ORDER BY developer_studio.name DESC, game.name ASC", sql)
         self.assertEqual("%final%", parameters["name_pattern"])
         self.assertEqual("playstation4", parameters["platform_key"])
-        self.assertNotIn("t_user", sql)
+        self.assertNotIn('JOIN "collection".t_user_collection', sql)
+
+    def test_list_current_user_collection_game_ids_reads_page_ids_without_wishlist(self):
+        """Verifie la requete dediee de collection hors wishlist.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la requete utilisateur.
+        """
+
+        connection = FakeRepositoryConnection(rows=[{"game_id": 3}, {"game_id": 8}])
+
+        game_ids = self.game_repository.list_current_user_collection_game_ids(
+            connection,
+            12,
+            [3, 8, 13],
+        )
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual({3, 8}, game_ids)
+        self.assertIn('FROM "collection".t_user_collection', sql)
+        self.assertIn("user_id = :user_id", sql)
+        self.assertIn("wishlist = FALSE", sql)
+        self.assertIn("game_id = ANY(:game_ids)", sql)
+        self.assertEqual(12, parameters["user_id"])
+        self.assertEqual([3, 8, 13], parameters["game_ids"])
 
     def test_count_public_library_entities_by_criteria_uses_bound_name_filter(self):
         """Verifie les compteurs filtres par nom sans interpolation brute.
