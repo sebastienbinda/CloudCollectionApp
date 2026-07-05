@@ -10,7 +10,7 @@
 # Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
 # Licence : Apache 2.0
 #
-# Description : utilitaire de test du score de similarite utilise par l'import.
+# Description : utilitaire de test du score de matching utilise par l'import.
 
 set -euo pipefail
 
@@ -25,43 +25,61 @@ PYTHON_BIN="${PYTHON_BIN:-python3}"
 show_usage() {
   cat <<'USAGE'
 Usage:
-  scripts/matching_score.sh [--normalize] <cle_1> <cle_2>
+  scripts/matching_score.sh [--text] [--normalize] <nom_1> <nom_2>
 
 Options:
-  --normalize  Normalise les deux valeurs comme l'import avant de calculer le score.
+  --text       Utilise le score texte generique au lieu du score metier jeu.
+  --normalize  Normalise les deux valeurs avant le score texte generique.
+               Le score metier jeu normalise toujours comme l'import.
 
 Exemples:
+  scripts/matching_score.sh "Final X" "Final X-2"
   scripts/matching_score.sh "legend of zelda" "the legend of zelda"
-  scripts/matching_score.sh --normalize "  École du Jeu  " "ecole du jeu"
+  scripts/matching_score.sh --text --normalize "  École du Jeu  " "ecole du jeu"
 USAGE
 }
 
 normalize_values="false"
+score_mode="game"
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   show_usage
   exit 0
 fi
 
-if [ "${1:-}" = "--normalize" ]; then
-  normalize_values="true"
-  shift
-fi
+while [ "$#" -gt 0 ]; do
+  case "${1:-}" in
+    --text)
+      score_mode="text"
+      shift
+      ;;
+    --normalize)
+      normalize_values="true"
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 if [ "$#" -ne 2 ]; then
   show_usage >&2
   exit 1
 fi
 
-"$PYTHON_BIN" - "$BACKEND_DIR" "$normalize_values" "$1" "$2" <<'PY'
+"$PYTHON_BIN" - "$BACKEND_DIR" "$score_mode" "$normalize_values" "$1" "$2" <<'PY'
 import sys
 import unicodedata
 from pathlib import Path
 
 backend_dir = Path(sys.argv[1])
-normalize_values = sys.argv[2] == "true"
-first_value = sys.argv[3]
-second_value = sys.argv[4]
+matching_dir = backend_dir / "services" / "matching"
+sys.path.insert(0, str(matching_dir))
+score_mode = sys.argv[2]
+normalize_values = sys.argv[3] == "true"
+first_value = sys.argv[4]
+second_value = sys.argv[5]
 
 
 def load_matching_module(module_path: Path):
@@ -87,18 +105,37 @@ def comparison_key(value: str) -> str:
 
 
 matching_module = load_matching_module(
-    backend_dir / "services" / "matching" / "string_similarity.py",
+    matching_dir / "string_similarity.py",
 )
 
-if normalize_values:
+if score_mode == "game":
     first_key = comparison_key(first_value)
     second_key = comparison_key(second_value)
+    result = matching_module.explain_game_name_matching(first_key, second_key)
+    score = result.score
+    decision = result.decision.value
+    rule = result.rule
+    reason = result.reason
+elif normalize_values:
+    first_key = comparison_key(first_value)
+    second_key = comparison_key(second_value)
+    score = matching_module.matching_score(first_key, second_key)
+    decision = "scored"
+    rule = "text_similarity"
+    reason = "Score de similarite textuelle generique."
 else:
     first_key = first_value
     second_key = second_value
+    score = matching_module.matching_score(first_key, second_key)
+    decision = "scored"
+    rule = "text_similarity"
+    reason = "Score de similarite textuelle generique."
 
-score = matching_module.matching_score(first_key, second_key)
+print(f"mode={score_mode}")
 print(f"cle_1={first_key}")
 print(f"cle_2={second_key}")
 print(f"score={score}")
+print(f"decision={decision}")
+print(f"rule={rule}")
+print(f"reason={reason}")
 PY

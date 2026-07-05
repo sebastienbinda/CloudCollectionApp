@@ -266,7 +266,12 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             insert=lambda connection, game, platform_id, studio_id: insert_calls.append(game),
         )
 
-        associations, created_games, created_game_match_reports = repository._ensure_games(
+        (
+            associations,
+            created_games,
+            created_game_match_reports,
+            imported_game_match_reports,
+        ) = repository._ensure_games(
             object(),
             CollectionImportData(
                 platforms=[CollectionImportPlatform("Switch")],
@@ -279,8 +284,70 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
 
         self.assertEqual(0, created_games)
         self.assertEqual([], created_game_match_reports)
+        self.assertEqual(1, len(imported_game_match_reports))
+        self.assertFalse(imported_game_match_reports[0].created)
+        self.assertEqual("The Legend of Zelda", imported_game_match_reports[0].associated_game_name)
+        self.assertGreaterEqual(imported_game_match_reports[0].score, 75)
         self.assertEqual([], insert_calls)
         self.assertEqual(31, associations[0].game_id)
+
+    def test_ensure_games_reuses_existing_game_with_stored_name_key(self):
+        """Verifie le rattachement exact avec le nom standardise du referentiel.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence d'insertion en doublon.
+        """
+
+        insert_calls = []
+        repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
+        repository.game_matching_service = GameMatchingService(
+            GameMatchingConfiguration(low_level_rating=25, high_level_rating=99),
+            repository.name_normalizer,
+        )
+        repository.game_repository = SimpleNamespace(
+            load_references_by_key=lambda connection: {
+                ("playstation 2", "burnout 3 : takedown"): (
+                    107,
+                    "Burnout 3 : Takedown",
+                    None,
+                )
+            },
+            game_key=lambda game: (
+                repository.name_normalizer.comparison_key(game.platform_name),
+                repository.name_normalizer.game_comparison_key(game.name),
+            ),
+            insert=lambda connection, game, platform_id, studio_id: insert_calls.append(game),
+        )
+
+        (
+            associations,
+            created_games,
+            created_game_match_reports,
+            imported_game_match_reports,
+        ) = repository._ensure_games(
+            object(),
+            CollectionImportData(
+                platforms=[CollectionImportPlatform("PlayStation 2")],
+                studios=[],
+                games=[CollectionImportGame("Burnout 3\xa0: Takedown", "PlayStation 2", "", None)],
+            ),
+            {"playstation 2": 7},
+            {},
+        )
+
+        self.assertEqual(0, created_games)
+        self.assertEqual([], created_game_match_reports)
+        self.assertEqual([], insert_calls)
+        self.assertEqual(107, associations[0].game_id)
+        self.assertFalse(imported_game_match_reports[0].created)
+        self.assertEqual(
+            "Burnout 3 : Takedown",
+            imported_game_match_reports[0].associated_game_name,
+        )
 
     def test_ensure_games_reports_created_game_best_existing_candidate(self):
         """Verifie le diagnostic de matching pour un jeu cree.
@@ -309,7 +376,12 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             insert=lambda connection, game, platform_id, studio_id: 41,
         )
 
-        associations, created_games, created_game_match_reports = repository._ensure_games(
+        (
+            associations,
+            created_games,
+            created_game_match_reports,
+            imported_game_match_reports,
+        ) = repository._ensure_games(
             object(),
             CollectionImportData(
                 platforms=[CollectionImportPlatform("Switch")],
@@ -327,6 +399,11 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual("Switch", created_game_match_reports[0].platform_name)
         self.assertEqual("Mario Kart", created_game_match_reports[0].best_existing_game_name)
         self.assertGreaterEqual(created_game_match_reports[0].best_score, 0)
+        self.assertEqual(1, len(imported_game_match_reports))
+        self.assertTrue(imported_game_match_reports[0].created)
+        self.assertEqual("Zelda", imported_game_match_reports[0].imported_game_name)
+        self.assertEqual("", imported_game_match_reports[0].associated_game_name)
+        self.assertEqual("fuzzy_similarity", imported_game_match_reports[0].rule)
 
 
 class AdminLibraryImportRepositoryTest(unittest.TestCase):

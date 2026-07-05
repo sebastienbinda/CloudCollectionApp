@@ -12,7 +12,6 @@
 # Description : orchestration transactionnelle SQL de l'import de collection utilisateur.
 
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
@@ -27,50 +26,19 @@ from .game_repository import SqlAlchemyGameRepository
 from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
 from .studio_repository import SqlAlchemyStudioRepository
+from .user_collection_import_game_match_report_builder import (
+    UserCollectionImportGameMatchReportBuilder,
+)
+from .user_collection_import_persistence_result import (
+    CreatedGameMatchReport,
+    ImportedGameMatchReport,
+    UserCollectionImportPersistenceResult,
+)
 from .user_collection_file_repository import (
     SqlAlchemyUserCollectionFileRepository,
     UserCollectionImportUserNotFoundError,
 )
 from .user_collection_repository import SqlAlchemyUserCollectionRepository, UserGameAssociation
-
-
-@dataclass(frozen=True)
-class CreatedGameMatchReport:
-    """Decrit un jeu cree faute de rattachement a un jeu existant.
-
-    Attributes:
-        imported_game_name (str): Nom du jeu cree depuis l'import.
-        platform_name (str): Plateforme du jeu cree.
-        best_existing_game_name (str): Meilleur candidat existant trouve.
-        best_score (int): Score du meilleur candidat.
-    """
-
-    imported_game_name: str
-    platform_name: str
-    best_existing_game_name: str
-    best_score: int
-
-
-@dataclass(frozen=True)
-class UserCollectionImportPersistenceResult:
-    """Regroupe les compteurs de persistance d'un import de collection.
-
-    Attributes:
-        linked_platforms (int): Nombre de plateformes du referentiel liees.
-        created_studios (int): Nombre de studios crees.
-        created_games (int): Nombre de jeux crees.
-        associated_games (int): Nombre de jeux rattaches a l'utilisateur.
-        user_email (str): Adresse email de l'utilisateur importe.
-        created_game_match_reports (tuple[CreatedGameMatchReport, ...]): Jeux crees
-            avec leur meilleur candidat de matching.
-    """
-
-    linked_platforms: int
-    created_studios: int
-    created_games: int
-    associated_games: int
-    user_email: str = ""
-    created_game_match_reports: tuple[CreatedGameMatchReport, ...] = ()
 
 
 class UserCollectionReinitializationNotFoundError(Exception):
@@ -236,7 +204,12 @@ class SqlAlchemyUserCollectionImportRepository:
                 matched_import_data,
             )
             studio_ids, created_studios = self._ensure_studios(connection, matched_import_data)
-            game_associations, created_games, created_game_match_reports = self._ensure_games(
+            (
+                game_associations,
+                created_games,
+                created_game_match_reports,
+                imported_game_match_reports,
+            ) = self._ensure_games(
                 connection,
                 matched_import_data,
                 platform_ids,
@@ -261,6 +234,7 @@ class SqlAlchemyUserCollectionImportRepository:
             associated_games=associated_games,
             user_email=user_email,
             created_game_match_reports=tuple(created_game_match_reports),
+            imported_game_match_reports=tuple(imported_game_match_reports),
         )
 
     def _lock_global_game_import_state(self, connection: Connection) -> None:
@@ -401,7 +375,12 @@ class SqlAlchemyUserCollectionImportRepository:
         import_data: CollectionImportData,
         platform_ids: dict[str, int],
         studio_ids: dict[str, int],
-    ) -> tuple[list[UserGameAssociation], int, list[CreatedGameMatchReport]]:
+    ) -> tuple[
+        list[UserGameAssociation],
+        int,
+        list[CreatedGameMatchReport],
+        list[ImportedGameMatchReport],
+    ]:
         """Cree les jeux absents et retourne leurs identifiants.
 
         Args:
@@ -411,8 +390,9 @@ class SqlAlchemyUserCollectionImportRepository:
             studio_ids (dict[str, int]): Studios par cle normalisee.
 
         Returns:
-            tuple[list[UserGameAssociation], int, list[CreatedGameMatchReport]]: Associations,
-                nombre de creations et details de matching des jeux crees.
+            tuple[list[UserGameAssociation], int, list[CreatedGameMatchReport],
+                list[ImportedGameMatchReport]]: Associations, nombre de creations,
+                details des jeux crees et diagnostics par jeu importe.
         """
 
         existing_game_references = self.game_repository.load_references_by_key(connection)
@@ -425,18 +405,22 @@ class SqlAlchemyUserCollectionImportRepository:
         )
         game_associations: list[UserGameAssociation] = []
         created_game_match_reports: list[CreatedGameMatchReport] = []
+        imported_game_match_reports: list[ImportedGameMatchReport] = []
         created_count = 0
         for game in import_data.games:
             game_key = self.game_repository.game_key(game)
+            exact_game_reference = existing_game_references.get(game_key)
             matching_result = self.game_matching_service.evaluate_existing_game(
                 game,
                 existing_game_ids,
                 games_by_platform,
             )
             existing_game_id = matching_result.existing_game_id
+            created = False
             if existing_game_id is None:
+                created = True
                 created_game_match_reports.append(
-                    self._build_created_game_match_report(
+                    UserCollectionImportGameMatchReportBuilder.build_created_game_match_report(
                         game,
                         matching_result.best_candidate,
                     )
@@ -453,8 +437,17 @@ class SqlAlchemyUserCollectionImportRepository:
                     existing_game_id,
                     game.name,
                     games_by_platform,
+                    game.release_date,
                 )
                 created_count += 1
+            imported_game_match_reports.append(
+                UserCollectionImportGameMatchReportBuilder.build_imported_game_match_report(
+                    game,
+                    created,
+                    exact_game_reference,
+                    matching_result.best_candidate,
+                )
+            )
             game_associations.append(
                 UserGameAssociation(
                     game_id=existing_game_id,
@@ -473,18 +466,9 @@ class SqlAlchemyUserCollectionImportRepository:
                     description=game.description,
                 )
             )
-        return game_associations, created_count, created_game_match_reports
-
-    def _build_created_game_match_report(
-        self,
-        game,
-        best_candidate,
-    ) -> CreatedGameMatchReport:
-        return CreatedGameMatchReport(
-            imported_game_name=game.name,
-            platform_name=game.platform_name,
-            best_existing_game_name=(
-                best_candidate.game_name if best_candidate is not None else ""
-            ),
-            best_score=best_candidate.score if best_candidate is not None else 0,
+        return (
+            game_associations,
+            created_count,
+            created_game_match_reports,
+            imported_game_match_reports,
         )

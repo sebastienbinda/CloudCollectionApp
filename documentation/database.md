@@ -337,7 +337,22 @@ During import:
   `t_game_alias.name` and platform; when no exact key exists, existing games on
   the same matched platform are scored with the shared normalized similarity
   function and reused only if the best score is unique and greater than or equal to
-  `GAME_MATCHING_HIGH_LEVEL_RATING`;
+  `GAME_MATCHING_HIGH_LEVEL_RATING`; trailing sequel suffixes, including
+  hyphenated suffixes such as `X-2`, are compared before fuzzy scoring and force
+  a score of `0` when they differ or when extra content follows a numeric suffix;
+  different series numbers followed by extra text also force a score of `0`,
+  including when the series base has only a light typo but remains highly similar;
+  equivalent Arabic and Roman numbers force a score of `100` with the same
+  light-typo tolerance on the series base when no extra title text follows the
+  number; equivalent numbers followed by extra title text produce score `85` so
+  release-date comparison can arbitrate the candidate;
+  same-prefix titles with a different final word suffix also force a score of `0`;
+  the game-name matching service keeps an explainable decision and rule name for
+  diagnostics while persisting only the selected game relationship; for fuzzy
+  name scores from `85` to `94`, the service also compares imported and stored
+  `t_game.release_date` values when both exist, subtracting `10`, `20` or `35`
+  points when the absolute date gap is greater than six, eighteen or thirty-six
+  months;
 - duplicate rows in the ODS file are ignored after the first normalized match;
 - invalid or empty game release dates are stored as `NULL`.
 

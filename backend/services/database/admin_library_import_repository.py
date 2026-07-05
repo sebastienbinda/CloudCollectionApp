@@ -61,11 +61,13 @@ class SqlAlchemyAdminLibraryImportRepository(SqlAlchemyUserCollectionImportRepos
                 matched_import_data,
             )
             studio_ids, created_studios = self._ensure_studios(connection, matched_import_data)
-            _, created_games, _created_game_match_reports = self._ensure_games(
-                connection,
-                matched_import_data,
-                platform_ids,
-                studio_ids,
+            _, created_games, _created_game_match_reports, _imported_game_match_reports = (
+                self._ensure_games(
+                    connection,
+                    matched_import_data,
+                    platform_ids,
+                    studio_ids,
+                )
             )
         self.platform_repository.invalidate_cache()
         return AdminLibraryImportPersistenceResult(

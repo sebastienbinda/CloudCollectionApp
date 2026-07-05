@@ -21,6 +21,7 @@ from .game_alias import GameAlias
 from .game_duplicate_repository import SqlAlchemyGameDuplicateRepository
 from .game_matching_configuration import GameMatchingConfiguration
 from .game_matching_service import GameMatchingService
+from .game_release_date_score_adjuster import GameReleaseDateScoreAdjuster
 from .game_repository import SqlAlchemyGameRepository
 from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
 from .platform import Platform
@@ -44,10 +45,13 @@ from .studio_repository import SqlAlchemyStudioRepository
 from .user import User
 from .user_collection import UserCollection
 from .user_collection_file_repository import SqlAlchemyUserCollectionFileRepository
-from .user_collection_import_repository import (
+from .user_collection_import_persistence_result import (
     CreatedGameMatchReport,
-    SqlAlchemyUserCollectionImportRepository,
+    ImportedGameMatchReport,
     UserCollectionImportPersistenceResult,
+)
+from .user_collection_import_repository import (
+    SqlAlchemyUserCollectionImportRepository,
     UserCollectionImportUserNotFoundError,
 )
 from .user_collection_query_repository import SqlAlchemyUserCollectionQueryRepository
@@ -64,6 +68,8 @@ __all__ = [
     "GameAlias",
     "GameMatchingConfiguration",
     "GameMatchingService",
+    "GameReleaseDateScoreAdjuster",
+    "ImportedGameMatchReport",
     "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
     "SqlAlchemyGameDuplicateRepository",

@@ -119,6 +119,25 @@ class UserCollectionNameNormalizerTest(unittest.TestCase):
             with self.subTest(raw_name=raw_name):
                 self.assertEqual(expected_name, self.normalizer.stored_game_name(raw_name))
 
+    def test_game_comparison_key_uses_stored_game_name_normalization(self):
+        """Verifie que la cle jeu suit la standardisation du referentiel.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la normalisation des espaces et deux-points.
+        """
+
+        self.assertEqual(
+            "burnout 3 : takedown",
+            self.normalizer.game_comparison_key("Burnout 3\xa0: Takedown"),
+        )
+        self.assertEqual(
+            self.normalizer.game_comparison_key("Burnout 3 : Takedown"),
+            self.normalizer.game_comparison_key("burnout 3:takedown"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

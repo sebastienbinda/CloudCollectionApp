@@ -6,7 +6,16 @@
 #
 # Description : calcul partage des scores de similarite textuelle.
 
+from __future__ import annotations
+
 from difflib import SequenceMatcher
+
+try:
+    from .game_title_matching_engine import GameTitleMatchingEngine
+    from .game_title_matching_result import GameTitleMatchingResult
+except ImportError:
+    from game_title_matching_engine import GameTitleMatchingEngine
+    from game_title_matching_result import GameTitleMatchingResult
 
 
 def matching_score(imported_key: str, candidate_key: str) -> int:
@@ -28,3 +37,37 @@ def matching_score(imported_key: str, candidate_key: str) -> int:
     if not imported_key or not candidate_key:
         return 0
     return int(round(SequenceMatcher(None, imported_key, candidate_key).ratio() * 100))
+
+
+def game_name_matching_score(imported_key: str, candidate_key: str) -> int:
+    """Calcule le score de matching entre deux cles normalisees de jeux.
+
+    Args:
+        imported_key (str): Cle normalisee du jeu importe.
+        candidate_key (str): Cle normalisee du jeu candidat.
+
+    Returns:
+        int: Score metier compris entre 0 et 100.
+
+    Raises:
+        Aucun.
+    """
+
+    return explain_game_name_matching(imported_key, candidate_key).score
+
+
+def explain_game_name_matching(imported_key: str, candidate_key: str) -> GameTitleMatchingResult:
+    """Explique le matching entre deux cles normalisees de jeux.
+
+    Args:
+        imported_key (str): Cle normalisee du jeu importe.
+        candidate_key (str): Cle normalisee du jeu candidat.
+
+    Returns:
+        GameTitleMatchingResult: Score, decision et regle appliquee.
+
+    Raises:
+        Aucun.
+    """
+
+    return GameTitleMatchingEngine().evaluate(imported_key, candidate_key)

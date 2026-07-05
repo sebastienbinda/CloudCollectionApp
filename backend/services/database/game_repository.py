@@ -50,19 +50,19 @@ class SqlAlchemyGameRepository:
     def load_references_by_key(
         self,
         connection: Connection,
-    ) -> dict[tuple[str, str], tuple[int, str]]:
+    ) -> dict[tuple[str, str], tuple[int, str, object]]:
         """Charge les jeux existants par cle avec leur nom d'origine.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
 
         Returns:
-            dict[tuple[str, str], tuple[int, str]]: Identifiants et noms des jeux.
+            dict[tuple[str, str], tuple[int, str, object]]: Identifiants, noms et dates.
         """
 
         rows = connection.execute(
             text(
-                f'SELECT game.id, game.name, platform.name AS platform_name '
+                f'SELECT game.id, game.name, game.release_date, platform.name AS platform_name '
                 f'FROM "{self.schema_name}".t_game game '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform'
             )
@@ -70,13 +70,13 @@ class SqlAlchemyGameRepository:
         references = {
             (
                 self.name_normalizer.comparison_key(row["platform_name"]),
-                self.name_normalizer.comparison_key(row["name"]),
-            ): (int(row["id"]), str(row["name"] or ""))
+                self.name_normalizer.game_comparison_key(row["name"]),
+            ): (int(row["id"]), str(row["name"] or ""), row.get("release_date"))
             for row in rows
         }
         alias_rows = connection.execute(
             text(
-                f'SELECT game.id, game.name, alias.name AS alias_name, '
+                f'SELECT game.id, game.name, game.release_date, alias.name AS alias_name, '
                 "platform.name AS platform_name "
                 f'FROM "{self.schema_name}".t_game_alias alias '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = alias.game_id '
@@ -87,9 +87,9 @@ class SqlAlchemyGameRepository:
             references.setdefault(
                 (
                     self.name_normalizer.comparison_key(row["platform_name"]),
-                    self.name_normalizer.comparison_key(row["alias_name"]),
+                    self.name_normalizer.game_comparison_key(row["alias_name"]),
                 ),
-                (int(row["id"]), str(row["name"] or "")),
+                (int(row["id"]), str(row["name"] or ""), row.get("release_date")),
             )
         return references
 
@@ -154,7 +154,7 @@ class SqlAlchemyGameRepository:
 
         return (
             self.name_normalizer.comparison_key(game.platform_name),
-            self.name_normalizer.comparison_key(game.name),
+            self.name_normalizer.game_comparison_key(game.name),
         )
 
     def count_public_library_games(self, connection: Connection) -> int:

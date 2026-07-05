@@ -14,7 +14,7 @@
 from typing import Protocol
 
 from services.collection.imports import CollectionImportData
-from services.database.user_collection_import_repository import (
+from services.database.user_collection_import_persistence_result import (
     UserCollectionImportPersistenceResult,
 )
 
