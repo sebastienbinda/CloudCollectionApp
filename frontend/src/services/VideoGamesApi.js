@@ -318,6 +318,7 @@ class VideoGamesApi {
         Studio: game.studio_name || "",
         "Date de sortie": game.release_date || "",
         duplicate_flag: Boolean(game.duplicate_flag),
+        wishlist: Boolean(game.wishlist),
         "Date d'achat": game.buy_date || "",
         "Lieu d'achat": game.buy_location || "",
         Note: game.grade || "",
