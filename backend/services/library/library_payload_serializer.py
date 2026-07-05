@@ -138,7 +138,7 @@ class LibraryPayloadSerializer:
             dict[str, Any]: Jeu serialisable.
         """
 
-        return {
+        payload = {
             "id": row["id"],
             "name": self.text_value(row.get("name")),
             "release_date": self.date_value(row.get("release_date")),
@@ -148,6 +148,9 @@ class LibraryPayloadSerializer:
             "platform": self.text_value(row.get("platform")),
             "duplicate_flag": bool(row.get("duplicate_flag")),
         }
+        if "in_current_user_collection" in row:
+            payload["in_current_user_collection"] = bool(row.get("in_current_user_collection"))
+        return payload
 
     def date_value(self, value: Any) -> str:
         """Serialise une date pour l'API Bibliotheque.

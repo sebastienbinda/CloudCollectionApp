@@ -12,8 +12,8 @@
  *
  * Description : client frontend dedie aux endpoints publics Bibliotheque.
  */
-import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
-import AuthApi from "./AuthApi";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard.js";
+import AuthApi from "./AuthApi.js";
 
 /**
  * Regroupe les appels publics de consultation de la Bibliotheque.
@@ -120,7 +120,8 @@ class LibraryApi {
   static async fetchGames(criteria = {}) {
     return this.fetchJson(
       this.buildListUrl("/api/library/games", criteria),
-      "Impossible de charger les jeux Bibliotheque."
+      "Impossible de charger les jeux Bibliotheque.",
+      this.getOptionalFreshAuthorizationOptions()
     );
   }
 
@@ -234,13 +235,28 @@ class LibraryApi {
    * @param {string} fallbackMessage - Message utilise si l'API ne detaille pas l'erreur.
    * @returns {Promise<any>} Corps JSON retourne par l'API.
    */
-  static async fetchJson(url, fallbackMessage) {
-    const response = await BackendAvailabilityGuard.fetch(url);
+  static async fetchJson(url, fallbackMessage, requestOptions = undefined) {
+    const response = await BackendAvailabilityGuard.fetch(url, requestOptions);
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
+      if (AuthApi.isExpiredAuthenticatedResponse(response, requestOptions)) {
+        AuthApi.handleExpiredSession(response);
+      }
       throw new Error(data.error || fallbackMessage);
     }
     return data;
+  }
+
+  /**
+   * Construit les options Bearer optionnelles pour enrichir une liste publique.
+   *
+   * @returns {RequestInit|undefined} Options avec Bearer frais, sinon aucune option.
+   */
+  static getOptionalFreshAuthorizationOptions() {
+    if (!AuthApi.getAccessToken() || AuthApi.isStoredAccessTokenExpired()) {
+      return undefined;
+    }
+    return { headers: AuthApi.getAuthorizationHeaders() };
   }
 
   /**

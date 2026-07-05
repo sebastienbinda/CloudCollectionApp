@@ -360,6 +360,7 @@ class GameDuplicateService:
             platform=platform_name,
             normalized_platform=self.name_normalizer.comparison_key(platform_name) or "",
             duplicate_flag=None,
+            current_user_id=None,
             sort_rules=(LibrarySortRule("name", "asc"),),
         )
 

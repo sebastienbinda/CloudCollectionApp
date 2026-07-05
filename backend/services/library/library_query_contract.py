@@ -101,6 +101,7 @@ class LibraryQueryCriteria:
         platform (str): Filtre `platform` brut nettoye.
         normalized_platform (str): Filtre `platform` sans casse ni accents.
         duplicate_flag (bool | None): Filtre optionnel des jeux signales doublons.
+        current_user_id (int | None): Utilisateur connecte optionnel pour enrichir les jeux.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises et normalises.
     """
 
@@ -110,6 +111,7 @@ class LibraryQueryCriteria:
     platform: str
     normalized_platform: str
     duplicate_flag: bool | None
+    current_user_id: int | None
     sort_rules: tuple[LibrarySortRule, ...]
 
 
@@ -146,12 +148,14 @@ class LibraryQueryParser:
         self,
         entity_name: str,
         query_parameters: QueryParameterSource | Mapping[str, Any],
+        current_user_id: int | None = None,
     ) -> LibraryQueryCriteria:
         """Parse les criteres de consultation pour une entite Bibliotheque.
 
         Args:
             entity_name (str): Nom logique de l'entite, par exemple `platforms`.
             query_parameters (QueryParameterSource | Mapping[str, Any]): Parametres HTTP bruts.
+            current_user_id (int | None): Utilisateur connecte optionnel.
 
         Returns:
             LibraryQueryCriteria: Criteres normalises et securises.
@@ -176,6 +180,7 @@ class LibraryQueryParser:
             duplicate_flag=self._parse_duplicate_flag(
                 self._get_first_value(query_parameters, "duplicate_flag")
             ),
+            current_user_id=current_user_id,
             sort_rules=tuple(
                 self._parse_sort_rules(
                     entity_name,

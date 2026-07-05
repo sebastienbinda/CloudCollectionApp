@@ -245,6 +245,42 @@ class SqlAlchemyGameRepository:
         ).mappings()
         return [dict(row) for row in rows]
 
+    def list_current_user_collection_game_ids(
+        self,
+        connection: Connection,
+        user_id: int,
+        game_ids: list[int],
+    ) -> set[int]:
+        """Liste les jeux de la page presents dans la collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur connecte.
+            game_ids (list[int]): Identifiants des jeux de la page courante.
+
+        Returns:
+            set[int]: Identifiants en collection hors wishlist.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        if not game_ids:
+            return set()
+        rows = connection.execute(
+            text(
+                f'SELECT game_id FROM "{self.schema_name}".t_user_collection '
+                "WHERE user_id = :user_id "
+                "AND wishlist = FALSE "
+                "AND game_id = ANY(:game_ids)"
+            ),
+            {
+                "user_id": user_id,
+                "game_ids": game_ids,
+            },
+        ).mappings()
+        return {int(row["game_id"]) for row in rows}
+
     def find_public_library_game(
         self,
         connection: Connection,

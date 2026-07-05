@@ -146,6 +146,7 @@ function LibraryEntityListView({
             sortableColumns={listState.sortableColumns}
             sortedRows={listState.rows}
             tableClassName={listState.tableClassName}
+            formatCellValue={listState.formatCellValue}
             onToggleSort={listState.toggleSort}
             pagination={listState.pagination}
             renderRowActions={renderRowActions}
