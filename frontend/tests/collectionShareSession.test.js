@@ -18,6 +18,7 @@ import AppRouting from "../src/appRouting.js";
 import AuthApi from "../src/services/AuthApi.js";
 import CollectionShareSessionApi from "../src/services/CollectionShareSessionApi.js";
 import BackendAvailabilityGuard from "../src/services/BackendAvailabilityGuard.js";
+import VideoGamesApi from "../src/services/VideoGamesApi.js";
 
 class MemoryStorage {
   /** Initialise un stockage navigateur en memoire. */
@@ -131,4 +132,22 @@ test("les profils USER conservent le traitement existant des statuts 401 et 403"
   assert.equal(AuthApi.isExpiredAuthenticatedResponse({ status: 401 }, options), true);
   assert.equal(AuthApi.isExpiredAuthenticatedResponse({ status: 403 }, options), true);
   assert.equal(AuthApi.isExpiredAuthenticatedResponse({ status: 411 }, options), false);
+});
+
+test("annule les appels proteges avant reseau quand le token local est expire", async () => {
+  let fetchCalls = 0;
+  window.fetch = async () => {
+    fetchCalls += 1;
+    return new Response("{}", { status: 200 });
+  };
+  AuthApi.storeAccessToken(createToken({ profile: "USER" }), -1);
+
+  await assert.rejects(
+    () => VideoGamesApi.fetchHomeStats(),
+    (error) => AuthApi.isSessionExpiredError(error)
+  );
+
+  assert.equal(fetchCalls, 0);
+  assert.equal(AuthApi.getAccessToken(), "");
+  assert.equal(window.dispatchedEvents.includes(AuthApi.sessionExpiredEventName), true);
 });

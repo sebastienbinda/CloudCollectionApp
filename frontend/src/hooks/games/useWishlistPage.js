@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import { filterGames } from "../../collectionUtils";
+import AuthApi from "../../services/AuthApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 
 const wishlistColumns = ["Nom du jeu", "Plateforme", "Studio", "Date de sortie", "Version"];
@@ -128,6 +129,9 @@ function useWishlistPage(options) {
         setGames(Array.isArray(loadedGames) ? loadedGames : []);
         setValuesByColumn(buildValuesByColumn(Array.isArray(loadedGames) ? loadedGames : []));
       } catch (e) {
+        if (AuthApi.isSessionExpiredError(e)) {
+          return;
+        }
         setWishlistError("Impossible de charger la liste de souhaits.");
         setGames([]);
         setValuesByColumn({});

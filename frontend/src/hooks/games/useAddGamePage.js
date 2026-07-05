@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
+import AuthApi from "../../services/AuthApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 
 const initialGameForm = AppRouting.createInitialGameForm();
@@ -81,6 +82,9 @@ function useAddGamePage(options) {
       options.reloadGames();
       options.openPlatform(data.item.Plateforme);
     } catch (e) {
+      if (AuthApi.isSessionExpiredError(e)) {
+        return;
+      }
       setAddGameError(e.message || "Impossible d'ajouter le jeu.");
     } finally {
       setIsAddingGame(false);

@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import AppRouting from "../../appRouting";
+import AuthApi from "../../services/AuthApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 
 /**
@@ -53,6 +54,9 @@ function usePlatformsCatalog(options) {
           }));
         }
       } catch (e) {
+        if (AuthApi.isSessionExpiredError(e)) {
+          return;
+        }
         options.setError("Impossible de charger les plateformes depuis le backend.");
       } finally {
         setIsLoadingPlatforms(false);

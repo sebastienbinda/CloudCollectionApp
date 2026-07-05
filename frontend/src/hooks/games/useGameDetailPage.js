@@ -13,6 +13,7 @@
  * Description : hook React de chargement du detail d'un jeu.
  */
 import { useEffect, useState } from "react";
+import AuthApi from "../../services/AuthApi";
 import LibraryApi from "../../services/LibraryApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 
@@ -65,6 +66,9 @@ function useGameDetailPage(options) {
           : await LibraryApi.fetchGame(options.gameId);
         setGameDetail(data.game || null);
       } catch (error) {
+        if (AuthApi.isSessionExpiredError(error)) {
+          return;
+        }
         setGameDetail(null);
         setGameDetailError(error.message || "Impossible de charger le detail du jeu.");
       } finally {
@@ -164,6 +168,9 @@ function useGameDetailPage(options) {
       setGameDetail((currentGame) => currentGame ? { ...currentGame, duplicate_flag: true } : currentGame);
       setDuplicateReportMessage(data.message || "Merci, un administrateur verifiera ce signalement.");
     } catch (error) {
+      if (AuthApi.isSessionExpiredError(error)) {
+        return;
+      }
       setDuplicateReportError(error.message || "Impossible de signaler ce doublon.");
     } finally {
       setIsReportingDuplicate(false);

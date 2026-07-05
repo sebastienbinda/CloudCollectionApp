@@ -13,6 +13,7 @@
  * Description : hook de gestion des mutations de jeux d'une plateforme.
  */
 import { useState } from "react";
+import AuthApi from "../services/AuthApi";
 import VideoGamesApi from "../services/VideoGamesApi";
 
 /**
@@ -75,6 +76,9 @@ function usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames) {
       reloadOds();
       reloadGames();
     } catch (e) {
+      if (AuthApi.isSessionExpiredError(e)) {
+        return;
+      }
       const message = e.message || "Impossible de supprimer le jeu.";
       setDeleteGameError(message);
       window.alert(message);
@@ -98,6 +102,9 @@ function usePlatformGameMutations(selectedPlatform, reloadOds, reloadGames) {
       reloadOds();
       reloadGames();
     } catch (e) {
+      if (AuthApi.isSessionExpiredError(e)) {
+        return;
+      }
       const message = e.message || "Impossible de modifier le jeu.";
       setDeleteGameError(message);
       window.alert(message);

@@ -62,6 +62,9 @@ class BackendRouteAccessService {
    * @returns {Promise<Object>} Permissions applicatives calculees.
    */
   static async loadActionPermissions(apiClient) {
+    if (!apiClient.getAccessToken()) {
+      return this.getFallbackActionPermissions("");
+    }
     const data = await apiClient.fetchRoutes();
     const service = new BackendRouteAccessService(
       data.routes || [],

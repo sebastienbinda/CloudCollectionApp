@@ -13,6 +13,7 @@
  * Description : hook React de la page d'accueil de collection.
  */
 import { useEffect, useState } from "react";
+import AuthApi from "../../services/AuthApi";
 import VideoGamesApi from "../../services/VideoGamesApi";
 import useHomeSearch from "./useHomeSearch";
 
@@ -41,6 +42,9 @@ function useHomePage(options) {
         const data = await VideoGamesApi.fetchHomeStats();
         setHomeStats(data);
       } catch (e) {
+        if (AuthApi.isSessionExpiredError(e)) {
+          return;
+        }
         options.setError("Impossible de charger les statistiques de l'accueil.");
       } finally {
         setIsLoadingHome(false);
