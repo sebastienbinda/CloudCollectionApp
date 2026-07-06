@@ -18,7 +18,6 @@ import AuthView from "./AuthView";
 import EmailVerificationResultView from "./EmailVerificationResultView";
 import GameDetailView from "./GameDetailView";
 import GameDuplicateAdminView from "./GameDuplicateAdminView";
-import HomeView from "./HomeView";
 import LibraryEntityListView from "./LibraryEntityListView";
 import LibraryHomeView from "./LibraryHomeView";
 import LibraryPlatformDetailView from "./LibraryPlatformDetailView";
@@ -27,8 +26,10 @@ import renderPlatformImageModerationView from "./appViewSwitchPlatformImageModer
 import renderConfigurationView from "./appViewSwitchConfigurationRenderer";
 import renderCollectionShareManagementView from "./appViewSwitchCollectionShareRenderer";
 import renderAdminLibraryImportView from "./appViewSwitchAdminLibraryImportRenderer";
+import renderHomeView from "./appViewSwitchHomeRenderer";
+import renderStatisticsView from "./appViewSwitchStatisticsRenderer";
+import renderUsersView from "./appViewSwitchUsersRenderer";
 import UserCollectionOnboardingView from "./UserCollectionOnboardingView";
-import UsersView from "./UsersView";
 import WishlistView from "./WishlistView";
 import GuestNavigationPolicy from "../services/GuestNavigationPolicy";
 
@@ -62,6 +63,9 @@ class AppViewSwitch {
     if (props.currentView === "wishlist") {
       return "wishlist";
     }
+    if (props.currentView === "statistics") {
+      return "statistics";
+    }
     if (props.currentView === "gameDetail" && props.selectedGameSource !== "collection") {
       return "library";
     }
@@ -90,6 +94,7 @@ class AppViewSwitch {
       canUseCollectionViews: props.canUseCollectionViews,
       canViewCollection: props.canViewCollection,
       canViewWishlist: props.canViewWishlist,
+      canViewStatistics: props.canViewStatistics,
       canAccessConfiguration: props.canAccessConfiguration,
       canViewPrices: props.canViewPrices,
       isGuest: props.isGuest,
@@ -100,6 +105,7 @@ class AppViewSwitch {
       onOpenAbout: props.openAbout,
       onOpenAuth: props.openAuth,
       onOpenHome: props.goHome,
+      onOpenStatistics: props.openStatistics,
       onOpenLibrary: props.openLibrary,
       onOpenWishlist: props.openWishlist,
       onOpenConfiguration: props.openConfiguration,
@@ -120,7 +126,11 @@ class AppViewSwitch {
       return this.renderAbout(props);
     }
     if (props.currentView === "home") {
-      return this.renderHome(props);
+      return renderHomeView(props, this.buildPageLayoutProps(props));
+    }
+
+    if (props.currentView === "statistics") {
+      return renderStatisticsView(props, this.buildPageLayoutProps(props));
     }
 
     if (props.currentView === "about") {
@@ -159,7 +169,7 @@ class AppViewSwitch {
     }
 
     if (props.currentView === "users") {
-      return this.renderUsers(props);
+      return renderUsersView(props, this.buildPageLayoutProps(props));
     }
 
     if (props.currentView === "platformImageModeration") {
@@ -218,52 +228,6 @@ class AppViewSwitch {
       <AboutView
         {...this.buildPageLayoutProps(props)}
         error={props.error}
-      />
-    );
-  }
-
-  /**
-   * Rend la page d'accueil.
-   *
-   * @param {Object} props - Etat et callbacks d'accueil.
-   * @returns {import("react").JSX.Element} Vue d'accueil.
-   */
-  static renderHome(props) {
-    return (
-      <HomeView
-        {...this.buildPageLayoutProps(props)}
-        homeStats={props.homeStats}
-        error={props.error}
-        isLoadingHome={props.isLoadingHome}
-        isSearchingGames={props.isSearchingGames}
-        hasSearchedGames={props.hasSearchedGames}
-        homeSearchQuery={props.homeSearchQuery}
-        homeSearchResults={props.homeSearchResults}
-        homeSearchError={props.homeSearchError}
-        onOpenPlatform={props.openPlatform}
-        onSearchQueryChange={props.setHomeSearchQuery}
-        onSearchSubmit={props.searchGamesByName}
-        onCloseSearch={props.closeHomeSearch}
-        onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
-      />
-    );
-  }
-
-  /**
-   * Rend la page de gestion des utilisateurs.
-   *
-   * @param {Object} props - Etat et callbacks d'administration utilisateur.
-   * @returns {import("react").JSX.Element} Vue utilisateurs.
-   */
-  static renderUsers(props) {
-    return (
-      <UsersView
-        {...this.buildPageLayoutProps(props)}
-        canSearchUsers={props.actionPermissions.canSearchUsers}
-        canDeleteUser={props.actionPermissions.canDeleteUser}
-        canLockUser={props.actionPermissions.canLockUser}
-        canUnlockUser={props.actionPermissions.canUnlockUser}
-        canValidateUser={props.actionPermissions.canValidateUser}
       />
     );
   }

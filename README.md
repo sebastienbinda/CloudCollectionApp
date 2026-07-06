@@ -26,6 +26,8 @@ La version publique est disponible sur <https://www.cloud-collection.fr>.
 - Import de collection utilisateur depuis LibreOffice Calc `.ods` ou CSV.
 - Consultation de la collection personnelle avec statistiques, filtres, tris,
   details de jeux, prix, etats, regions, notes et descriptions privees.
+- Ecran de statistiques detaillees par plateforme, annees de sortie, annees
+  d'achat et meilleurs jeux notes.
 - Liste de souhaits alimentee par les imports utilisateur, avec filtrage des
   jeux en cours d'achat.
 - Bibliotheque commune de plateformes, studios et jeux, avec recherche et pages
@@ -63,6 +65,8 @@ fonctionnels et techniques sont dans `documentation/` :
   collection.
 - [documentation/collection.md](documentation/collection.md) : consultation de la
   collection utilisateur.
+- [documentation/statistics.md](documentation/statistics.md) : ecran et API de
+  statistiques detaillees de collection.
 - [documentation/import.md](documentation/import.md) : workflow d'import ODS/CSV.
 - [documentation/import-mapping.md](documentation/import-mapping.md) : regles de
   conversion des valeurs importees.

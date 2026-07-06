@@ -32,6 +32,7 @@ function AdminLibraryImportView({
   canImportLibraryCsv,
   canUseCollectionViews,
   canViewCollection,
+  canViewStatistics,
   canViewWishlist,
   isAuthenticated,
   isImportingAdminLibrary,
@@ -42,6 +43,7 @@ function AdminLibraryImportView({
   onOpenConfiguration,
   onOpenHome,
   onOpenLibrary,
+  onOpenStatistics,
   onOpenWishlist,
   onSelectAdminLibraryImportFile,
   selectedAdminLibraryImportFileName,
@@ -65,6 +67,7 @@ function AdminLibraryImportView({
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
       canViewWishlist={canViewWishlist}
+      canViewStatistics={canViewStatistics}
       canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
@@ -73,6 +76,7 @@ function AdminLibraryImportView({
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
       onOpenWishlist={onOpenWishlist}
+      onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

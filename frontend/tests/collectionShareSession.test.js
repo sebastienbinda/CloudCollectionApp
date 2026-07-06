@@ -151,3 +151,9 @@ test("annule les appels proteges avant reseau quand le token local est expire", 
   assert.equal(AuthApi.getAccessToken(), "");
   assert.equal(window.dispatchedEvents.includes(AuthApi.sessionExpiredEventName), true);
 });
+
+test("ne considere pas un token local expire comme utilisable", () => {
+  AuthApi.storeAccessToken(createToken({ profile: "USER" }), -1);
+
+  assert.equal(AuthApi.hasUsableAccessToken(), false);
+});

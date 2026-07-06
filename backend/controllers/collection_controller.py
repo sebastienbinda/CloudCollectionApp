@@ -18,6 +18,7 @@ from flask import Flask, current_app, jsonify, request, send_file
 from services import AuthGuard, DatabaseConfiguration, SqlAlchemyUserRepository, UserProfile
 from services.collection import GuestCollectionAccessPolicy, UserCollectionQueryParser
 from services.collection.user_collection_query_service import UserCollectionQueryService
+from services.collection.user_collection_statistics_service import UserCollectionStatisticsService
 
 
 class CollectionController:
@@ -27,6 +28,7 @@ class CollectionController:
         self,
         auth_guard: AuthGuard,
         collection_query_service_factory=None,
+        collection_statistics_service_factory=None,
         collection_query_parser=None,
         user_repository_class=SqlAlchemyUserRepository,
         database_configuration_class=DatabaseConfiguration,
@@ -37,6 +39,7 @@ class CollectionController:
         Args:
             auth_guard (AuthGuard): Garde d'authentification et de profil.
             collection_query_service_factory (Callable | None): Fabrique du service de lecture SQL.
+            collection_statistics_service_factory (Callable | None): Fabrique du service de statistiques.
             collection_query_parser (UserCollectionQueryParser | None): Parseur des criteres.
             user_repository_class (type): Classe de repository utilisateur.
             database_configuration_class (type): Classe de configuration base.
@@ -49,6 +52,10 @@ class CollectionController:
         self.auth_guard = auth_guard
         self.collection_query_service_factory = (
             collection_query_service_factory or self._create_default_collection_query_service
+        )
+        self.collection_statistics_service_factory = (
+            collection_statistics_service_factory
+            or self._create_default_collection_statistics_service
         )
         self.collection_query_parser = collection_query_parser or UserCollectionQueryParser()
         self.user_repository_class = user_repository_class
@@ -68,11 +75,20 @@ class CollectionController:
         read_view = self.auth_guard.require_profiles(
             [UserProfile.GUEST.value, UserProfile.USER.value, UserProfile.ADMIN.value]
         )
+        user_guest_view = self.auth_guard.require_profiles(
+            [UserProfile.GUEST.value, UserProfile.USER.value]
+        )
         write_view = self.auth_guard.require_profile(UserProfile.USER.value)
         flask_app.add_url_rule(
             "/collections/videogames",
             endpoint="get_collection_video_games_statistics",
             view_func=read_view(self.get_video_games_statistics),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
+            "/collections/statistics",
+            endpoint="get_collection_statistics",
+            view_func=user_guest_view(self.get_collection_statistics),
             methods=["GET"],
         )
         flask_app.add_url_rule(
@@ -140,6 +156,31 @@ class CollectionController:
             return jsonify({"error": str(exc)}), 400
         except Exception:
             current_app.logger.exception("Erreur pendant la lecture des statistiques collection.")
+            return jsonify({"error": "Unable to read collection statistics."}), 500
+
+    def get_collection_statistics(self):
+        """Retourne les statistiques detaillees de la collection possedee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            flask.Response | tuple[flask.Response, int]: Statistiques detaillees JSON ou erreur JSON.
+        """
+
+        try:
+            context = self._current_access_context()
+            self.guest_access_policy.ensure_category_allowed(context, False)
+            statistics = self._create_collection_statistics_service().get_statistics(
+                context.user_id,
+            )
+            return jsonify(statistics)
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant la lecture des statistiques detaillees.")
             return jsonify({"error": "Unable to read collection statistics."}), 500
 
     def search_video_game_platforms(self):
@@ -320,6 +361,18 @@ class CollectionController:
 
         return self.collection_query_service_factory()
 
+    def _create_collection_statistics_service(self):
+        """Construit le service de statistiques detaillees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            UserCollectionStatisticsService: Service de statistiques configure.
+        """
+
+        return self.collection_statistics_service_factory()
+
     def _create_default_collection_query_service(self):
         """Construit le service de consultation depuis l'environnement.
 
@@ -331,6 +384,18 @@ class CollectionController:
         """
 
         return UserCollectionQueryService(self.database_configuration_class.from_environment())
+
+    def _create_default_collection_statistics_service(self):
+        """Construit le service de statistiques detaillees depuis l'environnement.
+
+        Args:
+            Aucun.
+
+        Returns:
+            UserCollectionStatisticsService: Service de statistiques configure.
+        """
+
+        return UserCollectionStatisticsService(self.database_configuration_class.from_environment())
 
     def _create_user_repository(self):
         """Construit le repository utilisateur.

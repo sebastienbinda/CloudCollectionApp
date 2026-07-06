@@ -12,14 +12,56 @@
 # Description : tests des routes de lecture de collection jeux video.
 
 try:
+    import app as app_module
     from tests.support.route_test_support import BaseAppRoutesTest
-    from tests.support.route_test_fakes import FakeUserCollectionQueryService
+    from tests.support.route_test_fakes import (
+        FakeUserCollectionQueryService,
+        FakeUserCollectionStatisticsService,
+    )
 except ModuleNotFoundError:
+    import app as app_module
     from tests.support.route_test_support import BaseAppRoutesTest
-    from tests.support.route_test_fakes import FakeUserCollectionQueryService
+    from tests.support.route_test_fakes import (
+        FakeUserCollectionQueryService,
+        FakeUserCollectionStatisticsService,
+    )
 
 class CollectionRoutesTest(BaseAppRoutesTest):
     """Valide les routes protegees de lecture et outils collection."""
+
+    def setUp(self):
+        """Prepare le service factice des statistiques detaillees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les dependances de test sont configurees.
+        """
+
+        super().setUp()
+        self.original_collection_statistics_service_factory = (
+            app_module.collection_controller.collection_statistics_service_factory
+        )
+        app_module.collection_controller.collection_statistics_service_factory = (
+            FakeUserCollectionStatisticsService
+        )
+        FakeUserCollectionStatisticsService.last_user_id = None
+
+    def tearDown(self):
+        """Restaure le service reel des statistiques detaillees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les dependances globales sont restaurees.
+        """
+
+        app_module.collection_controller.collection_statistics_service_factory = (
+            self.original_collection_statistics_service_factory
+        )
+        super().tearDown()
 
     def test_read_routes_require_authentication(self):
         """Verifie que les routes de lecture collection exigent un token.
@@ -33,6 +75,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
 
         for path in [
             "/collections/videogames",
+            "/collections/statistics",
             "/collections/videogames/platforms/search",
             "/collections/videogames/games/search?q=mario",
             "/collections/videogames/games/3",
@@ -87,6 +130,31 @@ class CollectionRoutesTest(BaseAppRoutesTest):
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].column,
             FakeUserCollectionQueryService.last_games_criteria.sort_rules[0].direction,
         ))
+
+    def test_collection_statistics_returns_detailed_contract_for_user(self):
+        """Verifie la nouvelle route de statistiques detaillees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload et l'utilisateur cible.
+        """
+
+        response = self.client.get(
+            "/collections/statistics",
+            headers=self.get_user_auth_headers(),
+        )
+        payload = response.get_json()
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, payload["total_games"])
+        self.assertEqual("Switch", payload["platform_distribution"][0]["platform_name"])
+        self.assertEqual(100, payload["platform_distribution"][0]["ratio"])
+        self.assertEqual(1992, payload["release_year_distribution"][0]["year"])
+        self.assertEqual(2024, payload["purchase_year_distribution"][0]["year"])
+        self.assertEqual("Mario Kart", payload["top_rated_games"][0]["name"])
+        self.assertEqual(7, FakeUserCollectionStatisticsService.last_user_id)
 
     def test_collection_game_detail_returns_current_user_game(self):
         """Verifie la route de detail d'un jeu de collection.

@@ -1,0 +1,184 @@
+/*
+ *   ____ _                 _  ____      _ _           _   _             ___
+ *  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+ * | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+ * | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+ *  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+ *                                                                            |_|   |_|
+ * Projet : CloudCollectionApp
+ * Date de creation : 2026-07-05
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+ * Licence : Apache 2.0
+ *
+ * Description : styles de la page statistiques collection.
+ */
+
+.collectionStatisticsShell {
+  gap: 1.2rem;
+}
+
+.statisticsSummary,
+.statisticsTimelineGrid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.statisticsSummary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statisticsTimelineGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.statisticsPanel {
+  background: #ffffff;
+  border: 1px solid #dbe5d2;
+  border-radius: 8px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.statisticsPanel h2,
+.statisticsSectionHeader h2 {
+  color: #1f2937;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.statisticsSectionHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.statisticsSectionHeader span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.statisticsBars {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.statisticsBarRow {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.statisticsBarLabels {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.statisticsBarLabels span {
+  color: #1f2937;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.statisticsBarLabels strong {
+  color: #3f6212;
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+}
+
+.statisticsBarTrack {
+  background: #ecfdf5;
+  border-radius: 999px;
+  height: 0.62rem;
+  overflow: hidden;
+}
+
+.statisticsBarTrack span {
+  background: linear-gradient(90deg, #16a34a, #84cc16);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.topRatedGamesList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.topRatedGame {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+  padding: 0.75rem;
+}
+
+.topRatedGame h3 {
+  color: #111827;
+  font-size: 1rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.topRatedGame span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.topRatedGame dl {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.topRatedGame div,
+.topRatedGame dl div {
+  min-width: 0;
+}
+
+.topRatedGame dt {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.topRatedGame dd {
+  color: #1f2937;
+  font-weight: 700;
+  margin: 0.12rem 0 0;
+}
+
+@media (max-width: 760px) {
+  .statisticsSummary,
+  .statisticsTimelineGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statisticsPanel {
+    padding: 0.85rem;
+  }
+
+  .statisticsBarLabels,
+  .statisticsSectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .topRatedGame {
+    grid-template-columns: 1fr;
+  }
+
+  .topRatedGame dl {
+    grid-template-columns: 1fr;
+  }
+}

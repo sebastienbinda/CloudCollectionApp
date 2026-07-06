@@ -29,6 +29,7 @@ in `documentation/share.md`.
 The current collection consultation uses:
 
 - `GET /collections/videogames` for collection and wishlist statistics;
+- `GET /collections/statistics` for detailed owned-collection statistics;
 - `GET /collections/videogames/platforms/search` for collection platforms;
 - `GET /collections/videogames/games/search` for collection and wishlist
   games;
@@ -67,6 +68,8 @@ and units are returned without conversion.
 The statistics response includes only permitted category counts for GUEST. A
 non-permitted collection or wishlist section is empty rather than leaking its
 game count.
+The dedicated detailed statistics endpoint exposes only owned-collection
+statistics and therefore requires the GUEST `collection` permission.
 
 ## Wishlist Semantics
 
@@ -148,6 +151,12 @@ For collection and platform statistics, `total_value` is the sum of persisted
 `purchase_price` values. `average_value` is calculated only from entries whose
 `purchase_price` is not null and is rounded to two decimal places. An empty set
 of prices returns zero for both values.
+
+`GET /collections/statistics` returns detailed, backend-computed statistics for
+`wishlist=false`: platform proportions, release-year distribution,
+purchase-year distribution and games whose numeric note is strictly greater
+than `9`. Frontend pages must not recalculate these distributions from game
+lists.
 
 ## Filtering
 

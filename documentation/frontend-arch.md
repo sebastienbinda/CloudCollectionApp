@@ -36,7 +36,7 @@ Use the following domain folders for new or modified hooks:
 - `frontend/src/hooks/navigation/`: current view, URL synchronization,
   history handling and route redirection.
 - `frontend/src/hooks/collection/`: cross-page collection refresh signals, plus
-  connected-user collection onboarding and import state.
+  connected-user collection onboarding, detailed statistics and import state.
 - `frontend/src/hooks/home/`: connected-user collection statistics and home
   search.
 - `frontend/src/hooks/platforms/`: platform catalog loading and platform
@@ -118,6 +118,9 @@ Use the following domain folders for new or modified hooks:
   Keep form validation in `collectionShareForm.js`, HTTP details in
   `CollectionSharesApi`, and clipboard/confirmation actions in the hook. The
   routed owner page only renders this state.
+- Own detailed collection statistics loading in `useCollectionStatisticsPage`.
+  It must call `GET /collections/statistics` through `CollectionStatisticsApi`
+  and must not recalculate backend chart distributions from game lists.
 
 ### `hooks/home`
 

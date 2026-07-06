@@ -45,6 +45,9 @@ function resolveActiveNavigationKeyFromLocation() {
   if (pathname === "/wishlist") {
     return "wishlist";
   }
+  if (pathname === "/collection/statistics") {
+    return "statistics";
+  }
   if (pathname.startsWith("/bibliotheque")) {
     return "library";
   }
@@ -73,6 +76,7 @@ function resolveActiveNavigationKeyFromLocation() {
  * @param {Function} props.onOpenAbout - Callback ouvrant la page A propos.
  * @param {Function} props.onOpenAuth - Callback ouvrant la page Connexion.
  * @param {Function} props.onOpenHome - Callback ouvrant Ma collection.
+ * @param {Function} props.onOpenStatistics - Callback ouvrant les statistiques.
  * @param {Function} props.onOpenLibrary - Callback ouvrant la Bibliotheque.
  * @param {Function} props.onOpenWishlist - Callback ouvrant la liste de souhaits.
  * @param {Function} props.onOpenConfiguration - Callback ouvrant la page Configuration.
@@ -96,12 +100,14 @@ function PageLayout({
   canUseCollectionViews = true,
   canViewCollection = canUseCollectionViews,
   canViewWishlist = canUseCollectionViews,
+  canViewStatistics = canViewCollection,
   canAccessConfiguration = true,
   authenticatedUsername,
   authenticatedProfile,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
+  onOpenStatistics,
   onOpenLibrary,
   onOpenWishlist,
   onOpenConfiguration,
@@ -166,12 +172,14 @@ function PageLayout({
           canUseCollectionViews={canUseCollectionViews}
           canViewCollection={canViewCollection}
           canViewWishlist={canViewWishlist}
+          canViewStatistics={canViewStatistics}
           canAccessConfiguration={canAccessConfiguration}
           username={authenticatedUsername}
           profile={authenticatedProfile}
           onOpenAbout={onOpenAbout}
           onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
+          onOpenStatistics={onOpenStatistics}
           onOpenLibrary={onOpenLibrary}
           onOpenWishlist={onOpenWishlist}
           onOpenConfiguration={onOpenConfiguration}
