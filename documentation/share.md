@@ -68,7 +68,7 @@ owner id and stored recipient label, but never logs the raw token.
 
 | Permission | Backend effect | Frontend effect |
 | --- | --- | --- |
-| `collection` | Allows `wishlist=false` statistics, platform search, game search and detail. | Shows Collection, platform pages and `Collection de <pseudonyme>`. |
+| `collection` | Allows `wishlist=false` statistics, detailed collection statistics, platform search, game search and detail. | Shows Collection, Statistics, platform pages and `Collection de <pseudonyme>`. |
 | `wishlist` | Allows `wishlist=true` statistics, search and detail. | Shows Wishlist and `Liste de souhaits de <pseudonyme>`. |
 | `prices` | Keeps `purchase_price`, `price_unit`, `total_value` and `average_value`. | Shows price fields and statistics when present. |
 
@@ -89,6 +89,7 @@ category; it may leave the criterion open only when both categories are shared.
 | USER/ADMIN | `GET /api/collection-shares` | List owned active, expired and revoked shares. |
 | USER/ADMIN | `DELETE /api/collection-shares/<share_id>` | Revoke an owned share idempotently. |
 | GUEST/USER/ADMIN | `GET /collections/videogames` | Read permitted statistics. |
+| GUEST/USER | `GET /collections/statistics` | Read owned-collection detailed statistics when collection is permitted. |
 | GUEST/USER/ADMIN | `GET /collections/videogames/platforms/search` | Read permitted platforms. |
 | GUEST/USER/ADMIN | `GET /collections/videogames/games/search` | Read permitted games. |
 | GUEST/USER/ADMIN | `GET /collections/videogames/games/<game_id>` | Read a permitted game detail. |
@@ -108,7 +109,8 @@ upload remain unavailable to GUEST.
 - GUEST identity is `Invité de <pseudonyme>` with the yellow desktop/mobile
   treatment.
 - Collection and Wishlist menu entries are omitted when their respective claim
-  is false. Library, About and Logout remain available.
+  is false. Statistics is omitted when collection is false. Library, About and
+  Logout remain available.
 - Configuration, all Configuration subpages, add/edit/delete, import,
   reinitialization and image proposal are hidden from GUEST; direct navigation
   redirects to the first allowed category, otherwise About.

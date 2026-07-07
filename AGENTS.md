@@ -81,9 +81,14 @@
 - Before changing how a value read from an imported collection file is cleaned,
   matched, converted, warned about, or persisted, read and respect
   `documentation/import-mapping.md`.
+- Before changing the dedicated collection statistics page, backend statistics
+  endpoint, chart payload, or statistics menu entry, read and respect
+  `documentation/statistics.md`.
 - Before changing user registration, password hashing, email verification, or registration route exposure, read and respect `documentation/register.md`.
 - Before changing backend user administration, user search, user deletion, user locking, or user status, read and respect `documentation/users.md`.
-- Before changing the main navigation menu, responsive menu behavior, or shared menu actions, read and respect `documentation/menu.md`.
+- Before changing the main navigation menu, adding or removing a menu entry,
+  changing menu entry visibility, responsive menu behavior, or shared menu
+  actions, read and respect `documentation/menu.md`.
 - Before changing the public About page, its route, copy, image, or responsive layout, read and respect `documentation/about.md`.
 - Before adding or modifying any frontend page, read and respect `documentation/site-plan.md`.
 - Before changing frontend React/Vite architecture, frontend hooks, frontend services, or shared frontend state orchestration, read and respect `documentation/frontend-arch.md`.

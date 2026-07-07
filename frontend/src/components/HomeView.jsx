@@ -25,6 +25,7 @@ function HomeView({
   canUseCollectionViews,
   canViewCollection,
   canViewWishlist,
+  canViewStatistics,
   canAccessConfiguration,
   canViewPrices = true,
   isGuest = false,
@@ -36,6 +37,7 @@ function HomeView({
   onOpenHome,
   onOpenLibrary,
   onOpenWishlist,
+  onOpenStatistics,
   onOpenConfiguration,
   onLogout,
   onOpenPlatform,
@@ -80,6 +82,7 @@ function HomeView({
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
       canViewWishlist={canViewWishlist}
+      canViewStatistics={canViewStatistics}
       canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
@@ -88,6 +91,7 @@ function HomeView({
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
       onOpenWishlist={onOpenWishlist}
+      onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

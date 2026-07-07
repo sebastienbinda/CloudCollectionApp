@@ -31,6 +31,11 @@ function resolveMainMenuAccess(options = {}) {
       options.canViewCollection === true &&
       typeof options.onOpenHome === "function"
     ),
+    canOpenStatistics: (
+      isAuthenticated &&
+      options.canViewStatistics === true &&
+      typeof options.onOpenStatistics === "function"
+    ),
   });
 }
 

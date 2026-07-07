@@ -23,6 +23,7 @@ import "./styles/editorial-views.css";
 import "./styles/collection-onboarding.css";
 import "./styles/game-detail.css";
 import "./styles/collection-shares.css";
+import "./styles/collection-statistics.css";
 import "./styles/platform-detail.css";
 import "./styles/mobile-fixes.css";
 

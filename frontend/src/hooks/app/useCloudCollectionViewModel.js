@@ -14,6 +14,7 @@
  */
 import { useRef, useState } from "react";
 import useCollectionRefresh from "../collection/useCollectionRefresh";
+import useCollectionStatisticsPage from "../collection/useCollectionStatisticsPage";
 import useUserCollectionReinitialization from "../collection/useUserCollectionReinitialization";
 import useUserCollectionOnboarding from "../collection/useUserCollectionOnboarding";
 import useAddGamePage from "../games/useAddGamePage";
@@ -50,6 +51,7 @@ function useCloudCollectionViewModel() {
   const isCollectionProfile = session.hasAccessToken && session.authenticatedProfile !== "ADMIN";
   const canViewCollection = isCollectionProfile && session.viewAccess.canViewCollection;
   const canViewWishlist = isCollectionProfile && session.viewAccess.canViewWishlist;
+  const canViewStatistics = canViewCollection;
   const canUseCollectionViews = canViewCollection || canViewWishlist;
   const refresh = useCollectionRefresh();
   const clearDeleteGameFeedbackRef = useRef(() => {});
@@ -61,6 +63,7 @@ function useCloudCollectionViewModel() {
     canUseCollectionViews,
     canViewCollection,
     canViewWishlist,
+    canViewStatistics,
     canAccessConfiguration: session.viewAccess.canAccessConfiguration,
     isGuest: session.viewAccess.isGuest,
     clearDeleteGameFeedback: () => clearDeleteGameFeedbackRef.current(),
@@ -120,6 +123,11 @@ function useCloudCollectionViewModel() {
     hasAccessToken: canViewWishlist,
     gamesReloadKey: refresh.gamesReloadKey,
     wishlistBuyStatusDefaultFilter: session.viewAccess.wishlistBuyStatusDefaultFilter,
+  });
+  const collectionStatisticsPage = useCollectionStatisticsPage({
+    enabled: navigation.currentView === "statistics",
+    hasAccessToken: canViewStatistics,
+    reloadKey: refresh.odsReloadKey,
   });
   const gameDuplicateAdminPage = useGameDuplicateAdminPage({
     enabled: navigation.currentView === "gameDuplicateAdmin",
@@ -230,6 +238,7 @@ function useCloudCollectionViewModel() {
       canUseCollectionViews,
       canViewCollection,
       canViewWishlist,
+      canViewStatistics,
       canViewPrices: session.viewAccess.canViewPrices,
       canAccessConfiguration: session.viewAccess.canAccessConfiguration,
       isGuest: session.viewAccess.isGuest,
@@ -279,6 +288,7 @@ function useCloudCollectionViewModel() {
       openGameDuplicateAdmin: navigation.openGameDuplicateAdmin,
       openLibraryPlatformDetail: navigation.openLibraryPlatformDetail,
       openWishlist: navigation.openWishlist,
+      openStatistics: navigation.openStatistics,
       openCollectionOnboarding: navigation.openCollectionOnboarding,
       openUsersPage: navigation.openUsersPage,
       openAdminLibraryImport: navigation.openAdminLibraryImport,
@@ -319,6 +329,7 @@ function useCloudCollectionViewModel() {
       libraryPlatforms,
       libraryStudios,
       libraryGames,
+      collectionStatisticsPage,
       collectionShareManagement,
     },
     authModalProps: session.authModalProps,

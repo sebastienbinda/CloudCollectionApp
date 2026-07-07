@@ -51,7 +51,7 @@ class GuestNavigationPolicy {
       "addGame",
       "collectionOnboarding",
     ].includes(view)) return true;
-    if (["home", "games"].includes(view)) return !this.canViewCollection;
+    if (["home", "games", "statistics"].includes(view)) return !this.canViewCollection;
     if (view === "wishlist") return !this.canViewWishlist;
     return false;
   }

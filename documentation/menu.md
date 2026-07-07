@@ -42,10 +42,10 @@ session state received through props.
   bar: `Connexion` for anonymous visitors, `Deconnexion` for authenticated
   users.
 - For authenticated users on desktop, the main navigation order is
-  `Ma collection`, `Liste de souhaits`, `Bibliotheque`, `Configuration`, then
+  `Ma collection`, `Liste de souhaits`, `Statistiques`, `Bibliotheque`, `Configuration`, then
   `A propos`; `Deconnexion` remains the last action on the right side of the
   navigation bar.
-- For authenticated users on mobile, `Collection`, `Souhaits`, `Biblio` and
+- For authenticated users on mobile, `Collection`, `Souhaits`, `Stats`, `Biblio` and
   `Plus` are the primary dock entries, in that order.
 - Anonymous visitors see only public/session entries: `Bibliotheque`,
   `Connexion` and `A propos` directly in the mobile dock; the `Plus` entry is
@@ -73,9 +73,13 @@ session state received through props.
   and opens `/wishlist`.
 - `Ma collection` requires an active local non-`ADMIN` collection session and
   opens `/collection`.
+- `Statistiques` requires an active local non-`ADMIN` collection session and
+  opens `/collection/statistics`. The backend route remains the authority for
+  access to `GET /collections/statistics`.
 - For GUEST, Collection and Wishlist are independent: each entry is rendered
-  only when its corresponding signed permission is true. Configuration and all
-  Configuration subpages are never rendered.
+  only when its corresponding signed permission is true. Statistics follows the
+  Collection permission. Configuration and all Configuration subpages are never
+  rendered.
 - Authenticated entries whose access is still being discovered must use
   `disabled`; entries reserved for authenticated users must not be rendered for
   anonymous visitors.
@@ -117,5 +121,14 @@ session state received through props.
   `MainMenu` directly.
 - Routes and navigation remain centralized in the navigation hook and the
   application view model.
+- When adding a new menu entry, update the full propagation chain, not only
+  `MainMenu.jsx`: the application view model must expose the boolean access flag
+  and navigation callback, `AppViewSwitch.buildPageLayoutProps` must pass both,
+  and every routed page that renders `PageLayout` must forward both props to the
+  layout. A missing callback such as `onOpenStatistics` makes `MainMenu` omit the
+  entry even when the access boolean is true.
+- Add or update a frontend regression test covering this propagation. At minimum,
+  test that routed pages using `PageLayout` forward the new access flag and
+  callback for the menu entry.
 - After any menu change, run at least `npm run build`.
 - For a significant visual change, verify desktop and mobile states.

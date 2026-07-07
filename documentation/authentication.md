@@ -144,12 +144,16 @@ The collection read routes below explicitly accept `GUEST`, `USER` and
 `ADMIN`, then apply the validated identity and share scope:
 
 - `GET /collections/videogames`
+- `GET /collections/statistics`
 - `GET /collections/videogames/platforms/search`
 - `GET /collections/videogames/games/search`
 - `GET /collections/videogames/games/<game_id>`
 
 These routes must derive the target user from the validated Bearer token and
 must not accept a user identifier from the request payload or query string.
+`GET /collections/statistics` accepts only `USER` and `GUEST` profiles, and
+requires the GUEST `collection` permission because it exposes owned-collection
+statistics only.
 Collection-share management resolves the owner from the Bearer subject and
 allows a user to list or revoke only shares attached to that owner.
 For platform image upload, the backend resolves `t_platform_image.user_id` from

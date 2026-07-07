@@ -35,6 +35,7 @@ class BackendRouteAccessService {
       canUpdatePlatformImageStatus: false,
       canUpdatePlatformImageType: false,
       canReinitializeCollection: false,
+      canViewCollectionStatistics: false,
       canSearchUsers: false,
       canDeleteUser: false,
       canLockUser: false,
@@ -189,6 +190,7 @@ class BackendRouteAccessService {
         "/api/library/platforms/<int:platform_id>/image/<int:image_id>/type/<image_type>"
       ),
       canReinitializeCollection: this.canAccess("POST", "/api/users/collection/reinit"),
+      canViewCollectionStatistics: this.canAccess("GET", "/collections/statistics"),
       canSearchUsers: this.canAccess("GET", "/api/users"),
       canDeleteUser: this.canAccess("DELETE", "/api/users/<int:user_id>"),
       canLockUser: this.canAccess("POST", "/api/users/<int:user_id>/lock"),

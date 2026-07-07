@@ -74,6 +74,7 @@ function CollectionShareManagementView(props) {
       canUseCollectionViews={props.canUseCollectionViews}
       canViewCollection={props.canViewCollection}
       canViewWishlist={props.canViewWishlist}
+      canViewStatistics={props.canViewStatistics}
       canAccessConfiguration={props.canAccessConfiguration}
       authenticatedUsername={props.authenticatedUsername}
       authenticatedProfile={props.authenticatedProfile}
@@ -82,6 +83,7 @@ function CollectionShareManagementView(props) {
       onOpenHome={props.onOpenHome}
       onOpenLibrary={props.onOpenLibrary}
       onOpenWishlist={props.onOpenWishlist}
+      onOpenStatistics={props.onOpenStatistics}
       onOpenConfiguration={props.onOpenConfiguration}
       onLogout={props.onLogout}
     >

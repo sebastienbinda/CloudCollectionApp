@@ -39,6 +39,7 @@ function ConfigurationView({
   canUseCollectionViews,
   canViewCollection,
   canViewWishlist,
+  canViewStatistics,
   canAccessConfiguration,
   downloadError,
   isDownloadingOds,
@@ -55,6 +56,7 @@ function ConfigurationView({
   onOpenHome,
   onOpenLibrary,
   onOpenWishlist,
+  onOpenStatistics,
   onAddGame,
   onOpenUsers,
   onOpenAdminLibraryImport,
@@ -80,6 +82,7 @@ function ConfigurationView({
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
       canViewWishlist={canViewWishlist}
+      canViewStatistics={canViewStatistics}
       canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={username}
       authenticatedProfile={authenticatedProfile}
@@ -88,6 +91,7 @@ function ConfigurationView({
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
       onOpenWishlist={onOpenWishlist}
+      onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

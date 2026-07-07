@@ -15,10 +15,16 @@ import app as app_module
 from services.auth import CollectionShareUnavailableError
 
 try:
-    from tests.support.route_test_fakes import FakeUserCollectionQueryService
+    from tests.support.route_test_fakes import (
+        FakeUserCollectionQueryService,
+        FakeUserCollectionStatisticsService,
+    )
     from tests.support.route_test_support import BaseAppRoutesTest
 except ModuleNotFoundError:
-    from tests.support.route_test_fakes import FakeUserCollectionQueryService
+    from tests.support.route_test_fakes import (
+        FakeUserCollectionQueryService,
+        FakeUserCollectionStatisticsService,
+    )
     from tests.support.route_test_support import BaseAppRoutesTest
 
 
@@ -73,7 +79,15 @@ class GuestCollectionRoutesTest(BaseAppRoutesTest):
 
         super().setUp()
         self.original_guest_session_validator = app_module.auth_guard.guest_session_validator
+        self.original_collection_statistics_service_factory = (
+            app_module.collection_controller.collection_statistics_service_factory
+        )
         app_module.auth_guard.guest_session_validator = AvailableGuestSessionValidator()
+        app_module.collection_controller.collection_statistics_service_factory = (
+            FakeUserCollectionStatisticsService
+        )
+        FakeUserCollectionStatisticsService.last_user_id = None
+        FakeUserCollectionStatisticsService.last_platform_id = None
 
     def tearDown(self):
         """Restaure le validateur reel des sessions GUEST.
@@ -86,6 +100,9 @@ class GuestCollectionRoutesTest(BaseAppRoutesTest):
         """
 
         app_module.auth_guard.guest_session_validator = self.original_guest_session_validator
+        app_module.collection_controller.collection_statistics_service_factory = (
+            self.original_collection_statistics_service_factory
+        )
         super().tearDown()
 
     def get_guest_auth_headers(self, collection=True, wishlist=False, prices=False):
@@ -169,6 +186,42 @@ class GuestCollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(200, wishlist_response.status_code)
         self.assertTrue(wishlist_criteria.wishlist)
         self.assertEqual(200, both_response.status_code)
+
+    def test_guest_collection_statistics_uses_shared_owner_when_collection_allowed(self):
+        """Verifie les statistiques detaillees GUEST sur le proprietaire partage.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le statut et l'utilisateur cible.
+        """
+
+        response = self.client.get(
+            "/collections/statistics",
+            headers=self.get_guest_auth_headers(collection=True, wishlist=False),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, response.get_json()["total_games"])
+        self.assertEqual(91, FakeUserCollectionStatisticsService.last_user_id)
+
+    def test_guest_collection_statistics_requires_collection_permission(self):
+        """Verifie qu'un partage wishlist seul ne lit pas les statistiques collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident HTTP 403.
+        """
+
+        response = self.client.get(
+            "/collections/statistics",
+            headers=self.get_guest_auth_headers(collection=False, wishlist=True),
+        )
+
+        self.assertEqual(403, response.status_code)
 
     def test_guest_without_price_permission_has_masked_prices(self):
         """Verifie les listes, details et statistiques sans prix.

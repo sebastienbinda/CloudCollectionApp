@@ -57,6 +57,7 @@ function UsersView({
   canUseCollectionViews,
   canViewCollection,
   canViewWishlist,
+  canViewStatistics,
   canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
@@ -65,6 +66,7 @@ function UsersView({
   onOpenHome,
   onOpenLibrary,
   onOpenWishlist,
+  onOpenStatistics,
   onOpenConfiguration,
   onLogout,
 }) {
@@ -236,6 +238,7 @@ function UsersView({
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
       canViewWishlist={canViewWishlist}
+      canViewStatistics={canViewStatistics}
       canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
@@ -244,6 +247,7 @@ function UsersView({
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
       onOpenWishlist={onOpenWishlist}
+      onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

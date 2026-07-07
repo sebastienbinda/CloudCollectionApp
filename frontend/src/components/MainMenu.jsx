@@ -40,6 +40,15 @@ const MENU_ICON_PATHS = {
   wishlist: (
     <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
   ),
+  statistics: (
+    <>
+      <path d="M4 19V5" />
+      <path d="M4 19h16" />
+      <path d="M8 16V9" />
+      <path d="M12 16V6" />
+      <path d="M16 16v-4" />
+    </>
+  ),
   collection: (
     <>
       <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
@@ -89,12 +98,14 @@ function MainMenu({
   canUseCollectionViews = true,
   canViewCollection = canUseCollectionViews,
   canViewWishlist = canUseCollectionViews,
+  canViewStatistics = canViewCollection,
   canAccessConfiguration = true,
   username,
   profile,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
+  onOpenStatistics,
   onOpenLibrary,
   onOpenWishlist,
   onOpenConfiguration,
@@ -174,14 +185,16 @@ function MainMenu({
   };
 
   const normalizedProfile = String(profile || "").trim().toUpperCase();
-  const { canOpenConfiguration, canOpenWishlist, canOpenHome } = resolveMainMenuAccess({
+  const { canOpenConfiguration, canOpenWishlist, canOpenHome, canOpenStatistics } = resolveMainMenuAccess({
     isAuthenticated,
     canAccessConfiguration,
     canViewWishlist,
     canViewCollection,
+    canViewStatistics,
     onOpenConfiguration,
     onOpenWishlist,
     onOpenHome,
+    onOpenStatistics,
   });
   const aboutItem = {
     key: "about",
@@ -223,6 +236,14 @@ function MainMenu({
     disabled: !canOpenHome,
     action: onOpenHome,
   };
+  const statisticsItem = {
+    key: "statistics",
+    label: "Statistiques",
+    shortLabel: "Stats",
+    icon: "statistics",
+    disabled: !canOpenStatistics,
+    action: onOpenStatistics,
+  };
   const anonymousNavigationItems = [
     aboutItem,
     libraryItem,
@@ -230,6 +251,7 @@ function MainMenu({
   const authenticatedNavigationItems = [
     canOpenHome ? collectionItem : null,
     canOpenWishlist ? wishlistItem : null,
+    canOpenStatistics ? statisticsItem : null,
     libraryItem,
     canOpenConfiguration ? configurationItem : null,
     aboutItem,
@@ -238,6 +260,7 @@ function MainMenu({
   const mobileAuthenticatedPrimaryItems = [
     canOpenHome ? collectionItem : null,
     canOpenWishlist ? wishlistItem : null,
+    canOpenStatistics ? statisticsItem : null,
     libraryItem,
   ].filter(Boolean);
   const mobileAnonymousPrimaryItems = [

@@ -235,6 +235,16 @@ class AuthApi {
   }
 
   /**
+   * Indique si le token stocke peut encore etre utilise localement.
+   *
+   * @returns {boolean} `true` si un token existe et n'est pas expire localement.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  static hasUsableAccessToken() {
+    return Boolean(this.getAccessToken()) && !this.isStoredAccessTokenExpired();
+  }
+
+  /**
    * Confirme la deconnexion puis supprime le token local.
    *
    * @param {void} Aucun - Utilise `window.confirm`.

@@ -56,6 +56,7 @@ from .user_collection_import_repository import (
 )
 from .user_collection_query_repository import SqlAlchemyUserCollectionQueryRepository
 from .user_collection_repository import SqlAlchemyUserCollectionRepository, UserGameAssociation
+from .user_collection_statistics_repository import SqlAlchemyUserCollectionStatisticsRepository
 from .user_repository import SqlAlchemyUserRepository
 
 __all__ = [
@@ -98,6 +99,7 @@ __all__ = [
     "SqlAlchemyUserCollectionImportRepository",
     "SqlAlchemyUserCollectionQueryRepository",
     "SqlAlchemyUserCollectionRepository",
+    "SqlAlchemyUserCollectionStatisticsRepository",
     "SqlAlchemyUserRepository",
     "User",
     "UserCollection",

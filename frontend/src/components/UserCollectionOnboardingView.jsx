@@ -40,12 +40,14 @@ function UserCollectionOnboardingView({
   canUseCollectionViews,
   canViewCollection,
   canViewWishlist,
+  canViewStatistics,
   canAccessConfiguration,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
   onOpenWishlist,
+  onOpenStatistics,
   onOpenConfiguration,
   onLogout,
   onFileChange,
@@ -96,6 +98,7 @@ function UserCollectionOnboardingView({
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
       canViewWishlist={canViewWishlist}
+      canViewStatistics={canViewStatistics}
       canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
@@ -104,6 +107,7 @@ function UserCollectionOnboardingView({
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
       onOpenWishlist={onOpenWishlist}
+      onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

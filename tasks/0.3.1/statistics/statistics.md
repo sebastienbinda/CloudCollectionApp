@@ -11,6 +11,10 @@ La liste des jeux les mieux notés de la collection (note > 9) en présentant po
  - La date de sortie
  - La date d'achat
 
+Ce nouvel écran est aussi accessible au user de profile GUEST. qui voit alors les statistiques de l'utilisateur a qui appartient la collection partagée.
+
+Toutes les statistiques nécessaires doivent être calculés coté backend via un nouveau endpoint accessible que aux users de profile USER et GUEST. GET /collection/statistics
+
 L'entrée du menu est visible dans le menu desktop mais aussi dans le menu mobile avec une icone dédiée.
 
 Cet écran doit avoir un rendu mobile spécifique pour afficher correctement ces différentes informations.

@@ -1,0 +1,267 @@
+/*
+ *   ____ _                 _  ____      _ _           _   _             ___
+ *  / ___| | ___  _   _  __| |/ ___|___ | | | ___  ___| |_(_) ___  _ __ / _ \ _ __  _ __
+ * | |   | |/ _ \| | | |/ _` | |   / _ \| | |/ _ \/ __| __| |/ _ \| `_ \| | | | `_ \| `_ |
+ * | |___| | (_) | |_| | (_| | |__| (_) | | |  __/ (__| |_| | (_) | | | | |_| | |_) | |_) |
+ *  \____|_|\___/ \__,_|\__,_|\____\___/|_|_|\___|\___|\__|_|\___/|_| |_|\___/| .__/| .__/
+ *                                                                            |_|   |_|
+ * Projet : CloudCollectionApp
+ * Date de creation : 2026-07-05
+ * Auteurs : OpenAI ChatGPT, Codex, Binda Sébastien
+ * Licence : Apache 2.0
+ *
+ * Description : styles de la page statistiques collection.
+ */
+
+.collectionStatisticsShell {
+  gap: 1.2rem;
+}
+
+.statisticsSummary {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.statisticsSummary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statisticsPanel {
+  background: #ffffff;
+  border: 1px solid #dbe5d2;
+  border-radius: 8px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.statisticsPanel h2,
+.statisticsSectionHeader h2 {
+  color: #1f2937;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.statisticsSectionHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.statisticsSectionHeader span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.platformPieChart {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(13rem, 0.9fr) minmax(0, 1.1fr);
+}
+
+.platformPieCanvasFrame {
+  aspect-ratio: 1;
+  min-height: 13rem;
+  position: relative;
+  width: min(100%, 18rem);
+}
+
+.platformPieLegend {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.platformPieLegend li {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  padding: 0.55rem;
+}
+
+.platformPieLegendSwatch {
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.platformPieLegendButton {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #1f2937;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  justify-self: start;
+  overflow-wrap: anywhere;
+  padding: 0;
+  text-align: left;
+}
+
+.platformPieLegendButton:hover,
+.platformPieLegendButton:focus-visible {
+  color: #15803d;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+}
+
+.platformPieLegendButton[aria-pressed="true"] {
+  color: #15803d;
+}
+
+.platformPieLegend strong {
+  color: #3f6212;
+  font-size: 0.9rem;
+}
+
+.platformPieLegend li > span:last-child {
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.dateDistributionChart {
+  min-width: 0;
+}
+
+.dateDistributionCanvasFrame {
+  min-height: 18rem;
+  position: relative;
+}
+
+.topRatedGamesList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.topRatedGame {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+  padding: 0.75rem;
+}
+
+.topRatedGame h3 {
+  color: #111827;
+  font-size: 1rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.topRatedGame span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.topRatedGame dl {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.topRatedGame div,
+.topRatedGame dl div {
+  min-width: 0;
+}
+
+.topRatedGame dt {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.topRatedGame dd {
+  color: #1f2937;
+  font-weight: 700;
+  margin: 0.12rem 0 0;
+}
+
+@media (max-width: 760px) {
+  .statisticsSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .statisticsPanel {
+    padding: 0.85rem;
+  }
+
+  .statisticsSectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .platformPieChart {
+    grid-template-columns: 1fr;
+  }
+
+  .platformPieCanvasFrame {
+    justify-self: center;
+    min-height: 0;
+    width: min(68vw, 13.5rem);
+  }
+
+  .dateDistributionCanvasFrame {
+    min-height: 16rem;
+  }
+
+  .platformPieLegend {
+    gap: 0.28rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platformPieLegend li {
+    border-radius: 6px;
+    column-gap: 0.28rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0.28rem 0.34rem;
+    row-gap: 0.08rem;
+  }
+
+  .platformPieLegendSwatch {
+    height: 0.58rem;
+    width: 0.58rem;
+  }
+
+  .platformPieLegendButton {
+    font-size: 0.76rem;
+    line-height: 1.05;
+  }
+
+  .platformPieLegend strong {
+    font-size: 0.7rem;
+    grid-column: 2;
+  }
+
+  .platformPieLegend li > span:last-child {
+    font-size: 0.7rem;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .topRatedGame {
+    grid-template-columns: 1fr;
+  }
+
+  .topRatedGame dl {
+    grid-template-columns: 1fr;
+  }
+}

@@ -56,6 +56,9 @@ public pages.
   already have a collection.
 - `/collection?platform_id=<platform_id>`: authenticated platform detail for a
   non-`ADMIN` user's collection, listing games attached to that platform.
+- `/collection/statistics`: authenticated statistics page for non-`ADMIN`
+  users with a collection. It displays backend-computed owned-collection
+  diagrams and the games whose numeric note is greater than `9`.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
   attached to the connected user's collection. Nullable private purchase and
   copy information is shown only when available, including region flag and
@@ -90,6 +93,8 @@ claims:
 
 - `/collection` and platform views are available only with collection
   permission and display `Collection de <pseudonyme>`;
+- `/collection/statistics` is available only with collection permission and
+  displays the shared owner's owned-collection statistics;
 - `/wishlist` is available only with wishlist permission, displays
   `Liste de souhaits de <pseudonyme>` and initializes the buy-status filter
   from the share claim when the URL does not already define it;
@@ -125,7 +130,7 @@ validation and persistence remain authoritative.
 
 The `ADMIN` profile keeps backend access through the route catalog and Bearer
 token hierarchy, but the frontend must not offer collection ownership screens to
-that profile. `Ma collection`, wishlist, platform detail, add-game and
+that profile. `Ma collection`, statistics, wishlist, platform detail, add-game and
 collection import routes must be disabled or redirected to `/configuration` for
 `ADMIN`.
 

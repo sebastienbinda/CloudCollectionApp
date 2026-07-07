@@ -33,6 +33,7 @@ function LibraryPlatformDetailView({
   canUseCollectionViews,
   canViewCollection,
   canViewWishlist,
+  canViewStatistics,
   canAccessConfiguration,
   authenticatedUsername,
   authenticatedProfile,
@@ -41,6 +42,7 @@ function LibraryPlatformDetailView({
   onOpenHome,
   onOpenLibrary,
   onOpenWishlist,
+  onOpenStatistics,
   onOpenConfiguration,
   onLogout,
   onBack,
@@ -65,6 +67,7 @@ function LibraryPlatformDetailView({
       canUseCollectionViews={canUseCollectionViews}
       canViewCollection={canViewCollection}
       canViewWishlist={canViewWishlist}
+      canViewStatistics={canViewStatistics}
       canAccessConfiguration={canAccessConfiguration}
       authenticatedUsername={authenticatedUsername}
       authenticatedProfile={authenticatedProfile}
@@ -73,6 +76,7 @@ function LibraryPlatformDetailView({
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
       onOpenWishlist={onOpenWishlist}
+      onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >

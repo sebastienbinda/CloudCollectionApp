@@ -101,7 +101,7 @@ Use domain folders under `backend/services/`:
 - `email/`: email configuration and sending;
 - `formatting/`: value formatting helpers;
 - `collection/`: connected-user SQL collection consultation and query
-  contracts; `collection/imports/` also owns format-independent import
+  contracts; detailed collection statistics; `collection/imports/` also owns format-independent import
   contracts, value mapping, matching configuration and shared validators;
 - `library/`: public read-only consultation of global reference games,
   platforms and studios, plus platform image upload/public read/moderation

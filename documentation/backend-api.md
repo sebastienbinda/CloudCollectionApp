@@ -758,8 +758,9 @@ Access and error status:
 
 ## Game Collection Routes
 
-The four read routes in this section explicitly accept `GUEST`, `USER` and
-`ADMIN`. For USER/ADMIN, the collection owner is resolved from the Bearer
+The legacy collection read routes in this section explicitly accept `GUEST`,
+`USER` and `ADMIN`. `GET /collections/statistics` accepts only `GUEST` and
+`USER`. For USER/ADMIN, the collection owner is resolved from the Bearer
 subject. For GUEST, it is resolved from the validated `owner_user_id` claim and
 the persisted share is revalidated before each request. Download and mutation
 routes require at least `USER`; GUEST receives `403`.
@@ -767,6 +768,7 @@ routes require at least `USER`; GUEST receives `403`.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `GET` | `/collections/videogames` | Returns connected-user collection statistics from SQL. |
+| `GET` | `/collections/statistics` | Returns detailed owned-collection statistics from SQL. |
 | `GET` | `/collections/videogames/platforms/search` | Lists platforms owned by the connected user from SQL. |
 | `GET` | `/collections/videogames/games/search` | Lists connected-user games from SQL. |
 | `GET` | `/collections/videogames/games/<game_id>` | Returns one game only when attached to the connected user. |
@@ -821,6 +823,63 @@ wishlist statistics are computed with `wishlist = true`.
 `total_value` sums persisted purchase prices. `average_value` ignores null
 purchase prices and is rounded to two decimal places. Both values are zero when
 no purchase price is available.
+
+### Detailed Collection Statistics Response
+
+```http
+GET /collections/statistics
+Authorization: Bearer <user-or-guest-token>
+```
+
+This endpoint accepts `USER` and `GUEST` only. For GUEST sessions it requires
+the `collection` permission and reads the shared owner's collection. It always
+uses `t_user_collection.wishlist = false`.
+
+Optional query parameters:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `platform_id` | positive integer | Filters `release_year_distribution` and `purchase_year_distribution` to one platform. `platform_distribution`, `total_games` and `top_rated_games` remain collection-wide. |
+
+```json
+{
+  "total_games": 4,
+  "platform_distribution": [
+    {
+      "platform_id": 1,
+      "platform_name": "Switch",
+      "games_count": 3,
+      "ratio": 75
+    }
+  ],
+  "release_year_distribution": [
+    {
+      "year": 1992,
+      "games_count": 1
+    }
+  ],
+  "purchase_year_distribution": [
+    {
+      "year": 2024,
+      "games_count": 2
+    }
+  ],
+  "top_rated_games": [
+    {
+      "id": 3,
+      "name": "Mario Kart",
+      "platform_name": "Switch",
+      "release_date": "1992-08-27",
+      "buy_date": "2024-03-10",
+      "grade": "9.5"
+    }
+  ]
+}
+```
+
+`ratio` is the backend-computed percentage of owned collection games on the
+platform. `top_rated_games` includes only numeric grades strictly greater than
+`9`; commas in grades are normalized as decimal separators before comparison.
 
 When the connected user has no game in `t_user_collection`, both sections are
 empty:

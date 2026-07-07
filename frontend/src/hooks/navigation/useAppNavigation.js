@@ -203,6 +203,7 @@ function useAppNavigation(options) {
         "/bibliotheque/studios": "libraryStudios",
         "/bibliotheque/jeux": "libraryGames",
         "/collection": "home",
+        "/collection/statistics": "statistics",
         "/wishlist": "wishlist",
         "/add-game": "addGame",
         "/configuration": "configuration",
@@ -260,7 +261,7 @@ function useAppNavigation(options) {
 
   useEffect(() => {
     if (options.isGuest) return;
-    const collectionViews = ["home", "games", "wishlist", "addGame", "collectionOnboarding"];
+    const collectionViews = ["home", "games", "statistics", "wishlist", "addGame", "collectionOnboarding"];
     if (currentView === "gameDetail" && selectedGameSource === "collection" && !options.canUseCollectionViews) {
       const fallbackView = options.authenticatedProfile === "ADMIN" ? "configuration" : "about";
       const fallbackPath = options.authenticatedProfile === "ADMIN" ? "/configuration" : "/about";
@@ -310,6 +311,13 @@ function useAppNavigation(options) {
       openView("home", "/collection");
     },
     openVerifiedCollection: () => openView("home", "/collection"),
+    openStatistics: () => {
+      if (!options.canViewStatistics) {
+        openGuestFallback();
+        return;
+      }
+      openView("statistics", "/collection/statistics");
+    },
     openAbout: () => openView("about", "/about"),
     openAuth: () => openView("auth", "/auth"),
     openLibrary: () => openView("library", "/bibliotheque"),

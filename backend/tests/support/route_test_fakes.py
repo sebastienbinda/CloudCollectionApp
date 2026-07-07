@@ -343,3 +343,52 @@ class FakeUserCollectionQueryService:
             "size": criteria.page_request.size,
             "totalPages": 1,
         }
+
+
+class FakeUserCollectionStatisticsService:
+    """Service de statistiques detaillees factice."""
+
+    last_user_id = None
+    last_platform_id = None
+
+    def get_statistics(self, user_id, platform_id=None):
+        """Retourne les statistiques detaillees factices.
+
+        Args:
+            user_id (int): Identifiant utilisateur.
+            platform_id (int | None): Plateforme filtree.
+
+        Returns:
+            dict[str, object]: Statistiques detaillees factices.
+        """
+
+        self.__class__.last_user_id = user_id
+        self.__class__.last_platform_id = platform_id
+        return {
+            "total_games": 2,
+            "platform_distribution": [
+                {
+                    "platform_id": 1,
+                    "platform_name": "Switch",
+                    "games_count": 2,
+                    "ratio": 100,
+                }
+            ],
+            "release_year_distribution": [
+                {"year": 1992, "games_count": 1},
+                {"year": 2017, "games_count": 1},
+            ],
+            "purchase_year_distribution": [
+                {"year": 2024, "games_count": 2},
+            ],
+            "top_rated_games": [
+                {
+                    "id": 3,
+                    "name": "Mario Kart",
+                    "platform_name": "Switch",
+                    "release_date": "1992-08-27",
+                    "buy_date": "2024-03-10",
+                    "grade": "9.5",
+                }
+            ],
+        }
