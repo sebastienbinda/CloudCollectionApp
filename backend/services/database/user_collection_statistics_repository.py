@@ -73,12 +73,14 @@ class SqlAlchemyUserCollectionStatisticsRepository:
         self,
         connection: Connection,
         user_id: int,
+        platform_id: int | None = None,
     ) -> list[dict[str, Any]]:
         """Liste la repartition annuelle des dates de sortie.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant du proprietaire de collection.
+            platform_id (int | None): Plateforme optionnelle de filtrage.
 
         Returns:
             list[dict[str, Any]]: Nombre de jeux par annee de sortie.
@@ -87,18 +89,20 @@ class SqlAlchemyUserCollectionStatisticsRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
-        return self._list_year_distribution(connection, user_id, "game.release_date")
+        return self._list_year_distribution(connection, user_id, "game.release_date", platform_id)
 
     def list_purchase_year_distribution(
         self,
         connection: Connection,
         user_id: int,
+        platform_id: int | None = None,
     ) -> list[dict[str, Any]]:
         """Liste la repartition annuelle des dates d'achat.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant du proprietaire de collection.
+            platform_id (int | None): Plateforme optionnelle de filtrage.
 
         Returns:
             list[dict[str, Any]]: Nombre de jeux par annee d'achat.
@@ -107,7 +111,12 @@ class SqlAlchemyUserCollectionStatisticsRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
-        return self._list_year_distribution(connection, user_id, "user_collection.buy_date")
+        return self._list_year_distribution(
+            connection,
+            user_id,
+            "user_collection.buy_date",
+            platform_id,
+        )
 
     def list_top_rated_games(
         self,
@@ -153,7 +162,12 @@ class SqlAlchemyUserCollectionStatisticsRepository:
         connection: Connection,
         user_id: int,
         date_column_expression: str,
+        platform_id: int | None = None,
     ) -> list[dict[str, Any]]:
+        platform_filter = "AND game.platform = :platform_id " if platform_id is not None else ""
+        parameters = {"user_id": user_id}
+        if platform_id is not None:
+            parameters["platform_id"] = platform_id
         rows = connection.execute(
             text(
                 f"SELECT EXTRACT(YEAR FROM {date_column_expression})::int AS year, "
@@ -162,10 +176,11 @@ class SqlAlchemyUserCollectionStatisticsRepository:
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 "WHERE user_collection.user_id = :user_id "
                 "AND user_collection.wishlist = FALSE "
+                f"{platform_filter}"
                 f"AND {date_column_expression} IS NOT NULL "
                 f"GROUP BY EXTRACT(YEAR FROM {date_column_expression})::int "
                 "ORDER BY year ASC"
             ),
-            {"user_id": user_id},
+            parameters,
         ).mappings()
         return [dict(row) for row in rows]

@@ -87,6 +87,7 @@ class GuestCollectionRoutesTest(BaseAppRoutesTest):
             FakeUserCollectionStatisticsService
         )
         FakeUserCollectionStatisticsService.last_user_id = None
+        FakeUserCollectionStatisticsService.last_platform_id = None
 
     def tearDown(self):
         """Restaure le validateur reel des sessions GUEST.

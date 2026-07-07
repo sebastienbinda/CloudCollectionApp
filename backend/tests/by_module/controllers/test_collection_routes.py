@@ -47,6 +47,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
             FakeUserCollectionStatisticsService
         )
         FakeUserCollectionStatisticsService.last_user_id = None
+        FakeUserCollectionStatisticsService.last_platform_id = None
 
     def tearDown(self):
         """Restaure le service reel des statistiques detaillees.
@@ -155,6 +156,44 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(2024, payload["purchase_year_distribution"][0]["year"])
         self.assertEqual("Mario Kart", payload["top_rated_games"][0]["name"])
         self.assertEqual(7, FakeUserCollectionStatisticsService.last_user_id)
+        self.assertIsNone(FakeUserCollectionStatisticsService.last_platform_id)
+
+    def test_collection_statistics_passes_platform_filter_to_service(self):
+        """Verifie le filtre plateforme des statistiques detaillees.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le parametre transmis.
+        """
+
+        response = self.client.get(
+            "/collections/statistics?platform_id=1",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(7, FakeUserCollectionStatisticsService.last_user_id)
+        self.assertEqual(1, FakeUserCollectionStatisticsService.last_platform_id)
+
+    def test_collection_statistics_rejects_invalid_platform_filter(self):
+        """Verifie la validation du filtre plateforme.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse HTTP.
+        """
+
+        response = self.client.get(
+            "/collections/statistics?platform_id=abc",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("platform_id", response.get_json()["error"])
 
     def test_collection_game_detail_returns_current_user_game(self):
         """Verifie la route de detail d'un jeu de collection.

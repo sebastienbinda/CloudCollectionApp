@@ -39,8 +39,9 @@ La version publique est disponible sur <https://www.cloud-collection.fr>.
   par categorie et affichage optionnel des prix.
 - Administration des utilisateurs, reset de la Bibliotheque globale et gestion
   des doublons signales.
-- Backend Flask, frontend React/Vite, PostgreSQL, Docker Compose et publication
-  d'images sur GitHub Container Registry.
+- Backend Flask, frontend React/Vite avec Chart.js pour les graphiques,
+  PostgreSQL, Docker Compose et publication d'images sur GitHub Container
+  Registry.
 
 ## Documentation
 

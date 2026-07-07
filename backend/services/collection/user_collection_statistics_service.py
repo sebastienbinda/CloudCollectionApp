@@ -57,11 +57,12 @@ class UserCollectionStatisticsService:
             configuration.schema_name,
         )
 
-    def get_statistics(self, user_id: int) -> dict[str, Any]:
+    def get_statistics(self, user_id: int, platform_id: int | None = None) -> dict[str, Any]:
         """Retourne les statistiques detaillees de la collection possedee.
 
         Args:
             user_id (int): Identifiant du proprietaire de collection.
+            platform_id (int | None): Plateforme optionnelle filtrant les distributions temporelles.
 
         Returns:
             dict[str, Any]: Statistiques detaillees serialisables.
@@ -72,8 +73,16 @@ class UserCollectionStatisticsService:
 
         with self.engine.connect() as connection:
             platforms = self.repository.list_platform_distribution(connection, user_id)
-            release_years = self.repository.list_release_year_distribution(connection, user_id)
-            purchase_years = self.repository.list_purchase_year_distribution(connection, user_id)
+            release_years = self.repository.list_release_year_distribution(
+                connection,
+                user_id,
+                platform_id,
+            )
+            purchase_years = self.repository.list_purchase_year_distribution(
+                connection,
+                user_id,
+                platform_id,
+            )
             top_rated_games = self.repository.list_top_rated_games(connection, user_id)
         total_games = sum(int(row.get("games_count") or 0) for row in platforms)
         return {

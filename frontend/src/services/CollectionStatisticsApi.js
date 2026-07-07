@@ -21,9 +21,14 @@ class CollectionStatisticsApi {
    *
    * @returns {Promise<Object>} Statistiques normalisees.
    */
-  static async fetchStatistics() {
+  static async fetchStatistics(options = {}) {
+    const queryParameters = new URLSearchParams();
+    if (options.platformId) {
+      queryParameters.set("platform_id", String(options.platformId));
+    }
+    const queryString = queryParameters.toString();
     const data = await VideoGamesApi.fetchJson(
-      "/collections/statistics",
+      `/collections/statistics${queryString ? `?${queryString}` : ""}`,
       "Impossible de recuperer les statistiques detaillees.",
       {
         headers: AuthApi.getAuthorizationHeaders(),

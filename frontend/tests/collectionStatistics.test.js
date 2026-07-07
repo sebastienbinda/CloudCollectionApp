@@ -13,6 +13,7 @@ import BackendRouteAccessService from "../src/services/BackendRouteAccessService
 import CollectionStatisticsApi from "../src/services/CollectionStatisticsApi.js";
 import GuestNavigationPolicy from "../src/services/GuestNavigationPolicy.js";
 import resolveMainMenuAccess from "../src/services/MainMenuAccessPolicy.js";
+import VideoGamesApi from "../src/services/VideoGamesApi.js";
 
 test("normalise le contrat backend des statistiques detaillees", () => {
   const statistics = CollectionStatisticsApi.normalizeStatistics({
@@ -40,6 +41,23 @@ test("normalise le contrat backend des statistiques detaillees", () => {
   assert.equal(statistics.releaseYearDistribution[0].label, "1992");
   assert.equal(statistics.purchaseYearDistribution[0].gamesCount, 2);
   assert.equal(statistics.topRatedGames[0].platformName, "Switch");
+});
+
+test("envoie le filtre plateforme au endpoint des statistiques detaillees", async () => {
+  const originalFetchJson = VideoGamesApi.fetchJson;
+  let requestedUrl = "";
+  VideoGamesApi.fetchJson = async (url) => {
+    requestedUrl = url;
+    return {};
+  };
+
+  try {
+    await CollectionStatisticsApi.fetchStatistics({ platformId: 3 });
+  } finally {
+    VideoGamesApi.fetchJson = originalFetchJson;
+  }
+
+  assert.equal(requestedUrl, "/collections/statistics?platform_id=3");
 });
 
 test("expose l'entree statistiques seulement avec route et collection autorisees", () => {
@@ -108,6 +126,67 @@ test("positionne statistiques apres la liste de souhaits dans le menu", () => {
 
   assert.ok(desktopMenu.indexOf("wishlistItem") < desktopMenu.indexOf("statisticsItem"));
   assert.ok(mobileMenu.indexOf("wishlistItem") < mobileMenu.indexOf("statisticsItem"));
+});
+
+test("affiche les repartitions par dates dans un graphique Chart.js commun", () => {
+  const source = readFileSync(
+    new URL("../src/components/CollectionStatisticsView.jsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(source.includes("<DateDistributionBarChart"), true);
+  assert.equal(source.includes('type: "bar"'), true);
+  assert.equal(source.includes("releaseYearDistribution"), true);
+  assert.equal(source.includes("purchaseYearDistribution"), true);
+});
+
+test("la legende du camembert pilote le filtre plateforme des dates", () => {
+  const source = readFileSync(
+    new URL("../src/components/CollectionStatisticsView.jsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(source.includes("onTogglePlatform"), true);
+  assert.equal(source.includes("aria-pressed"), true);
+  assert.equal(source.includes("selectedPlatformId"), true);
+});
+
+test("adapte le camembert aux ecrans mobiles avec legende compacte", () => {
+  const componentSource = readFileSync(
+    new URL("../src/components/CollectionStatisticsView.jsx", import.meta.url),
+    "utf8"
+  );
+  const stylesSource = readFileSync(
+    new URL("../src/styles/collection-statistics.css", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(componentSource.includes("createMobilePieLabelPlugin"), false);
+  assert.equal(componentSource.includes("mobilePlatformPieLabels"), false);
+  assert.equal(stylesSource.includes("grid-template-columns: repeat(2, minmax(0, 1fr));"), true);
+  assert.equal(stylesSource.includes("font-size: 0.76rem;"), true);
+  assert.equal(stylesSource.includes("padding: 0.28rem 0.34rem;"), true);
+  assert.equal(stylesSource.includes("width: min(68vw, 13.5rem);"), true);
+});
+
+test("conserve le contenu statistiques pendant le rechargement du filtre plateforme", () => {
+  const source = readFileSync(
+    new URL("../src/components/CollectionStatisticsView.jsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(source.includes("!statisticsPage?.isLoadingStatistics && statistics && !hasNoData"), false);
+  assert.equal(source.includes("statistics && !hasNoData"), true);
+});
+
+test("masque le message vide des jeux les mieux notes", () => {
+  const source = readFileSync(
+    new URL("../src/components/CollectionStatisticsView.jsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(source.includes("Aucun jeu avec une note superieure a 9"), false);
+  assert.equal(source.includes("{formatNumber(statistics.topRatedGames.length)} jeux"), true);
 });
 
 test("les pages applicatives propagent l'entree statistiques au layout", () => {

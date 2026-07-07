@@ -835,6 +835,12 @@ This endpoint accepts `USER` and `GUEST` only. For GUEST sessions it requires
 the `collection` permission and reads the shared owner's collection. It always
 uses `t_user_collection.wishlist = false`.
 
+Optional query parameters:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `platform_id` | positive integer | Filters `release_year_distribution` and `purchase_year_distribution` to one platform. `platform_distribution`, `total_games` and `top_rated_games` remain collection-wide. |
+
 ```json
 {
   "total_games": 4,

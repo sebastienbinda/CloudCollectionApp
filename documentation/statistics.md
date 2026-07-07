@@ -25,9 +25,11 @@ Wishlist entries are excluded from every statistic on this page.
 
 ## Backend Contract
 
-The page calls `GET /collections/statistics`. The endpoint accepts only `USER`
-and `GUEST` profiles. `ADMIN` is intentionally excluded because the frontend
-administrator is not a collection owner.
+The page calls `GET /collections/statistics`. It may pass
+`platform_id=<positive integer>` to filter the release-year and purchase-year
+distributions by platform after a platform legend click. The endpoint accepts
+only `USER` and `GUEST` profiles. `ADMIN` is intentionally excluded because the
+frontend administrator is not a collection owner.
 
 The backend derives the target user from the Bearer token:
 
@@ -54,4 +56,12 @@ For GUEST, the entry is visible only with the signed `collection` permission.
 The page uses `PageLayout` and must not recreate the application header, menu or
 footer.
 
-The visual charts are CSS-based bars. No chart dependency is required.
+The platform distribution is rendered as a Chart.js pie chart with an explicit
+legend. Clicking a platform in the legend highlights the platform on the pie
+chart and toggles the backend `platform_id` filter for the release/purchase
+date chart. On mobile, the pie chart is size-constrained to the viewport and
+the external legend remains visible in a compact two-column layout. The page
+must keep the current statistics content mounted while a platform-filter
+refresh is running, so the vertical scroll position does not jump back to the
+top. Release and purchase year distributions are rendered together as one
+Chart.js grouped bar chart.

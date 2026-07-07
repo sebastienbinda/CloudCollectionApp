@@ -349,18 +349,21 @@ class FakeUserCollectionStatisticsService:
     """Service de statistiques detaillees factice."""
 
     last_user_id = None
+    last_platform_id = None
 
-    def get_statistics(self, user_id):
+    def get_statistics(self, user_id, platform_id=None):
         """Retourne les statistiques detaillees factices.
 
         Args:
             user_id (int): Identifiant utilisateur.
+            platform_id (int | None): Plateforme filtree.
 
         Returns:
             dict[str, object]: Statistiques detaillees factices.
         """
 
         self.__class__.last_user_id = user_id
+        self.__class__.last_platform_id = platform_id
         return {
             "total_games": 2,
             "platform_distribution": [

@@ -171,8 +171,10 @@ class CollectionController:
         try:
             context = self._current_access_context()
             self.guest_access_policy.ensure_category_allowed(context, False)
+            platform_id = self._optional_positive_integer(request.args.get("platform_id"))
             statistics = self._create_collection_statistics_service().get_statistics(
                 context.user_id,
+                platform_id=platform_id,
             )
             return jsonify(statistics)
         except PermissionError as exc:
@@ -372,6 +374,30 @@ class CollectionController:
         """
 
         return self.collection_statistics_service_factory()
+
+    @staticmethod
+    def _optional_positive_integer(raw_value):
+        """Convertit un parametre optionnel en entier positif.
+
+        Args:
+            raw_value (str | None): Valeur recue depuis la requete HTTP.
+
+        Returns:
+            int | None: Entier positif ou None si absent.
+
+        Raises:
+            ValueError: Si la valeur n'est pas un entier positif.
+        """
+
+        if raw_value in (None, ""):
+            return None
+        try:
+            value = int(raw_value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("platform_id must be a positive integer.") from exc
+        if value <= 0:
+            raise ValueError("platform_id must be a positive integer.")
+        return value
 
     def _create_default_collection_query_service(self):
         """Construit le service de consultation depuis l'environnement.

@@ -92,6 +92,19 @@ class FakeEngine:
 class FakeStatisticsRepository:
     """Repository de statistiques factice."""
 
+    def __init__(self):
+        """Initialise le repository factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.release_platform_id = None
+        self.purchase_platform_id = None
+
     def list_platform_distribution(self, connection, user_id):
         """Retourne la repartition par plateforme.
 
@@ -108,30 +121,34 @@ class FakeStatisticsRepository:
             {"platform_id": 2, "platform_name": "NES", "games_count": 1},
         ]
 
-    def list_release_year_distribution(self, connection, user_id):
+    def list_release_year_distribution(self, connection, user_id, platform_id=None):
         """Retourne les annees de sortie factices.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
+            platform_id (int | None): Plateforme filtree.
 
         Returns:
             list[dict]: Annees de sortie.
         """
 
+        self.release_platform_id = platform_id
         return [{"year": 1992, "games_count": 1}]
 
-    def list_purchase_year_distribution(self, connection, user_id):
+    def list_purchase_year_distribution(self, connection, user_id, platform_id=None):
         """Retourne les annees d'achat factices.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
+            platform_id (int | None): Plateforme filtree.
 
         Returns:
             list[dict]: Annees d'achat.
         """
 
+        self.purchase_platform_id = platform_id
         return [{"year": 2024, "games_count": 4}]
 
     def list_top_rated_games(self, connection, user_id):
@@ -186,6 +203,28 @@ class UserCollectionStatisticsServiceTest(unittest.TestCase):
         self.assertEqual(1992, payload["release_year_distribution"][0]["year"])
         self.assertEqual(2024, payload["purchase_year_distribution"][0]["year"])
         self.assertEqual("Mario Kart", payload["top_rated_games"][0]["name"])
+
+    def test_get_statistics_filters_date_distributions_by_platform(self):
+        """Verifie la propagation du filtre plateforme aux distributions temporelles.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre transmis.
+        """
+
+        repository = FakeStatisticsRepository()
+        service = UserCollectionStatisticsService(
+            DatabaseConfiguration(None, "collection", "0.1"),
+            repository=repository,
+            engine=FakeEngine(),
+        )
+
+        service.get_statistics(7, platform_id=3)
+
+        self.assertEqual(3, repository.release_platform_id)
+        self.assertEqual(3, repository.purchase_platform_id)
 
 
 if __name__ == "__main__":

@@ -137,6 +137,24 @@ class UserCollectionStatisticsRepositoryTest(unittest.TestCase):
         self.assertIn("EXTRACT(YEAR FROM user_collection.buy_date)", purchase_sql)
         self.assertIn("user_collection.buy_date IS NOT NULL", purchase_sql)
 
+    def test_year_distributions_can_filter_platform(self):
+        """Verifie le filtre optionnel par plateforme des distributions temporelles.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre SQL.
+        """
+
+        connection = FakeRepositoryConnection(rows=[{"year": 1992}])
+
+        self.repository.list_release_year_distribution(connection, 12, platform_id=3)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertIn("AND game.platform = :platform_id", sql)
+        self.assertEqual({"user_id": 12, "platform_id": 3}, parameters)
+
     def test_list_top_rated_games_filters_numeric_grade_above_nine(self):
         """Verifie le filtrage SQL des jeux les mieux notes.
 

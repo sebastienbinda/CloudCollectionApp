@@ -156,7 +156,9 @@ of prices returns zero for both values.
 `wishlist=false`: platform proportions, release-year distribution,
 purchase-year distribution and games whose numeric note is strictly greater
 than `9`. Frontend pages must not recalculate these distributions from game
-lists.
+lists. The endpoint accepts an optional positive `platform_id` query parameter
+that filters only release-year and purchase-year distributions. Platform
+proportions, total games and top-rated games remain collection-wide.
 
 ## Filtering
 

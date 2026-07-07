@@ -12,7 +12,7 @@
  *
  * Description : hook React de la page statistiques collection.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CollectionStatisticsApi from "../../services/CollectionStatisticsApi";
 
 /**
@@ -25,19 +25,27 @@ function useCollectionStatisticsPage(options = {}) {
   const [statistics, setStatistics] = useState(null);
   const [statisticsError, setStatisticsError] = useState("");
   const [isLoadingStatistics, setIsLoadingStatistics] = useState(false);
+  const [selectedPlatformId, setSelectedPlatformId] = useState(null);
+
+  const togglePlatformFilter = useCallback((platformId) => {
+    setSelectedPlatformId((currentPlatformId) => (
+      currentPlatformId === platformId ? null : platformId
+    ));
+  }, []);
 
   useEffect(() => {
     if (!options.enabled || !options.hasAccessToken) {
       setStatistics(null);
       setStatisticsError("");
       setIsLoadingStatistics(false);
+      setSelectedPlatformId(null);
       return undefined;
     }
 
     let isCancelled = false;
     setIsLoadingStatistics(true);
     setStatisticsError("");
-    CollectionStatisticsApi.fetchStatistics()
+    CollectionStatisticsApi.fetchStatistics({ platformId: selectedPlatformId })
       .then((payload) => {
         if (!isCancelled) {
           setStatistics(payload);
@@ -57,12 +65,14 @@ function useCollectionStatisticsPage(options = {}) {
     return () => {
       isCancelled = true;
     };
-  }, [options.enabled, options.hasAccessToken, options.reloadKey]);
+  }, [options.enabled, options.hasAccessToken, options.reloadKey, selectedPlatformId]);
 
   return {
     statistics,
     statisticsError,
     isLoadingStatistics,
+    selectedPlatformId,
+    togglePlatformFilter,
   };
 }
 
