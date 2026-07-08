@@ -457,6 +457,7 @@ class SqlAlchemyUserCollectionImportRepository:
                     buy_location=game.buy_location,
                     buy_date=game.buy_date,
                     grade=game.grade,
+                    grade_normalized=game.grade_normalized,
                     condition=game.condition,
                     has_manual=game.has_manual,
                     is_collector=game.is_collector,

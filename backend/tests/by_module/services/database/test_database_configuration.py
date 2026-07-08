@@ -61,6 +61,21 @@ class DatabaseConfigurationTest(unittest.TestCase):
         self.assertFalse(table.columns["wishlist"].nullable)
         self.assertEqual("false", str(table.columns["wishlist"].server_default.arg))
 
+    def test_user_collection_model_exposes_grade_normalized_column(self):
+        """Verifie que le modele ORM expose la note normalisee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la colonne nullable.
+        """
+
+        table = DatabaseModelBase.metadata.tables["t_user_collection"]
+
+        self.assertIn("grade_normalized", table.columns)
+        self.assertTrue(table.columns["grade_normalized"].nullable)
+
     def test_collection_share_model_exposes_recipient_column(self):
         """Verifie que le modele ORM expose le destinataire optionnel.
 

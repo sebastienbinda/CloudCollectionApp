@@ -35,11 +35,15 @@ reader architecture rules in `documentation/reader.md`.
 | `price_unit` | File-level `EUR`, `USD`, `GBP`, `JPY`, `AUD`, `CAD`, `CHF`, `CNY`, `KRW` | Same ISO code when price is valid, otherwise `NULL` | Configuration rejected |
 | `buy_location` | Text | Trimmed text or `NULL` | — |
 | `buy_date` | Parseable date | SQL date or `NULL` | `NULL` + warning |
-| `grade` | Text | Trimmed text or `NULL` | — |
+| `grade` | Text, number or `<grade>/<base>` text | Raw text in `grade` and integer base-100 value in `grade_normalized`, rounded down when numeric | `NULL` + warning only for invalid non-empty numeric rating |
 | `condition` | French/English physical-condition label | `0` Mauvais, `1` Correct, `2` Bon, `3` Très bon, `4` Neuf | `NULL` + warning |
 | `has_manual`, `is_collector`, `has_steelbook`, `is_digital` | Native boolean or mapped text | SQL boolean or `NULL` | `NULL` + warning |
 | `region` | Controlled code, exact alias or unique fuzzy match | Controlled region code or `NULL` | `NULL` + warning |
 | `description` | Text | Trimmed text or `NULL` | — |
+
+Plain numeric `grade` values are normalized with the file-level `rating_base`.
+Values formatted as `<grade>/<base>` use their own base, for example `8/10`
+becomes `80`.
 
 ## Names and Platform References
 

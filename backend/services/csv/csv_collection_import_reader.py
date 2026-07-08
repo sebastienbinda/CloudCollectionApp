@@ -264,6 +264,7 @@ class CsvCollectionImportReader:
                 game_name,
                 warnings,
                 description.price_unit,
+                description.rating_base,
             ),
         )
 

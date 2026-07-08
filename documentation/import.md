@@ -58,6 +58,9 @@ database structure in `documentation/database.md`, and frontend navigation in
 - The import configuration may contain a global `price_unit`. It is mandatory
   when a layout configures `purchase_price` and accepts `EUR`, `USD`, `GBP`,
   `JPY`, `AUD`, `CAD`, `CHF`, `CNY` or `KRW`.
+- The import configuration may contain a global `rating_base`. It is used to
+  normalize mapped `grade` values that do not already carry their own
+  `<grade>/<base>` suffix.
 - `POST /api/users/collection/reinit` reinitializes only the connected user's
   collection and returns `{"reinitialized": true}` on success.
 - Both routes require a Bearer token with at least profile `USER`.
@@ -112,6 +115,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   `NULL` with an `invalid_games` warning and does not reject the game.
 - The global `price_unit` is stored on each imported association with a valid
   purchase price; no price conversion is performed.
+- `grade` stores the original imported rating text. `grade_normalized` stores
+  the same rating as an integer on base 100, rounded down. Ratings may be plain
+  numbers using the global `rating_base`, or text formatted as `<grade>/<base>`.
 - `t_user_collection` rows are inserted only when missing. Existing
   `(user_id, game_id)` rows are not errors.
 - `game_additional_name` is not filled by the current import workflow.
@@ -322,6 +328,7 @@ database structure in `documentation/database.md`, and frontend navigation in
   an integer between `0` and `100`; its default is `60`.
 - `ETAT_MATCH_LIMIT` configures the minimum condition matching score. It must
   be an integer between `0` and `100`; its default is `60`.
+- `rating_base`, when provided, must be a positive integer.
 - Matching ratings must be numeric integers between `0` and `100`, and
   `PLATFORM_MATCHING_LOW_LVL_RATING` must be strictly lower than
   `PLATFORM_MATCHING_HIGH_LEVEL_RATING`.
@@ -347,6 +354,8 @@ database structure in `documentation/database.md`, and frontend navigation in
   the user confirms reuse.
 - For ODS, prefill `header_row` from the first row of the selected data range
   and prefill mapping columns from the range columns in order.
+- Let the user select one global rating base used by mapped plain numeric
+  ratings.
 - Send the final import configuration as JSON to `POST /api/users/import`.
 - Display the successful import summary and let the user open `/collection`
   explicitly instead of redirecting immediately.

@@ -389,6 +389,7 @@ class FakeUserCollectionStatisticsService:
                     "release_date": "1992-08-27",
                     "buy_date": "2024-03-10",
                     "grade": "9.5",
+                    "grade_normalized": 95,
                 }
             ],
         }

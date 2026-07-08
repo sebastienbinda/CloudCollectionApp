@@ -155,7 +155,7 @@ class UserCollectionStatisticsRepositoryTest(unittest.TestCase):
         self.assertIn("AND game.platform = :platform_id", sql)
         self.assertEqual({"user_id": 12, "platform_id": 3}, parameters)
 
-    def test_list_top_rated_games_filters_numeric_grade_above_nine(self):
+    def test_list_top_rated_games_filters_normalized_grade_at_least_ninety(self):
         """Verifie le filtrage SQL des jeux les mieux notes.
 
         Args:
@@ -171,10 +171,29 @@ class UserCollectionStatisticsRepositoryTest(unittest.TestCase):
 
         sql, parameters = connection.executed_statements[0]
         self.assertIn("user_collection.grade", sql)
-        self.assertIn("REPLACE(TRIM(user_collection.grade), ',', '.')", sql)
-        self.assertIn("AS NUMERIC) > 9", sql)
+        self.assertIn("user_collection.grade_normalized", sql)
+        self.assertIn("user_collection.grade_normalized >= 90", sql)
+        self.assertIn("ORDER BY user_collection.grade_normalized DESC", sql)
         self.assertIn("user_collection.wishlist = FALSE", sql)
         self.assertEqual({"user_id": 12}, parameters)
+
+    def test_list_top_rated_games_can_filter_platform(self):
+        """Verifie le filtre plateforme applique aux meilleurs jeux.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les parametres SQL.
+        """
+
+        connection = FakeRepositoryConnection(rows=[{"id": 3}])
+
+        self.repository.list_top_rated_games(connection, 12, platform_id=7)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertIn("AND game.platform = :platform_id", sql)
+        self.assertEqual({"user_id": 12, "platform_id": 7}, parameters)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,7 @@ function buildFrontendCsvConfiguration(description, defaultConfiguration, wishli
     ...defaultConfiguration,
     fileType: "csv",
     priceUnit: description.price_unit || defaultConfiguration.priceUnit,
+    ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
     multipleSheets: false,
     wishlist: {
       ...wishlist,
@@ -70,17 +71,35 @@ function buildFrontendCsvConfiguration(description, defaultConfiguration, wishli
  */
 function buildCsvImportConfigurationDescription(configuration) {
   const errors = [];
+  const ratingBase = buildCsvRatingBase(configuration, errors);
   const wishlist = buildCsvWishlistConfiguration(configuration, errors);
   const mapping = buildCsvMapping(configuration.csvMapping, wishlist.mode, errors);
   return {
     description: errors.length ? null : {
       file_type: "csv",
       price_unit: configuration.priceUnit,
+      rating_base: ratingBase,
       wishlist,
       mapping,
     },
     errors,
   };
+}
+
+/**
+ * Construit la base de notation CSV.
+ *
+ * @param {Object} configuration - Etat frontend de configuration.
+ * @param {string[]} errors - Erreurs UX a enrichir.
+ * @returns {number} Base de notation.
+ */
+function buildCsvRatingBase(configuration, errors) {
+  const ratingBase = Number.parseInt(configuration.ratingBase, 10);
+  if (!Number.isInteger(ratingBase) || ratingBase <= 0) {
+    errors.push("Renseignez une base de notation valide.");
+    return 10;
+  }
+  return ratingBase;
 }
 
 /**

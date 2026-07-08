@@ -36,6 +36,7 @@ class UserGameAssociation:
     buy_location: str | None = None
     buy_date: date | None = None
     grade: str | None = None
+    grade_normalized: int | None = None
     condition: int | None = None
     has_manual: bool | None = None
     is_collector: bool | None = None
@@ -114,10 +115,12 @@ class SqlAlchemyUserCollectionRepository:
                 text(
                     f'INSERT INTO "{self.schema_name}".t_user_collection '
                     "(user_id, game_id, game_additional_name, wishlist, purchase_price, "
-                    "price_unit, buy_location, buy_date, grade, condition, has_manual, "
+                    "price_unit, buy_location, buy_date, grade, grade_normalized, "
+                    "condition, has_manual, "
                     "is_collector, has_steelbook, is_digital, region, description) "
                     "VALUES (:user_id, :game_id, NULL, :wishlist, :purchase_price, "
-                    ":price_unit, :buy_location, :buy_date, :grade, :condition, :has_manual, "
+                    ":price_unit, :buy_location, :buy_date, :grade, :grade_normalized, "
+                    ":condition, :has_manual, "
                     ":is_collector, :has_steelbook, :is_digital, :region, :description)"
                 ),
                 self._association_parameters(user_id, association),
@@ -190,8 +193,8 @@ class SqlAlchemyUserCollectionRepository:
 
         return (
             "purchase_price", "price_unit", "buy_location", "buy_date", "grade",
-            "condition", "has_manual", "is_collector", "has_steelbook",
-            "is_digital", "region", "description",
+            "grade_normalized", "condition", "has_manual", "is_collector",
+            "has_steelbook", "is_digital", "region", "description",
         )
 
     def count_user_game_associations(self, connection: Connection, user_id: int) -> int:

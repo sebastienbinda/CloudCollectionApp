@@ -74,6 +74,16 @@ function ImportConfigurationFields({
         </select>
       </label>
 
+      <label>
+        Base de notation
+        <input
+          type="number"
+          min="1"
+          value={configuration.ratingBase}
+          onChange={(event) => onConfigurationChange("ratingBase", event.target.value)}
+        />
+      </label>
+
       <WishlistFields
         configuration={configuration}
         availableSheetNames={availableSheetNames}

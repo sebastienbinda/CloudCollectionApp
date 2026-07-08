@@ -18,18 +18,20 @@ The page shows:
 - game proportions by platform;
 - game counts by release year;
 - game counts by purchase year;
-- games whose numeric grade is strictly greater than `9`, with name, platform,
-  release date and purchase date.
+- games whose normalized rating is greater than or equal to `90`, sorted by
+  normalized rating descending, with name, platform, release date, purchase date
+  and raw rating.
 
 Wishlist entries are excluded from every statistic on this page.
 
 ## Backend Contract
 
 The page calls `GET /collections/statistics`. It may pass
-`platform_id=<positive integer>` to filter the release-year and purchase-year
-distributions by platform after a platform legend click. The endpoint accepts
-only `USER` and `GUEST` profiles. `ADMIN` is intentionally excluded because the
-frontend administrator is not a collection owner.
+`platform_id=<positive integer>` to filter the release-year distribution,
+purchase-year distribution and top-rated games by platform after a platform
+legend click. The endpoint accepts only `USER` and `GUEST` profiles. `ADMIN` is
+intentionally excluded because the frontend administrator is not a collection
+owner.
 
 The backend derives the target user from the Bearer token:
 

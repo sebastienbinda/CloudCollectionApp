@@ -78,7 +78,7 @@ Game rows follow these rules:
 - invalid optional information must be converted to `None` or a safe default
   before persistence;
 - invalid or empty release dates must be returned as `None`;
-- optional private fields may map purchase price, location/date, note,
+- optional private fields may map purchase price, location/date, note, rating,
   condition, manual, collector, steelbook, digital version, region and
   description into `CollectionImportGame`;
 - when a dedicated wishlist sheet is configured, it may map the same optional
@@ -88,6 +88,9 @@ Game rows follow these rules:
   truncates additional decimal digits toward the lower value to two digits, and
   keeps the file-level ISO `price_unit` without conversion; a negative or
   non-numeric value is invalid;
+- rating values keep their raw text in `grade` and normalize to
+  `grade_normalized` on base 100, rounded down; plain numeric values use the
+  file-level `rating_base`, while `<grade>/<base>` values use their own base;
 - condition accepts `Mauvais`, `Correct`, `Bon`, `Très bon`, `Neuf` and maps
   them to integers `0` through `4`;
 - invalid non-empty private values become `None` and are reported through

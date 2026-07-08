@@ -122,12 +122,14 @@ class SqlAlchemyUserCollectionStatisticsRepository:
         self,
         connection: Connection,
         user_id: int,
+        platform_id: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Liste les jeux possedes dont la note numerique est superieure a 9.
+        """Liste les jeux possedes dont la note normalisee est superieure ou egale a 90.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant du proprietaire de collection.
+            platform_id (int | None): Plateforme optionnelle de filtrage.
 
         Returns:
             list[dict[str, Any]]: Jeux les mieux notes.
@@ -136,24 +138,27 @@ class SqlAlchemyUserCollectionStatisticsRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
-        normalized_grade = "REPLACE(TRIM(user_collection.grade), ',', '.')"
+        platform_filter = "AND game.platform = :platform_id " if platform_id is not None else ""
+        parameters = {"user_id": user_id}
+        if platform_id is not None:
+            parameters["platform_id"] = platform_id
         rows = connection.execute(
             text(
                 "SELECT game.id, game.name, platform.name AS platform_name, "
                 "game.release_date::text AS release_date, "
                 "user_collection.buy_date::text AS buy_date, "
-                "user_collection.grade "
+                "user_collection.grade, user_collection.grade_normalized "
                 f'FROM "{self.schema_name}".t_user_collection user_collection '
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
                 "WHERE user_collection.user_id = :user_id "
                 "AND user_collection.wishlist = FALSE "
-                f"AND NULLIF({normalized_grade}, '') ~ '^[0-9]+(\\.[0-9]+)?$' "
-                f"AND CAST(NULLIF({normalized_grade}, '') AS NUMERIC) > 9 "
-                f"ORDER BY CAST(NULLIF({normalized_grade}, '') AS NUMERIC) DESC, "
+                f"{platform_filter}"
+                "AND user_collection.grade_normalized >= 90 "
+                "ORDER BY user_collection.grade_normalized DESC, "
                 "game.name ASC"
             ),
-            {"user_id": user_id},
+            parameters,
         ).mappings()
         return [dict(row) for row in rows]
 

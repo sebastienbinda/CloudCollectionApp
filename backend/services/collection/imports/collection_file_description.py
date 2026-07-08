@@ -244,6 +244,7 @@ class CollectionFileDescription:
         multiple_sheets_conf (Optional[CollectionMultipleSheetsConfiguration]): Configuration multi-onglets.
         csv_conf (Optional[CollectionCsvConfiguration]): Configuration CSV.
         price_unit (Optional[str]): Unite globale des prix du fichier.
+        rating_base (Optional[int]): Base globale de notation du fichier.
     """
 
     file_type: CollectionFileType
@@ -252,6 +253,7 @@ class CollectionFileDescription:
     multiple_sheets_conf: Optional[CollectionMultipleSheetsConfiguration] = None
     csv_conf: Optional[CollectionCsvConfiguration] = None
     price_unit: Optional[str] = None
+    rating_base: Optional[int] = None
 
     def to_dict(self) -> dict:
         """Convertit la description en dictionnaire serialisable.
@@ -267,6 +269,8 @@ class CollectionFileDescription:
         payload["wishlist"] = self.wishlist.to_dict()
         if self.price_unit is not None:
             payload["price_unit"] = self.price_unit
+        if self.rating_base is not None:
+            payload["rating_base"] = self.rating_base
         if self.single_sheet_conf is not None:
             payload["single_sheet_conf"] = self.single_sheet_conf.to_dict(
                 include_included_sheets=False

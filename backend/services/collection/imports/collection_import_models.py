@@ -63,6 +63,7 @@ class CollectionImportGame:
     buy_location: Optional[str] = None
     buy_date: Optional[date] = None
     grade: Optional[str] = None
+    grade_normalized: Optional[int] = None
     condition: Optional[int] = None
     has_manual: Optional[bool] = None
     is_collector: Optional[bool] = None

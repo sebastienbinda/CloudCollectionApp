@@ -190,6 +190,7 @@ class OdsCollectionImportReader:
                     description.wishlist.mode,
                     warnings,
                     price_unit=description.price_unit,
+                    rating_base=description.rating_base,
                 ),
                 description.wishlist.mode,
             )
@@ -204,6 +205,7 @@ class OdsCollectionImportReader:
                     description.wishlist.mode,
                     warnings,
                     description.price_unit,
+                    description.rating_base,
                 ),
                 description.wishlist.mode,
             )
@@ -221,6 +223,7 @@ class OdsCollectionImportReader:
                     warnings,
                     forced_wishlist=True,
                     price_unit=description.price_unit,
+                    rating_base=description.rating_base,
                 ),
                 description.wishlist.mode,
             )
@@ -238,6 +241,7 @@ class OdsCollectionImportReader:
         wishlist_mode: WishlistImportMode,
         warnings: dict[str, Any],
         price_unit: str | None,
+        rating_base: int | None,
     ) -> list[CollectionImportGame]:
         games: list[CollectionImportGame] = []
         if configuration.shared_layout is not None:
@@ -255,6 +259,7 @@ class OdsCollectionImportReader:
                         wishlist_mode,
                         warnings,
                         price_unit=price_unit,
+                        rating_base=rating_base,
                     )
                 )
             return games
@@ -269,6 +274,7 @@ class OdsCollectionImportReader:
                     wishlist_mode,
                     warnings,
                     price_unit=price_unit,
+                    rating_base=rating_base,
                 )
             )
         return games
@@ -295,6 +301,7 @@ class OdsCollectionImportReader:
         warnings: dict[str, Any],
         forced_wishlist: Optional[bool] = None,
         price_unit: str | None = None,
+        rating_base: int | None = None,
     ) -> list[CollectionImportGame]:
         try:
             dataframe = reader.read_sheet_dataframe(
@@ -320,6 +327,7 @@ class OdsCollectionImportReader:
             warnings,
             forced_wishlist,
             price_unit,
+            rating_base,
         )
 
     def _configured_columns(self, layout: CollectionSheetLayout) -> str:

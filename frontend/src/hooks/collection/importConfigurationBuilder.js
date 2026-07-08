@@ -61,6 +61,7 @@ function createDefaultImportConfiguration() {
   return {
     fileType: "libreoffice_ods",
     priceUnit: "EUR",
+    ratingBase: "10",
     csvMapping: createDefaultCsvMapping(),
     multipleSheets: false,
     sharedLayout: true,
@@ -111,6 +112,7 @@ function createImportConfigurationFromDescription(description) {
       ...defaultConfiguration,
       fileType: description.file_type || defaultConfiguration.fileType,
       priceUnit: description.price_unit || defaultConfiguration.priceUnit,
+      ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
       multipleSheets: false,
       wishlist,
       singleSheetLayout: buildFrontendLayout(
@@ -126,6 +128,7 @@ function createImportConfigurationFromDescription(description) {
       ...defaultConfiguration,
       fileType: description.file_type || defaultConfiguration.fileType,
       priceUnit: description.price_unit || defaultConfiguration.priceUnit,
+      ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
       multipleSheets: true,
       sharedLayout: true,
       sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
@@ -145,6 +148,7 @@ function createImportConfigurationFromDescription(description) {
       ...defaultConfiguration,
       fileType: description.file_type || defaultConfiguration.fileType,
       priceUnit: description.price_unit || defaultConfiguration.priceUnit,
+      ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
       multipleSheets: true,
       sharedLayout: false,
       sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
@@ -161,6 +165,7 @@ function createImportConfigurationFromDescription(description) {
     ...defaultConfiguration,
     fileType: description.file_type || defaultConfiguration.fileType,
     priceUnit: description.price_unit || defaultConfiguration.priceUnit,
+    ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
     wishlist,
   };
 }
@@ -253,6 +258,7 @@ function buildImportConfigurationDescription(configuration) {
   }
   const fileType = "libreoffice_ods";
   const wishlist = buildWishlistConfiguration(configuration, errors);
+  const ratingBase = buildRatingBase(configuration, errors);
   if (!configuration.multipleSheets) {
     const layout = buildLayout(
       configuration.singleSheetLayout,
@@ -263,6 +269,7 @@ function buildImportConfigurationDescription(configuration) {
       description: errors.length ? null : {
         file_type: fileType,
         price_unit: configuration.priceUnit,
+        rating_base: ratingBase,
         wishlist,
         single_sheet_conf: layout,
       },
@@ -288,6 +295,7 @@ function buildImportConfigurationDescription(configuration) {
       description: errors.length ? null : {
         file_type: fileType,
         price_unit: configuration.priceUnit,
+        rating_base: ratingBase,
         wishlist,
         multiple_sheets_conf: {
           sheet_information: SHEET_INFORMATION,
@@ -313,11 +321,28 @@ function buildImportConfigurationDescription(configuration) {
     description: errors.length ? null : {
       file_type: fileType,
       price_unit: configuration.priceUnit,
+      rating_base: ratingBase,
       wishlist,
       multiple_sheets_conf: { sheets },
     },
     errors,
   };
+}
+
+/**
+ * Construit la base globale de notation.
+ *
+ * @param {Object} configuration - Etat frontend de configuration.
+ * @param {string[]} errors - Erreurs UX a enrichir.
+ * @returns {number} Base de notation.
+ */
+function buildRatingBase(configuration, errors) {
+  const ratingBase = Number.parseInt(configuration.ratingBase, 10);
+  if (!Number.isInteger(ratingBase) || ratingBase <= 0) {
+    errors.push("Renseignez une base de notation valide.");
+    return 10;
+  }
+  return ratingBase;
 }
 
 /**

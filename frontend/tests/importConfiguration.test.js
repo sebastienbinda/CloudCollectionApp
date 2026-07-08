@@ -70,5 +70,6 @@ test("serialise les colonnes optionnelles wishlist sans fusionner celles de la c
   assert.equal(description.wishlist.column_information.buy_location, "F");
   assert.equal(description.wishlist.column_information.grade, undefined);
   assert.equal(description.single_sheet_conf.column_information.grade, "G");
+  assert.equal(description.rating_base, 10);
   assert.equal(description.single_sheet_conf.column_information.purchase_price, undefined);
 });
