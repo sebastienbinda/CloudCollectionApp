@@ -181,6 +181,7 @@ class CollectionFileDescriptionValidator:
         )
         self.rules.validate_csv_wishlist_configuration(csv_conf, wishlist_configuration, errors)
         price_unit = self._parse_price_unit(payload.get("price_unit"), errors)
+        rating_base = self._parse_rating_base(payload.get("rating_base"), errors)
         if (
             self.rules.uses_purchase_price(
                 single_sheet,
@@ -201,6 +202,7 @@ class CollectionFileDescriptionValidator:
             multiple_sheets_conf=multiple_sheets,
             csv_conf=csv_conf,
             price_unit=price_unit,
+            rating_base=rating_base,
         )
 
     def _parse_price_unit(self, value: Any, errors: list[str]) -> Optional[str]:
@@ -221,6 +223,29 @@ class CollectionFileDescriptionValidator:
             errors.append("price_unit inconnu.")
             return None
         return price_unit
+
+    def _parse_rating_base(self, value: Any, errors: list[str]) -> Optional[int]:
+        """Valide la base globale de notation optionnelle.
+
+        Args:
+            value (Any): Valeur brute du payload.
+            errors (list[str]): Erreurs a enrichir.
+
+        Returns:
+            Optional[int]: Base strictement positive ou absence.
+        """
+
+        if value is None or not str(value).strip():
+            return None
+        try:
+            rating_base = int(str(value).strip())
+        except (TypeError, ValueError):
+            errors.append("rating_base doit etre un entier positif.")
+            return None
+        if rating_base <= 0:
+            errors.append("rating_base doit etre un entier positif.")
+            return None
+        return rating_base
 
     def _parse_file_type(
         self,

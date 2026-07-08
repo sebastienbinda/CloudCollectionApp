@@ -72,6 +72,7 @@ class OdsCollectionImportGameBuilder:
         warnings: dict[str, Any],
         forced_wishlist: Optional[bool],
         price_unit: str | None = None,
+        rating_base: int | None = None,
     ) -> list[CollectionImportGame]:
         """Construit les jeux valides d'une feuille.
 
@@ -84,6 +85,7 @@ class OdsCollectionImportGameBuilder:
             warnings (dict[str, Any]): Warnings a enrichir.
             forced_wishlist (Optional[bool]): Valeur wishlist forcee.
             price_unit (str | None): Unite globale du prix d'achat.
+            rating_base (int | None): Base globale de notation.
 
         Returns:
             list[CollectionImportGame]: Jeux importables.
@@ -104,6 +106,7 @@ class OdsCollectionImportGameBuilder:
                     warnings,
                     forced_wishlist,
                     price_unit,
+                    rating_base,
                 )
                 if game is not None:
                     games.append(game)
@@ -169,6 +172,7 @@ class OdsCollectionImportGameBuilder:
         warnings: dict[str, Any],
         forced_wishlist: Optional[bool],
         price_unit: str | None,
+        rating_base: int | None,
     ) -> Optional[CollectionImportGame]:
         game_name = self.value_mapper.map_name(
             self._field_value(row, column_positions, CollectionImportField.NAME)
@@ -221,6 +225,7 @@ class OdsCollectionImportGameBuilder:
                 game_name,
                 warnings,
                 price_unit,
+                rating_base,
             ),
         )
 

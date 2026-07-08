@@ -60,6 +60,7 @@ class CollectionStatisticsApi {
             releaseDate: game.release_date || "",
             buyDate: game.buy_date || "",
             grade: game.grade || "",
+            gradeNormalized: Number(game.grade_normalized || 0),
           }))
         : [],
     };

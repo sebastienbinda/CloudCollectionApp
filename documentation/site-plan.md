@@ -58,7 +58,7 @@ public pages.
   non-`ADMIN` user's collection, listing games attached to that platform.
 - `/collection/statistics`: authenticated statistics page for non-`ADMIN`
   users with a collection. It displays backend-computed owned-collection
-  diagrams and the games whose numeric note is greater than `9`.
+  diagrams and the games whose normalized note is greater than or equal to `90`.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
   attached to the connected user's collection. Nullable private purchase and
   copy information is shown only when available, including region flag and
@@ -125,8 +125,8 @@ layouts, and optional wishlist extraction from no source, a dedicated sheet, or
 a dedicated column for ODS files. For CSV files, it lets users map each
 importable information to a detected CSV column and supports wishlist from no
 source or from a dedicated column. It also lets the user select one global ISO
-price unit and map optional private game-information columns. Backend
-validation and persistence remain authoritative.
+price unit, one global rating base and map optional private game-information
+columns. Backend validation and persistence remain authoritative.
 
 The `ADMIN` profile keeps backend access through the route catalog and Bearer
 token hierarchy, but the frontend must not offer collection ownership screens to

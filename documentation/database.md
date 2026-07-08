@@ -232,7 +232,8 @@ cleanup.
 | `price_unit` | `VARCHAR(3)` | Yes | ISO 4217 unit selected globally for the imported file. |
 | `buy_location` | `VARCHAR(256)` | Yes | Private purchase location. |
 | `buy_date` | `TIMESTAMP` | Yes | Private purchase date. |
-| `grade` | `VARCHAR(256)` | Yes | Private user note. |
+| `grade` | `VARCHAR(256)` | Yes | Raw private user rating read from the imported file. |
+| `grade_normalized` | `INTEGER` | Yes | User note normalized to base 100 during import. |
 | `condition` | `SMALLINT` | Yes | Condition from `0` (bad) to `4` (new). |
 | `has_manual` | `BOOLEAN` | Yes | Whether the owned copy includes its manual. |
 | `is_collector` | `BOOLEAN` | Yes | Whether the owned copy is a collector edition. |

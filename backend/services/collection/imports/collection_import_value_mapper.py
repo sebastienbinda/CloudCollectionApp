@@ -153,6 +153,7 @@ class CollectionImportValueMapper:
         game_name: str,
         warnings: dict[str, Any],
         price_unit: str | None,
+        rating_base: int | None = None,
     ) -> dict[str, Any]:
         """Mappe les valeurs privees et enregistre les valeurs invalides.
 
@@ -161,11 +162,13 @@ class CollectionImportValueMapper:
             game_name (str): Nom du jeu utilise dans les warnings.
             warnings (dict[str, Any]): Warnings d'import a enrichir.
             price_unit (str | None): Unite globale configuree pour le fichier.
+            rating_base (int | None): Base globale de notation.
 
         Returns:
             dict[str, Any]: Valeurs privees normalisees.
         """
 
+        grade = self._text(values.get(CollectionImportField.GRADE))
         parsed = {
             "purchase_price": self._parse_non_negative_decimal(
                 values.get(CollectionImportField.PURCHASE_PRICE),
@@ -177,7 +180,13 @@ class CollectionImportValueMapper:
             "buy_date": self._parse_date(
                 values.get(CollectionImportField.BUY_DATE), game_name, "buy_date", warnings
             ),
-            "grade": self._text(values.get(CollectionImportField.GRADE)),
+            "grade": grade,
+            "grade_normalized": self._parse_grade_normalized(
+                values.get(CollectionImportField.GRADE),
+                rating_base,
+                game_name,
+                warnings,
+            ),
             "condition": self._parse_condition(
                 values.get(CollectionImportField.CONDITION), game_name, warnings
             ),
@@ -258,6 +267,39 @@ class CollectionImportValueMapper:
             return normalized
         except (InvalidOperation, TypeError, ValueError):
             self._record_invalid(game_name, field, value, warnings)
+            return None
+
+    def _parse_grade_normalized(
+        self,
+        value: Any,
+        rating_base: int | None,
+        game_name: str,
+        warnings: dict[str, Any],
+    ) -> int | None:
+        if self._is_empty(value):
+            return None
+        try:
+            grade_text = str(value).strip().replace(" ", "").replace(",", ".")
+            if "/" in grade_text:
+                grade_part, base_part = grade_text.split("/", 1)
+                grade_value = Decimal(grade_part)
+                base_value = Decimal(base_part)
+            else:
+                if rating_base is None:
+                    raise ValueError
+                grade_value = Decimal(grade_text)
+                base_value = Decimal(rating_base)
+            if (
+                not grade_value.is_finite()
+                or not base_value.is_finite()
+                or base_value <= 0
+                or grade_value < 0
+            ):
+                raise ValueError
+            normalized = grade_value * Decimal(100) / base_value
+            return int(normalized.to_integral_value(rounding=ROUND_DOWN))
+        except (InvalidOperation, TypeError, ValueError):
+            self._record_invalid(game_name, "grade", value, warnings)
             return None
 
     def _parse_date(

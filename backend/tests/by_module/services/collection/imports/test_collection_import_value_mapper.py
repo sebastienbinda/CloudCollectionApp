@@ -56,7 +56,7 @@ class CollectionImportValueMapperTest(unittest.TestCase):
             CollectionImportField.PURCHASE_PRICE: "129",
             CollectionImportField.BUY_LOCATION: " Paris ",
             CollectionImportField.BUY_DATE: "2026-06-01",
-            CollectionImportField.GRADE: "Rare",
+            CollectionImportField.GRADE: "8/10",
             CollectionImportField.CONDITION: "Très bon",
             CollectionImportField.HAS_MANUAL: "Non",
             CollectionImportField.IS_COLLECTOR: "Oui",
@@ -71,6 +71,8 @@ class CollectionImportValueMapperTest(unittest.TestCase):
         self.assertEqual(Decimal("129.00"), result["purchase_price"])
         self.assertEqual("EUR", result["price_unit"])
         self.assertEqual(date(2026, 6, 1), result["buy_date"])
+        self.assertEqual("8/10", result["grade"])
+        self.assertEqual(80, result["grade_normalized"])
         self.assertEqual(3, result["condition"])
         self.assertFalse(result["has_manual"])
         self.assertTrue(result["is_collector"])
@@ -143,6 +145,7 @@ class CollectionImportValueMapperTest(unittest.TestCase):
 
         values = {
             CollectionImportField.PURCHASE_PRICE: "prix inconnu",
+            CollectionImportField.GRADE: "note inconnue",
             CollectionImportField.CONDITION: "zzzzzz",
             CollectionImportField.HAS_MANUAL: "Peut-etre",
             CollectionImportField.REGION: "MARS",
@@ -156,9 +159,38 @@ class CollectionImportValueMapperTest(unittest.TestCase):
         self.assertIsNone(result["description"])
         invalid_fields = self.warnings["invalid_games"][0]["invalid_fields"]
         self.assertEqual(
-            {"purchase_price", "condition", "has_manual", "region"},
+            {"purchase_price", "grade", "condition", "has_manual", "region"},
             {item["field"] for item in invalid_fields},
         )
+
+    def test_grade_uses_global_base_and_rounds_down(self):
+        """Verifie la normalisation de note sur base globale.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'arrondi inferieur.
+        """
+
+        result = self.mapper.map_private_values(
+            {CollectionImportField.GRADE: "08"},
+            "Zelda",
+            {"invalid_games": []},
+            None,
+            10,
+        )
+        rounded_result = self.mapper.map_private_values(
+            {CollectionImportField.GRADE: "4"},
+            "Mario",
+            {"invalid_games": []},
+            None,
+            6,
+        )
+
+        self.assertEqual("08", result["grade"])
+        self.assertEqual(80, result["grade_normalized"])
+        self.assertEqual(66, rounded_result["grade_normalized"])
 
     def test_purchase_price_accepts_and_truncates_decimal_values(self):
         """Verifie l'acceptation et la troncature inferieure des prix positifs.

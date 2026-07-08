@@ -104,6 +104,7 @@ class FakeStatisticsRepository:
 
         self.release_platform_id = None
         self.purchase_platform_id = None
+        self.top_rated_platform_id = None
 
     def list_platform_distribution(self, connection, user_id):
         """Retourne la repartition par plateforme.
@@ -151,17 +152,19 @@ class FakeStatisticsRepository:
         self.purchase_platform_id = platform_id
         return [{"year": 2024, "games_count": 4}]
 
-    def list_top_rated_games(self, connection, user_id):
+    def list_top_rated_games(self, connection, user_id, platform_id=None):
         """Retourne les jeux les mieux notes factices.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
+            platform_id (int | None): Plateforme filtree.
 
         Returns:
             list[dict]: Jeux factices.
         """
 
+        self.top_rated_platform_id = platform_id
         return [
             {
                 "id": 3,
@@ -170,6 +173,7 @@ class FakeStatisticsRepository:
                 "release_date": "1992-08-27",
                 "buy_date": "2024-03-10",
                 "grade": "9.5",
+                "grade_normalized": 95,
             }
         ]
 
@@ -203,6 +207,8 @@ class UserCollectionStatisticsServiceTest(unittest.TestCase):
         self.assertEqual(1992, payload["release_year_distribution"][0]["year"])
         self.assertEqual(2024, payload["purchase_year_distribution"][0]["year"])
         self.assertEqual("Mario Kart", payload["top_rated_games"][0]["name"])
+        self.assertEqual("9.5", payload["top_rated_games"][0]["grade"])
+        self.assertEqual(95, payload["top_rated_games"][0]["grade_normalized"])
 
     def test_get_statistics_filters_date_distributions_by_platform(self):
         """Verifie la propagation du filtre plateforme aux distributions temporelles.
@@ -225,6 +231,7 @@ class UserCollectionStatisticsServiceTest(unittest.TestCase):
 
         self.assertEqual(3, repository.release_platform_id)
         self.assertEqual(3, repository.purchase_platform_id)
+        self.assertEqual(3, repository.top_rated_platform_id)
 
 
 if __name__ == "__main__":

@@ -83,7 +83,11 @@ class UserCollectionStatisticsService:
                 user_id,
                 platform_id,
             )
-            top_rated_games = self.repository.list_top_rated_games(connection, user_id)
+            top_rated_games = self.repository.list_top_rated_games(
+                connection,
+                user_id,
+                platform_id,
+            )
         total_games = sum(int(row.get("games_count") or 0) for row in platforms)
         return {
             "total_games": total_games,
@@ -126,6 +130,7 @@ class UserCollectionStatisticsService:
                 "release_date": str(row.get("release_date") or ""),
                 "buy_date": str(row.get("buy_date") or ""),
                 "grade": str(row.get("grade") or ""),
+                "grade_normalized": int(row.get("grade_normalized") or 0),
             }
             for row in rows
         ]

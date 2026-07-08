@@ -31,6 +31,7 @@ test("normalise le contrat backend des statistiques detaillees", () => {
         release_date: "1992-08-27",
         buy_date: "2024-03-10",
         grade: "9.5",
+        grade_normalized: 95,
       },
     ],
   });
@@ -41,6 +42,7 @@ test("normalise le contrat backend des statistiques detaillees", () => {
   assert.equal(statistics.releaseYearDistribution[0].label, "1992");
   assert.equal(statistics.purchaseYearDistribution[0].gamesCount, 2);
   assert.equal(statistics.topRatedGames[0].platformName, "Switch");
+  assert.equal(statistics.topRatedGames[0].gradeNormalized, 95);
 });
 
 test("envoie le filtre plateforme au endpoint des statistiques detaillees", async () => {

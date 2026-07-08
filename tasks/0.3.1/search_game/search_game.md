@@ -1,7 +1,7 @@
 En tant  qu'utilisateur connecté, je veux pouvoir depuis chaque jeu de ma wishlist consulter les offres de ventes récentes du jeu sur les sites marchands type le bon coin, Ebay, Rakuten. Cette fonctionnalité doit etre accessible aux utilisateurs de profiles USER et GUEST.
 
 Je veux une page avec un onglet par plateforme de vente.
-Sur chaque onglet un liste des 10 annonces les plus cohérentes et triées par prix de vente avec les moins cher en premier.
+Sur chaque onglet, une liste des 10 annonces les plus cohérentes et triées par prix de vente avec les moins cher en premier.
 Je veux un lien pour pouvoir voir chaque annonce indisivudellement
 Je veux un lien au dessus du tableau pour aller sur le site marchand et aplliquer la recherche du jeu courant.
 

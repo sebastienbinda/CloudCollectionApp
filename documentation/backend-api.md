@@ -839,7 +839,7 @@ Optional query parameters:
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `platform_id` | positive integer | Filters `release_year_distribution` and `purchase_year_distribution` to one platform. `platform_distribution`, `total_games` and `top_rated_games` remain collection-wide. |
+| `platform_id` | positive integer | Filters `release_year_distribution`, `purchase_year_distribution` and `top_rated_games` to one platform. `platform_distribution` and `total_games` remain collection-wide. |
 
 ```json
 {
@@ -871,15 +871,17 @@ Optional query parameters:
       "platform_name": "Switch",
       "release_date": "1992-08-27",
       "buy_date": "2024-03-10",
-      "grade": "9.5"
+      "grade": "9.5",
+      "grade_normalized": 95
     }
   ]
 }
 ```
 
 `ratio` is the backend-computed percentage of owned collection games on the
-platform. `top_rated_games` includes only numeric grades strictly greater than
-`9`; commas in grades are normalized as decimal separators before comparison.
+platform. `top_rated_games` includes only rows whose `grade_normalized` is
+greater than or equal to `90`, ordered by `grade_normalized` descending so the
+best-rated games appear first.
 
 When the connected user has no game in `t_user_collection`, both sections are
 empty:
@@ -1280,6 +1282,8 @@ The JSON configuration supports:
 - an optional top-level `price_unit` selected globally for the file; it becomes
   mandatory when any layout maps `purchase_price` and accepts `EUR`, `USD`,
   `GBP`, `JPY`, `AUD`, `CAD`, `CHF`, `CNY` or `KRW`;
+- an optional top-level `rating_base` selected globally for mapped `grade`
+  values that do not contain their own `<grade>/<base>` suffix;
 - `single_sheet_conf` for a single imported sheet;
 - `multiple_sheets_conf.shared_layout.included_sheets` to import only selected
   sheets;
@@ -1295,6 +1299,7 @@ Example CSV payload:
 {
   "file_type": "csv",
   "price_unit": "EUR",
+  "rating_base": 10,
   "wishlist": {"mode": "column"},
   "mapping": {
     "name": "Jeu",
@@ -1312,6 +1317,9 @@ Every collection layout may map the nullable private fields `purchase_price`,
 `has_steelbook`, `is_digital`, `region` and `description`. Invalid non-empty
 values are ignored and reported in `warnings.invalid_games` without rejecting
 the complete import.
+`grade` keeps the original imported value, while `grade_normalized` persists
+the integer base-100 value rounded down. Values may be plain numbers using
+`rating_base`, or `<grade>/<base>` strings such as `8/10`.
 Region values are fuzzy-matched against the controlled codes. The unique best
 match must reach `REGION_MATCH_LIMIT` (default `60`); otherwise the imported
 region is stored as null and reported as invalid.

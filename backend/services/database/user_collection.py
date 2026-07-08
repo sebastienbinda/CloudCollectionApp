@@ -52,6 +52,7 @@ class UserCollection(DatabaseModelBase):
     buy_location: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     buy_date: Mapped[Optional[datetime]] = mapped_column(nullable=True)
     grade: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    grade_normalized: Mapped[Optional[int]] = mapped_column(nullable=True)
     condition: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
     has_manual: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     is_collector: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
