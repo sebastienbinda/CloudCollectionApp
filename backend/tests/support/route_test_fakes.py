@@ -125,6 +125,8 @@ class FakeLibraryService:
                     "editor": "",
                     "status": "",
                     "platform": "NES",
+                    "platform_end_date": "1995-08-14",
+                    "platform_common_alias": "NES",
                     "duplicate_flag": False,
                     "in_current_user_collection": criteria.current_user_id == 7,
                 }
@@ -143,7 +145,7 @@ class FakeLibraryService:
 
         if game_id != 3:
             return None
-        return {"id": 3, "name": "Final Fantasy", "release_date": "1987-12-18", "developer": "Square", "editor": "", "status": "", "platform": "NES", "duplicate_flag": True}
+        return {"id": 3, "name": "Final Fantasy", "release_date": "1987-12-18", "developer": "Square", "editor": "", "status": "", "platform": "NES", "platform_end_date": "1995-08-14", "platform_common_alias": "NES", "duplicate_flag": True}
 
     def _page(self, criteria):
         """Construit une page factice.
@@ -251,6 +253,8 @@ class FakeUserCollectionQueryService:
                     "name": "Mario Kart",
                     "platform_name": "Switch",
                     "platform_id": 1,
+                    "platform_end_date": "",
+                    "platform_common_alias": "Switch",
                     "release_date": "1992-08-27",
                     "duplicate_flag": False,
                     "studio_name": "Nintendo",
@@ -297,6 +301,8 @@ class FakeUserCollectionQueryService:
             "name": "Mario Kart",
             "platform_name": "Switch",
             "platform_id": 1,
+            "platform_end_date": "",
+            "platform_common_alias": "Switch",
             "release_date": "1992-08-27",
             "studio_name": "Nintendo",
             "studio_id": 2,

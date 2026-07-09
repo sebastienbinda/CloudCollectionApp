@@ -313,6 +313,8 @@ class VideoGamesApi {
       const normalizedGame = {
         id: game.id,
         platform_id: game.platform_id,
+        platform_common_alias: game.platform_common_alias || "",
+        platform_end_date: game.platform_end_date || "",
         "Nom du jeu": game.name || "",
         Plateforme: game.platform_name || "",
         Studio: game.studio_name || "",

@@ -334,6 +334,8 @@ class FakeGameRepository:
                 "developer": "Square",
                 "editor": None,
                 "platform": "NES",
+                "platform_end_date": datetime(1995, 8, 14),
+                "platform_common_alias": "NES",
             }
         ]
 
@@ -373,6 +375,8 @@ class FakeGameRepository:
             "developer": "Square",
             "editor": None,
             "platform": "NES",
+            "platform_end_date": datetime(1995, 8, 14),
+            "platform_common_alias": "NES",
         }
 
 
@@ -543,6 +547,8 @@ class LibraryServiceTest(unittest.TestCase):
                     "editor": "",
                     "status": "",
                     "platform": "NES",
+                    "platform_end_date": "1995-08-14",
+                    "platform_common_alias": "NES",
                     "duplicate_flag": False,
                     "in_current_user_collection": False,
                 }
@@ -581,6 +587,8 @@ class LibraryServiceTest(unittest.TestCase):
         self.assertEqual("Final Fantasy", game["name"])
         self.assertEqual("1987-12-18", game["release_date"])
         self.assertEqual("NES", game["platform"])
+        self.assertEqual("1995-08-14", game["platform_end_date"])
+        self.assertEqual("NES", game["platform_common_alias"])
 
     def test_get_game_returns_none_for_unknown_game(self):
         """Verifie l'absence de jeu public.

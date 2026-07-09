@@ -146,6 +146,8 @@ class LibraryPayloadSerializer:
             "editor": self.text_value(row.get("editor")),
             "status": self.text_value(row.get("status")),
             "platform": self.text_value(row.get("platform")),
+            "platform_end_date": self.date_value(row.get("platform_end_date")),
+            "platform_common_alias": self.text_value(row.get("platform_common_alias")),
             "duplicate_flag": bool(row.get("duplicate_flag")),
         }
         if "in_current_user_collection" in row:

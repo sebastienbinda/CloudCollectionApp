@@ -120,6 +120,8 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         self.assertNotIn("status", platforms["platforms"][0])
         self.assertEqual("Mario Kart", games["games"][0]["name"])
         self.assertEqual(1, games["games"][0]["platform_id"])
+        self.assertEqual("", games["games"][0]["platform_end_date"])
+        self.assertEqual("Switch", games["games"][0]["platform_common_alias"])
         self.assertFalse(games["games"][0]["wishlist"])
         self.assertFalse(FakeUserCollectionQueryService.last_games_criteria.wishlist)
         self.assertEqual("ecole", FakeUserCollectionQueryService.last_platforms_criteria.normalized_name)
@@ -214,6 +216,8 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(200, response.status_code)
         self.assertEqual("Mario Kart", game["name"])
         self.assertEqual("Switch", game["platform_name"])
+        self.assertEqual("", game["platform_end_date"])
+        self.assertEqual("Switch", game["platform_common_alias"])
         self.assertFalse(game["wishlist"])
 
     def test_collection_game_detail_returns_404_for_unknown_game(self):

@@ -25,6 +25,7 @@ from services.collection.user_collection_query_contract import (
 from services.library.library_query_contract import LibrarySortRule
 
 from .library_query_sql_builder import LibraryQuerySqlBuilder
+from .platform_alias_sql_selector import PlatformAliasSqlSelector
 
 
 class SqlAlchemyUserCollectionQueryRepository:
@@ -36,6 +37,12 @@ class SqlAlchemyUserCollectionQueryRepository:
         "end_date": "platform.end_date",
         "manufacturer": "platform.manufacturer",
     }
+
+    def _platform_common_alias_select(self) -> str:
+        return PlatformAliasSqlSelector.common_alias_subquery(
+            self.schema_name,
+            "platform.id",
+        ) + " AS platform_common_alias, "
     GAME_SORT_COLUMNS = {
         "name": "game.name",
         "platform_name": "platform.name",
@@ -329,6 +336,8 @@ class SqlAlchemyUserCollectionQueryRepository:
                 "game.id, game.name, game.release_date::text AS release_date, "
                 "game.duplicate_flag, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
+                "platform.end_date::text AS platform_end_date, "
+                f"{self._platform_common_alias_select()}"
                 "studio.id AS studio_id, studio.name AS studio_name, "
                 "user_collection.wishlist, user_collection.purchase_price, "
                 "user_collection.price_unit, user_collection.buy_location, "
@@ -375,6 +384,8 @@ class SqlAlchemyUserCollectionQueryRepository:
                 "game.id, game.name, game.release_date::text AS release_date, "
                 "game.duplicate_flag, "
                 "platform.id AS platform_id, platform.name AS platform_name, "
+                "platform.end_date::text AS platform_end_date, "
+                f"{self._platform_common_alias_select()}"
                 "studio.id AS studio_id, studio.name AS studio_name, "
                 "user_collection.wishlist, user_collection.purchase_price, "
                 "user_collection.price_unit, user_collection.buy_location, "

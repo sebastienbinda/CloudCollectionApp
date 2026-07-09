@@ -136,6 +136,8 @@ class LibraryRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("Final Fantasy", game["name"])
+        self.assertEqual("1995-08-14", game["platform_end_date"])
+        self.assertEqual("NES", game["platform_common_alias"])
         self.assertNotIn("collection_file_path", game)
         self.assertFalse(game["in_current_user_collection"])
         self.assertEqual("nes", criteria.normalized_platform)
@@ -226,6 +228,8 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual(200, response.status_code)
         self.assertEqual("Final Fantasy", game["name"])
         self.assertEqual("NES", game["platform"])
+        self.assertEqual("1995-08-14", game["platform_end_date"])
+        self.assertEqual("NES", game["platform_common_alias"])
         self.assertNotIn("collection_file_path", game)
 
     def test_library_game_detail_route_returns_404_for_unknown_game(self):

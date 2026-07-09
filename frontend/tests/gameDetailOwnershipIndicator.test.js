@@ -38,3 +38,18 @@ test("normalise l'attribut wishlist des jeux de collection", () => {
   assert.equal(wishlistedGame.wishlist, true);
   assert.equal(ownedGame.wishlist, false);
 });
+
+test("conserve les informations de plateforme utilisees par les boutons d'achat", () => {
+  const [game] = VideoGamesApi.normalizeCollectionGames([
+    {
+      id: 7,
+      name: "Ridge Racer",
+      platform_name: "PlayStation",
+      platform_end_date: "2006-03-23",
+      platform_common_alias: "PS1",
+    },
+  ]);
+
+  assert.equal(game.platform_end_date, "2006-03-23");
+  assert.equal(game.platform_common_alias, "PS1");
+});
