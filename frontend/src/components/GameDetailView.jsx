@@ -14,6 +14,7 @@
  */
 import { formatCellValue } from "../collectionUtils";
 import { buildGameDetailOwnershipIndicator } from "../gameDetailOwnershipIndicator";
+import { buildGameMarketplaceSearchLinks } from "../gameMarketplaceSearchLinks";
 import TableColumnFormatService from "../services/TableColumnFormatService.jsx";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
@@ -53,6 +54,13 @@ function GameDetailView({
   const title = getGameName(game) || "Jeu";
   const platformName = getGamePlatform(game);
   const fields = buildGameFields(game, isCollectionSource);
+  const marketplaceSearchLinks = buildGameMarketplaceSearchLinks(
+    getGameName(game),
+    getGameMarketplacePlatformName(game),
+    getGamePlatformEndDate(game),
+    new Date(),
+    getGameMarketplaceRegion(game, isCollectionSource)
+  );
   const ownershipIndicator = buildGameDetailOwnershipIndicator(
     Boolean(gameDetailPage?.isInCurrentUserCollection),
     Boolean(gameDetailPage?.isInCurrentUserWishlist)
@@ -81,9 +89,21 @@ function GameDetailView({
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
-      <button className="backButton" type="button" onClick={onBack}>
-        Retour
-      </button>
+      <div className="gameDetailTopActions">
+        <button className="backButton" type="button" onClick={onBack}>
+          Retour
+        </button>
+        {gameDetailPage?.canReportDuplicate ? (
+          <button
+            className="secondaryButton gameDuplicateReportTopButton"
+            type="button"
+            disabled={gameDetailPage.isReportingDuplicate}
+            onClick={gameDetailPage.reportDuplicate}
+          >
+            Indiquer un doublon
+          </button>
+        ) : null}
+      </div>
 
       {gameDetailPage?.isLoadingGameDetail ? <ProgressBar label="Chargement du jeu" /> : null}
       {gameDetailPage?.gameDetailError ? <p className="error">{gameDetailPage.gameDetailError}</p> : null}
@@ -118,17 +138,26 @@ function GameDetailView({
               </div>
             ))}
           </dl>
+          {marketplaceSearchLinks.length ? (
+            <section className="gamePurchaseSection" aria-labelledby="game-purchase-title">
+              <h2 id="game-purchase-title">Acheter ce jeu</h2>
+              <div className="gameMarketplaceActions">
+                {marketplaceSearchLinks.map((link) => (
+                  <a
+                    key={link.key}
+                    className="secondaryButton gameMarketplaceSearchButton"
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img src={link.iconUrl} alt="" aria-hidden="true" loading="lazy" />
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <div className="gameDetailActions">
-            {gameDetailPage.canReportDuplicate ? (
-              <button
-                className="secondaryButton"
-                type="button"
-                disabled={gameDetailPage.isReportingDuplicate}
-                onClick={gameDetailPage.reportDuplicate}
-              >
-                Indiquer un doublon
-              </button>
-            ) : null}
             {gameDetailPage.canCorrectDuplicate ? (
               <button
                 className="primaryAction"
@@ -151,6 +180,18 @@ function getGameName(game) {
 
 function getGamePlatform(game) {
   return game?.Plateforme || game?.platform || game?.platform_name || "";
+}
+
+function getGamePlatformEndDate(game) {
+  return game?.platform_end_date || game?.["Date de fin plateforme"] || "";
+}
+
+function getGameMarketplacePlatformName(game) {
+  return game?.platform_common_alias || game?.["Alias courant plateforme"] || getGamePlatform(game);
+}
+
+function getGameMarketplaceRegion(game, isCollectionSource) {
+  return isCollectionSource ? game?.Region || game?.region || "" : "";
 }
 
 function buildGameFields(game, isCollectionSource) {

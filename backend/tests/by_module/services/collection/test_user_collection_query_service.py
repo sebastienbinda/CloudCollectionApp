@@ -245,6 +245,8 @@ class FakeUserCollectionQueryRepository:
                 "name": "Final Fantasy",
                 "platform_name": "NES",
                 "platform_id": 3,
+                "platform_end_date": "1995-08-14",
+                "platform_common_alias": "NES",
                 "release_date": datetime(1987, 12, 18),
                 "studio_name": None,
                 "studio_id": None,
@@ -284,6 +286,8 @@ class FakeUserCollectionQueryRepository:
             "name": "Final Fantasy",
             "platform_name": "NES",
             "platform_id": 3,
+            "platform_end_date": datetime(1995, 8, 14),
+            "platform_common_alias": "NES",
             "release_date": datetime(1987, 12, 18),
             "studio_name": None,
             "studio_id": None,
@@ -533,6 +537,8 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                     "name": "Final Fantasy",
                     "platform_name": "NES",
                     "platform_id": 3,
+                    "platform_end_date": "1995-08-14",
+                    "platform_common_alias": "NES",
                     "release_date": "1987-12-18",
                     "studio_name": "",
                     "studio_id": None,
@@ -569,6 +575,8 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
 
         self.assertEqual("Final Fantasy", game["name"])
         self.assertEqual("NES", game["platform_name"])
+        self.assertEqual("1995-08-14", game["platform_end_date"])
+        self.assertEqual("NES", game["platform_common_alias"])
         self.assertTrue(game["wishlist"])
 
     def test_get_game_returns_none_for_unknown_collection_game(self):

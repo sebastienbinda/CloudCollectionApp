@@ -446,6 +446,8 @@ class UserCollectionQueryService:
             "name": self._text_value(row.get("name")),
             "platform_name": self._text_value(row.get("platform_name")),
             "platform_id": int(row["platform_id"]),
+            "platform_end_date": self._date_value(row.get("platform_end_date")),
+            "platform_common_alias": self._text_value(row.get("platform_common_alias")),
             "release_date": self._date_value(row.get("release_date")),
             "studio_name": self._text_value(row.get("studio_name")),
             "studio_id": self._optional_integer_value(row.get("studio_id")),

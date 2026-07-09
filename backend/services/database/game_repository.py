@@ -20,6 +20,7 @@ from services.users.user_collection_name_normalizer import UserCollectionNameNor
 from services.collection.imports import CollectionImportDateValidator
 
 from .library_query_sql_builder import LibraryQuerySqlBuilder
+from .platform_alias_sql_selector import PlatformAliasSqlSelector
 
 
 class SqlAlchemyGameRepository:
@@ -31,6 +32,12 @@ class SqlAlchemyGameRepository:
         "developer": "developer_studio.name",
         "platform": "platform.name",
     }
+
+    def _platform_common_alias_select(self) -> str:
+        return PlatformAliasSqlSelector.common_alias_subquery(
+            self.schema_name,
+            "platform.id",
+        ) + " AS platform_common_alias, "
 
     def __init__(self, schema_name: str, name_normalizer: UserCollectionNameNormalizer):
         """Initialise le repository des jeux.
@@ -230,7 +237,9 @@ class SqlAlchemyGameRepository:
                 "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
                 "game.developer AS developer_id, developer_studio.name AS developer, "
                 "game.editor AS editor_id, editor_studio.name AS editor, "
-                "game.platform AS platform_id, platform.name AS platform "
+                "game.platform AS platform_id, platform.name AS platform, "
+                f"{self._platform_common_alias_select()}"
+                "platform.end_date AS platform_end_date "
                 f'FROM "{self.schema_name}".t_game game '
                 f'LEFT JOIN "{self.schema_name}".t_studio developer_studio '
                 "ON developer_studio.id = game.developer "
@@ -304,7 +313,9 @@ class SqlAlchemyGameRepository:
                 "SELECT "
                 "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
                 "developer_studio.name AS developer, editor_studio.name AS editor, "
-                "platform.name AS platform "
+                "platform.name AS platform, "
+                f"{self._platform_common_alias_select()}"
+                "platform.end_date AS platform_end_date "
                 f'FROM "{self.schema_name}".t_game game '
                 f'LEFT JOIN "{self.schema_name}".t_studio developer_studio '
                 "ON developer_studio.id = game.developer "
