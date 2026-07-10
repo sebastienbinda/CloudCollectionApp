@@ -20,8 +20,6 @@ function renderConfigurationView(props, pageLayoutProps) {
     <ConfigurationView
       {...pageLayoutProps}
       username={props.authenticatedUsername}
-      platforms={props.platforms}
-      canAddGame={props.actionPermissions.canAddGame}
       canDownloadOds={props.actionPermissions.canDownloadOds}
       canResetLibrary={props.actionPermissions.canResetLibrary}
       canImportLibraryCsv={props.actionPermissions.canImportLibraryCsv}
@@ -40,7 +38,6 @@ function renderConfigurationView(props, pageLayoutProps) {
       isSyncingPlatformCatalog={props.isSyncingPlatformCatalog}
       reinitializationError={props.reinitializationError}
       isReinitializingCollection={props.isReinitializingCollection}
-      onAddGame={props.openAddGamePage}
       onOpenUsers={props.openUsersPage}
       onOpenAdminLibraryImport={props.openAdminLibraryImport}
       onOpenPlatformImageModeration={props.openPlatformImageModeration}
