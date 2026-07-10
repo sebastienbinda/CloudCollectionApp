@@ -26,8 +26,6 @@ function ConfigurationView({
   username,
   authenticatedProfile,
   isAuthenticated,
-  platforms,
-  canAddGame,
   canDownloadOds,
   canResetLibrary,
   canImportLibraryCsv,
@@ -57,7 +55,6 @@ function ConfigurationView({
   onOpenLibrary,
   onOpenWishlist,
   onOpenStatistics,
-  onAddGame,
   onOpenUsers,
   onOpenAdminLibraryImport,
   onOpenPlatformImageModeration,
@@ -103,21 +100,6 @@ function ConfigurationView({
       {reinitializationError ? <p className="error">{reinitializationError}</p> : null}
 
       <section className="adminActionGrid" aria-label="Actions d'administration">
-        {canUseCollectionViews ? (
-          <article className="adminActionCard">
-            <span>Collection</span>
-            <h2>Ajouter</h2>
-            <p>Ouvre le formulaire d'ajout dans la collection.</p>
-            <button
-              type="button"
-              onClick={onAddGame}
-              disabled={!canAddGame || platforms.length === 0}
-            >
-              Ajouter un jeu
-            </button>
-          </article>
-        ) : null}
-
         {canManageCollectionShares ? (
           <article className="adminActionCard">
             <span>Partage</span>
@@ -154,7 +136,7 @@ function ConfigurationView({
             <h2>Exporter</h2>
             <p>Recupere le fichier source de la collection.</p>
             <button
-              className="downloadOdsButton"
+              className="secondaryButton"
               type="button"
               onClick={onDownloadOds}
               disabled={!canDownloadOds || isDownloadingOds}
@@ -173,7 +155,7 @@ function ConfigurationView({
               Supprime la collection actuelle et son fichier serveur pour permettre un nouvel import.
             </p>
             <button
-              className="secondaryButton"
+              className="dangerButton"
               type="button"
               onClick={onReinitializeCollection}
               disabled={!canReinitializeCollection || isReinitializingCollection}

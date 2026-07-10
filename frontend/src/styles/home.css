@@ -596,17 +596,6 @@
   opacity: 0.55;
 }
 
-.downloadOdsButton {
-  background: #7c2d12;
-  border-color: #7c2d12;
-  color: #ffffff;
-}
-
-.downloadOdsButton:hover:not(:disabled) {
-  background: #9a3412;
-  border-color: #9a3412;
-}
-
 .pageHeaderConnectedUser {
   align-items: center;
   background: rgba(236, 253, 245, 0.94);
