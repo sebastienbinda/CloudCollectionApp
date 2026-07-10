@@ -25,7 +25,7 @@ import VideoGamesApi from "../services/VideoGamesApi";
  */
 function useBackendActionPermissions() {
   const [actionPermissions, setActionPermissions] = useState(() =>
-    BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getAccessToken())
+    BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getUsableAccessToken())
   );
 
   useEffect(() => {
@@ -35,7 +35,7 @@ function useBackendActionPermissions() {
         setActionPermissions(permissions);
       } catch (e) {
         setActionPermissions(
-          BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getAccessToken())
+          BackendRouteAccessService.getFallbackActionPermissions(AuthApi.getUsableAccessToken())
         );
       }
     };

@@ -25,7 +25,8 @@ import GuestSessionViewPolicy from "../../services/GuestSessionViewPolicy";
  * @returns {Object} Etat local de session avec presence, nom et profil.
  */
 function getLocalAuthenticatedIdentity() {
-  const hasLocalAccessToken = AuthApi.hasUsableAccessToken();
+  const localAccessToken = AuthApi.getUsableAccessToken();
+  const hasLocalAccessToken = Boolean(localAccessToken);
   const payload = hasLocalAccessToken ? AuthApi.getAccessTokenPayload() : {};
   const defaultUsername = hasLocalAccessToken ? AuthApi.getAuthenticatedUsername() : "";
   const viewAccess = new GuestSessionViewPolicy(payload).toViewModel(defaultUsername);
@@ -57,7 +58,7 @@ function useSessionState() {
     return () => window.removeEventListener(AuthApi.authChangeEventName, updateAuthenticatedIdentity);
   }, []);
 
-  const hasAccessToken = AuthApi.hasUsableAccessToken();
+  const hasAccessToken = Boolean(AuthApi.getUsableAccessToken());
   return {
     actionPermissions,
     hasAccessToken,
