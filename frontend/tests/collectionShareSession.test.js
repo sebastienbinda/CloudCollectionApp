@@ -18,6 +18,7 @@ import AppRouting from "../src/appRouting.js";
 import AuthApi from "../src/services/AuthApi.js";
 import CollectionShareSessionApi from "../src/services/CollectionShareSessionApi.js";
 import BackendAvailabilityGuard from "../src/services/BackendAvailabilityGuard.js";
+import BackendRouteAccessService from "../src/services/BackendRouteAccessService.js";
 import VideoGamesApi from "../src/services/VideoGamesApi.js";
 
 class MemoryStorage {
@@ -156,4 +157,15 @@ test("ne considere pas un token local expire comme utilisable", () => {
   AuthApi.storeAccessToken(createToken({ profile: "USER" }), -1);
 
   assert.equal(AuthApi.hasUsableAccessToken(), false);
+  assert.equal(AuthApi.getUsableAccessToken(), "");
+});
+
+test("les permissions de repli ignorent un token local expire pour le menu", () => {
+  AuthApi.storeAccessToken(createToken({ profile: "USER" }), -1);
+
+  const permissions = BackendRouteAccessService.getFallbackActionPermissions(
+    AuthApi.getUsableAccessToken()
+  );
+
+  assert.equal(permissions.isAuthenticated, false);
 });

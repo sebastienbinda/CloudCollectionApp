@@ -245,6 +245,16 @@ class AuthApi {
   }
 
   /**
+   * Retourne le token Bearer uniquement s'il est encore utilisable localement.
+   *
+   * @returns {string} Token d'acces non expire ou chaine vide.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  static getUsableAccessToken() {
+    return this.hasUsableAccessToken() ? this.getAccessToken() : "";
+  }
+
+  /**
    * Confirme la deconnexion puis supprime le token local.
    *
    * @param {void} Aucun - Utilise `window.confirm`.
