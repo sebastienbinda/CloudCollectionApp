@@ -163,13 +163,17 @@
   overflow-wrap: anywhere;
 }
 
-.topRatedGame span {
+.topRatedGameMainLine {
+  min-width: 0;
+}
+
+.topRatedGamePlatform {
   color: #64748b;
   font-size: 0.9rem;
   font-weight: 650;
 }
 
-.topRatedGame dl {
+.topRatedGameDetailsLine {
   display: grid;
   gap: 0.65rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -258,10 +262,47 @@
   }
 
   .topRatedGame {
+    gap: 0.3rem;
     grid-template-columns: 1fr;
+    padding: 0.48rem 0.55rem;
   }
 
-  .topRatedGame dl {
-    grid-template-columns: 1fr;
+  .topRatedGameMainLine {
+    align-items: baseline;
+    display: grid;
+    gap: 0.45rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .topRatedGame h3 {
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+
+  .topRatedGamePlatform {
+    font-size: 0.72rem;
+    line-height: 1.1;
+    max-width: 7.5rem;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topRatedGameDetailsLine {
+    gap: 0.45rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .topRatedGame dt {
+    font-size: 0.58rem;
+    line-height: 1.05;
+  }
+
+  .topRatedGame dd {
+    font-size: 0.68rem;
+    line-height: 1.1;
+    margin-top: 0.04rem;
+    overflow-wrap: anywhere;
   }
 }
