@@ -109,11 +109,11 @@ function CollectionStatisticsView({
               <div className="topRatedGamesList">
                 {statistics.topRatedGames.map((game) => (
                   <article className="topRatedGame" key={game.id}>
-                    <div>
+                    <div className="topRatedGameMainLine">
                       <h3>{game.name}</h3>
-                      <span>{game.platformName}</span>
+                      <span className="topRatedGamePlatform">{game.platformName}</span>
                     </div>
-                    <dl>
+                    <dl className="topRatedGameDetailsLine">
                       <div>
                         <dt>Sortie</dt>
                         <dd>{formatCellValue("Date", game.releaseDate)}</dd>

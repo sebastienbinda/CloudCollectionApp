@@ -191,6 +191,25 @@ test("masque le message vide des jeux les mieux notes", () => {
   assert.equal(source.includes("{formatNumber(statistics.topRatedGames.length)} jeux"), true);
 });
 
+test("compacte les jeux les mieux notes en deux lignes sur mobile", () => {
+  const componentSource = readFileSync(
+    new URL("../src/components/CollectionStatisticsView.jsx", import.meta.url),
+    "utf8"
+  );
+  const stylesSource = readFileSync(
+    new URL("../src/styles/collection-statistics.css", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(componentSource.includes('className="topRatedGameMainLine"'), true);
+  assert.equal(componentSource.includes('className="topRatedGamePlatform"'), true);
+  assert.equal(componentSource.includes('className="topRatedGameDetailsLine"'), true);
+  assert.equal(stylesSource.includes(".topRatedGameMainLine"), true);
+  assert.equal(stylesSource.includes("grid-template-columns: minmax(0, 1fr) auto;"), true);
+  assert.equal(stylesSource.includes(".topRatedGameDetailsLine"), true);
+  assert.equal(stylesSource.includes("grid-template-columns: repeat(3, minmax(0, 1fr));"), true);
+});
+
 test("les pages applicatives propagent l'entree statistiques au layout", () => {
   const componentsDirectory = new URL("../src/components/", import.meta.url);
   const ignoredFiles = new Set(["AuthView.jsx", "EmailVerificationResultView.jsx"]);
