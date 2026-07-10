@@ -63,6 +63,7 @@ function PlatformDetailView({
   onOpenStatistics,
   onOpenConfiguration,
   onLogout,
+  onBackToPlatforms,
   onOpenPlatform,
   onGameNameFilterChange = () => {},
   onToggleSort,
@@ -154,6 +155,12 @@ function PlatformDetailView({
         </div>
       )}
     >
+      {typeof onBackToPlatforms === "function" ? (
+        <button className="backButton" type="button" onClick={onBackToPlatforms}>
+          Retour aux plateformes
+        </button>
+      ) : null}
+
       {error ? <p className="error">{error}</p> : null}
       {deleteGameError ? <p className="error">{deleteGameError}</p> : null}
       {deleteGameMessage ? <p className="success">{deleteGameMessage}</p> : null}

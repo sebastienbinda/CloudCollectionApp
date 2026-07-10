@@ -376,6 +376,7 @@ class AppViewSwitch {
         title={title}
         subtitle={subtitle}
         listState={listState}
+        onBackToLibrary={props.openLibrary}
         onRowClick={
           listState === props.libraryGames
             ? (game) => props.openGameDetail(game, "library")
@@ -468,6 +469,7 @@ class AppViewSwitch {
         canEditGame={props.actionPermissions.canEditGame && !props.isGuest}
         canDeleteGame={props.actionPermissions.canDeleteGame && !props.isGuest}
         editingGame={props.editingGame}
+        onBackToPlatforms={props.goHome}
         onOpenPlatform={props.openPlatform}
         onGameNameFilterChange={props.setGameNameFilter}
         onToggleSort={props.toggleSort}

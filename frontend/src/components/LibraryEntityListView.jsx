@@ -44,6 +44,7 @@ function LibraryEntityListView({
   onOpenStatistics,
   onOpenConfiguration,
   onLogout,
+  onBackToLibrary,
 }) {
   return (
     <PageLayout
@@ -68,6 +69,12 @@ function LibraryEntityListView({
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
     >
+      {typeof onBackToLibrary === "function" ? (
+        <button className="backButton" type="button" onClick={onBackToLibrary}>
+          Retour a la Bibliotheque
+        </button>
+      ) : null}
+
       <section className="libraryListSection">
         <form className="librarySearchForm" onSubmit={listState.submitSearch}>
           <label htmlFor="library-search">Recherche par nom</label>
