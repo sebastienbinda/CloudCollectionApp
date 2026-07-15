@@ -323,6 +323,13 @@ database structure in `documentation/database.md`, and frontend navigation in
   import with administrator verification. Default: `25`.
 - `PLATFORM_MATCHING_HIGH_LEVEL_RATING` configures the platform score accepted without
   manual-verification warning. Default: `75`.
+- `STUDIO_MATCHING_LOW_LVL_RATING` configures the low studio matching score for
+  consistency with import matching thresholds. Default: `25`.
+- `STUDIO_MATCHING_HIGH_LEVEL_RATING` configures the unique high-confidence
+  studio score required to automatically attach an imported studio to an
+  existing studio. Default: `87`.
+  This higher default prevents close but distinct location-based studios such
+  as `Ubisoft Mainz` and `Ubisoft Milan` from being automatically merged.
 - `GAME_MATCHING_LOW_LVL_RATING` configures the low game matching score below
   which a non-exact game candidate is rejected. Default: `25`.
 - `GAME_MATCHING_HIGH_LEVEL_RATING` configures the unique high-confidence game
@@ -339,6 +346,12 @@ database structure in `documentation/database.md`, and frontend navigation in
 - Game matching ratings must be numeric integers between `0` and `100`, and
   `GAME_MATCHING_LOW_LVL_RATING` must be strictly lower than
   `GAME_MATCHING_HIGH_LEVEL_RATING`.
+- Studio matching ratings must be numeric integers between `0` and `100`, and
+  `STUDIO_MATCHING_LOW_LVL_RATING` must be strictly lower than
+  `STUDIO_MATCHING_HIGH_LEVEL_RATING`.
+- The studio matching variables must be present in local and production
+  environment templates so Docker Compose passes the same thresholds to the
+  backend in both modes.
 - Docker must mount the host `USERS_WORKSPACE` into `/users/workspace` for the
   backend container.
 - Do not hardcode secrets, tokens or user-specific absolute host paths.

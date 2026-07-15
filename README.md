@@ -231,6 +231,8 @@ Configurer ensuite `/etc/cloudcollectionapp/deploy-env/.env`, notamment :
 - `USERS_WORKSPACE`, `BACKEND_IMG_HOST_DIR`, `BACKEND_LOG_HOST_DIR`,
   `POSTGRES_DATA_HOST_DIR` et `TRAEFIK_LETSENCRYPT_HOST_DIR` si les sous-dossiers
   par defaut de `APPLICATION_WORKDIR` ne conviennent pas.
+- `STUDIO_MATCHING_LOW_LVL_RATING` et `STUDIO_MATCHING_HIGH_LEVEL_RATING` si les
+  seuils par defaut du matching de studios a l'import doivent etre ajustes.
 - les variables SMTP non secretes.
 
 Le demarrage cree et valide automatiquement l'arborescence hote via
