@@ -106,7 +106,12 @@ becomes `80`.
 - Studios are scored against existing normalized `t_studio.name` values without
   alias lookup. A unique studio score at or above
   `STUDIO_MATCHING_HIGH_LEVEL_RATING` (default `87`) is reused; otherwise the
-  missing non-empty studio is created. Studio matching also treats trailing
+  missing non-empty studio is created. Studio matching configuration is
+  validated through the
+  `STUDIO_MATCHING_LOW_LVL_RATING` and `STUDIO_MATCHING_HIGH_LEVEL_RATING`
+  threshold pair, but automatic association uses only the high-confidence
+  threshold because non-associated studio names are created instead of being
+  imported with a manual-check state. Studio matching also treats trailing
   `Entertainment`, `Game`, `Games`, `Studio` and `Studios` suffixes, including
   light typos, as optional alternatives, so `Acclaim` can match
   `Accclaim Entertainment`, `Acclaim Games` or `Acclaim Sutiods` when that

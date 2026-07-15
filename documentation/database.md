@@ -336,8 +336,12 @@ During import:
 - studios are scored against normalized `t_studio.name` without aliases and a
   unique score greater than or equal to `STUDIO_MATCHING_HIGH_LEVEL_RATING`
   (default `87`) reuses the existing studio; lower or ambiguous scores create
-  the imported studio. Trailing `Entertainment`, `Game`, `Games`, `Studio` and
-  `Studios` suffixes, including light typos, are treated as optional
+  the imported studio. The validated studio threshold pair is configured with
+  `STUDIO_MATCHING_LOW_LVL_RATING` and `STUDIO_MATCHING_HIGH_LEVEL_RATING`;
+  automatic association uses the high threshold because non-associated studio
+  names are created instead of kept in a manual-check state. Trailing
+  `Entertainment`, `Game`, `Games`, `Studio` and `Studios` suffixes, including
+  light typos, are treated as optional
   alternatives, for example `Acclaim` can match `Accclaim Entertainment`,
   `Acclaim Games` or `Acclaim Sutiods` when the best candidate is unique; other
   trailing words such as locations are not ignored;
