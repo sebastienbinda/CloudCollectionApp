@@ -22,6 +22,9 @@
 <li>Jeux en liste de souhaits: ${wishlisted_games}</li>
 </ul>
 
+<h2>Studios importes</h2>
+${imported_studio_match_reports}
+
 <h2>Jeux importes</h2>
 ${imported_game_match_reports}
 

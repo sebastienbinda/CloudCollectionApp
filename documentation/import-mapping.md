@@ -103,8 +103,17 @@ becomes `80`.
 - A unique platform score at or above `PLATFORM_MATCHING_HIGH_LEVEL_RATING` is accepted;
   a score from `PLATFORM_MATCHING_LOW_LVL_RATING` up to the high threshold is accepted
   with a manual-check warning; a lower or ambiguous score skips affected games.
-- Studios use their normalized name. Existing studios are reused and missing
-  non-empty studios are created.
+- Studios are scored against existing normalized `t_studio.name` values without
+  alias lookup. A unique studio score at or above
+  `STUDIO_MATCHING_HIGH_LEVEL_RATING` (default `87`) is reused; otherwise the
+  missing non-empty studio is created. Studio matching also treats trailing
+  `Entertainment`, `Game`, `Games`, `Studio` and `Studios` suffixes, including
+  light typos, as optional alternatives, so `Acclaim` can match
+  `Accclaim Entertainment`, `Acclaim Games` or `Acclaim Sutiods` when that
+  candidate is unique. Other trailing words such as locations are not ignored.
+  The administrator import report includes an HTML table for every imported
+  studio with the imported name, creation status, associated existing studio and
+  matching score.
 
 ## Boolean Mapping
 
@@ -170,6 +179,8 @@ document together:
   and `backend/services/matching/`;
 - platform matching: `backend/services/database/platform_matching_service.py`
   and `platform_matching_configuration.py`;
+- studio matching: `backend/services/database/studio_matching_service.py`
+  and `studio_matching_configuration.py`;
 - release-date validation:
   `backend/services/collection/imports/collection_import_date_validator.py`;
 - regression tests:

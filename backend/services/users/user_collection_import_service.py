@@ -453,6 +453,7 @@ class UserCollectionImportService:
             collection_file_description=file_description.to_dict(),
             created_game_match_reports=persistence_result.created_game_match_reports,
             imported_game_match_reports=persistence_result.imported_game_match_reports,
+            imported_studio_match_reports=persistence_result.imported_studio_match_reports,
         )
 
     def _notify_import_report(self, context: UserCollectionImportReportContext) -> None:

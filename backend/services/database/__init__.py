@@ -41,6 +41,8 @@ from .platform_image_repository import SqlAlchemyPlatformImageRepository
 from .platform_repository import SqlAlchemyPlatformRepository
 from .schema_version import SchemaVersion
 from .studio import Studio
+from .studio_matching_configuration import StudioMatchingConfiguration
+from .studio_matching_service import StudioMatchingResult, StudioMatchingService
 from .studio_repository import SqlAlchemyStudioRepository
 from .user import User
 from .user_collection import UserCollection
@@ -48,6 +50,7 @@ from .user_collection_file_repository import SqlAlchemyUserCollectionFileReposit
 from .user_collection_import_persistence_result import (
     CreatedGameMatchReport,
     ImportedGameMatchReport,
+    ImportedStudioMatchReport,
     UserCollectionImportPersistenceResult,
 )
 from .user_collection_import_repository import (
@@ -71,6 +74,7 @@ __all__ = [
     "GameMatchingService",
     "GameReleaseDateScoreAdjuster",
     "ImportedGameMatchReport",
+    "ImportedStudioMatchReport",
     "LibraryResetImportableUser",
     "SqlAlchemyGameRepository",
     "SqlAlchemyGameDuplicateRepository",
@@ -94,6 +98,9 @@ __all__ = [
     "SqlAlchemyPlatformRepository",
     "SchemaVersion",
     "Studio",
+    "StudioMatchingConfiguration",
+    "StudioMatchingResult",
+    "StudioMatchingService",
     "SqlAlchemyStudioRepository",
     "SqlAlchemyUserCollectionFileRepository",
     "SqlAlchemyUserCollectionImportRepository",

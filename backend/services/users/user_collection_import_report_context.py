@@ -34,6 +34,7 @@ class UserCollectionImportReportContext:
         collection_file_description (dict): Configuration valide utilisee.
         created_game_match_reports (tuple): Jeux crees avec meilleur candidat existant.
         imported_game_match_reports (tuple): Diagnostic de matching pour chaque jeu importe.
+        imported_studio_match_reports (tuple): Diagnostic de matching pour chaque studio importe.
     """
 
     user_id: int
@@ -51,3 +52,4 @@ class UserCollectionImportReportContext:
     collection_file_description: dict
     created_game_match_reports: tuple = ()
     imported_game_match_reports: tuple = ()
+    imported_studio_match_reports: tuple = ()

@@ -60,7 +60,10 @@ class SqlAlchemyAdminLibraryImportRepository(SqlAlchemyUserCollectionImportRepos
                 connection,
                 matched_import_data,
             )
-            studio_ids, created_studios = self._ensure_studios(connection, matched_import_data)
+            studio_ids, created_studios, _imported_studio_match_reports = self._ensure_studios(
+                connection,
+                matched_import_data,
+            )
             _, created_games, _created_game_match_reports, _imported_game_match_reports = (
                 self._ensure_games(
                     connection,
