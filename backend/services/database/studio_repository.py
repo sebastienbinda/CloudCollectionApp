@@ -61,6 +61,23 @@ class SqlAlchemyStudioRepository:
             ).mappings()
         }
 
+    def load_names_by_key(self, connection: Connection) -> dict[str, str]:
+        """Charge les noms de studios existants par cle de comparaison.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+
+        Returns:
+            dict[str, str]: Noms des studios par cle normalisee.
+        """
+
+        return {
+            self.name_normalizer.comparison_key(row["name"]): str(row["name"])
+            for row in connection.execute(
+                text(f'SELECT name FROM "{self.schema_name}".t_studio')
+            ).mappings()
+        }
+
     def insert(self, connection: Connection, studio_name: str) -> int:
         """Insere un studio avec le statut `UNKNOWN`.
 

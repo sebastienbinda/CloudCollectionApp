@@ -164,14 +164,18 @@ database structure in `documentation/database.md`, and frontend navigation in
   when `ADMIN_NOTIFICATION_EMAIL` is configured, even when the import has no
   warning. The report is sent outside the reader layer as an HTML email and
   includes the import context, counters, validated configuration, total
-  duration, platform mappings and every import warning. The game section is an
-  HTML table listing every imported game with the original file name, whether a
-  reference game was created, the associated existing game when one was
-  accepted, the final matching score, the matching decision, the applied rule
-  and the explanatory reason. When a game reference is created because no exact
-  or high-confidence existing game match was accepted, the same diagnostic
-  table keeps the best existing same-platform candidate score and explanation.
-- Studios are matched by normalized studio name.
+  duration, platform mappings and every import warning. The studio section is
+  an HTML table listing every imported studio with the original studio name,
+  whether a reference studio was created, the associated existing studio when
+  one was accepted and the matching score. The game section is an HTML table
+  listing every imported game with the original file name, whether a reference
+  game was created, the associated existing game when one was accepted, the
+  final matching score, the matching decision, the applied rule and the
+  explanatory reason. When a game reference is created because no exact or
+  high-confidence existing game match was accepted, the same diagnostic table
+  keeps the best existing same-platform candidate score and explanation.
+- Studios are matched by normalized studio name with the configurable studio
+  matching rules from `documentation/import-mapping.md`.
 - Games are first matched by exact normalized `(platform, name)` key. When no
   exact key exists, the backend computes the normalized name similarity score
   against existing games on the same matched platform. A game is automatically

@@ -19,6 +19,7 @@ from services.collection.imports import (
     CollectionImportData,
     CollectionImportGame,
     CollectionImportPlatform,
+    CollectionImportStudio,
 )
 from services.database.user_collection_import_repository import (
     SqlAlchemyUserCollectionImportRepository,
@@ -31,6 +32,8 @@ from services.database import (
     GameMatchingService,
     PlatformMatchingConfiguration,
     PlatformMatchingService,
+    StudioMatchingConfiguration,
+    StudioMatchingService,
 )
 from services.users import UserCollectionNameNormalizer
 
@@ -404,6 +407,50 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual("Zelda", imported_game_match_reports[0].imported_game_name)
         self.assertEqual("", imported_game_match_reports[0].associated_game_name)
         self.assertEqual("fuzzy_similarity", imported_game_match_reports[0].rule)
+
+    def test_ensure_studios_reuses_existing_studio_with_high_unique_score(self):
+        """Verifie le rattachement d'un studio existant par score de nom.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de creation.
+        """
+
+        insert_calls = []
+        repository = object.__new__(SqlAlchemyUserCollectionImportRepository)
+        repository.name_normalizer = UserCollectionNameNormalizer()
+        repository.studio_matching_service = StudioMatchingService(
+            StudioMatchingConfiguration(low_level_rating=25, high_level_rating=87),
+            repository.name_normalizer,
+        )
+        repository.studio_repository = SimpleNamespace(
+            load_ids_by_key=lambda connection: {"accclaim entertainment": 77},
+            insert=lambda connection, studio_name: insert_calls.append(studio_name),
+        )
+
+        studio_ids, created_studios, imported_studio_match_reports = repository._ensure_studios(
+            object(),
+            CollectionImportData(
+                platforms=[CollectionImportPlatform("Switch")],
+                studios=[CollectionImportStudio("Acclaim")],
+                games=[CollectionImportGame("Turok", "Switch", "Acclaim", None)],
+            ),
+        )
+
+        self.assertEqual(0, created_studios)
+        self.assertEqual(1, len(imported_studio_match_reports))
+        self.assertFalse(imported_studio_match_reports[0].created)
+        self.assertEqual("Acclaim", imported_studio_match_reports[0].imported_studio_name)
+        self.assertEqual(
+            "accclaim entertainment",
+            imported_studio_match_reports[0].associated_studio_name,
+        )
+        self.assertEqual(100, imported_studio_match_reports[0].score)
+        self.assertEqual([], insert_calls)
+        self.assertEqual(77, studio_ids["accclaim entertainment"])
+        self.assertEqual(77, studio_ids["acclaim"])
 
 
 class AdminLibraryImportRepositoryTest(unittest.TestCase):

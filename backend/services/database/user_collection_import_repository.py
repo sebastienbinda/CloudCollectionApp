@@ -25,12 +25,14 @@ from .game_matching_service import GameMatchingService
 from .game_repository import SqlAlchemyGameRepository
 from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
+from .studio_matching_service import StudioMatchingService
 from .studio_repository import SqlAlchemyStudioRepository
 from .user_collection_import_game_match_report_builder import (
     UserCollectionImportGameMatchReportBuilder,
 )
 from .user_collection_import_persistence_result import (
     CreatedGameMatchReport,
+    ImportedStudioMatchReport,
     ImportedGameMatchReport,
     UserCollectionImportPersistenceResult,
 )
@@ -93,6 +95,7 @@ class SqlAlchemyUserCollectionImportRepository:
         name_normalizer: UserCollectionNameNormalizer | None = None,
         collection_file_remover=None,
         platform_matching_service: PlatformMatchingService | None = None,
+        studio_matching_service: StudioMatchingService | None = None,
         game_matching_service: GameMatchingService | None = None,
     ):
         """Initialise l'orchestrateur SQL d'import de collection.
@@ -102,6 +105,7 @@ class SqlAlchemyUserCollectionImportRepository:
             name_normalizer (UserCollectionNameNormalizer | None): Normaliseur metier.
             collection_file_remover (object | None): Suppresseur de fichier injecte.
             platform_matching_service (PlatformMatchingService | None): Matching plateformes.
+            studio_matching_service (StudioMatchingService | None): Matching studios.
             game_matching_service (GameMatchingService | None): Matching jeux existants.
 
         Returns:
@@ -139,6 +143,10 @@ class SqlAlchemyUserCollectionImportRepository:
         self.platform_matching_service = (
             platform_matching_service
             or PlatformMatchingService(name_normalizer=self.name_normalizer)
+        )
+        self.studio_matching_service = (
+            studio_matching_service
+            or StudioMatchingService(name_normalizer=self.name_normalizer)
         )
         self.game_matching_service = (
             game_matching_service
@@ -203,7 +211,10 @@ class SqlAlchemyUserCollectionImportRepository:
                 connection,
                 matched_import_data,
             )
-            studio_ids, created_studios = self._ensure_studios(connection, matched_import_data)
+            studio_ids, created_studios, imported_studio_match_reports = self._ensure_studios(
+                connection,
+                matched_import_data,
+            )
             (
                 game_associations,
                 created_games,
@@ -235,6 +246,7 @@ class SqlAlchemyUserCollectionImportRepository:
             user_email=user_email,
             created_game_match_reports=tuple(created_game_match_reports),
             imported_game_match_reports=tuple(imported_game_match_reports),
+            imported_studio_match_reports=tuple(imported_studio_match_reports),
         )
 
     def _lock_global_game_import_state(self, connection: Connection) -> None:
@@ -348,7 +360,7 @@ class SqlAlchemyUserCollectionImportRepository:
         self,
         connection: Connection,
         import_data: CollectionImportData,
-    ) -> tuple[dict[str, int], int]:
+    ) -> tuple[dict[str, int], int, list[ImportedStudioMatchReport]]:
         """Cree les studios absents et retourne leurs identifiants.
 
         Args:
@@ -356,18 +368,65 @@ class SqlAlchemyUserCollectionImportRepository:
             import_data (CollectionImportData): Donnees importees.
 
         Returns:
-            tuple[dict[str, int], int]: Identifiants par cle et nombre de creations.
+            tuple[dict[str, int], int, list[ImportedStudioMatchReport]]: Identifiants
+                par cle, nombre de creations et diagnostics de matching.
         """
 
         studio_ids = self.studio_repository.load_ids_by_key(connection)
+        studio_names = self._load_studio_names_by_key(connection, studio_ids)
+        studio_matching_service = getattr(
+            self,
+            "studio_matching_service",
+            StudioMatchingService(name_normalizer=self.name_normalizer),
+        )
         created_count = 0
+        imported_studio_match_reports = []
         for studio in import_data.studios:
             studio_key = self.name_normalizer.comparison_key(studio.name)
-            if studio_key in studio_ids:
+            matching_result = studio_matching_service.evaluate_existing_studio(
+                studio.name,
+                studio_ids,
+            )
+            matched_studio_key = matching_result.matched_key
+            if matched_studio_key is not None:
+                if studio_key not in studio_ids:
+                    studio_ids[studio_key] = studio_ids[matched_studio_key]
+                    studio_names[studio_key] = studio_names.get(matched_studio_key, "")
+                imported_studio_match_reports.append(
+                    ImportedStudioMatchReport(
+                        studio.name,
+                        False,
+                        studio_names.get(matched_studio_key, ""),
+                        matching_result.score,
+                    )
+                )
                 continue
             studio_ids[studio_key] = self.studio_repository.insert(connection, studio.name)
+            studio_names[studio_key] = studio.name
             created_count += 1
-        return studio_ids, created_count
+            imported_studio_match_reports.append(
+                ImportedStudioMatchReport(studio.name, True, "", matching_result.score)
+            )
+        return studio_ids, created_count, imported_studio_match_reports
+
+    def _load_studio_names_by_key(
+        self,
+        connection: Connection,
+        studio_ids: dict[str, int],
+    ) -> dict[str, str]:
+        """Charge les noms de studios existants quand le repository les expose.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            studio_ids (dict[str, int]): Identifiants de studios par cle.
+
+        Returns:
+            dict[str, str]: Noms de studios par cle normalisee.
+        """
+
+        if hasattr(self.studio_repository, "load_names_by_key"):
+            return self.studio_repository.load_names_by_key(connection)
+        return {studio_key: studio_key for studio_key in studio_ids}
 
     def _ensure_games(
         self,

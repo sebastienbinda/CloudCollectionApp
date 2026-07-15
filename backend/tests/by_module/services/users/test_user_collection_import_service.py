@@ -21,6 +21,7 @@ sys.path.insert(0, str(next(parent for parent in Path(__file__).resolve().parent
 from services.database.user_collection_import_repository import (
     CreatedGameMatchReport,
     ImportedGameMatchReport,
+    ImportedStudioMatchReport,
     UserCollectionImportPersistenceResult,
 )
 from services.collection.imports import (
@@ -330,6 +331,9 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                         "Score de similarite textuelle generique.",
                     ),
                 ),
+                imported_studio_match_reports=(
+                    ImportedStudioMatchReport("Acclaim", False, "Acclaim Studios", 100),
+                ),
             )
             service, repository, reader, source_file = self._build_service(
                 directory,
@@ -361,6 +365,10 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(
                 repository.result.imported_game_match_reports,
                 context.imported_game_match_reports,
+            )
+            self.assertEqual(
+                repository.result.imported_studio_match_reports,
+                context.imported_studio_match_reports,
             )
             self.assertEqual(
                 self._valid_description().to_dict(),

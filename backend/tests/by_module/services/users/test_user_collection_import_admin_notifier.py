@@ -15,7 +15,11 @@ import unittest
 from pathlib import Path
 
 from services.collection.imports import CollectionImportWarnings
-from services.database import CreatedGameMatchReport, ImportedGameMatchReport
+from services.database import (
+    CreatedGameMatchReport,
+    ImportedGameMatchReport,
+    ImportedStudioMatchReport,
+)
 from services.users import UserCollectionImportAdminNotifier, UserCollectionImportReportContext
 from tests.support.fake_platform_matching_email_sender import FakePlatformMatchingEmailSender
 
@@ -44,6 +48,7 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertIn("Email utilisateur: importer@example.com", body)
         self.assertIn("Type de fichier: libreoffice_ods", body)
         self.assertIn("Jeux associes: 4", body)
+        self.assertIn("Aucun studio importe.", body)
         self.assertIn("Aucun jeu importe.", body)
         self.assertIn("Warnings: aucun warning detecte.", body)
         self.assertEqual("html", sender.sent_emails[0]["content_subtype"])
@@ -182,11 +187,48 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
         self.assertIn("<td>Mario Kart 8 Deluxe</td>", body)
         self.assertIn("<td>exact_normalized_key</td>", body)
 
+    def test_notify_import_report_sends_imported_studio_match_reports_table(self):
+        """Verifie le tableau HTML de diagnostic des studios importes.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la section du mail.
+        """
+
+        sender = FakePlatformMatchingEmailSender()
+        notifier = UserCollectionImportAdminNotifier(sender, "admin@example.com")
+
+        notifier.notify_import_report(
+            self._context(
+                CollectionImportWarnings(),
+                imported_studio_match_reports=(
+                    ImportedStudioMatchReport("Acclaim <Import>", False, "Acclaim Studios", 100),
+                    ImportedStudioMatchReport("Rare", True, "", 22),
+                ),
+            )
+        )
+
+        body = sender.sent_emails[0]["body"]
+        self.assertIn("<th>Nom du studio importé</th>", body)
+        self.assertIn("<th>Créé</th>", body)
+        self.assertIn("<th>Nom du Studio associé</th>", body)
+        self.assertIn("<th>Score de matching</th>", body)
+        self.assertIn("<td>Acclaim &lt;Import&gt;</td>", body)
+        self.assertIn("<td>Non</td>", body)
+        self.assertIn("<td>Acclaim Studios</td>", body)
+        self.assertIn("<td>100</td>", body)
+        self.assertIn("<td>Rare</td>", body)
+        self.assertIn("<td>Oui</td>", body)
+        self.assertIn("<td>22</td>", body)
+
     def _context(
         self,
         warnings,
         created_game_match_reports=(),
         imported_game_match_reports=(),
+        imported_studio_match_reports=(),
     ):
         return UserCollectionImportReportContext(
             user_id=7,
@@ -204,6 +246,7 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
             collection_file_description={"file_type": "libreoffice_ods"},
             created_game_match_reports=created_game_match_reports,
             imported_game_match_reports=imported_game_match_reports,
+            imported_studio_match_reports=imported_studio_match_reports,
         )
 
 

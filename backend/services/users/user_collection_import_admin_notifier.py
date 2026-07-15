@@ -121,6 +121,9 @@ class UserCollectionImportAdminNotifier:
                 "imported_game_match_reports": self._imported_game_match_reports_html(
                     context.imported_game_match_reports,
                 ),
+                "imported_studio_match_reports": self._imported_studio_match_reports_html(
+                    context.imported_studio_match_reports,
+                ),
                 "total_import_duration_seconds": "{duration:.3f}".format(
                     duration=float(
                         getattr(context.warnings, "total_import_duration_seconds", 0.0)
@@ -136,6 +139,31 @@ class UserCollectionImportAdminNotifier:
                 ),
                 "warnings": escape("\n".join(warnings_lines)),
             },
+        )
+
+    def _imported_studio_match_reports_html(self, imported_studio_match_reports: tuple) -> str:
+        if not imported_studio_match_reports:
+            return "<p>Aucun studio importe.</p>"
+        rows = []
+        for report in imported_studio_match_reports:
+            rows.append(
+                "<tr>"
+                f"<td>{self._html_value(getattr(report, 'imported_studio_name', ''))}</td>"
+                f"<td>{'Oui' if getattr(report, 'created', False) else 'Non'}</td>"
+                f"<td>{self._html_value(getattr(report, 'associated_studio_name', ''))}</td>"
+                f"<td>{int(getattr(report, 'score', 0) or 0)}</td>"
+                "</tr>"
+            )
+        return (
+            '<table border="1" cellpadding="6" cellspacing="0">'
+            "<thead><tr>"
+            "<th>Nom du studio importé</th>"
+            "<th>Créé</th>"
+            "<th>Nom du Studio associé</th>"
+            "<th>Score de matching</th>"
+            "</tr></thead><tbody>"
+            + "".join(rows)
+            + "</tbody></table>"
         )
 
     def _imported_game_match_reports_html(self, imported_game_match_reports: tuple) -> str:

@@ -333,7 +333,14 @@ During import:
 - when the best direct platform score is lower than the high-confidence
   threshold, platform aliases from `t_platform_alias.name` are evaluated and the
   best alias match is kept only if it improves the direct score;
-- studios are matched by normalized `t_studio.name`;
+- studios are scored against normalized `t_studio.name` without aliases and a
+  unique score greater than or equal to `STUDIO_MATCHING_HIGH_LEVEL_RATING`
+  (default `87`) reuses the existing studio; lower or ambiguous scores create
+  the imported studio. Trailing `Entertainment`, `Game`, `Games`, `Studio` and
+  `Studios` suffixes, including light typos, are treated as optional
+  alternatives, for example `Acclaim` can match `Accclaim Entertainment`,
+  `Acclaim Games` or `Acclaim Sutiods` when the best candidate is unique; other
+  trailing words such as locations are not ignored;
 - games are first matched by exact normalized `t_game.name` or
   `t_game_alias.name` and platform; when no exact key exists, existing games on
   the same matched platform are scored with the shared normalized similarity

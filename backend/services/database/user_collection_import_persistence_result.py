@@ -55,6 +55,23 @@ class ImportedGameMatchReport:
 
 
 @dataclass(frozen=True)
+class ImportedStudioMatchReport:
+    """Decrit le diagnostic de matching d'un studio importe.
+
+    Attributes:
+        imported_studio_name (str): Nom d'origine du studio dans le fichier utilisateur.
+        created (bool): Indique si un nouveau studio de reference a ete cree.
+        associated_studio_name (str): Nom du studio existant retenu quand il existe.
+        score (int): Score de matching du meilleur candidat.
+    """
+
+    imported_studio_name: str
+    created: bool
+    associated_studio_name: str
+    score: int
+
+
+@dataclass(frozen=True)
 class UserCollectionImportPersistenceResult:
     """Regroupe les compteurs de persistance d'un import de collection.
 
@@ -68,6 +85,8 @@ class UserCollectionImportPersistenceResult:
             avec leur meilleur candidat de matching.
         imported_game_match_reports (tuple[ImportedGameMatchReport, ...]): Diagnostic
             de matching pour chaque jeu importe.
+        imported_studio_match_reports (tuple[ImportedStudioMatchReport, ...]): Diagnostic
+            de matching pour chaque studio importe.
     """
 
     linked_platforms: int
@@ -77,3 +96,4 @@ class UserCollectionImportPersistenceResult:
     user_email: str = ""
     created_game_match_reports: tuple[CreatedGameMatchReport, ...] = ()
     imported_game_match_reports: tuple[ImportedGameMatchReport, ...] = ()
+    imported_studio_match_reports: tuple[ImportedStudioMatchReport, ...] = ()
