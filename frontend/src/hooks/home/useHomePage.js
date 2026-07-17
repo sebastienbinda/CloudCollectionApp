@@ -57,10 +57,18 @@ function useHomePage(options) {
   const selectedPlatformStats = homeStats?.platforms?.find(
     (platform) => String(platform.id) === String(options.selectedPlatform)
   );
+  const homeGameResultNavigationContext = {
+    detailSource: "collection",
+    rows: search.homeSearchResults,
+    page: 0,
+    size: search.homeSearchResults.length,
+    totalElements: search.homeSearchResults.length,
+  };
 
   return {
     homeStats,
     selectedPlatformStats,
+    homeGameResultNavigationContext,
     isLoadingHome,
     ...search,
   };

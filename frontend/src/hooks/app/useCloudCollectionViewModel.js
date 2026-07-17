@@ -34,6 +34,7 @@ import useLibraryStudios from "../library/useLibraryStudios";
 import usePlatformImageModeration from "../library/usePlatformImageModeration";
 import usePlatformCatalogSyncAction from "../library/usePlatformCatalogSyncAction";
 import useAppNavigation from "../navigation/useAppNavigation";
+import useGameResultNavigation from "../navigation/useGameResultNavigation";
 import usePlatformsCatalog from "../platforms/usePlatformsCatalog";
 import useOdsDownload from "../useOdsDownload";
 import useSessionState from "./useSessionState";
@@ -70,6 +71,15 @@ function useCloudCollectionViewModel() {
     prepareAddGameForm: (selectedPlatform) => prepareAddGameFormRef.current(selectedPlatform),
     setGlobalError: setError,
   });
+  const gameResultNavigation = useGameResultNavigation({
+    gameId: navigation.selectedGameId,
+    source: navigation.selectedGameSource,
+    openGameDetail: navigation.openGameDetail,
+  });
+  const openGameDetail = (game, source = "library", resultContext = null) => {
+    gameResultNavigation.registerGameResultContext(resultContext, game);
+    navigation.openGameDetail(game, source);
+  };
   useCollectionShareSession({
     setCurrentView: navigation.setCurrentView,
     setError,
@@ -214,6 +224,7 @@ function useCloudCollectionViewModel() {
       selectedLibraryPlatformId: navigation.selectedLibraryPlatformId,
       selectedGameSource: navigation.selectedGameSource,
       gameDetailPage,
+      gameResultNavigation,
       gameDuplicateAdminPage,
       libraryPlatformDetailPage,
       homeStats: homePage.homeStats,
@@ -225,6 +236,7 @@ function useCloudCollectionViewModel() {
       hasSearchedGames: homePage.hasSearchedGames,
       homeSearchQuery: homePage.homeSearchQuery,
       homeSearchResults: homePage.homeSearchResults,
+      homeGameResultNavigationContext: homePage.homeGameResultNavigationContext,
       homeSearchError: homePage.homeSearchError,
       gameForm: addGamePage.gameForm,
       addGameColumnValues: addGamePage.addGameColumnValues,
@@ -284,7 +296,7 @@ function useCloudCollectionViewModel() {
       openLibraryPlatforms: navigation.openLibraryPlatforms,
       openLibraryStudios: navigation.openLibraryStudios,
       openLibraryGames: navigation.openLibraryGames,
-      openGameDetail: navigation.openGameDetail,
+      openGameDetail,
       openGameDuplicateAdmin: navigation.openGameDuplicateAdmin,
       openLibraryPlatformDetail: navigation.openLibraryPlatformDetail,
       openWishlist: navigation.openWishlist,

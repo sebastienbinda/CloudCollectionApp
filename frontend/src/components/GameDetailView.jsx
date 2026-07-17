@@ -29,6 +29,7 @@ const EMPTY_VALUE = "-";
  */
 function GameDetailView({
   gameDetailPage,
+  gameResultNavigation,
   selectedGameSource,
   isAuthenticated,
   canUseCollectionViews,
@@ -93,6 +94,33 @@ function GameDetailView({
         <button className="backButton" type="button" onClick={onBack}>
           Retour
         </button>
+        <div className="gameResultNavigationActions" aria-label="Navigation entre les jeux">
+          <button
+            className="secondaryButton"
+            type="button"
+            disabled={
+              !gameResultNavigation?.canOpenPreviousGame ||
+              gameResultNavigation?.isLoadingAdjacentGame
+            }
+            onClick={gameResultNavigation?.openPreviousGame}
+          >
+            Precedent
+          </button>
+          {gameResultNavigation?.positionLabel ? (
+            <span>{gameResultNavigation.positionLabel}</span>
+          ) : null}
+          <button
+            className="secondaryButton"
+            type="button"
+            disabled={
+              !gameResultNavigation?.canOpenNextGame ||
+              gameResultNavigation?.isLoadingAdjacentGame
+            }
+            onClick={gameResultNavigation?.openNextGame}
+          >
+            Suivant
+          </button>
+        </div>
         {gameDetailPage?.canReportDuplicate ? (
           <button
             className="secondaryButton gameDuplicateReportTopButton"

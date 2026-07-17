@@ -333,7 +333,7 @@ class AppViewSwitch {
       <WishlistView
         {...this.buildPageLayoutProps(props)}
         wishlistPage={props.wishlistPage}
-        onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "collection", props.wishlistPage?.gameResultNavigationContext)}
       />
     );
   }
@@ -355,7 +355,7 @@ class AppViewSwitch {
         onOpenLibraryPlatforms={props.openLibraryPlatforms}
         onOpenLibraryStudios={props.openLibraryStudios}
         onOpenLibraryGames={props.openLibraryGames}
-        onOpenGameDetail={(game) => props.openGameDetail(game, "library")}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "library", props.libraryHomeSearch?.gameResultNavigationContext)}
       />
     );
   }
@@ -379,7 +379,7 @@ class AppViewSwitch {
         onBackToLibrary={props.openLibrary}
         onRowClick={
           listState === props.libraryGames
-            ? (game) => props.openGameDetail(game, "library")
+            ? (game) => props.openGameDetail(game, "library", props.libraryGames?.gameResultNavigationContext)
             : listState === props.libraryPlatforms
               ? (platform) => props.openLibraryPlatformDetail(platform)
             : null
@@ -399,6 +399,7 @@ class AppViewSwitch {
       <GameDetailView
         {...this.buildPageLayoutProps(props)}
         gameDetailPage={props.gameDetailPage}
+        gameResultNavigation={props.gameResultNavigation}
         selectedGameSource={props.selectedGameSource}
         onOpenGameDuplicateAdmin={props.openGameDuplicateAdmin}
         onBack={() => window.history.back()}
@@ -477,7 +478,7 @@ class AppViewSwitch {
         onSaveGame={props.saveEditedGame}
         onCancelEditGame={props.cancelEditGame}
         onDeleteGame={props.deletePlatformGame}
-        onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
+        onOpenGameDetail={(game) => props.openGameDetail(game, "collection", props.gameResultNavigationContext)}
       />
     );
   }

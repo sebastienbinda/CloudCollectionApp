@@ -115,6 +115,13 @@ function useGameCollectionPage(options) {
   const columns = namedGames.length > 0 ? visibleCollectionGameColumns : [];
   const filteredGames = nameFilteredGames;
   const sortedGames = filteredGames;
+  const gameResultNavigationContext = {
+    detailSource: "collection",
+    rows: sortedGames,
+    page: 0,
+    size: sortedGames.length,
+    totalElements: sortedGames.length,
+  };
   const toggleSort = (column) => {
     if (!sortableColumns.includes(column)) {
       return;
@@ -133,6 +140,7 @@ function useGameCollectionPage(options) {
     sortConfig,
     sortedGames,
     filteredGames,
+    gameResultNavigationContext,
     isLoadingGames,
     sortableColumns,
     studioCount: getStudioCount(namedGames),
