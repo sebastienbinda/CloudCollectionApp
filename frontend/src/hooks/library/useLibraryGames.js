@@ -126,9 +126,41 @@ function useLibraryGames(options = {}) {
     enabled,
     extraCriteria,
   });
+  const fetchGameResultPage = useCallback(
+    async (page) => {
+      const data = await LibraryApi.fetchGames({
+        name: listState.appliedSearchQuery,
+        ...extraCriteria,
+        page,
+        size: listState.pagination.size,
+        sort: [listState.sortConfig],
+      });
+      return {
+        detailSource: "library",
+        rows: Array.isArray(data.games) ? data.games : [],
+        page: data.page?.page ?? page,
+        size: data.page?.size ?? listState.pagination.size,
+        totalElements: data.page?.totalElements ?? 0,
+      };
+    },
+    [
+      extraCriteria,
+      listState.appliedSearchQuery,
+      listState.pagination.size,
+      listState.sortConfig,
+    ]
+  );
 
   return {
     ...listState,
+    gameResultNavigationContext: {
+      detailSource: "library",
+      rows: listState.rows,
+      page: listState.pagination.page,
+      size: listState.pagination.size,
+      totalElements: listState.pagination.totalElements,
+      fetchPage: fetchGameResultPage,
+    },
     platformFilter: {
       error: platformError,
       isLoading: isLoadingPlatforms,

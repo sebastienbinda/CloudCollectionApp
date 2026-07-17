@@ -154,6 +154,13 @@ function useWishlistPage(options) {
 
   const namedGames = games.filter((game) => String(game["Nom du jeu"] || "").trim() !== "");
   const filteredGames = filterGames(namedGames, wishlistFilterColumns, columnFilters);
+  const gameResultNavigationContext = {
+    detailSource: "collection",
+    rows: filteredGames,
+    page: 0,
+    size: filteredGames.length,
+    totalElements: filteredGames.length,
+  };
   const toggleSort = (column) => {
     if (!sortableColumns.includes(column)) {
       return;
@@ -180,6 +187,7 @@ function useWishlistPage(options) {
     wishlistSortConfig: sortConfig,
     wishlistSortedGames: filteredGames,
     wishlistFilteredGames: filteredGames,
+    gameResultNavigationContext,
     isLoadingWishlistGames,
     wishlistError,
     wishlistSortableColumns: sortableColumns,

@@ -26,8 +26,14 @@ const LIBRARY_GAME_SEARCH_SIZE = 12;
 function useLibraryHomeSearch(options = {}) {
   const enabled = options.enabled !== false;
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
+  const [appliedLibrarySearchQuery, setAppliedLibrarySearchQuery] = useState("");
   const [librarySearchResults, setLibrarySearchResults] = useState([]);
   const [librarySearchError, setLibrarySearchError] = useState("");
+  const [pageMetadata, setPageMetadata] = useState({
+    page: 0,
+    size: LIBRARY_GAME_SEARCH_SIZE,
+    totalElements: 0,
+  });
   const [hasSearchedLibraryGames, setHasSearchedLibraryGames] = useState(false);
   const [isSearchingLibraryGames, setIsSearchingLibraryGames] = useState(false);
 
@@ -46,9 +52,17 @@ function useLibraryHomeSearch(options = {}) {
         sort: [{ column: "name", direction: "asc" }],
       });
       setLibrarySearchResults(Array.isArray(data.games) ? data.games : []);
+      setAppliedLibrarySearchQuery(query);
+      setPageMetadata({
+        page: data.page?.page ?? 0,
+        size: data.page?.size ?? LIBRARY_GAME_SEARCH_SIZE,
+        totalElements: data.page?.totalElements ?? data.games?.length ?? 0,
+      });
     } catch (caughtError) {
       setLibrarySearchError(caughtError.message || "Impossible de rechercher dans la Bibliotheque.");
       setLibrarySearchResults([]);
+      setAppliedLibrarySearchQuery("");
+      setPageMetadata({ page: 0, size: LIBRARY_GAME_SEARCH_SIZE, totalElements: 0 });
     } finally {
       setIsSearchingLibraryGames(false);
     }
@@ -56,7 +70,9 @@ function useLibraryHomeSearch(options = {}) {
 
   const closeLibrarySearch = useCallback(() => {
     setLibrarySearchResults([]);
+    setAppliedLibrarySearchQuery("");
     setLibrarySearchError("");
+    setPageMetadata({ page: 0, size: LIBRARY_GAME_SEARCH_SIZE, totalElements: 0 });
     setHasSearchedLibraryGames(false);
     setLibrarySearchQuery("");
   }, []);
@@ -68,11 +84,32 @@ function useLibraryHomeSearch(options = {}) {
 
     if (!query) {
       setLibrarySearchResults([]);
+      setAppliedLibrarySearchQuery("");
       setLibrarySearchError("");
+      setPageMetadata({ page: 0, size: LIBRARY_GAME_SEARCH_SIZE, totalElements: 0 });
       return;
     }
     await fetchSearchResults(query);
   }, [fetchSearchResults, librarySearchQuery]);
+
+  const fetchGameResultPage = useCallback(
+    async (page) => {
+      const data = await LibraryApi.fetchGames({
+        name: appliedLibrarySearchQuery,
+        page,
+        size: LIBRARY_GAME_SEARCH_SIZE,
+        sort: [{ column: "name", direction: "asc" }],
+      });
+      return {
+        detailSource: "library",
+        rows: Array.isArray(data.games) ? data.games : [],
+        page: data.page?.page ?? page,
+        size: data.page?.size ?? LIBRARY_GAME_SEARCH_SIZE,
+        totalElements: data.page?.totalElements ?? 0,
+      };
+    },
+    [appliedLibrarySearchQuery]
+  );
 
   useEffect(() => {
     if (enabled) {
@@ -86,6 +123,14 @@ function useLibraryHomeSearch(options = {}) {
     setLibrarySearchQuery,
     librarySearchResults,
     librarySearchError,
+    gameResultNavigationContext: {
+      detailSource: "library",
+      rows: librarySearchResults,
+      page: pageMetadata.page,
+      size: pageMetadata.size,
+      totalElements: pageMetadata.totalElements,
+      fetchPage: fetchGameResultPage,
+    },
     hasSearchedLibraryGames,
     isSearchingLibraryGames,
     closeLibrarySearch,

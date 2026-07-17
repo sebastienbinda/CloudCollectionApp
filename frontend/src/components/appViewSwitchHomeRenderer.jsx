@@ -37,7 +37,11 @@ function renderHomeView(props, layoutProps) {
       onSearchQueryChange={props.setHomeSearchQuery}
       onSearchSubmit={props.searchGamesByName}
       onCloseSearch={props.closeHomeSearch}
-      onOpenGameDetail={(game) => props.openGameDetail(game, "collection")}
+      onOpenGameDetail={(game) => props.openGameDetail(
+        game,
+        "collection",
+        props.homeGameResultNavigationContext
+      )}
     />
   );
 }
