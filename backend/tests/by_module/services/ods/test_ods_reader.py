@@ -61,6 +61,7 @@ class OdsReaderImportTest(unittest.TestCase):
         """
 
         dataframe = pd.DataFrame([{"Nom": "Zelda", "Studio": "Nintendo"}])
+        self.reader._excel_file = "workbook"
         with patch("services.ods.ods_reader.pd.read_excel", return_value=dataframe) as read_excel:
             sheet = self.reader.read_sheet_dataframe("Collection", "A1:H200", 1, "A,C")
 
@@ -68,6 +69,29 @@ class OdsReaderImportTest(unittest.TestCase):
         read_excel.assert_called_once()
         self.assertEqual("A,C", read_excel.call_args.kwargs["usecols"])
         self.assertEqual(199, read_excel.call_args.kwargs["nrows"])
+
+    def test_reuses_excel_file_handle_between_sheet_reads(self):
+        """Verifie que le classeur ODS n'est ouvert qu'une fois.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reutilisation du handle pandas.
+        """
+
+        excel_file = MagicMock()
+        excel_file.sheet_names = ["Collection"]
+        dataframe = pd.DataFrame([{"Nom": "Zelda"}])
+        with patch("services.ods.ods_reader.pd.ExcelFile", return_value=excel_file) as excel:
+            with patch("services.ods.ods_reader.pd.read_excel", return_value=dataframe):
+                sheets = self.reader.list_sheets()
+                self.reader.read_sheet_dataframe("Collection", "A1:A2", 1, "A")
+
+        self.assertEqual(["Collection"], sheets)
+        excel.assert_called_once_with("/tmp/import.ods", engine="odf")
+        self.reader.close()
+        excel_file.close.assert_called_once()
 
     def test_read_sheet_dataframe_fills_selected_trailing_empty_columns(self):
         """Verifie la lecture de colonnes configurees mais entierement vides.
@@ -87,6 +111,7 @@ class OdsReaderImportTest(unittest.TestCase):
             "Defining usecols with out-of-bounds indices is not allowed. "
             "[13, 14] are out-of-bounds."
         )
+        self.reader._excel_file = "workbook"
         with patch(
             "services.ods.ods_reader.pd.read_excel",
             side_effect=[out_of_bounds_error, complete_dataframe],
@@ -116,6 +141,7 @@ class OdsReaderImportTest(unittest.TestCase):
             None: Les assertions valident la propagation de l'erreur.
         """
 
+        self.reader._excel_file = "workbook"
         with patch(
             "services.ods.ods_reader.pd.read_excel",
             side_effect=ValueError("ODS corrompu"),

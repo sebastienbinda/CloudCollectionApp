@@ -260,6 +260,22 @@ class FakeImportReportNotifier:
         self.contexts.append(context)
 
 
+class DisabledImportReportNotifier(FakeImportReportNotifier):
+    """Simule un notifier de rapport sans destinataire configure."""
+
+    def is_enabled(self):
+        """Indique que le rapport administrateur est desactive.
+
+        Args:
+            Aucun.
+
+        Returns:
+            bool: `False` pour eviter la construction du contexte.
+        """
+
+        return False
+
+
 class UserCollectionImportServiceTest(unittest.TestCase):
     """Valide le service metier d'import de collection utilisateur."""
 
@@ -334,6 +350,8 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 imported_studio_match_reports=(
                     ImportedStudioMatchReport("Acclaim", False, "Acclaim Studios", 100),
                 ),
+                association_calculation_duration_seconds=0.123,
+                database_query_duration_seconds=0.456,
             )
             service, repository, reader, source_file = self._build_service(
                 directory,
@@ -374,6 +392,9 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 self._valid_description().to_dict(),
                 context.collection_file_description,
             )
+            self.assertGreaterEqual(context.file_read_duration_seconds, 0)
+            self.assertEqual(0.123, context.association_calculation_duration_seconds)
+            self.assertEqual(0.456, context.database_query_duration_seconds)
             self.assertGreaterEqual(context.warnings.total_import_duration_seconds, 0)
 
     def test_import_collection_keeps_success_when_report_email_fails(self):
@@ -400,6 +421,35 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             )
 
             self.assertEqual(1, result.associated_games)
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+
+    def test_import_collection_skips_report_context_when_notifier_is_disabled(self):
+        """Verifie qu'aucun contexte n'est construit quand le rapport est desactive.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le court-circuit du notifier.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            notifier = DisabledImportReportNotifier()
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                report_notifier=notifier,
+            )
+
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
+
+            self.assertEqual(1, result.associated_games)
+            self.assertEqual([], notifier.contexts)
             self.assertEqual(1, len(repository.import_calls))
             self.assertEqual(1, len(reader.read_paths))
 

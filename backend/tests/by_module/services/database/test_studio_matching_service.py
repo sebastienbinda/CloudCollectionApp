@@ -103,6 +103,37 @@ class StudioMatchingServiceTest(unittest.TestCase):
             )
         )
 
+    def test_evaluate_existing_studio_reuses_cached_scores(self):
+        """Verifie que le matching identique ne recalcule pas les scores.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le cache local du service.
+        """
+
+        service = self._service()
+        calls = []
+        original_score = service._studio_matching_score
+        service._studio_matching_score = lambda imported_key, candidate_key: (
+            calls.append((imported_key, candidate_key))
+            or original_score(imported_key, candidate_key)
+        )
+        existing_studio_ids = {
+            "acclaim studios": 1,
+            "nintendo": 2,
+        }
+
+        first_result = service.evaluate_existing_studio("Acclaim", existing_studio_ids)
+        second_result = service.evaluate_existing_studio("Acclaim", existing_studio_ids)
+
+        self.assertEqual(first_result, second_result)
+        self.assertEqual(
+            [("acclaim", "acclaim studios"), ("acclaim", "nintendo")],
+            calls,
+        )
+
     def _service(self):
         return StudioMatchingService(
             StudioMatchingConfiguration(low_level_rating=25, high_level_rating=87)

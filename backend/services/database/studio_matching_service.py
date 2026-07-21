@@ -58,6 +58,8 @@ class StudioMatchingService:
         self.configuration = configuration or StudioMatchingConfiguration.from_environment()
         self.configuration.validate()
         self.name_normalizer = name_normalizer or UserCollectionNameNormalizer()
+        self._matching_results_cache: dict[tuple[str, tuple[str, ...]], StudioMatchingResult] = {}
+        self._score_cache: dict[tuple[str, str], int] = {}
 
     def match_existing_studio_key(
         self,
@@ -97,30 +99,46 @@ class StudioMatchingService:
         imported_key = self._comparison_key(imported_studio_name)
         if not imported_key:
             return StudioMatchingResult(None, 0, False)
+        candidate_keys = tuple(existing_studio_ids.keys())
         if imported_key in existing_studio_ids:
             return StudioMatchingResult(imported_key, 100, True)
-        return self._best_unique_existing_result(imported_key, existing_studio_ids)
+        cache_key = (imported_key, candidate_keys)
+        if cache_key not in self._matching_results_cache:
+            self._matching_results_cache[cache_key] = self._best_unique_existing_result(
+                imported_key,
+                candidate_keys,
+            )
+        return self._matching_results_cache[cache_key]
 
     def _best_unique_existing_result(
         self,
         imported_key: str,
-        existing_studio_ids: dict[str, int],
+        candidate_keys: tuple[str, ...],
     ) -> StudioMatchingResult:
-        scored_keys = [
-            (self._studio_matching_score(imported_key, candidate_key), candidate_key)
-            for candidate_key in existing_studio_ids
-        ]
-        best_score = max((score for score, _candidate_key in scored_keys), default=0)
+        best_score = 0
+        best_keys = []
+        for candidate_key in candidate_keys:
+            score = self._cached_studio_matching_score(imported_key, candidate_key)
+            if score > best_score:
+                best_score = score
+                best_keys = [candidate_key]
+                continue
+            if score == best_score:
+                best_keys.append(candidate_key)
         if best_score < self.configuration.high_level_rating:
             return StudioMatchingResult(None, best_score, False)
-        best_keys = [
-            candidate_key
-            for score, candidate_key in scored_keys
-            if score == best_score
-        ]
         if len(best_keys) != 1:
             return StudioMatchingResult(None, best_score, False)
         return StudioMatchingResult(best_keys[0], best_score, True)
+
+    def _cached_studio_matching_score(self, imported_key: str, candidate_key: str) -> int:
+        score_key = (imported_key, candidate_key)
+        if score_key not in self._score_cache:
+            self._score_cache[score_key] = self._studio_matching_score(
+                imported_key,
+                candidate_key,
+            )
+        return self._score_cache[score_key]
 
     def _studio_matching_score(self, imported_key: str, candidate_key: str) -> int:
         imported_words = self._words(imported_key)

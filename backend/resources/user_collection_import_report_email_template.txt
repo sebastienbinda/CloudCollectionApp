@@ -29,6 +29,12 @@ ${imported_studio_match_reports}
 ${imported_game_match_reports}
 
 <p>Duree totale de l'import: ${total_import_duration_seconds} seconde(s).</p>
+<h2>Durees detaillees</h2>
+<ul>
+<li>Lecture du fichier: ${file_read_duration_seconds} seconde(s).</li>
+<li>Calcul des associations: ${association_calculation_duration_seconds} seconde(s).</li>
+<li>Requetes base de donnees: ${database_query_duration_seconds} seconde(s).</li>
+</ul>
 
 <h2>Configuration d'import</h2>
 <pre>

@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 from services.collection.imports import CollectionImportData
 
+from .collection_import_data_synchronizer import CollectionImportDataSynchronizer
 from .user_collection_import_repository import SqlAlchemyUserCollectionImportRepository
 
 
@@ -55,7 +56,7 @@ class SqlAlchemyAdminLibraryImportRepository(SqlAlchemyUserCollectionImportRepos
         with self.engine.begin() as connection:
             self._lock_global_game_import_state(connection)
             matched_import_data = self._match_platforms(connection, import_data)
-            self._synchronize_import_data(import_data, matched_import_data)
+            CollectionImportDataSynchronizer().synchronize(import_data, matched_import_data)
             platform_ids, linked_platforms = self._ensure_platforms(
                 connection,
                 matched_import_data,
