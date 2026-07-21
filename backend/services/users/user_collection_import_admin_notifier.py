@@ -101,6 +101,18 @@ class UserCollectionImportAdminNotifier:
             content_subtype="html",
         )
 
+    def is_enabled(self) -> bool:
+        """Indique si un rapport administrateur peut etre envoye.
+
+        Args:
+            Aucun.
+
+        Returns:
+            bool: `True` lorsqu'une adresse administrateur est configuree.
+        """
+
+        return bool(self.admin_notification_email)
+
     def _build_email_body(self, context: UserCollectionImportReportContext) -> str:
         warnings_lines = []
         self._append_warnings(warnings_lines, context.warnings)
@@ -130,6 +142,15 @@ class UserCollectionImportAdminNotifier:
                         or 0.0
                     ),
                 ),
+                "file_read_duration_seconds": self._format_duration(
+                    context.file_read_duration_seconds
+                ),
+                "association_calculation_duration_seconds": self._format_duration(
+                    context.association_calculation_duration_seconds
+                ),
+                "database_query_duration_seconds": self._format_duration(
+                    context.database_query_duration_seconds
+                ),
                 "collection_file_description": escape(
                     json.dumps(
                         context.collection_file_description,
@@ -140,6 +161,9 @@ class UserCollectionImportAdminNotifier:
                 "warnings": escape("\n".join(warnings_lines)),
             },
         )
+
+    def _format_duration(self, duration_seconds: object) -> str:
+        return "{duration:.3f}".format(duration=float(duration_seconds or 0.0))
 
     def _imported_studio_match_reports_html(self, imported_studio_match_reports: tuple) -> str:
         if not imported_studio_match_reports:

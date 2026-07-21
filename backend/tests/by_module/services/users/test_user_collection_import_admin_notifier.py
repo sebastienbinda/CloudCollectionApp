@@ -128,6 +128,9 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
 
         body = sender.sent_emails[0]["body"]
         self.assertIn("Duree totale de l'import: 1.234 seconde(s).", body)
+        self.assertIn("Lecture du fichier: 0.120 seconde(s).", body)
+        self.assertIn("Calcul des associations: 0.340 seconde(s).", body)
+        self.assertIn("Requetes base de donnees: 0.560 seconde(s).", body)
         self.assertIn("Super Nintendo", body)
         self.assertIn("Alias: oui (Super Nintendo)", body)
         self.assertIn("Sports", body)
@@ -247,6 +250,9 @@ class UserCollectionImportAdminNotifierTest(unittest.TestCase):
             created_game_match_reports=created_game_match_reports,
             imported_game_match_reports=imported_game_match_reports,
             imported_studio_match_reports=imported_studio_match_reports,
+            file_read_duration_seconds=0.12,
+            association_calculation_duration_seconds=0.34,
+            database_query_duration_seconds=0.56,
         )
 
 

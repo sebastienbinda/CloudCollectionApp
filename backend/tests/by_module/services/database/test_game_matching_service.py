@@ -493,10 +493,10 @@ class GameMatchingServiceTest(unittest.TestCase):
             ("switch", "the legend of zelda"): 11,
             ("nes", "legend of zelda"): 13,
         }
-        original_matching_score = self.service._matching_score
-        self.service._matching_score = lambda imported_key, candidate_key: (
+        original_explain_name_score = self.service.explain_name_score
+        self.service.explain_name_score = lambda imported_key, candidate_key: (
             scored_candidates.append(candidate_key)
-            or original_matching_score(imported_key, candidate_key)
+            or original_explain_name_score(imported_key, candidate_key)
         )
 
         game_id = self.service.find_existing_game_id(

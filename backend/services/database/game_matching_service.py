@@ -260,7 +260,7 @@ class GameMatchingService:
                 candidate_release_date,
             ) = self._indexed_candidate_values(indexed_candidate)
             matching_explanation = self.explain_name_score(game_name_key, candidate_name_key)
-            score = self._matching_score(game_name_key, candidate_name_key)
+            score = matching_explanation.score
             adjusted_score = self.release_date_score_adjuster.adjust_score(
                 score,
                 imported_release_date,

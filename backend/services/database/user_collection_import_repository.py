@@ -11,8 +11,7 @@
 #
 # Description : orchestration transactionnelle SQL de l'import de collection utilisateur.
 
-import logging
-from pathlib import Path
+from time import perf_counter
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
@@ -21,10 +20,12 @@ from services.collection.imports import CollectionImportData
 from services.users.user_collection_name_normalizer import UserCollectionNameNormalizer
 
 from .database_configuration import DatabaseConfiguration
+from .collection_import_data_synchronizer import CollectionImportDataSynchronizer
 from .game_matching_service import GameMatchingService
 from .game_repository import SqlAlchemyGameRepository
 from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
+from .query_timing_connection import QueryTimingConnection
 from .studio_matching_service import StudioMatchingService
 from .studio_repository import SqlAlchemyStudioRepository
 from .user_collection_import_game_match_report_builder import (
@@ -40,6 +41,7 @@ from .user_collection_file_repository import (
     SqlAlchemyUserCollectionFileRepository,
     UserCollectionImportUserNotFoundError,
 )
+from .user_collection_file_remover import UserCollectionFileRemover
 from .user_collection_repository import SqlAlchemyUserCollectionRepository, UserGameAssociation
 
 
@@ -47,41 +49,7 @@ class UserCollectionReinitializationNotFoundError(Exception):
     """Signale qu'aucune collection utilisateur ne peut etre reinitialisee."""
 
 
-class _UserCollectionFileRemover:
-    """Supprime le fichier de collection stocke sur disque."""
-
-    def __init__(self, logger=None):
-        """Initialise le suppresseur de fichier.
-
-        Args:
-            logger (logging.Logger | None): Logger applicatif.
-
-        Returns:
-            None: Le constructeur ne retourne aucune valeur.
-        """
-
-        self.logger = logger or logging.getLogger(__name__)
-
-    def delete_collection_file(self, collection_file_path: str) -> None:
-        """Supprime le fichier de collection si son chemin est renseigne.
-
-        Args:
-            collection_file_path (str): Chemin du fichier a supprimer.
-
-        Returns:
-            None: La methode ne retourne aucune valeur.
-
-        Raises:
-            OSError: Si le fichier existe mais ne peut pas etre supprime.
-        """
-
-        if not collection_file_path:
-            return
-        resolved_path = Path(collection_file_path)
-        try:
-            resolved_path.unlink()
-        except FileNotFoundError:
-            self.logger.warning("Fichier de collection absent pendant la reinitialisation.")
+_UserCollectionFileRemover = UserCollectionFileRemover
 
 
 class SqlAlchemyUserCollectionImportRepository:
@@ -139,7 +107,7 @@ class SqlAlchemyUserCollectionImportRepository:
         self.user_collection_repository = SqlAlchemyUserCollectionRepository(
             configuration.schema_name
         )
-        self.collection_file_remover = collection_file_remover or _UserCollectionFileRemover()
+        self.collection_file_remover = collection_file_remover or UserCollectionFileRemover()
         self.platform_matching_service = (
             platform_matching_service
             or PlatformMatchingService(name_normalizer=self.name_normalizer)
@@ -152,6 +120,7 @@ class SqlAlchemyUserCollectionImportRepository:
             game_matching_service
             or GameMatchingService(name_normalizer=self.name_normalizer)
         )
+        self.import_data_synchronizer = CollectionImportDataSynchronizer()
 
     def user_has_collection(self, user_id: int) -> bool:
         """Indique si l'utilisateur possede deja un fichier de collection.
@@ -202,37 +171,48 @@ class SqlAlchemyUserCollectionImportRepository:
         """
 
         with self.engine.begin() as connection:
-            self.user_file_repository.lock_user_collection_state(connection, user_id)
-            self._lock_global_game_import_state(connection)
-            user_email = self.user_file_repository.find_user_email(connection, user_id)
-            matched_import_data = self._match_platforms(connection, import_data)
-            self._synchronize_import_data(import_data, matched_import_data)
+            timed_connection = QueryTimingConnection(connection)
+            self.user_file_repository.lock_user_collection_state(timed_connection, user_id)
+            self._lock_global_game_import_state(timed_connection)
+            user_email = self.user_file_repository.find_user_email(timed_connection, user_id)
+            matched_import_data = self._match_platforms(timed_connection, import_data)
+            import_data_synchronizer = getattr(
+                self,
+                "import_data_synchronizer",
+                CollectionImportDataSynchronizer(),
+            )
+            import_data_synchronizer.synchronize(import_data, matched_import_data)
             platform_ids, linked_platforms = self._ensure_platforms(
-                connection,
+                timed_connection,
                 matched_import_data,
             )
             studio_ids, created_studios, imported_studio_match_reports = self._ensure_studios(
-                connection,
+                timed_connection,
                 matched_import_data,
             )
+            association_calculation_started_at = perf_counter()
             (
                 game_associations,
                 created_games,
                 created_game_match_reports,
                 imported_game_match_reports,
             ) = self._ensure_games(
-                connection,
+                timed_connection,
                 matched_import_data,
                 platform_ids,
                 studio_ids,
             )
+            association_calculation_duration_seconds = round(
+                max(0.0, perf_counter() - association_calculation_started_at),
+                3,
+            )
             associated_games = self.user_collection_repository.ensure_user_game_associations(
-                connection,
+                timed_connection,
                 user_id,
                 game_associations,
             )
             self.user_file_repository.update_collection_file(
-                connection,
+                timed_connection,
                 user_id,
                 collection_file_path,
                 collection_file_description,
@@ -247,6 +227,11 @@ class SqlAlchemyUserCollectionImportRepository:
             created_game_match_reports=tuple(created_game_match_reports),
             imported_game_match_reports=tuple(imported_game_match_reports),
             imported_studio_match_reports=tuple(imported_studio_match_reports),
+            association_calculation_duration_seconds=association_calculation_duration_seconds,
+            database_query_duration_seconds=round(
+                timed_connection.query_duration_seconds,
+                3,
+            ),
         )
 
     def _lock_global_game_import_state(self, connection: Connection) -> None:
@@ -263,26 +248,6 @@ class SqlAlchemyUserCollectionImportRepository:
             text("SELECT pg_advisory_xact_lock(:lock_key)"),
             {"lock_key": self.GLOBAL_GAME_IMPORT_LOCK_KEY},
         )
-
-    def _synchronize_import_data(
-        self,
-        import_data: CollectionImportData,
-        matched_import_data: CollectionImportData,
-    ) -> None:
-        """Expose les donnees filtrees au service appelant apres matching.
-
-        Args:
-            import_data (CollectionImportData): Donnees initiales lues par le reader.
-            matched_import_data (CollectionImportData): Donnees rattachees au catalogue.
-
-        Returns:
-            None: La methode met a jour l'objet transmis par l'appelant.
-        """
-
-        object.__setattr__(import_data, "platforms", matched_import_data.platforms)
-        object.__setattr__(import_data, "studios", matched_import_data.studios)
-        object.__setattr__(import_data, "games", matched_import_data.games)
-        object.__setattr__(import_data, "warnings", matched_import_data.warnings)
 
     def _match_platforms(
         self,

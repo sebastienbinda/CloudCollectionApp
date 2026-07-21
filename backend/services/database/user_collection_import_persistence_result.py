@@ -87,6 +87,8 @@ class UserCollectionImportPersistenceResult:
             de matching pour chaque jeu importe.
         imported_studio_match_reports (tuple[ImportedStudioMatchReport, ...]): Diagnostic
             de matching pour chaque studio importe.
+        association_calculation_duration_seconds (float): Duree de construction des associations.
+        database_query_duration_seconds (float): Duree cumulee des executions SQL.
     """
 
     linked_platforms: int
@@ -97,3 +99,5 @@ class UserCollectionImportPersistenceResult:
     created_game_match_reports: tuple[CreatedGameMatchReport, ...] = ()
     imported_game_match_reports: tuple[ImportedGameMatchReport, ...] = ()
     imported_studio_match_reports: tuple[ImportedStudioMatchReport, ...] = ()
+    association_calculation_duration_seconds: float = 0.0
+    database_query_duration_seconds: float = 0.0

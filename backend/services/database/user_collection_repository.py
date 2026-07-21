@@ -49,6 +49,8 @@ class UserGameAssociation:
 class SqlAlchemyUserCollectionRepository:
     """Persiste les associations de jeux dans `t_user_collection`."""
 
+    ASSOCIATION_BATCH_SIZE = 500
+
     def __init__(self, schema_name: str):
         """Initialise le repository d'association utilisateur-collection.
 
@@ -107,55 +109,110 @@ class SqlAlchemyUserCollectionRepository:
         normalized_associations = self._normalize_associations(game_associations)
         existing_wishlist_values = self.find_user_game_wishlist_values(connection, user_id)
         existing_game_ids = set(existing_wishlist_values.keys())
+        insert_associations = []
+        update_associations = []
         for association in normalized_associations:
             if association.game_id in existing_game_ids:
-                self._update_private_information(connection, user_id, association)
+                update_associations.append(association)
                 continue
-            connection.execute(
-                text(
-                    f'INSERT INTO "{self.schema_name}".t_user_collection '
-                    "(user_id, game_id, game_additional_name, wishlist, purchase_price, "
-                    "price_unit, buy_location, buy_date, grade, grade_normalized, "
-                    "condition, has_manual, "
-                    "is_collector, has_steelbook, is_digital, region, description) "
-                    "VALUES (:user_id, :game_id, NULL, :wishlist, :purchase_price, "
-                    ":price_unit, :buy_location, :buy_date, :grade, :grade_normalized, "
-                    ":condition, :has_manual, "
-                    ":is_collector, :has_steelbook, :is_digital, :region, :description)"
-                ),
-                self._association_parameters(user_id, association),
-            )
+            insert_associations.append(association)
             existing_game_ids.add(association.game_id)
+        self._insert_missing_associations(connection, user_id, insert_associations)
+        self._update_private_information(connection, user_id, update_associations)
         return len(normalized_associations)
+
+    def _insert_missing_associations(
+        self,
+        connection: Connection,
+        user_id: int,
+        associations: list[UserGameAssociation],
+    ) -> None:
+        """Insere les associations absentes en une execution groupee.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+            associations (list[UserGameAssociation]): Associations nouvelles.
+
+        Returns:
+            None: Les associations sont persistees quand la liste n'est pas vide.
+        """
+
+        if not associations:
+            return
+        insert_statement = text(
+            f'INSERT INTO "{self.schema_name}".t_user_collection '
+            "(user_id, game_id, game_additional_name, wishlist, purchase_price, "
+            "price_unit, buy_location, buy_date, grade, grade_normalized, "
+            "condition, has_manual, "
+            "is_collector, has_steelbook, is_digital, region, description) "
+            "VALUES (:user_id, :game_id, NULL, :wishlist, :purchase_price, "
+            ":price_unit, :buy_location, :buy_date, :grade, :grade_normalized, "
+            ":condition, :has_manual, "
+            ":is_collector, :has_steelbook, :is_digital, :region, :description)"
+        )
+        for association_batch in self._association_batches(associations):
+            connection.execute(
+                insert_statement,
+                [
+                    self._association_parameters(user_id, association)
+                    for association in association_batch
+                ],
+            )
 
     def _update_private_information(
         self,
         connection: Connection,
         user_id: int,
-        association: UserGameAssociation,
+        associations: list[UserGameAssociation],
     ) -> None:
-        """Met a jour uniquement les informations privees non nulles.
+        """Met a jour en groupe les informations privees non nulles.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
-            association (UserGameAssociation): Valeurs importees.
+            associations (list[UserGameAssociation]): Valeurs importees.
 
         Returns:
-            None: Met a jour l'association existante.
+            None: Met a jour les associations existantes quand la liste n'est pas vide.
         """
 
+        if not associations:
+            return
         assignments = ", ".join(
             f"{field} = COALESCE(:{field}, {field})"
             for field in self._private_field_names()
         )
-        connection.execute(
-            text(
-                f'UPDATE "{self.schema_name}".t_user_collection SET {assignments} '
-                "WHERE user_id = :user_id AND game_id = :game_id"
-            ),
-            self._association_parameters(user_id, association),
+        update_statement = text(
+            f'UPDATE "{self.schema_name}".t_user_collection SET {assignments} '
+            "WHERE user_id = :user_id AND game_id = :game_id"
         )
+        for association_batch in self._association_batches(associations):
+            connection.execute(
+                update_statement,
+                [
+                    self._association_parameters(user_id, association)
+                    for association in association_batch
+                ],
+            )
+
+    def _association_batches(
+        self,
+        associations: list[UserGameAssociation],
+    ) -> list[list[UserGameAssociation]]:
+        """Decoupe les associations en lots bornes pour les executions SQL.
+
+        Args:
+            associations (list[UserGameAssociation]): Associations a persister.
+
+        Returns:
+            list[list[UserGameAssociation]]: Lots successifs de taille limitee.
+        """
+
+        return [
+            associations[index:index + self.ASSOCIATION_BATCH_SIZE]
+            for index in range(0, len(associations), self.ASSOCIATION_BATCH_SIZE)
+        ]
 
     def _association_parameters(
         self,

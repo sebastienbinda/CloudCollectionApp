@@ -129,7 +129,8 @@ class UserCollectionRepositoryTest(unittest.TestCase):
 
         count = self.repository.ensure_user_game_associations(connection, 7, [42])
 
-        insert_sql, parameters = connection.executed_statements[1]
+        insert_sql, parameter_batch = connection.executed_statements[1]
+        parameters = parameter_batch[0]
         self.assertEqual(1, count)
         self.assertIn("wishlist", insert_sql)
         self.assertEqual(7, parameters["user_id"])
@@ -160,7 +161,8 @@ class UserCollectionRepositoryTest(unittest.TestCase):
             [UserGameAssociation(42, True)],
         )
 
-        _, parameters = connection.executed_statements[1]
+        _, parameter_batch = connection.executed_statements[1]
+        parameters = parameter_batch[0]
         self.assertEqual(1, count)
         self.assertEqual(7, parameters["user_id"])
         self.assertEqual(42, parameters["game_id"])
@@ -203,13 +205,96 @@ class UserCollectionRepositoryTest(unittest.TestCase):
 
         self.repository.ensure_user_game_associations(connection, 7, [association])
 
-        sql, parameters = connection.executed_statements[1]
+        sql, parameter_batch = connection.executed_statements[1]
+        parameters = parameter_batch[0]
         self.assertIn("purchase_price = COALESCE(:purchase_price, purchase_price)", sql)
         self.assertEqual(Decimal("120.25"), parameters["purchase_price"])
         self.assertEqual("EUR", parameters["price_unit"])
         self.assertEqual("EU-FR", parameters["region"])
         self.assertFalse(parameters["has_manual"])
         self.assertIsNone(parameters["description"])
+
+    def test_batches_new_and_existing_association_persistence(self):
+        """Verifie le regroupement SQL des insertions et mises a jour.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les lots de parametres transmis.
+        """
+
+        connection = FakeRepositoryConnection(existing_wishlist_values={42: False})
+
+        count = self.repository.ensure_user_game_associations(
+            connection,
+            7,
+            [
+                UserGameAssociation(42, purchase_price=Decimal("5.00")),
+                UserGameAssociation(43, True),
+                UserGameAssociation(44, False),
+            ],
+        )
+
+        self.assertEqual(3, count)
+        self.assertEqual(3, len(connection.executed_statements))
+        insert_sql, insert_batch = connection.executed_statements[1]
+        update_sql, update_batch = connection.executed_statements[2]
+        self.assertIn("INSERT INTO", insert_sql)
+        self.assertEqual([43, 44], [parameters["game_id"] for parameters in insert_batch])
+        self.assertIn("UPDATE", update_sql)
+        self.assertEqual([42], [parameters["game_id"] for parameters in update_batch])
+
+    def test_limits_insert_and_update_batch_sizes(self):
+        """Verifie que les lots SQL respectent la taille maximale configuree.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le decoupage des insertions et mises a jour.
+        """
+
+        self.repository.ASSOCIATION_BATCH_SIZE = 2
+        connection = FakeRepositoryConnection(
+            existing_wishlist_values={
+                42: False,
+                43: False,
+                44: False,
+                45: False,
+                46: False,
+            }
+        )
+
+        self.repository.ensure_user_game_associations(
+            connection,
+            7,
+            [
+                UserGameAssociation(42),
+                UserGameAssociation(43),
+                UserGameAssociation(44),
+                UserGameAssociation(45),
+                UserGameAssociation(46),
+                UserGameAssociation(47),
+                UserGameAssociation(48),
+                UserGameAssociation(49),
+                UserGameAssociation(50),
+                UserGameAssociation(51),
+            ],
+        )
+
+        insert_batches = [
+            parameters
+            for sql, parameters in connection.executed_statements
+            if "INSERT INTO" in sql
+        ]
+        update_batches = [
+            parameters
+            for sql, parameters in connection.executed_statements
+            if "UPDATE" in sql
+        ]
+        self.assertEqual([[47, 48], [49, 50], [51]], self._game_ids(insert_batches))
+        self.assertEqual([[42, 43], [44, 45], [46]], self._game_ids(update_batches))
 
     def test_counts_user_game_associations(self):
         """Verifie le comptage des associations utilisateur."""
@@ -234,6 +319,21 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         self.assertEqual(2, deleted_count)
         self.assertIn("DELETE FROM", sql)
         self.assertEqual({"user_id": 7}, parameters)
+
+    def _game_ids(self, batches):
+        """Extrait les identifiants de jeux depuis des lots de parametres.
+
+        Args:
+            batches (list[list[dict]]): Lots de parametres SQL captures.
+
+        Returns:
+            list[list[int]]: Identifiants de jeux par lot.
+        """
+
+        return [
+            [parameters["game_id"] for parameters in batch]
+            for batch in batches
+        ]
 
 
 if __name__ == "__main__":

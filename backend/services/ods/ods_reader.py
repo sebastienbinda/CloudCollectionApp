@@ -31,6 +31,7 @@ class OdsReader:
 
         self.ods_path = ods_path
         self.cache = cache
+        self._excel_file = None
 
     def list_sheets(self) -> list[str]:
         """Liste tous les onglets presents dans le fichier ODS.
@@ -83,8 +84,7 @@ class OdsReader:
             list[str]: Tous les noms d'onglets.
         """
 
-        excel_file = pd.ExcelFile(self.ods_path, engine="odf")
-        return list(excel_file.sheet_names)
+        return list(self._excel_file_handle().sheet_names)
 
     def _load_sheet_dataframe(
         self,
@@ -113,17 +113,48 @@ class OdsReader:
             "nrows": self._data_row_count(data_range, header_row),
         }
         try:
-            dataframe = pd.read_excel(self.ods_path, **read_options)
+            dataframe = pd.read_excel(self._excel_file_handle(), **read_options)
         except ValueError as exc:
             if selected_columns is None or not self._is_out_of_bounds_usecols_error(exc):
                 raise
             read_options.pop("usecols")
-            complete_dataframe = pd.read_excel(self.ods_path, **read_options)
+            complete_dataframe = pd.read_excel(self._excel_file_handle(), **read_options)
             dataframe = self._select_columns_with_empty_fallback(
                 complete_dataframe,
                 selected_columns,
             )
         return dataframe.where(pd.notna(dataframe), None)
+
+    def close(self) -> None:
+        """Ferme le classeur ODS conserve pendant l'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: La methode libere le handle pandas si disponible.
+        """
+
+        if self._excel_file is None:
+            return
+        close = getattr(self._excel_file, "close", None)
+        if callable(close):
+            close()
+        self._excel_file = None
+
+    def _excel_file_handle(self):
+        """Retourne le classeur ODS partage par les lectures d'onglets.
+
+        Args:
+            Aucun.
+
+        Returns:
+            pandas.ExcelFile: Classeur ODS ouvert avec le moteur ODF.
+        """
+
+        if self._excel_file is None:
+            self._excel_file = pd.ExcelFile(self.ods_path, engine="odf")
+        return self._excel_file
 
     def _is_out_of_bounds_usecols_error(self, error: ValueError) -> bool:
         """Detecte l'erreur pandas produite par des colonnes terminales absentes.

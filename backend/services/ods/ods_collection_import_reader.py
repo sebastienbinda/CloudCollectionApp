@@ -394,4 +394,7 @@ class OdsCollectionImportReader:
 
     def _reset_reader_cache(self, reader: Optional[OdsReader]) -> None:
         if reader is not None and hasattr(reader, "cache"):
+            close = getattr(reader, "close", None)
+            if callable(close):
+                close()
             reader.cache.reset()

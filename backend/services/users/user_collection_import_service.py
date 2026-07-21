@@ -40,7 +40,9 @@ from .user_collection_import_configuration import UserCollectionImportConfigurat
 from .user_collection_import_report_notifier import UserCollectionImportReportNotifier
 from .user_collection_import_repository_protocol import UserCollectionImportRepository
 from .user_collection_import_report_context import UserCollectionImportReportContext
+from .user_collection_import_report_policy import UserCollectionImportReportPolicy
 from .user_collection_import_result import UserCollectionImportResult
+from .user_collection_import_timer import UserCollectionImportTimer
 
 
 class UserCollectionImportError(Exception):
@@ -115,6 +117,7 @@ class UserCollectionImportService:
         self.reader_factory = reader_factory
         self.date_validator = date_validator or CollectionImportDateValidator()
         self.report_notifier = report_notifier or UserCollectionImportAdminNotifier()
+        self.report_policy = UserCollectionImportReportPolicy()
         self.logger = logger or logging.getLogger(__name__)
 
     def upload_import_file(
@@ -291,7 +294,12 @@ class UserCollectionImportService:
             copied_file_path = self._copy_file(source_file_path, target_file_path)
             import_file_path = copied_file_path
         try:
-            import_data = self.date_validator.validate(reader.read(str(import_file_path), file_description))
+            file_read_started_at = perf_counter()
+            import_data = reader.read(str(import_file_path), file_description)
+            file_read_duration_seconds = UserCollectionImportTimer.elapsed_seconds(
+                file_read_started_at
+            )
+            import_data = self.date_validator.validate(import_data)
             persistence_result = self.repository.import_collection(
                 user_id,
                 str(import_file_path),
@@ -300,17 +308,19 @@ class UserCollectionImportService:
             )
             self._set_total_import_duration(import_data, import_started_at)
             result = self._map_result(persistence_result, import_data)
-            self._notify_import_report(
-                self._build_import_report_context(
-                    user_id,
-                    original_filename or source_file_path.name,
-                    file_description,
-                    copy_to_workspace,
-                    persistence_result,
-                    import_data,
-                    result,
+            if self.report_policy.is_enabled(self.report_notifier):
+                self._notify_import_report(
+                    self._build_import_report_context(
+                        user_id,
+                        original_filename or source_file_path.name,
+                        file_description,
+                        copy_to_workspace,
+                        persistence_result,
+                        import_data,
+                        result,
+                        file_read_duration_seconds,
+                    )
                 )
-            )
             return result
         except CollectionFileDescriptionValidationError:
             self._delete_copied_file(copied_file_path)
@@ -436,6 +446,7 @@ class UserCollectionImportService:
         persistence_result: UserCollectionImportPersistenceResult,
         import_data: CollectionImportData,
         result: UserCollectionImportResult,
+        file_read_duration_seconds: float = 0.0,
     ) -> UserCollectionImportReportContext:
         return UserCollectionImportReportContext(
             user_id=user_id,
@@ -454,6 +465,11 @@ class UserCollectionImportService:
             created_game_match_reports=persistence_result.created_game_match_reports,
             imported_game_match_reports=persistence_result.imported_game_match_reports,
             imported_studio_match_reports=persistence_result.imported_studio_match_reports,
+            file_read_duration_seconds=file_read_duration_seconds,
+            association_calculation_duration_seconds=(
+                persistence_result.association_calculation_duration_seconds
+            ),
+            database_query_duration_seconds=persistence_result.database_query_duration_seconds,
         )
 
     def _notify_import_report(self, context: UserCollectionImportReportContext) -> None:
@@ -467,7 +483,7 @@ class UserCollectionImportService:
         import_data: CollectionImportData,
         import_started_at: float,
     ) -> None:
-        duration_seconds = round(max(0.0, perf_counter() - import_started_at), 3)
+        duration_seconds = UserCollectionImportTimer.elapsed_seconds(import_started_at)
         object.__setattr__(
             import_data.warnings,
             "total_import_duration_seconds",

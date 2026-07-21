@@ -35,6 +35,9 @@ class UserCollectionImportReportContext:
         created_game_match_reports (tuple): Jeux crees avec meilleur candidat existant.
         imported_game_match_reports (tuple): Diagnostic de matching pour chaque jeu importe.
         imported_studio_match_reports (tuple): Diagnostic de matching pour chaque studio importe.
+        file_read_duration_seconds (float): Duree de lecture du fichier source.
+        association_calculation_duration_seconds (float): Duree de calcul des associations.
+        database_query_duration_seconds (float): Duree cumulee des requetes SQL.
     """
 
     user_id: int
@@ -53,3 +56,6 @@ class UserCollectionImportReportContext:
     created_game_match_reports: tuple = ()
     imported_game_match_reports: tuple = ()
     imported_studio_match_reports: tuple = ()
+    file_read_duration_seconds: float = 0.0
+    association_calculation_duration_seconds: float = 0.0
+    database_query_duration_seconds: float = 0.0
