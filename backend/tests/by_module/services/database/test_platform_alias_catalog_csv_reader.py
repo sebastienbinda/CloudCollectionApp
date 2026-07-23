@@ -71,6 +71,41 @@ class PlatformAliasCatalogCsvReaderTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 PlatformAliasCatalogCsvReader().read(csv_path)
 
+    def test_project_alias_catalog_contains_pc_import_aliases(self):
+        """Verifie les alias PC utiles au matching d'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les alias de boutiques et systemes.
+        """
+
+        catalog_path = (
+            Path(__file__).resolve().parents[4] / "resources" / "platform_alias_catalog.csv"
+        )
+
+        entries = PlatformAliasCatalogCsvReader().read(catalog_path)
+        pc_aliases = {
+            entry.alias_name
+            for entry in entries
+            if entry.platform_name == "PC"
+        }
+
+        self.assertTrue({
+            "Steam",
+            "Steam machine",
+            "Epic",
+            "Epic Game Store",
+            "GoG",
+            "Good Old Games",
+            "Windows",
+            "Ordinateur",
+            "Mac",
+            "Mac OS",
+            "Mac OSX",
+        }.issubset(pc_aliases))
+
 
 if __name__ == "__main__":
     unittest.main()

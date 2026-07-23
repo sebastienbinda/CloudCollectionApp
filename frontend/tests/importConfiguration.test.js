@@ -73,3 +73,16 @@ test("serialise les colonnes optionnelles wishlist sans fusionner celles de la c
   assert.equal(description.rating_base, 10);
   assert.equal(description.single_sheet_conf.column_information.purchase_price, undefined);
 });
+
+test("serialise une configuration Excel avec le meme contrat tableur que l'ODS", () => {
+  const configuration = createDefaultImportConfiguration();
+  configuration.fileType = "excel_xlsx";
+
+  const { description, errors } = buildImportConfigurationDescription(configuration);
+
+  assert.deepEqual(errors, []);
+  assert.equal(description.file_type, "excel_xlsx");
+  assert.equal(description.single_sheet_conf.data_range, "A1:D200");
+  assert.equal(description.single_sheet_conf.column_information.name, "A");
+  assert.equal(description.single_sheet_conf.column_information.platform, "B");
+});

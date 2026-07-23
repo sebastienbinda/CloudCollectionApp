@@ -49,6 +49,7 @@ class CollectionFileType(str, Enum):
     """Enumere les formats de fichiers de collection pris en charge."""
 
     LIBREOFFICE_ODS = "libreoffice_ods"
+    EXCEL_XLSX = "excel_xlsx"
     CSV = "csv"
 
 

@@ -142,12 +142,18 @@ function UserCollectionOnboardingView({
               onChange={(event) => onConfigurationChange("fileType", event.target.value)}
             >
               <option value="libreoffice_ods">LibreOffice ODS</option>
+              <option value="excel_xlsx">Excel XLSX</option>
               <option value="csv">CSV</option>
             </select>
           </label>
           <label>
             Fichier de collection
-            <input type="file" accept=".ods,.csv" onChange={handleFileChange} disabled={isBusy} />
+            <input
+              type="file"
+              accept=".ods,.xlsx,.csv"
+              onChange={handleFileChange}
+              disabled={isBusy}
+            />
           </label>
           {selectedCollectionFileName ? (
             <p className="collectionSelectedFile">{selectedCollectionFileName}</p>

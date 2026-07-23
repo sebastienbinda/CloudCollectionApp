@@ -15,15 +15,15 @@
 > Le code de cette application a ete genere avec l'aide de Codex et GPT-5.5.
 
 CloudCollectionApp est une application web personnelle de gestion de collection
-de jeux video. Elle permet d'importer une collection depuis un fichier ODS ou
-CSV, de la consulter en ligne, de l'enrichir avec des informations privees et de
+de jeux video. Elle permet d'importer une collection depuis un fichier ODS,
+Excel XLSX ou CSV, de la consulter en ligne, de l'enrichir avec des informations privees et de
 contribuer a un referentiel commun de plateformes, studios et jeux.
 
 La version publique est disponible sur <https://www.cloud-collection.fr>.
 
 ## Fonctionnalites
 
-- Import de collection utilisateur depuis LibreOffice Calc `.ods` ou CSV.
+- Import de collection utilisateur depuis LibreOffice Calc `.ods`, Excel `.xlsx` ou CSV.
 - Consultation de la collection personnelle avec statistiques, filtres, tris,
   details de jeux, section d'achat externe utilisant les alias de plateformes
   et regions non francaises, prix, etats, regions, notes et descriptions
@@ -70,7 +70,7 @@ fonctionnels et techniques sont dans `documentation/` :
   collection utilisateur.
 - [documentation/statistics.md](documentation/statistics.md) : ecran et API de
   statistiques detaillees de collection.
-- [documentation/import.md](documentation/import.md) : workflow d'import ODS/CSV.
+- [documentation/import.md](documentation/import.md) : workflow d'import ODS/Excel/CSV.
 - [documentation/import-mapping.md](documentation/import-mapping.md) : regles de
   conversion des valeurs importees.
 - [documentation/reader.md](documentation/reader.md) : lecteurs de fichiers de

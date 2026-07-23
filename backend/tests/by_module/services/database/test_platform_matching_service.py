@@ -140,6 +140,58 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         self.assertEqual([], matched_data.warnings.platform_matches)
         self.assertEqual([], matched_data.warnings.skipped_games)
 
+    def test_match_import_data_maps_pc_store_aliases_to_pc_platform(self):
+        """Verifie que les boutiques PC importees sont rattachees a PC.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le matching par alias PC.
+        """
+
+        import_data = CollectionImportData(
+            platforms=[
+                CollectionImportPlatform("Steam"),
+                CollectionImportPlatform("Steam machine"),
+                CollectionImportPlatform("Epic Game Store"),
+                CollectionImportPlatform("Good Old Games"),
+                CollectionImportPlatform("Ordinateur"),
+            ],
+            studios=[],
+            games=[
+                CollectionImportGame("Half-Life Alyx", "Steam", "", None),
+                CollectionImportGame("Portal 2", "Steam machine", "", None),
+                CollectionImportGame("Fortnite", "Epic Game Store", "", None),
+                CollectionImportGame("The Witcher 3", "Good Old Games", "", None),
+                CollectionImportGame("Civilization VI", "Ordinateur", "", None),
+            ],
+        )
+        rows = [
+            {
+                "name": "PC",
+                "aliases": [
+                    {"name": "Steam"},
+                    {"name": "Steam machine"},
+                    {"name": "Epic Game Store"},
+                    {"name": "Good Old Games"},
+                    {"name": "Ordinateur"},
+                ],
+            },
+            {"name": "Steam Deck", "aliases": [{"name": "Valve Steam Deck"}]},
+        ]
+
+        matched_data = self._service().match_import_data(import_data, rows)
+
+        self.assertEqual(["PC", "PC", "PC", "PC", "PC"], [
+            game.platform_name for game in matched_data.games
+        ])
+        self.assertEqual([], matched_data.warnings.platform_matches)
+        self.assertEqual([], matched_data.warnings.skipped_games)
+        self.assertTrue(
+            all(mapping["matched_by_alias"] for mapping in matched_data.warnings.platform_mappings)
+        )
+
     def test_match_import_data_rejects_too_low_score_zero_and_ambiguity(self):
         """Verifie les jeux ignores faute de plateforme fiable.
 

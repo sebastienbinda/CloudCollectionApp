@@ -22,6 +22,7 @@ from services.collection.imports import (  # noqa: E402
     CollectionFileType,
 )
 from services.csv import CsvCollectionImportReader  # noqa: E402
+from services.excel import ExcelCollectionImportReader  # noqa: E402
 from services.ods import OdsCollectionImportReader  # noqa: E402
 
 
@@ -57,6 +58,21 @@ class CollectionFileReaderFactoryTest(unittest.TestCase):
 
         self.assertIsInstance(reader, CsvCollectionImportReader)
         self.assertEqual((".csv",), reader.accepted_extensions)
+
+    def test_create_returns_excel_reader_for_excel_xlsx(self):
+        """Verifie le mapping du type Excel XLSX.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le lecteur retourne.
+        """
+
+        reader = CollectionFileReaderFactory().create(CollectionFileType.EXCEL_XLSX)
+
+        self.assertIsInstance(reader, ExcelCollectionImportReader)
+        self.assertEqual((".xlsx",), reader.accepted_extensions)
 
 
 if __name__ == "__main__":
