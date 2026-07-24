@@ -42,6 +42,7 @@ class OdsCollectionImportGameBuilder:
         logger: logging.Logger,
         wishlist_duplicate_policy: WishlistDuplicatePolicy,
         value_mapper: CollectionImportValueMapper | None = None,
+        validation_error_class: type[Exception] | None = None,
     ):
         """Initialise le constructeur de jeux importes.
 
@@ -51,6 +52,7 @@ class OdsCollectionImportGameBuilder:
             logger (logging.Logger): Logger applicatif.
             wishlist_duplicate_policy (WishlistDuplicatePolicy): Politique doublons.
             value_mapper (CollectionImportValueMapper | None): Mapper de valeurs generique.
+            validation_error_class (type[Exception] | None): Erreur de validation a lever.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -61,6 +63,7 @@ class OdsCollectionImportGameBuilder:
         self.logger = logger
         self.wishlist_duplicate_policy = wishlist_duplicate_policy
         self.value_mapper = value_mapper or CollectionImportValueMapper(logger=self.logger)
+        self.validation_error_class = validation_error_class
 
     def build_games(
         self,
@@ -111,9 +114,12 @@ class OdsCollectionImportGameBuilder:
                 if game is not None:
                     games.append(game)
             except Exception as exc:
-                from .ods_collection_import_reader import OdsCollectionImportValidationError
+                if self.validation_error_class is None:
+                    from .ods_collection_import_reader import OdsCollectionImportValidationError
 
-                raise OdsCollectionImportValidationError(
+                    self.validation_error_class = OdsCollectionImportValidationError
+
+                raise self.validation_error_class(
                     self.error_context.row_message(sheet_name, row_number, layout)
                 ) from exc
         return games

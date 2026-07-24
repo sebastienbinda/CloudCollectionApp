@@ -347,7 +347,7 @@ class CollectionFileDescriptionValidatorTest(unittest.TestCase):
         """
 
         payload = self._single_sheet_payload()
-        payload["file_type"] = "excel_xlsx"
+        payload["file_type"] = "unknown_spreadsheet"
 
         self._assert_errors(payload, ["file_type inconnu."])
 

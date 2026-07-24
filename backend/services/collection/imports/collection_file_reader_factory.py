@@ -35,6 +35,10 @@ class CollectionFileReaderFactory:
             from services.ods import OdsCollectionImportReader
 
             return OdsCollectionImportReader()
+        if file_type == CollectionFileType.EXCEL_XLSX:
+            from services.excel import ExcelCollectionImportReader
+
+            return ExcelCollectionImportReader()
         if file_type == CollectionFileType.CSV:
             from services.csv import CsvCollectionImportReader
 

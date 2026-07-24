@@ -103,6 +103,25 @@ class PlatformCatalogCsvReaderTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "En vente"):
             PlatformCatalogCsvReader().read(csv_path)
 
+    def test_project_catalog_contains_pc_platform(self):
+        """Verifie la presence de la plateforme PC dans le catalogue applicatif.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la ligne de reference PC.
+        """
+
+        catalog_path = Path(__file__).resolve().parents[4] / "resources" / "platform_catalog.csv"
+
+        entries = PlatformCatalogCsvReader().read(catalog_path)
+        pc_entries = [entry for entry in entries if entry.name == "PC"]
+
+        self.assertEqual(1, len(pc_entries))
+        self.assertEqual("Multi-constructeurs", pc_entries[0].manufacturer)
+        self.assertIsNone(pc_entries[0].end_date)
+
     def _write_csv(self, content: str) -> Path:
         temporary_directory = TemporaryDirectory()
         self.addCleanup(temporary_directory.cleanup)

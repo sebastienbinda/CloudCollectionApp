@@ -13,7 +13,6 @@
  * Description : hook React pilotant l'onboarding d'import de collection utilisateur.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import AuthApi from "../../services/AuthApi";
 import UserCollectionApi from "../../services/UserCollectionApi";
 import getUserCollectionErrorMessage from "./userCollectionImportMessages";
 import updatedLayoutValue from "./importLayoutState";
@@ -23,17 +22,13 @@ import {
   createImportConfigurationFromDescription,
   createDefaultImportConfiguration,
 } from "./importConfigurationBuilder";
-
-/**
- * Indique si le token courant peut ouvrir les vues de collection.
- *
- * @returns {boolean} `true` pour les profils collection utilisateur.
- * @throws {void} Ne leve pas d'exception.
- */
-function canCurrentTokenUseCollectionViews() {
-  const profile = String(AuthApi.getAccessTokenPayload().profile || "USER").trim().toUpperCase();
-  return profile !== "ADMIN";
-}
+import {
+  buildIncompatibleSavedConfigurationMessage,
+  normalizeImportFileType,
+  resolveImportFileType,
+} from "./importFileTypeTools";
+import buildImportConfigurationAfterAnalysis from "./importAnalysisConfiguration";
+import canCurrentTokenUseCollectionViews from "./collectionSessionPolicy";
 
 /**
  * Orchestre la verification de collection et l'import initial du fichier de collection.
@@ -147,40 +142,11 @@ function useUserCollectionOnboarding(options) {
   const applyAnalyzedSheets = useCallback((sheetNames, analyzedFileType) => {
     setAvailableImportSheets(sheetNames);
     setHasAnalyzedImportFile(true);
-    setImportConfiguration((currentConfiguration) => {
-      const fileType = normalizeImportFileType(analyzedFileType || currentConfiguration.fileType);
-      if (fileType === "csv") {
-        return {
-          ...currentConfiguration,
-          fileType,
-          multipleSheets: false,
-        };
-      }
-      if (sheetNames.length <= 1) {
-        return {
-          ...currentConfiguration,
-          fileType,
-          multipleSheets: false,
-          sharedSheetLayout: {
-            ...currentConfiguration.sharedSheetLayout,
-            includedSheets: "",
-            excludedSheets: "",
-          },
-        };
-      }
-      return {
-        ...currentConfiguration,
-        fileType,
-        multipleSheets: true,
-        sharedLayout: true,
-        sharedSheetLayout: {
-          ...currentConfiguration.sharedSheetLayout,
-          sheetSelectionMode: "included",
-          includedSheets: sheetNames,
-          excludedSheets: [],
-        },
-      };
-    });
+    setImportConfiguration((currentConfiguration) => buildImportConfigurationAfterAnalysis(
+      currentConfiguration,
+      sheetNames,
+      analyzedFileType
+    ));
   }, []);
 
   const applySavedImportConfigurationIfConfirmed = useCallback(async (currentFileType) => {
@@ -521,65 +487,6 @@ function useUserCollectionOnboarding(options) {
     removeImportSheetConfiguration,
     importSelectedCollection,
   };
-}
-
-/**
- * Normalise le type de fichier d'import pour comparer deux configurations.
- *
- * @param {string} fileType - Type de fichier brut.
- * @returns {string} Type reconnu par le frontend.
- * @throws {void} Ne leve pas d'exception.
- */
-function normalizeImportFileType(fileType) {
-  const normalizedFileType = String(fileType || "").trim();
-  return normalizedFileType || "libreoffice_ods";
-}
-
-/**
- * Deduit le type d'import a partir du fichier choisi, avec repli sur le formulaire.
- *
- * @param {File} collectionFile - Fichier selectionne par l'utilisateur.
- * @param {string} selectedFileType - Type actuellement selectionne dans le formulaire.
- * @returns {string} Type d'import a utiliser pour l'upload et l'analyse.
- * @throws {void} Ne leve pas d'exception.
- */
-function resolveImportFileType(collectionFile, selectedFileType) {
-  const filename = String(collectionFile?.name || "").trim().toLowerCase();
-  if (filename.endsWith(".csv")) {
-    return "csv";
-  }
-  if (filename.endsWith(".ods")) {
-    return "libreoffice_ods";
-  }
-  return normalizeImportFileType(selectedFileType);
-}
-
-/**
- * Construit le message de refus d'une configuration sauvegardee incompatible.
- *
- * @param {string} savedFileType - Format de la configuration sauvegardee.
- * @param {string} selectedFileType - Format du fichier en cours.
- * @returns {string} Message affiche a l'utilisateur.
- * @throws {void} Ne leve pas d'exception.
- */
-function buildIncompatibleSavedConfigurationMessage(savedFileType, selectedFileType) {
-  return (
-    "La configuration d'import sauvegardee est au format " +
-    `${formatImportFileType(savedFileType)} et ne peut pas etre reutilisee ` +
-    `avec un fichier ${formatImportFileType(selectedFileType)}. ` +
-    "Renseignez une nouvelle configuration pour ce fichier."
-  );
-}
-
-/**
- * Retourne un libelle lisible pour un type de fichier d'import.
- *
- * @param {string} fileType - Type technique de fichier.
- * @returns {string} Libelle utilisateur.
- * @throws {void} Ne leve pas d'exception.
- */
-function formatImportFileType(fileType) {
-  return fileType === "csv" ? "CSV" : "LibreOffice ODS";
 }
 
 export default useUserCollectionOnboarding;

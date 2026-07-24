@@ -256,7 +256,7 @@ function buildImportConfigurationDescription(configuration) {
   if (configuration.fileType === "csv") {
     return buildCsvImportConfigurationDescription(configuration);
   }
-  const fileType = "libreoffice_ods";
+  const fileType = normalizeSpreadsheetFileType(configuration.fileType);
   const wishlist = buildWishlistConfiguration(configuration, errors);
   const ratingBase = buildRatingBase(configuration, errors);
   if (!configuration.multipleSheets) {
@@ -327,6 +327,16 @@ function buildImportConfigurationDescription(configuration) {
     },
     errors,
   };
+}
+
+/**
+ * Normalise le type de fichier tableur pour la description backend.
+ *
+ * @param {string} fileType - Type selectionne dans le formulaire.
+ * @returns {string} Type backend tableur reconnu.
+ */
+function normalizeSpreadsheetFileType(fileType) {
+  return fileType === "excel_xlsx" ? "excel_xlsx" : "libreoffice_ods";
 }
 
 /**
