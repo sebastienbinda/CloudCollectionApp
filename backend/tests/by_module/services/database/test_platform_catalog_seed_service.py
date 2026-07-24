@@ -92,14 +92,14 @@ class PlatformCatalogSeedServiceTest(unittest.TestCase):
 
         aliases = [
             PlatformAliasCatalogEntry(
-                "Super Nintendo Entertainment System / Super Famicom",
                 "Super Nintendo",
-                "nom_court",
-                "France",
-                "Nom courant.",
+                "Super Famicom",
+                "nom_alternatif",
+                "Japon",
+                "Nom japonais.",
             ),
             PlatformAliasCatalogEntry(
-                "Super Nintendo Entertainment System / Super Famicom",
+                "Super Nintendo",
                 "SNES",
                 "abreviation",
                 "Occident",
@@ -110,7 +110,7 @@ class PlatformCatalogSeedServiceTest(unittest.TestCase):
             existing_rows=[
                 {
                     "id": 7,
-                    "name": "Super Nintendo Entertainment System / Super Famicom",
+                    "name": "Super Nintendo",
                     "platform": 7,
                 },
                 {"id": 7, "platform": 7, "name": "SNES"},
@@ -134,7 +134,7 @@ class PlatformCatalogSeedServiceTest(unittest.TestCase):
             if "t_platform_alias" in statement and statement.startswith("INSERT INTO")
         ]
         self.assertEqual(1, inserted_count)
-        self.assertEqual("Super Nintendo", alias_insert_parameters[0]["name"])
+        self.assertEqual("Super Famicom", alias_insert_parameters[0]["name"])
         self.assertEqual(7, alias_insert_parameters[0]["platform"])
 
     def test_seed_from_csv_detailed_returns_serializable_counts(self):

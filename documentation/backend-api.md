@@ -556,10 +556,13 @@ Authorization: Bearer <admin-token>
 ```
 
 The route starts an asynchronous job and returns immediately. It deletes and
-rebuilds the global `t_platform`, `t_studio`, `t_game` and `t_user_collection`
-data from stored user collection files and their saved import configurations.
-Users are processed in registration order. Each user import reuses the backend
-collection import service core.
+rebuilds the global `t_platform`, `t_platform_alias`, `t_studio`, `t_game` and
+`t_user_collection` database rows from stored user collection files and their
+saved import configurations. Platform-image rows are snapshotted before cleanup,
+the CSV platform catalog is reloaded before user imports, and image rows are
+recreated after rebuild when the new platform catalog contains the same platform
+name or an alias matching the previous name. Users are processed in registration
+order. Each user import reuses the backend collection import service core.
 
 Successful response:
 
@@ -1389,12 +1392,12 @@ Successful response:
     "invalid_games": [],
     "platform_mappings": [
       {
-        "imported_platform": "Super Nintendo",
-        "matched_platform": "Super Nintendo Entertainment System / Super Famicom",
+        "imported_platform": "Super Famicom",
+        "matched_platform": "Super Nintendo",
         "score": 100,
         "games_count": 3,
         "matched_by_alias": true,
-        "matched_alias": "Super Nintendo",
+        "matched_alias": "Super Famicom",
         "accepted": true,
         "manual_check": false,
         "reason": ""

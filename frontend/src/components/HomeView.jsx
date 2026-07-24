@@ -260,9 +260,17 @@ function HomeView({
                       {formatNumber(platform.games_count)} jeux
                     </CardCountComponent>
                   </CardHeaderComponent>
-                  <p className="platformLifecycle">
-                    {formatPlatformLifecycle(platform)}
-                  </p>
+                  <div className="platformLifecycle" aria-label="Cycle de vie de la plateforme">
+                    {buildPlatformLifecycleItems(platform).map((item) => (
+                      <span
+                        className={`platformLifecycleItem platformLifecycleItem${item.type}`}
+                        key={item.label}
+                      >
+                        <span className="platformLifecycleLabel">{item.label}</span>
+                        <span className="platformLifecycleValue">{item.value}</span>
+                      </span>
+                    ))}
+                  </div>
                   {isAuthenticated && canViewPrices ? (
                     <dl>
                       <div>
@@ -286,15 +294,18 @@ function HomeView({
 }
 
 /**
- * Formate les dates de vie commerciale d'une plateforme.
+ * Construit les dates de vie commerciale d'une plateforme.
  *
  * @param {Object} platform - Plateforme normalisee par le service frontend.
- * @returns {string} Dates de sortie et retrait affichees sur une ligne.
+ * @returns {Array<Object>} Dates libellees pretes pour l'affichage.
  */
-function formatPlatformLifecycle(platform) {
+function buildPlatformLifecycleItems(platform) {
   const releaseDate = formatCellValue("Date", platform.release_date);
   const endDate = formatCellValue("Date", platform.end_date);
-  return `${releaseDate || "-"} / ${endDate || "-"}`;
+  return [
+    { label: "Sortie", type: "Release", value: releaseDate || "-" },
+    { label: "Fin", type: "End", value: endDate || "-" },
+  ];
 }
 
 export default HomeView;

@@ -35,8 +35,8 @@ class PlatformAliasCatalogCsvReaderTest(unittest.TestCase):
             csv_path = Path(temporary_directory) / "aliases.csv"
             csv_path.write_text(
                 '"nom_machine","nom_alternatif","categorie","zone_ou_usage","commentaire"\n'
-                '"Super Nintendo Entertainment System / Super Famicom",'
-                '"Super Nintendo","nom_court","France","Nom courant."\n',
+                '"Super Nintendo",'
+                '"Super Famicom","nom_alternatif","Japon","Nom japonais."\n',
                 encoding="utf-8",
             )
 
@@ -44,11 +44,11 @@ class PlatformAliasCatalogCsvReaderTest(unittest.TestCase):
 
         self.assertEqual(1, len(entries))
         self.assertEqual(
-            "Super Nintendo Entertainment System / Super Famicom",
+            "Super Nintendo",
             entries[0].platform_name,
         )
-        self.assertEqual("Super Nintendo", entries[0].alias_name)
-        self.assertEqual("nom_court", entries[0].category)
+        self.assertEqual("Super Famicom", entries[0].alias_name)
+        self.assertEqual("nom_alternatif", entries[0].category)
 
     def test_read_rejects_missing_required_column(self):
         """Verifie le refus d'un CSV sans colonne obligatoire.

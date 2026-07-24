@@ -188,12 +188,16 @@ class FakeUserCollectionQueryService:
             "total_value": 1234.5,
             "average_value": 29.39,
             "max_platform": "Switch",
+            "first_game_date": "1986-02-21",
+            "last_game_date": "2017-03-03",
         } if include_collection else self._empty_statistics()
         wishlist = {
             "total": 3,
             "total_value": 150,
             "average_value": 50,
             "max_platform": "NES",
+            "first_game_date": "1987-12-18",
+            "last_game_date": "1990-04-27",
         } if include_wishlist else self._empty_statistics()
         return {
             **collection,
@@ -331,6 +335,8 @@ class FakeUserCollectionQueryService:
             "total_value": 0,
             "average_value": 0,
             "max_platform": "",
+            "first_game_date": "",
+            "last_game_date": "",
         }
 
     def _page(self, criteria):

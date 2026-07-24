@@ -154,6 +154,29 @@ class FakeUserCollectionQueryRepository:
             return {"total_value": Decimal("19.99"), "average_value": Decimal("9.995")}
         return {"total_value": Decimal("125.50"), "average_value": Decimal("41.8333")}
 
+    def find_release_date_bounds(self, connection, user_id, wishlist=None):
+        """Retourne les dates extremes factices.
+
+        Args:
+            connection (object): Connexion recue.
+            user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist recu.
+
+        Returns:
+            dict: Dates de sortie minimale et maximale configurees.
+        """
+
+        self.calls.append(("find_release_date_bounds", connection, user_id, wishlist))
+        if wishlist is True:
+            return {
+                "first_game_date": datetime(1987, 12, 18),
+                "last_game_date": datetime(1990, 4, 27),
+            }
+        return {
+            "first_game_date": datetime(1986, 2, 21),
+            "last_game_date": datetime(2017, 3, 3),
+        }
+
     def find_collection_file_path(self, connection, user_id):
         """Retourne un chemin de fichier factice.
 
@@ -414,17 +437,23 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                 "total_value": 125.5,
                 "average_value": 41.83,
                 "max_platform": "Switch",
+                "first_game_date": "1986-02-21",
+                "last_game_date": "2017-03-03",
                 "collection": {
                     "total": 42,
                     "total_value": 125.5,
                     "average_value": 41.83,
                     "max_platform": "Switch",
+                    "first_game_date": "1986-02-21",
+                    "last_game_date": "2017-03-03",
                 },
                 "wishlist": {
                     "total": 3,
                     "total_value": 19.99,
                     "average_value": 10.0,
                     "max_platform": "NES",
+                    "first_game_date": "1987-12-18",
+                    "last_game_date": "1990-04-27",
                 },
             },
             payload,
@@ -457,17 +486,23 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
                 "total_value": 0,
                 "average_value": 0,
                 "max_platform": "",
+                "first_game_date": "",
+                "last_game_date": "",
                 "collection": {
                     "total": 0,
                     "total_value": 0,
                     "average_value": 0,
                     "max_platform": "",
+                    "first_game_date": "",
+                    "last_game_date": "",
                 },
                 "wishlist": {
                     "total": 0,
                     "total_value": 0,
                     "average_value": 0,
                     "max_platform": "",
+                    "first_game_date": "",
+                    "last_game_date": "",
                 },
             },
             statistics,

@@ -191,6 +191,41 @@ class SqlAlchemyUserCollectionQueryRepository:
         ).mappings()
         return dict(next(iter(rows)))
 
+    def find_release_date_bounds(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> dict[str, Any]:
+        """Recherche les dates de sortie extremes de la collection utilisateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant de l'utilisateur connecte.
+            wishlist (bool | None): Filtre wishlist optionnel.
+
+        Returns:
+            dict[str, Any]: Premiere et derniere date de sortie.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
+        parameters: dict[str, Any] = {"user_id": user_id}
+        where_clause = self._build_user_collection_where_clause(parameters, wishlist)
+        rows = connection.execute(
+            text(
+                "SELECT "
+                "MIN(game.release_date)::text AS first_game_date, "
+                "MAX(game.release_date)::text AS last_game_date "
+                f'FROM "{self.schema_name}".t_user_collection user_collection '
+                f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
+                f"{where_clause}"
+            ),
+            parameters,
+        ).mappings()
+        return dict(next(iter(rows)))
+
     def count_platforms_by_criteria(
         self,
         connection: Connection,

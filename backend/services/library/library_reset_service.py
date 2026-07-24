@@ -24,8 +24,10 @@ from services.collection.imports import (
 from services.database.database_configuration import DatabaseConfiguration
 from services.database.library_reset_repository import (
     LibraryResetImportableUser,
+    LibraryResetPlatformImageSnapshot,
     SqlAlchemyLibraryResetRepository,
 )
+from services.database.platform_catalog_update_service import PlatformCatalogUpdateService
 from services.database.user_collection_import_repository import (
     SqlAlchemyUserCollectionImportRepository,
 )
@@ -40,14 +42,14 @@ from .library_reset_job_coordinator import LibraryResetJob
 class LibraryResetRepository(Protocol):
     """Decrit les operations de persistance du reset Bibliotheque."""
 
-    def clean_library_tables(self) -> None:
+    def clean_library_tables(self) -> list[LibraryResetPlatformImageSnapshot]:
         """Vide les tables globales reconstruites par l'import.
 
         Args:
             Aucun.
 
         Returns:
-            None: La methode ne retourne aucune valeur.
+            list[LibraryResetPlatformImageSnapshot]: Images a restaurer apres reimport.
         """
 
     def list_importable_users(self) -> list[LibraryResetImportableUser]:
@@ -58,6 +60,33 @@ class LibraryResetRepository(Protocol):
 
         Returns:
             list[LibraryResetImportableUser]: Utilisateurs a traiter.
+        """
+
+    def restore_platform_images(
+        self,
+        platform_image_snapshots: list[LibraryResetPlatformImageSnapshot],
+    ) -> int:
+        """Reassocie les images de plateformes sauvegardees.
+
+        Args:
+            platform_image_snapshots (list[LibraryResetPlatformImageSnapshot]): Images sauvegardees.
+
+        Returns:
+            int: Nombre d'images restaurees.
+        """
+
+
+class LibraryResetPlatformCatalogUpdater(Protocol):
+    """Decrit la reconstruction du catalogue plateformes pendant le reset."""
+
+    def update_from_resources(self) -> object:
+        """Recharge les plateformes et alias depuis les ressources CSV.
+
+        Args:
+            Aucun.
+
+        Returns:
+            object: Resultat de synchronisation du catalogue.
         """
 
 
@@ -128,6 +157,7 @@ class LibraryResetService:
         self,
         reset_repository: LibraryResetRepository,
         import_service_factory,
+        platform_catalog_updater: LibraryResetPlatformCatalogUpdater | None = None,
         file_description_validator: CollectionFileDescriptionValidator | None = None,
         email_sender: LibraryResetEmailSender | None = None,
         admin_notification_email: str = "",
@@ -138,6 +168,8 @@ class LibraryResetService:
         Args:
             reset_repository (LibraryResetRepository): Repository de reset.
             import_service_factory (Callable): Fabrique du service d'import utilisateur.
+            platform_catalog_updater (LibraryResetPlatformCatalogUpdater | None):
+                Service de reconstruction du catalogue plateformes.
             file_description_validator (CollectionFileDescriptionValidator | None): Validateur.
             email_sender (LibraryResetEmailSender | None): Expediteur email optionnel.
             admin_notification_email (str): Destinataire du rapport final.
@@ -149,6 +181,7 @@ class LibraryResetService:
 
         self.reset_repository = reset_repository
         self.import_service_factory = import_service_factory
+        self.platform_catalog_updater = platform_catalog_updater
         self.file_description_validator = file_description_validator or CollectionFileDescriptionValidator()
         self.email_sender = email_sender
         self.admin_notification_email = str(admin_notification_email or "").strip()
@@ -173,6 +206,7 @@ class LibraryResetService:
                 SqlAlchemyUserCollectionImportRepository(database_configuration),
                 CollectionFileReaderFactory(),
             ),
+            platform_catalog_updater=PlatformCatalogUpdateService(database_configuration),
             email_sender=EmailSenderFactory.create(EmailConfiguration.from_environment()),
             admin_notification_email=os.getenv("ADMIN_NOTIFICATION_EMAIL", ""),
         )
@@ -189,17 +223,71 @@ class LibraryResetService:
 
         context = LibraryResetContext(job_id=job.job_id)
         try:
-            self.reset_repository.clean_library_tables()
+            platform_image_snapshots = self.reset_repository.clean_library_tables()
         except Exception as exc:
             context.global_error = f"Echec du nettoyage de la base: {exc}"
             self.logger.exception("Echec du nettoyage de la base pendant le reset Bibliotheque.")
             self._send_final_email(context)
             return context
 
+        try:
+            self._update_platform_catalog()
+        except Exception as exc:
+            context.global_error = f"Echec de reconstruction du catalogue plateformes: {exc}"
+            self.logger.exception(
+                "Echec de reconstruction du catalogue plateformes pendant le reset Bibliotheque."
+            )
+            self._send_final_email(context)
+            return context
+
         for user in self.reset_repository.list_importable_users():
             self._import_user_collection(user, context)
+        self._restore_platform_images(platform_image_snapshots, context)
         self._send_final_email(context)
         return context
+
+    def _update_platform_catalog(self) -> None:
+        """Recharge le catalogue plateformes requis par les imports utilisateurs.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        if self.platform_catalog_updater is None:
+            return
+        self.platform_catalog_updater.update_from_resources()
+
+    def _restore_platform_images(
+        self,
+        platform_image_snapshots: list[LibraryResetPlatformImageSnapshot],
+        context: LibraryResetContext,
+    ) -> None:
+        """Restaure les images de plateformes apres les imports.
+
+        Args:
+            platform_image_snapshots (list[LibraryResetPlatformImageSnapshot]): Images sauvegardees.
+            context (LibraryResetContext): Contexte a enrichir en cas d'erreur.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        try:
+            restored_count = self.reset_repository.restore_platform_images(platform_image_snapshots)
+            if platform_image_snapshots:
+                self.logger.info(
+                    "Reset Bibliotheque: %s image(s) de plateforme restauree(s) sur %s.",
+                    restored_count,
+                    len(platform_image_snapshots),
+                )
+        except Exception as exc:
+            context.global_error = f"Echec de reassociation des images de plateformes: {exc}"
+            self.logger.exception(
+                "Echec de reassociation des images de plateformes pendant le reset Bibliotheque."
+            )
 
     def _import_user_collection(
         self,

@@ -14,7 +14,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from typing import Callable
+from typing import Any, Callable
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -43,6 +43,29 @@ class LibraryResetImportableUser:
     collection_file_description: dict | None
     profile: str
     status: str
+    creation_date: datetime
+
+
+@dataclass(frozen=True)
+class LibraryResetPlatformImageSnapshot:
+    """Represente une image de plateforme a restaurer apres reset.
+
+    Attributes:
+        platform_name (str): Nom de plateforme avant nettoyage.
+        path (str): Chemin absolu du fichier image.
+        file_size_bytes (int): Taille du fichier image en octets.
+        type (str): Type fonctionnel de l'image.
+        status (str): Statut de validation de l'image.
+        user_id (int): Utilisateur ayant propose l'image.
+        creation_date (datetime): Date de creation de la proposition.
+    """
+
+    platform_name: str
+    path: str
+    file_size_bytes: int
+    type: str
+    status: str
+    user_id: int
     creation_date: datetime
 
 
@@ -81,25 +104,133 @@ class SqlAlchemyLibraryResetRepository:
         self.engine = engine or engine_factory(configuration.database_url)
         self.platform_catalog_cache = platform_catalog_cache or PlatformCatalogCache()
 
-    def clean_library_tables(self) -> None:
+    def clean_library_tables(self) -> list[LibraryResetPlatformImageSnapshot]:
         """Vide les tables reconstruites par le reset Bibliotheque.
 
         Args:
             Aucun.
 
         Returns:
-            None: La methode ne retourne aucune valeur.
+            list[LibraryResetPlatformImageSnapshot]: Images a reassocier apres reimport.
 
         Raises:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une suppression.
         """
 
         schema_name = self.configuration.schema_name
-        table_names = ("t_user_collection", "t_game", "t_studio")
+        table_names = (
+            "t_user_collection",
+            "t_game",
+            "t_studio",
+            "t_platform_image",
+            "t_platform_alias",
+            "t_platform",
+        )
         with self.engine.begin() as connection:
+            platform_image_snapshots = self._list_platform_image_snapshots(connection)
             for table_name in table_names:
                 connection.execute(text(f'DELETE FROM "{schema_name}".{table_name}'))
         self.platform_catalog_cache.invalidate(schema_name)
+        return platform_image_snapshots
+
+    def restore_platform_images(
+        self,
+        platform_image_snapshots: list[LibraryResetPlatformImageSnapshot],
+    ) -> int:
+        """Reassocie les images sauvegardees aux plateformes recreees.
+
+        Args:
+            platform_image_snapshots (list[LibraryResetPlatformImageSnapshot]): Images sauvegardees.
+
+        Returns:
+            int: Nombre d'images restaurees.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse une insertion.
+        """
+
+        if not platform_image_snapshots:
+            return 0
+        schema_name = self.configuration.schema_name
+        restored_count = 0
+        with self.engine.begin() as connection:
+            platform_ids_by_key = self._load_platform_ids_by_name_or_alias(connection)
+            for snapshot in platform_image_snapshots:
+                platform_id = platform_ids_by_key.get(self._platform_key(snapshot.platform_name))
+                if platform_id is None:
+                    continue
+                result = connection.execute(
+                    text(
+                        f'INSERT INTO "{schema_name}".t_platform_image '
+                        "(platform, path, file_size_bytes, type, status, user_id, creation_date) "
+                        "VALUES (:platform, :path, :file_size_bytes, :type, :status, "
+                        ":user_id, :creation_date) "
+                        "ON CONFLICT DO NOTHING"
+                    ),
+                    {
+                        "platform": platform_id,
+                        "path": snapshot.path,
+                        "file_size_bytes": snapshot.file_size_bytes,
+                        "type": snapshot.type,
+                        "status": snapshot.status,
+                        "user_id": snapshot.user_id,
+                        "creation_date": snapshot.creation_date,
+                    },
+                )
+                restored_count += int(result.rowcount or 0)
+        self.platform_catalog_cache.invalidate(schema_name)
+        return restored_count
+
+    def _list_platform_image_snapshots(
+        self,
+        connection,
+    ) -> list[LibraryResetPlatformImageSnapshot]:
+        rows = connection.execute(
+            text(
+                f"SELECT platform.name AS platform_name, image.path, image.file_size_bytes, "
+                f"image.type, image.status, image.user_id, image.creation_date "
+                f'FROM "{self.configuration.schema_name}".t_platform_image image '
+                f'JOIN "{self.configuration.schema_name}".t_platform platform '
+                "ON platform.id = image.platform "
+                "ORDER BY image.id ASC"
+            )
+        ).mappings().all()
+        return [
+            LibraryResetPlatformImageSnapshot(
+                platform_name=str(row["platform_name"]),
+                path=str(row["path"]),
+                file_size_bytes=int(row["file_size_bytes"]),
+                type=str(row["type"]),
+                status=str(row["status"]),
+                user_id=int(row["user_id"]),
+                creation_date=row["creation_date"],
+            )
+            for row in rows
+        ]
+
+    def _load_platform_ids_by_name_or_alias(self, connection) -> dict[str, int]:
+        platform_ids_by_key: dict[str, int] = {}
+        rows = connection.execute(
+            text(
+                f'SELECT id, name FROM "{self.configuration.schema_name}".t_platform '
+                "ORDER BY id ASC"
+            )
+        ).mappings().all()
+        for row in rows:
+            platform_ids_by_key.setdefault(self._platform_key(row["name"]), int(row["id"]))
+        alias_rows = connection.execute(
+            text(
+                f'SELECT platform, name FROM "{self.configuration.schema_name}".t_platform_alias '
+                "ORDER BY platform ASC, id ASC"
+            )
+        ).mappings().all()
+        for row in alias_rows:
+            platform_ids_by_key.setdefault(self._platform_key(row["name"]), int(row["platform"]))
+        return platform_ids_by_key
+
+    @staticmethod
+    def _platform_key(value: Any) -> str:
+        return str(value or "").strip().casefold()
 
     def list_importable_users(self) -> list[LibraryResetImportableUser]:
         """Liste les utilisateurs dont un fichier de collection est reference.

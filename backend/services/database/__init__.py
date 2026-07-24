@@ -23,7 +23,11 @@ from .game_matching_configuration import GameMatchingConfiguration
 from .game_matching_service import GameMatchingService
 from .game_release_date_score_adjuster import GameReleaseDateScoreAdjuster
 from .game_repository import SqlAlchemyGameRepository
-from .library_reset_repository import LibraryResetImportableUser, SqlAlchemyLibraryResetRepository
+from .library_reset_repository import (
+    LibraryResetImportableUser,
+    LibraryResetPlatformImageSnapshot,
+    SqlAlchemyLibraryResetRepository,
+)
 from .platform import Platform
 from .platform_alias import PlatformAlias
 from .platform_alias_catalog_csv_reader import PlatformAliasCatalogCsvReader
@@ -76,6 +80,7 @@ __all__ = [
     "ImportedGameMatchReport",
     "ImportedStudioMatchReport",
     "LibraryResetImportableUser",
+    "LibraryResetPlatformImageSnapshot",
     "SqlAlchemyGameRepository",
     "SqlAlchemyGameDuplicateRepository",
     "SqlAlchemyCollectionShareRepository",
