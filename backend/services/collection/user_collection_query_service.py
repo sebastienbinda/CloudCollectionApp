@@ -95,6 +95,26 @@ class UserCollectionQueryRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def find_release_date_bounds(
+        self,
+        connection: Connection,
+        user_id: int,
+        wishlist: bool | None = None,
+    ) -> dict[str, Any]:
+        """Calcule les dates de sortie extremes de la collection.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur.
+            wishlist (bool | None): Filtre wishlist optionnel.
+
+        Returns:
+            dict[str, Any]: Dates de sortie minimale et maximale.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
     def find_collection_file_path(self, connection: Connection, user_id: int) -> str:
         """Retourne le chemin du fichier de collection utilisateur.
 
@@ -288,6 +308,8 @@ class UserCollectionQueryService:
             "total_value": 0,
             "average_value": 0,
             "max_platform": "",
+            "first_game_date": "",
+            "last_game_date": "",
         }
 
     def _statistics_payload(
@@ -307,11 +329,18 @@ class UserCollectionQueryService:
             if total
             else {}
         )
+        release_date_bounds = (
+            self.repository.find_release_date_bounds(connection, user_id, wishlist)
+            if total
+            else {}
+        )
         return {
             "total": total,
             "total_value": self._decimal_value(price_statistics.get("total_value")),
             "average_value": self._decimal_value(price_statistics.get("average_value")),
             "max_platform": max_platform,
+            "first_game_date": self._date_value(release_date_bounds.get("first_game_date")),
+            "last_game_date": self._date_value(release_date_bounds.get("last_game_date")),
         }
 
     def list_platforms(

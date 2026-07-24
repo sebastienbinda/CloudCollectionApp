@@ -14,7 +14,11 @@
 from datetime import datetime
 import unittest
 
-from services.database import PlatformCatalogCache, SqlAlchemyLibraryResetRepository
+from services.database import (
+    LibraryResetPlatformImageSnapshot,
+    PlatformCatalogCache,
+    SqlAlchemyLibraryResetRepository,
+)
 
 
 class FakeDatabaseConfiguration:
@@ -93,12 +97,14 @@ class FakeTransaction:
 class FakeConnection:
     """Connexion SQL factice."""
 
-    def __init__(self, rows=None, error_on_execute=None):
+    def __init__(self, rows=None, error_on_execute=None, rows_by_query=None, rowcount=1):
         """Initialise la connexion.
 
         Args:
             rows (list[dict] | None): Lignes retournees.
             error_on_execute (Exception | None): Erreur a lever.
+            rows_by_query (dict | None): Lignes retournees selon un fragment SQL.
+            rowcount (int): Nombre de lignes modifiees retourne.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -106,13 +112,17 @@ class FakeConnection:
 
         self.rows = rows or []
         self.error_on_execute = error_on_execute
+        self.rows_by_query = rows_by_query or {}
+        self.rowcount = rowcount
         self.executed_sql = []
+        self.executed_parameters = []
 
-    def execute(self, statement):
+    def execute(self, statement, parameters=None):
         """Memorise le SQL execute.
 
         Args:
             statement (object): Statement SQLAlchemy.
+            parameters (dict | None): Parametres SQL.
 
         Returns:
             FakeResult: Resultat factice.
@@ -121,26 +131,33 @@ class FakeConnection:
             Exception: Erreur configuree.
         """
 
-        self.executed_sql.append(str(statement))
+        sql = str(statement)
+        self.executed_sql.append(sql)
+        self.executed_parameters.append(parameters or {})
         if self.error_on_execute:
             raise self.error_on_execute
-        return FakeResult(self.rows)
+        for query_fragment, rows in self.rows_by_query.items():
+            if query_fragment in sql:
+                return FakeResult(rows, self.rowcount)
+        return FakeResult(self.rows, self.rowcount)
 
 
 class FakeResult:
     """Resultat SQL factice."""
 
-    def __init__(self, rows):
+    def __init__(self, rows, rowcount=1):
         """Initialise le resultat.
 
         Args:
             rows (list[dict]): Lignes retournees.
+            rowcount (int): Nombre de lignes modifiees.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
         self.rows = rows
+        self.rowcount = rowcount
 
     def mappings(self):
         """Retourne le resultat comme mappings.
@@ -253,8 +270,8 @@ class FakeEngine:
 class LibraryResetRepositoryTest(unittest.TestCase):
     """Valide les requetes du repository de reset Bibliotheque."""
 
-    def test_clean_library_tables_preserves_platform_catalog(self):
-        """Verifie que le reset conserve le referentiel plateformes.
+    def test_clean_library_tables_removes_platform_catalog_before_reimport(self):
+        """Verifie que le reset vide aussi le referentiel plateformes.
 
         Args:
             Aucun.
@@ -272,13 +289,126 @@ class LibraryResetRepositoryTest(unittest.TestCase):
             platform_catalog_cache=cache,
         )
 
-        repository.clean_library_tables()
+        snapshots = repository.clean_library_tables()
 
-        executed_sql = "\n".join(connection.executed_sql)
-        self.assertLess(executed_sql.index("t_user_collection"), executed_sql.index("t_game"))
-        self.assertLess(executed_sql.index("t_game"), executed_sql.index("t_studio"))
-        self.assertNotIn("t_platform", executed_sql)
+        deleted_tables = [self._deleted_table_name(sql) for sql in connection.executed_sql]
+        self.assertEqual([], snapshots)
+        self.assertLess(deleted_tables.index("t_user_collection"), deleted_tables.index("t_game"))
+        self.assertLess(deleted_tables.index("t_game"), deleted_tables.index("t_studio"))
+        self.assertLess(deleted_tables.index("t_game"), deleted_tables.index("t_platform"))
+        self.assertLess(deleted_tables.index("t_platform_image"), deleted_tables.index("t_platform"))
+        self.assertLess(deleted_tables.index("t_platform_alias"), deleted_tables.index("t_platform"))
+        self.assertIn("t_platform", deleted_tables)
         self.assertEqual(0, cache.invalidate("public"))
+
+    def test_clean_library_tables_returns_platform_image_snapshots(self):
+        """Verifie la sauvegarde des images de plateformes avant suppression.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les snapshots.
+        """
+
+        connection = FakeConnection(
+            rows_by_query={
+                "FROM \"public\".t_platform_image image": [
+                    {
+                        "platform_name": "Switch",
+                        "path": "/images/switch.png",
+                        "file_size_bytes": 42,
+                        "type": "MAIN",
+                        "status": "ACCEPTED",
+                        "user_id": 7,
+                        "creation_date": datetime(2026, 6, 1, 12),
+                    }
+                ]
+            }
+        )
+        repository = SqlAlchemyLibraryResetRepository(
+            FakeDatabaseConfiguration(),
+            engine=FakeEngine(connection),
+        )
+
+        snapshots = repository.clean_library_tables()
+
+        self.assertEqual(1, len(snapshots))
+        self.assertEqual("Switch", snapshots[0].platform_name)
+        self.assertEqual("/images/switch.png", snapshots[0].path)
+        self.assertEqual(42, snapshots[0].file_size_bytes)
+
+    def test_restore_platform_images_uses_recreated_platform_name_or_alias(self):
+        """Verifie la reassociation des images par nom ou alias de plateforme.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les insertions.
+        """
+
+        connection = FakeConnection(
+            rows_by_query={
+                "SELECT id, name FROM \"public\".t_platform": [
+                    {"id": 10, "name": "Switch"},
+                    {"id": 11, "name": "Super Nintendo"},
+                ],
+                "SELECT platform, name FROM \"public\".t_platform_alias": [
+                    {"platform": 11, "name": "Super Famicom"},
+                ],
+            }
+        )
+        repository = SqlAlchemyLibraryResetRepository(
+            FakeDatabaseConfiguration(),
+            engine=FakeEngine(connection),
+        )
+        snapshots = [
+            LibraryResetPlatformImageSnapshot(
+                "Switch",
+                "/images/switch.png",
+                42,
+                "MAIN",
+                "ACCEPTED",
+                7,
+                datetime(2026, 6, 1, 12),
+            ),
+            LibraryResetPlatformImageSnapshot(
+                "Super Famicom",
+                "/images/sfc.png",
+                43,
+                "OTHER",
+                "WAITING_VALIDATION",
+                8,
+                datetime(2026, 6, 2, 12),
+            ),
+        ]
+
+        restored_count = repository.restore_platform_images(snapshots)
+
+        insert_parameters = [
+            parameters
+            for sql, parameters in zip(connection.executed_sql, connection.executed_parameters)
+            if "INSERT INTO" in sql and "t_platform_image" in sql
+        ]
+        self.assertEqual(2, restored_count)
+        self.assertEqual([10, 11], [parameters["platform"] for parameters in insert_parameters])
+        self.assertEqual(["/images/switch.png", "/images/sfc.png"], [
+            parameters["path"] for parameters in insert_parameters
+        ])
+
+    @staticmethod
+    def _deleted_table_name(sql: str) -> str:
+        """Extrait le nom de table d'un `DELETE FROM` de test.
+
+        Args:
+            sql (str): Requete SQL capturee.
+
+        Returns:
+            str: Nom de table cible.
+        """
+
+        return sql.rsplit(".", maxsplit=1)[-1]
 
     def test_clean_library_tables_rolls_back_on_error(self):
         """Verifie le rollback implicite quand le clean echoue.

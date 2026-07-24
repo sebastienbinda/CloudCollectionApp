@@ -82,8 +82,8 @@ class VideoGamesApi {
     const platforms = this.normalizeCollectionPlatforms(platformsPayload.platforms || []);
     return {
       title: "Ma collection",
-      first_game_date: "",
-      last_game_date: "",
+      first_game_date: collectionStatistics.first_game_date || "",
+      last_game_date: collectionStatistics.last_game_date || "",
       totals: {
         games_count: collectionStatistics.total || 0,
         total_price: collectionStatistics.total_value || 0,

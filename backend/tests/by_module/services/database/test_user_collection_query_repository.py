@@ -191,6 +191,34 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertIn("user_collection.wishlist = :wishlist", sql)
         self.assertEqual({"user_id": 12, "wishlist": False}, parameters)
 
+    def test_release_date_bounds_are_filtered_by_user_and_wishlist(self):
+        """Verifie les agregats de dates de sortie utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le SQL et les parametres.
+        """
+
+        connection = FakeRepositoryConnection(
+            rows=[{"first_game_date": "1986-02-21", "last_game_date": "2017-03-03"}],
+        )
+
+        bounds = self.repository.find_release_date_bounds(connection, 12, False)
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertEqual(
+            {"first_game_date": "1986-02-21", "last_game_date": "2017-03-03"},
+            bounds,
+        )
+        self.assertIn("MIN(game.release_date)", sql)
+        self.assertIn("MAX(game.release_date)", sql)
+        self.assertIn("JOIN", sql)
+        self.assertIn("t_game", sql)
+        self.assertIn("user_collection.wishlist = :wishlist", sql)
+        self.assertEqual({"user_id": 12, "wishlist": False}, parameters)
+
     def test_find_collection_file_path_reads_user_table_by_id(self):
         """Verifie la lecture du chemin de fichier utilisateur.
 

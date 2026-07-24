@@ -113,14 +113,17 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         """
 
         import_data = CollectionImportData(
-            platforms=[CollectionImportPlatform("Super Nintendo")],
+            platforms=[CollectionImportPlatform("Super Famicom")],
             studios=[],
-            games=[CollectionImportGame("Mario", "Super Nintendo", "", None)],
+            games=[CollectionImportGame("Mario", "Super Famicom", "", None)],
         )
         rows = [
             {
-                "name": "Super Nintendo Entertainment System / Super Famicom",
-                "aliases": [{"name": "Super Nintendo"}, {"name": "Super Famicom"}],
+                "name": "Super Nintendo",
+                "aliases": [
+                    {"name": "Super Nintendo Entertainment System"},
+                    {"name": "Super Famicom"},
+                ],
             },
             {"name": "Nintendo Switch", "aliases": [{"name": "Switch"}]},
         ]
@@ -128,12 +131,12 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         matched_data = self._service().match_import_data(import_data, rows)
 
         self.assertEqual(
-            ["Super Nintendo Entertainment System / Super Famicom"],
+            ["Super Nintendo"],
             [game.platform_name for game in matched_data.games],
         )
         self.assertTrue(matched_data.warnings.platform_mappings[0]["matched_by_alias"])
         self.assertEqual(
-            "Super Nintendo",
+            "Super Famicom",
             matched_data.warnings.platform_mappings[0]["matched_alias"],
         )
         self.assertEqual(1, matched_data.warnings.platform_mappings[0]["games_count"])

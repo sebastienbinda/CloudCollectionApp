@@ -13,8 +13,69 @@
  * Description : styles des informations de cycle de vie des cartes plateformes.
  */
 
+.platformCardHeader h3 {
+  color: #0f172a;
+  line-height: 1.2;
+}
+
 .platformCard .platformLifecycle {
+  display: grid;
+  gap: 0.35rem 0.8rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platformLifecycleItem {
+  min-width: 0;
+}
+
+.platformLifecycleLabel,
+.platformLifecycleValue {
+  display: block;
+}
+
+.platformLifecycleLabel {
   color: #64748b;
-  font-size: 0.88rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.platformLifecycleValue {
+  color: #334155;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-top: 0.25rem;
   overflow-wrap: anywhere;
+}
+
+.platformCardWithImage .platformCardHeader h3 {
+  color: #ffffff;
+}
+
+.platformCardWithImage .platformLifecycleLabel,
+.platformCardWithImage .platformLifecycleValue {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 620px) {
+  .platformCard .platformLifecycle {
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+
+  .platformLifecycleItem {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .platformLifecycleLabel {
+    font-size: 0.6rem;
+  }
+
+  .platformLifecycleValue {
+    font-size: 0.78rem;
+    margin-top: 0.15rem;
+  }
 }

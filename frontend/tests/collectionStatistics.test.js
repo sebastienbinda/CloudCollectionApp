@@ -62,6 +62,34 @@ test("envoie le filtre plateforme au endpoint des statistiques detaillees", asyn
   assert.equal(requestedUrl, "/collections/statistics?platform_id=3");
 });
 
+test("alimente les dates extremes de la page collection depuis les statistiques backend", async () => {
+  const originalFetchJson = VideoGamesApi.fetchJson;
+  VideoGamesApi.fetchJson = async (url) => {
+    if (url === "/collections/videogames") {
+      return {
+        collection: {
+          total: 2,
+          total_value: 30,
+          average_value: 15,
+          max_platform: "Switch",
+          first_game_date: "1986-02-21",
+          last_game_date: "2017-03-03",
+        },
+      };
+    }
+    return { platforms: [] };
+  };
+
+  try {
+    const homeStats = await VideoGamesApi.fetchHomeStats();
+
+    assert.equal(homeStats.first_game_date, "1986-02-21");
+    assert.equal(homeStats.last_game_date, "2017-03-03");
+  } finally {
+    VideoGamesApi.fetchJson = originalFetchJson;
+  }
+});
+
 test("expose l'entree statistiques seulement avec route et collection autorisees", () => {
   const service = new BackendRouteAccessService(
     [

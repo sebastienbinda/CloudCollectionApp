@@ -68,12 +68,12 @@ class PlatformMatchingAdminNotifierTest(unittest.TestCase):
             total_import_duration_seconds=1.234,
             platform_mappings=[
                 {
-                    "imported_platform": "Super Nintendo",
-                    "matched_platform": "Super Nintendo Entertainment System / Super Famicom",
+                    "imported_platform": "Super Famicom",
+                    "matched_platform": "Super Nintendo",
                     "score": 100,
                     "games_count": 3,
                     "matched_by_alias": True,
-                    "matched_alias": "Super Nintendo",
+                    "matched_alias": "Super Famicom",
                     "accepted": True,
                     "manual_check": False,
                     "reason": "",
@@ -97,7 +97,7 @@ class PlatformMatchingAdminNotifierTest(unittest.TestCase):
         self.assertIn("Super Nintendo", body)
         self.assertIn("Jeux: 3", body)
         self.assertIn("Duree totale de l'import: 1.234 seconde(s).", body)
-        self.assertIn("Alias: oui (Super Nintendo)", body)
+        self.assertIn("Alias: oui (Super Famicom)", body)
         self.assertIn("Unknown Game", body)
         self.assertIn("Chrono", body)
         self.assertIn("Peut etre", body)
