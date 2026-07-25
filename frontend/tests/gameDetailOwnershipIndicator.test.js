@@ -6,6 +6,7 @@
  * Description : tests de l'indicateur de detail d'un jeu associe a l'utilisateur.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { buildGameDetailOwnershipIndicator } from "../src/gameDetailOwnershipIndicator.js";
 import VideoGamesApi from "../src/services/VideoGamesApi.js";
@@ -15,6 +16,7 @@ test("affiche l'indicateur wishlist quand le jeu associe est dans la liste de so
 
   assert.equal(indicator.label, "Dans votre liste de souhaits");
   assert.equal(indicator.ariaLabel, "Jeu dans votre liste de souhaits");
+  assert.equal(indicator.icon, "heart");
   assert.match(indicator.className, /Wishlist/);
 });
 
@@ -22,6 +24,7 @@ test("conserve l'indicateur collection quand le jeu associe n'est pas en wishlis
   const indicator = buildGameDetailOwnershipIndicator(true, false);
 
   assert.equal(indicator.label, "Vous possedez ce jeu");
+  assert.equal(indicator.icon, "star");
   assert.equal(indicator.className, "gameCollectionOwnershipIndicator");
 });
 
@@ -52,4 +55,24 @@ test("conserve les informations de plateforme utilisees par les boutons d'achat"
 
   assert.equal(game.platform_end_date, "2006-03-23");
   assert.equal(game.platform_common_alias, "PS1");
+});
+
+test("aligne les couleurs du detail avec les marqueurs de liste", () => {
+  const styleSource = readFileSync(new URL("../src/styles/game-detail.css", import.meta.url), "utf8");
+
+  assert.equal(styleSource.includes(".gameCollectionOwnershipIndicator svg"), true);
+  assert.equal(styleSource.includes("fill: #16a34a"), true);
+  assert.equal(styleSource.includes(".gameCollectionOwnershipIndicatorWishlist svg"), true);
+  assert.equal(styleSource.includes("fill: #ec4899"), true);
+});
+
+test("differencie l'etoile collection et le coeur wishlist dans le detail", () => {
+  const componentSource = readFileSync(
+    new URL("../src/components/GameDetailView.jsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.equal(componentSource.includes('ownershipIndicator.icon === "star"'), true);
+  assert.equal(componentSource.includes("m12 3 2.7 5.5"), true);
+  assert.equal(componentSource.includes("M12 20s-7-4.4-7-10"), true);
 });

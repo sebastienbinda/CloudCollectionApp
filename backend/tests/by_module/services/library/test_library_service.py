@@ -355,6 +355,22 @@ class FakeGameRepository:
             return set()
         return {game_id for game_id in game_ids if game_id == 11}
 
+    def list_current_user_wishlist_game_ids(self, connection, user_id, game_ids):
+        """Liste les jeux factices presents dans la liste de souhaits utilisateur.
+
+        Args:
+            connection (object): Connexion recue.
+            user_id (int): Identifiant utilisateur.
+            game_ids (list[int]): Identifiants de jeux verifies.
+
+        Returns:
+            set[int]: Identifiants en liste de souhaits.
+        """
+
+        if user_id != 8:
+            return set()
+        return {game_id for game_id in game_ids if game_id == 11}
+
     def find_public_library_game(self, connection, game_id):
         """Recherche un jeu factice.
 
@@ -551,6 +567,7 @@ class LibraryServiceTest(unittest.TestCase):
                     "platform_common_alias": "NES",
                     "duplicate_flag": False,
                     "in_current_user_collection": False,
+                    "in_current_user_wishlist": False,
                 }
             ],
             payload["games"],
@@ -571,6 +588,24 @@ class LibraryServiceTest(unittest.TestCase):
         payload = self.service.list_games(criteria)
 
         self.assertTrue(payload["games"][0]["in_current_user_collection"])
+        self.assertFalse(payload["games"][0]["in_current_user_wishlist"])
+
+    def test_list_games_marks_current_user_wishlist_items(self):
+        """Verifie le marqueur liste de souhaits utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le booleen expose.
+        """
+
+        criteria = self.query_parser.parse("games", {}, current_user_id=8)
+
+        payload = self.service.list_games(criteria)
+
+        self.assertFalse(payload["games"][0]["in_current_user_collection"])
+        self.assertTrue(payload["games"][0]["in_current_user_wishlist"])
 
     def test_get_game_returns_detail_payload(self):
         """Verifie le payload detail d'un jeu public.

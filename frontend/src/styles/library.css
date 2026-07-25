@@ -209,6 +209,13 @@
   line-height: 1;
 }
 
+.libraryGameWishlistMarker {
+  color: #ec4899;
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
 .librarySearchForm > div > button {
   border-radius: 6px;
   padding: 0.4rem 0.7rem;

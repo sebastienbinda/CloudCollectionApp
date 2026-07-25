@@ -183,8 +183,8 @@ Use the following domain folders for new or modified hooks:
   render their own table pagination controls.
 - Do not add authentication headers to public Library endpoints, except
   `/api/library/games` may send a locally non-expired Bearer to request the
-  optional `in_current_user_collection` marker. Expired local tokens must not be
-  sent for this optional enrichment.
+  optional `in_current_user_collection` and `in_current_user_wishlist` markers.
+  Expired local tokens must not be sent for this optional enrichment.
 - Public Library and collection game detail may show the protected
   duplicate-report action to a connected `USER` only after the
   collection-status hook confirms that the user has an imported collection. The

@@ -51,7 +51,10 @@ send authentication headers.
 Search result cards may display only public reference fields returned by the
 Library API, such as game name, platform, release date, developer, editor and
 status. They must not display purchase price, purchase date, user note,
-wishlist state, uploaded file metadata or any user-private collection value.
+uploaded file metadata or any user-private collection value. The dedicated
+`/bibliotheque/jeux` list may display the optional current-user collection and
+wishlist markers returned by `GET /api/library/games` when a valid non-expired
+`USER` Bearer is sent.
 
 The `/bibliotheque/jeux` list page exposes game-name search and platform
 filter controls above the games table. Game list filters must remain outside

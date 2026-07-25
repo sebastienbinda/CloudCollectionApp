@@ -201,22 +201,40 @@ function formatLibraryGameCellValue(column, value, row) {
     return TableColumnFormatService.formatGameValue(column, value, row);
   }
   const formattedName = TableColumnFormatService.formatGameValue(column, value, row);
-  if (!row?.in_current_user_collection) {
+  const markers = [];
+  if (row?.in_current_user_collection) {
+    markers.push(createElement(
+      "span",
+      {
+        "aria-label": "Dans votre collection",
+        className: "libraryGameCollectionMarker",
+        key: "collection",
+        role: "img",
+        title: "Dans votre collection",
+      },
+      "★"
+    ));
+  }
+  if (row?.in_current_user_wishlist) {
+    markers.push(createElement(
+      "span",
+      {
+        "aria-label": "Dans votre liste de souhaits",
+        className: "libraryGameWishlistMarker",
+        key: "wishlist",
+        role: "img",
+        title: "Dans votre liste de souhaits",
+      },
+      "♥"
+    ));
+  }
+  if (markers.length === 0) {
     return formattedName;
   }
   return createElement(
     "span",
     { className: "libraryGameNameWithCollectionMarker" },
-    createElement(
-      "span",
-      {
-        "aria-label": "Dans votre collection",
-        className: "libraryGameCollectionMarker",
-        role: "img",
-        title: "Dans votre collection",
-      },
-      "★"
-    ),
+    ...markers,
     createElement("span", null, formattedName)
   );
 }
