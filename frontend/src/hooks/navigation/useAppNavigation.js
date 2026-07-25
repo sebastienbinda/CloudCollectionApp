@@ -39,7 +39,7 @@ function useAppNavigation(options) {
 
   const updatePlatformUrl = (platformId) => {
     const url = new URL(window.location.href);
-    url.pathname = "/";
+    url.pathname = "/collection";
     url.searchParams.delete("platform");
     if (platformId) url.searchParams.set("platform_id", platformId);
     else url.searchParams.delete("platform_id");

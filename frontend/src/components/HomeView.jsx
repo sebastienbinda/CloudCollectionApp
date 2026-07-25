@@ -246,6 +246,28 @@ function HomeView({
               </div>
             </div>
             <GridComponent>
+              <CardComponent
+                className="platformCardAllGames"
+                key="all-platforms"
+                onClick={() => onOpenPlatform("")}
+              >
+                <CardHeaderComponent>
+                  <h3>Toutes les plateformes</h3>
+                  <CardCountComponent>
+                    {formatNumber(homeStats.totals?.games_count)} jeux
+                  </CardCountComponent>
+                </CardHeaderComponent>
+                <dl>
+                  <div>
+                    <dt>Prix total</dt>
+                    <dd>{formatCurrency(homeStats.totals?.total_price)}</dd>
+                  </div>
+                  <div>
+                    <dt>Prix moyen</dt>
+                    <dd>{formatCurrency(homeStats.totals?.average_price)}</dd>
+                  </div>
+                </dl>
+              </CardComponent>
               {(homeStats.platforms || []).map((platform) => (
                 <CardComponent
                   className={[

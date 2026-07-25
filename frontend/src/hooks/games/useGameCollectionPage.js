@@ -66,7 +66,7 @@ function useGameCollectionPage(options) {
 
   useEffect(() => {
     const fetchGames = async () => {
-      if (!options.hasAccessToken || !options.selectedPlatform) {
+      if (!options.hasAccessToken) {
         setGames([]);
         setIsLoadingGames(false);
         return;
@@ -75,18 +75,21 @@ function useGameCollectionPage(options) {
       try {
         setIsLoadingGames(true);
         options.setError("");
-        const data = await VideoGamesApi.fetchGames({
-          platform_id: options.selectedPlatform,
+        const searchCriteria = {
           wishlist: false,
           sort: buildBackendSort(sortConfig),
-        });
+        };
+        if (options.selectedPlatform) {
+          searchCriteria.platform_id = options.selectedPlatform;
+        }
+        const data = await VideoGamesApi.fetchGames(searchCriteria);
         const loadedGames = Array.isArray(data) ? data : [];
         setGames(loadedGames);
       } catch (e) {
         if (AuthApi.isSessionExpiredError(e)) {
           return;
         }
-        options.setError("Impossible de charger les jeux video pour cette plateforme.");
+        options.setError("Impossible de charger les jeux video de la collection.");
         setGames([]);
       } finally {
         setIsLoadingGames(false);

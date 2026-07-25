@@ -9,6 +9,7 @@
  * Date de creation : 2026-05-03
  * Auteurs : Codex et Binda Sébastien
  */
+import { useState } from "react";
 import {
   formatCurrency,
   formatNumber,
@@ -17,6 +18,7 @@ import CollectionGamesTable from "./CollectionGamesTable";
 import EditGameDialog from "./EditGameDialog";
 import PageLayout from "./PageLayout";
 import ProgressBar from "./ProgressBar";
+import SortIcon from "./SortIcon";
 
 /**
  * Page de detail d'une plateforme avec statistiques, filtres et tableau de jeux.
@@ -74,9 +76,29 @@ function PlatformDetailView({
   onOpenGameDetail = () => {},
   editingGame,
 }) {
+  const [isMobileSortMenuOpen, setIsMobileSortMenuOpen] = useState(false);
+  const isAllPlatformsSelected = !selectedPlatform;
+  const allPlatformsStats = buildAllPlatformsStats(platforms, games);
+  const displayedPlatformStats = selectedPlatformStats
+    || (isAllPlatformsSelected ? allPlatformsStats : null);
   const selectedPlatformName = selectedPlatformStats?.name
     || platforms.find((platform) => String(platform.id) === String(selectedPlatform))?.name
-    || "CloudCollectionApp";
+    || (isAllPlatformsSelected ? "Tous les jeux" : "CloudCollectionApp");
+  const platformFilterSubtitle = isAllPlatformsSelected
+    ? "Toutes plateformes confondues"
+    : "Filtrer la liste par plateforme";
+  const platformStatsLabel = isAllPlatformsSelected
+    ? "Statistiques de la collection"
+    : "Statistiques de la plateforme";
+  const emptyCollectionMessage = isAllPlatformsSelected
+    ? "Aucun jeu a afficher dans la collection."
+    : "Aucun jeu a afficher pour cette plateforme.";
+  const activeSortLabel = sortConfig?.column || "Nom du jeu";
+  const mobileSortColumns = sortableColumns || [];
+  const handleMobileSort = (column) => {
+    onToggleSort(column);
+    setIsMobileSortMenuOpen(false);
+  };
 
   /**
    * Indique si une note de jeu merite une mise en avant.
@@ -103,9 +125,9 @@ function PlatformDetailView({
   return (
     <PageLayout
       shellClassName="container"
-      eyebrow="Plateforme"
+      eyebrow={isAllPlatformsSelected ? "Collection" : "Plateforme"}
       title={selectedPlatformName}
-      subtitle={isGuest ? guestCollectionLabel : "Filtrer la liste par plateforme"}
+      subtitle={isGuest ? guestCollectionLabel : platformFilterSubtitle}
       headerClassName={`pageHeader${isGuest ? " guestSessionPageHeader" : ""}`}
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
@@ -130,21 +152,21 @@ function PlatformDetailView({
               ? "platformDetailStatsAuthenticated"
               : "platformDetailStatsPublic"
           }`}
-          aria-label="Statistiques de la plateforme"
+          aria-label={platformStatsLabel}
         >
           <article>
             <span>Jeux</span>
-            <strong>{formatNumber(selectedPlatformStats?.games_count ?? games.length)}</strong>
+            <strong>{formatNumber(displayedPlatformStats?.games_count ?? games.length)}</strong>
           </article>
           {isAuthenticated && canViewPrices ? (
             <>
               <article>
                 <span>Valeur</span>
-                <strong>{formatCurrency(selectedPlatformStats?.total_price)}</strong>
+                <strong>{formatCurrency(displayedPlatformStats?.total_price)}</strong>
               </article>
               <article>
                 <span>Prix moyen</span>
-                <strong>{formatCurrency(selectedPlatformStats?.average_price)}</strong>
+                <strong>{formatCurrency(displayedPlatformStats?.average_price)}</strong>
               </article>
             </>
           ) : null}
@@ -173,13 +195,45 @@ function PlatformDetailView({
         sortedGames={sortedGames}
         filteredGames={filteredGames}
         isLoadingGames={isLoadingGames}
-        emptyMessage="Aucun jeu a afficher pour cette plateforme."
+        emptyMessage={emptyCollectionMessage}
         sortableColumns={sortableColumns}
         columnLabels={{ "Prix d'achat": "Prix" }}
         tableClassName="collectionGamesTable"
         controlsContent={(
           <form className="librarySearchForm" onSubmit={(event) => event.preventDefault()}>
-            <label htmlFor="collection-game-name-filter">Recherche par nom</label>
+            <div className="collectionSearchHeader">
+              <label htmlFor="collection-game-name-filter">Recherche par nom</label>
+              <div className="mobileCollectionSortControl">
+                <button
+                  type="button"
+                  className="mobileCollectionSortButton"
+                  onClick={() => setIsMobileSortMenuOpen((isOpen) => !isOpen)}
+                  aria-expanded={isMobileSortMenuOpen}
+                  aria-haspopup="menu"
+                  aria-label={`Trier les jeux, tri actif ${activeSortLabel}`}
+                  title="Trier les jeux"
+                >
+                  <SortIcon column={activeSortLabel} sortConfig={sortConfig} />
+                </button>
+                {isMobileSortMenuOpen ? (
+                  <div className="mobileCollectionSortMenu" role="menu">
+                    <p className="mobileCollectionSortMenuHeader">Critere de tri</p>
+                    {mobileSortColumns.map((column) => (
+                      <button
+                        type="button"
+                        key={column}
+                        role="menuitem"
+                        className={sortConfig?.column === column ? "mobileSortMenuItemActive" : ""}
+                        onClick={() => handleMobileSort(column)}
+                      >
+                        <span>{column}</span>
+                        <SortIcon column={column} sortConfig={sortConfig} />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
             <div>
               <div className="librarySearchInputControl">
                 <input
@@ -209,6 +263,7 @@ function PlatformDetailView({
                 disabled={isLoadingPlatforms || platforms.length === 0}
                 aria-label="Filtrer par plateforme"
               >
+                <option value="">Toutes les plateformes</option>
                 {platforms.map((platform) => (
                   <option key={platform.id} value={platform.id}>
                     {platform.name}
@@ -270,6 +325,26 @@ function PlatformDetailView({
 
     </PageLayout>
   );
+}
+
+/**
+ * Agrege les statistiques visibles pour la consultation toutes plateformes.
+ *
+ * @param {Array<Object>} platforms - Plateformes de la collection.
+ * @param {Array<Object>} games - Jeux charges pour la vue courante.
+ * @returns {Object} Statistiques synthetiques de collection.
+ */
+function buildAllPlatformsStats(platforms, games) {
+  const totalPrice = platforms.reduce(
+    (total, platform) => total + Number(platform.total_price || 0),
+    0
+  );
+  const gamesCount = games.length;
+  return {
+    games_count: gamesCount,
+    total_price: totalPrice,
+    average_price: gamesCount > 0 ? totalPrice / gamesCount : 0,
+  };
 }
 
 export default PlatformDetailView;
