@@ -248,6 +248,26 @@ class PublicLibraryGameRepository(Protocol):
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+    def list_current_user_wishlist_game_ids(
+        self,
+        connection: Connection,
+        user_id: int,
+        game_ids: list[int],
+    ) -> set[int]:
+        """Liste les jeux de la page deja presents dans la liste de souhaits.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle.
+            user_id (int): Identifiant utilisateur connecte.
+            game_ids (list[int]): Identifiants de jeux a verifier.
+
+        Returns:
+            set[int]: Identifiants en liste de souhaits.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
+        """
+
     def find_public_library_game(
         self,
         connection: Connection,

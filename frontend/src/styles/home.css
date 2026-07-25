@@ -742,8 +742,17 @@
   text-align: left;
 }
 
+.platformCardAllGames {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
 .platformCard:hover:not(:disabled) {
   background: #f8fafc;
+}
+
+.platformCardAllGames:hover:not(:disabled) {
+  background: #dcfce7;
 }
 
 .platformCardWithImage {

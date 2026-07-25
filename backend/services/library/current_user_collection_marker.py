@@ -55,6 +55,7 @@ class CurrentUserCollectionMarker:
 
         for row in rows:
             row["in_current_user_collection"] = False
+            row["in_current_user_wishlist"] = False
         if current_user_id is None or not rows:
             return
         page_game_ids = [int(row["id"]) for row in rows]
@@ -63,5 +64,11 @@ class CurrentUserCollectionMarker:
             current_user_id,
             page_game_ids,
         )
+        wished_game_ids = self.game_repository.list_current_user_wishlist_game_ids(
+            connection,
+            current_user_id,
+            page_game_ids,
+        )
         for row in rows:
             row["in_current_user_collection"] = int(row["id"]) in owned_game_ids
+            row["in_current_user_wishlist"] = int(row["id"]) in wished_game_ids

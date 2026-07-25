@@ -46,7 +46,7 @@ function usePlatformsCatalog(options) {
         if (platformIdFromUrl) {
           options.setSelectedPlatform(platformIdFromUrl);
           options.setCurrentView("games");
-        } else if (loadedPlatforms.length > 0) {
+        } else if (loadedPlatforms.length > 0 && options.currentView !== "games") {
           options.setSelectedPlatform(String(loadedPlatforms[0].id || ""));
           options.setGameForm((previous) => ({
             ...previous,

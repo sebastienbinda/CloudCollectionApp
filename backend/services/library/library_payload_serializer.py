@@ -152,6 +152,8 @@ class LibraryPayloadSerializer:
         }
         if "in_current_user_collection" in row:
             payload["in_current_user_collection"] = bool(row.get("in_current_user_collection"))
+        if "in_current_user_wishlist" in row:
+            payload["in_current_user_wishlist"] = bool(row.get("in_current_user_wishlist"))
         return payload
 
     def date_value(self, value: Any) -> str:

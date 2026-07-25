@@ -127,10 +127,10 @@
 
 .gameCollectionOwnershipIndicator {
   align-items: center;
-  background: #fff1f2;
-  border: 1px solid #f9a8d4;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-radius: 8px;
-  color: #9f1239;
+  color: #166534;
   display: inline-flex;
   font-size: 0.82rem;
   font-weight: 800;
@@ -143,10 +143,10 @@
 }
 
 .gameCollectionOwnershipIndicator svg {
-  fill: #ec4899;
+  fill: #16a34a;
   flex: 0 0 auto;
   height: 1.25rem;
-  stroke: #be185d;
+  stroke: #15803d;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
@@ -158,14 +158,14 @@
 }
 
 .gameCollectionOwnershipIndicatorWishlist {
-  background: #f0fdfa;
-  border-color: #5eead4;
-  color: #0f766e;
+  background: #fdf2f8;
+  border-color: #f9a8d4;
+  color: #9d174d;
 }
 
 .gameCollectionOwnershipIndicatorWishlist svg {
-  fill: #14b8a6;
-  stroke: #0f766e;
+  fill: #ec4899;
+  stroke: #be185d;
 }
 
 .gameDetailGrid {

@@ -152,7 +152,10 @@ function GameDetailView({
             {ownershipIndicator ? (
               <div className={ownershipIndicator.className} aria-label={ownershipIndicator.ariaLabel}>
                 <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                  <path d={ownershipIndicator.icon === "star"
+                    ? "m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 16.9 6.6 19.8l1-6.1-4.4-4.3 6.1-.9L12 3Z"
+                    : "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"}
+                  />
                 </svg>
                 <span>{ownershipIndicator.label}</span>
               </div>

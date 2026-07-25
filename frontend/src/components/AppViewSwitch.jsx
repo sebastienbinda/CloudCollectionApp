@@ -467,8 +467,12 @@ class AppViewSwitch {
         isLoadingPlatforms={props.isLoadingPlatforms}
         isLoadingGames={props.isLoadingGames}
         isSavingGame={props.isSavingGame}
-        canEditGame={props.actionPermissions.canEditGame && !props.isGuest}
-        canDeleteGame={props.actionPermissions.canDeleteGame && !props.isGuest}
+        canEditGame={
+          props.actionPermissions.canEditGame && !props.isGuest && Boolean(props.selectedPlatform)
+        }
+        canDeleteGame={
+          props.actionPermissions.canDeleteGame && !props.isGuest && Boolean(props.selectedPlatform)
+        }
         editingGame={props.editingGame}
         onBackToPlatforms={props.goHome}
         onOpenPlatform={props.openPlatform}

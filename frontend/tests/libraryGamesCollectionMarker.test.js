@@ -13,6 +13,7 @@
  * Description : tests frontend de l'enrichissement collection des jeux Bibliotheque.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { beforeEach, test } from "node:test";
 import AuthApi from "../src/services/AuthApi.js";
 import BackendAvailabilityGuard from "../src/services/BackendAvailabilityGuard.js";
@@ -88,4 +89,39 @@ test("n'envoie pas de Bearer expire pour conserver la lecture publique", async (
 
   assert.equal(receivedRequest.url, "/api/library/games");
   assert.equal(receivedRequest.options.headers, undefined);
+});
+
+test("conserve le marqueur wishlist retourne par la Bibliotheque", async () => {
+  window.fetch = async () => new Response(JSON.stringify({
+    page: {},
+    games: [{
+      id: 4,
+      name: "Chrono Trigger",
+      in_current_user_collection: false,
+      in_current_user_wishlist: true,
+    }],
+  }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+  AuthApi.storeAccessToken(createToken({ profile: "USER" }), 3600);
+
+  const data = await LibraryApi.fetchGames();
+
+  assert.equal(data.games[0].in_current_user_wishlist, true);
+  assert.equal(data.games[0].in_current_user_collection, false);
+});
+
+test("rend un coeur rose pour les jeux Bibliotheque en liste de souhaits", () => {
+  const hookSource = readFileSync(
+    new URL("../src/hooks/library/useLibraryGames.js", import.meta.url),
+    "utf8"
+  );
+  const styleSource = readFileSync(new URL("../src/styles/library.css", import.meta.url), "utf8");
+
+  assert.equal(hookSource.includes("in_current_user_wishlist"), true);
+  assert.equal(hookSource.includes("libraryGameWishlistMarker"), true);
+  assert.equal(hookSource.includes("♥"), true);
+  assert.equal(styleSource.includes(".libraryGameWishlistMarker"), true);
+  assert.equal(styleSource.includes("#ec4899"), true);
 });

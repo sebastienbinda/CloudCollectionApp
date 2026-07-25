@@ -41,10 +41,10 @@
   non-`ADMIN` token, and to `/configuration` with an `ADMIN` token.
 
 The Bibliotheque routes must stay public and read-only. They consult the global
-reference database. `/bibliotheque/jeux` may show a connected `USER` marker when
-the listed game is already in the user's collection and not in the wishlist; the
-page must still load as a public reference list without that marker when no
-valid token is available.
+reference database. `/bibliotheque/jeux` may show connected `USER` markers when
+the listed game is already in the user's collection or wishlist; the page must
+still load as a public reference list without those markers when no valid token
+is available.
 The platform image file route
 `GET /api/library/platforms/<platform_id>/image/<image_id>` is public only for
 images accepted by an administrator; waiting images must not be displayed from

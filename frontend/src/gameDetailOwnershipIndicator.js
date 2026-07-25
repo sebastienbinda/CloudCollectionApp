@@ -25,12 +25,14 @@ export function buildGameDetailOwnershipIndicator(
     return {
       ariaLabel: "Jeu dans votre liste de souhaits",
       className: "gameCollectionOwnershipIndicator gameCollectionOwnershipIndicatorWishlist",
+      icon: "heart",
       label: "Dans votre liste de souhaits",
     };
   }
   return {
     ariaLabel: "Jeu possede",
     className: "gameCollectionOwnershipIndicator",
+    icon: "star",
     label: "Vous possedez ce jeu",
   };
 }
