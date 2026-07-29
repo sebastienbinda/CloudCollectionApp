@@ -235,6 +235,7 @@ class SqlAlchemyGameRepository:
             text(
                 "SELECT "
                 "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
+                "game.status, "
                 "game.developer AS developer_id, developer_studio.name AS developer, "
                 "game.editor AS editor_id, editor_studio.name AS editor, "
                 "game.platform AS platform_id, platform.name AS platform, "
@@ -348,6 +349,7 @@ class SqlAlchemyGameRepository:
             text(
                 "SELECT "
                 "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
+                "game.status, "
                 "developer_studio.name AS developer, editor_studio.name AS editor, "
                 "platform.name AS platform, "
                 f"{self._platform_common_alias_select()}"

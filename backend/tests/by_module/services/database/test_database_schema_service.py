@@ -222,8 +222,9 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
 
         revisions_by_id = {revision.revision: revision for revision in revisions}
 
-        self.assertEqual(["20260708_0018"], script_directory.get_heads())
-        self.assertEqual(15, len(revisions))
+        self.assertEqual(["20260729_0019"], script_directory.get_heads())
+        self.assertEqual(16, len(revisions))
+        self.assertEqual("20260708_0018", revisions_by_id["20260729_0019"].down_revision)
         self.assertEqual("20260628_0017", revisions_by_id["20260708_0018"].down_revision)
         self.assertEqual("20260627_0016", revisions_by_id["20260628_0017"].down_revision)
         self.assertEqual("20260625_0015", revisions_by_id["20260627_0016"].down_revision)
@@ -442,6 +443,38 @@ class DatabaseSchemaServiceTest(unittest.TestCase):
         self.assertIn('down_revision: Union[str, None] = "20260620_0011"', migration_source)
         self.assertIn("sa.Numeric(precision=12, scale=2)", migration_source)
         self.assertIn('postgresql_using="purchase_price::numeric(12,2)"', migration_source)
+
+    def test_game_validation_status_migration_declares_expected_schema_changes(self):
+        """Verifie la migration du statut de validation des jeux.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident colonne, contrainte, index et downgrade.
+        """
+
+        migration_path = (
+            BACKEND_DIR
+            / "migrations"
+            / "versions"
+            / "20260729_0019_add_game_validation_status.py"
+        )
+        migration_source = migration_path.read_text(encoding="utf-8")
+
+        self.assertIn('down_revision: Union[str, None] = "20260708_0018"', migration_source)
+        self.assertIn('"t_game"', migration_source)
+        self.assertIn('"status"', migration_source)
+        self.assertIn("sa.String(length=32)", migration_source)
+        self.assertIn("server_default=sa.text(\"'ACCEPTED'\")", migration_source)
+        self.assertIn("nullable=False", migration_source)
+        self.assertIn("ck_t_game_status", migration_source)
+        self.assertIn("WAITING_VALIDATION", migration_source)
+        self.assertIn("ACCEPTED", migration_source)
+        self.assertIn("ix_t_game_status", migration_source)
+        self.assertIn("op.drop_index", migration_source)
+        self.assertIn("op.drop_constraint", migration_source)
+        self.assertIn("op.drop_column", migration_source)
 
     def test_initialize_database_schema_skips_when_database_url_is_absent(self):
         """Verifie que l'initialisation est ignoree sans `DATABASE_URL`.
