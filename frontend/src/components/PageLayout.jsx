@@ -12,12 +12,13 @@
  *
  * Description : layout React commun pour les pages applicatives.
  */
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import AppFooter from "./AppFooter";
 import MainMenu from "./MainMenu";
 import ProjectIcon from "./ProjectIcon";
 
 const SCROLL_TOP_VISIBILITY_THRESHOLD = 520;
+const LibraryValidationBadgeContext = createContext(0);
 
 /**
  * Deduit l'entree de menu active depuis l'URL courante.
@@ -105,7 +106,7 @@ function PageLayout({
   canAccessConfiguration = true,
   authenticatedUsername,
   authenticatedProfile,
-  libraryValidationBadgeCount = 0,
+  libraryValidationBadgeCount,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
@@ -119,6 +120,10 @@ function PageLayout({
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const resolvedActiveNavigationKey = (
     activeNavigationKey || resolveActiveNavigationKeyFromLocation()
+  );
+  const contextLibraryValidationBadgeCount = useContext(LibraryValidationBadgeContext);
+  const resolvedLibraryValidationBadgeCount = (
+    libraryValidationBadgeCount ?? contextLibraryValidationBadgeCount
   );
   const renderedTitleContent = titleContent || (
     <span className="pageTitleWithIcon">
@@ -178,7 +183,7 @@ function PageLayout({
           canAccessConfiguration={canAccessConfiguration}
           username={authenticatedUsername}
           profile={authenticatedProfile}
-          libraryValidationBadgeCount={libraryValidationBadgeCount}
+          libraryValidationBadgeCount={resolvedLibraryValidationBadgeCount}
           onOpenAbout={onOpenAbout}
           onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
@@ -207,4 +212,5 @@ function PageLayout({
   );
 }
 
+export { LibraryValidationBadgeContext };
 export default PageLayout;

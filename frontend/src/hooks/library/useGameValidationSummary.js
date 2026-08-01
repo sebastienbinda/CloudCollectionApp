@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import LibraryAdminApi from "../../services/LibraryAdminApi";
+import LibraryApi from "../../services/LibraryApi";
 
 const EMPTY_SUMMARY = {
   waiting_validation_count: 0,
@@ -43,8 +44,7 @@ function useGameValidationSummary(options = {}) {
     try {
       setIsLoadingSummary(true);
       setSummaryError("");
-      const data = await LibraryAdminApi.fetchGameValidationSummary();
-      const nextSummary = normalizeGameValidationSummary(data.summary);
+      const nextSummary = await loadGameValidationSummaryWithFallback();
       setSummary(nextSummary);
       return nextSummary;
     } catch (error) {
@@ -71,6 +71,47 @@ function useGameValidationSummary(options = {}) {
 }
 
 /**
+ * Charge le compteur admin avec un repli sur la liste filtree des jeux.
+ *
+ * @returns {Promise<Object>} Resume normalise du nombre de jeux en attente.
+ * @throws {Error} Si les deux lectures echouent.
+ */
+async function loadGameValidationSummaryWithFallback() {
+  try {
+    const data = await LibraryAdminApi.fetchGameValidationSummary();
+    const summary = normalizeGameValidationSummary(data.summary);
+    if (summary.waiting_validation_count > 0) {
+      return summary;
+    }
+    return loadGameValidationSummaryFromGameList(summary);
+  } catch {
+    return loadGameValidationSummaryFromGameList();
+  }
+}
+
+/**
+ * Compte les jeux en attente depuis le total de la liste admin filtree.
+ *
+ * @param {Object} defaultSummary - Resume deja obtenu par l'endpoint dedie.
+ * @returns {Promise<Object>} Resume confirme par la liste admin.
+ * @throws {Error} Si la liste filtree est indisponible.
+ */
+async function loadGameValidationSummaryFromGameList(defaultSummary = EMPTY_SUMMARY) {
+  const data = await LibraryApi.fetchGames({
+    page: 0,
+    size: 1,
+    status: "WAITING_VALIDATION",
+  });
+  const fallbackCount = Number.parseInt(data.page?.totalElements, 10);
+  if (!Number.isFinite(fallbackCount) || fallbackCount <= 0) {
+    return defaultSummary;
+  }
+  return normalizeGameValidationSummary({
+    waiting_validation_count: fallbackCount,
+  });
+}
+
+/**
  * Normalise le payload de resume de validation des jeux.
  *
  * @param {Object|null} summary - Resume brut retourne par le backend.
@@ -88,5 +129,8 @@ function normalizeGameValidationSummary(summary) {
   };
 }
 
-export { normalizeGameValidationSummary };
+export {
+  loadGameValidationSummaryFromGameList,
+  normalizeGameValidationSummary,
+};
 export default useGameValidationSummary;

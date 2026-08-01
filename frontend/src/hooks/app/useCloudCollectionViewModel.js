@@ -162,7 +162,7 @@ function useCloudCollectionViewModel() {
     enabled: navigation.currentView === "libraryStudios",
   });
   const gameValidationSummary = useGameValidationSummary({
-    enabled: session.actionPermissions.canManageGameValidation,
+    enabled: session.hasAccessToken && session.authenticatedProfile === "ADMIN",
   });
   const libraryGames = useLibraryGames({
     enabled: navigation.currentView === "libraryGames",

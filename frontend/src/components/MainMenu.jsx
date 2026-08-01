@@ -315,7 +315,13 @@ function MainMenu({
     return (
       <button
         aria-current={isActive ? "page" : undefined}
+        aria-label={
+          item.badgeCount > 0
+            ? `${item.label}, ${item.badgeCount} jeux en attente de validation`
+            : undefined
+        }
         className={`${className}${isActive ? " isActiveNavigationItem" : ""}`}
+        data-badge-count={item.badgeCount > 0 ? item.badgeCount : undefined}
         type="button"
         onClick={() => runMenuAction(item.action)}
         disabled={item.disabled}

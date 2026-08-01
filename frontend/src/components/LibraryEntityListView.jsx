@@ -193,7 +193,7 @@ function LibraryEntityListView({
                 }
                 onChange={listState.validationWorkflow.onToggleVisibleSelection}
               />
-              <span>Selection visible</span>
+              <span>Tout selectionner</span>
             </label>
             <div className="libraryValidationActions">
               <span>{listState.validationWorkflow.selectedCount} selection(s)</span>
@@ -249,6 +249,7 @@ function LibraryEntityListView({
             pagination={listState.pagination}
             renderRowActions={resolvedRenderRowActions}
             actionColumnLabel={listState.validationWorkflow ? "" : undefined}
+            actionColumnPosition={listState.validationWorkflow ? "left" : "right"}
             onRowClick={onRowClick}
             getRowKey={(row) => row.id || row.name}
           />

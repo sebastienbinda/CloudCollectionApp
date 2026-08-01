@@ -232,17 +232,32 @@
 }
 
 .libraryValidationRowSelection {
+  box-sizing: border-box;
+  display: grid;
   font-size: 0.82rem;
-  justify-content: center;
+  justify-items: center;
+  min-height: 1.05rem;
   width: 100%;
   white-space: nowrap;
 }
 
+.libraryValidationRowSelection input {
+  height: 1.05rem;
+  margin: 0;
+  width: 1.05rem;
+}
+
 .libraryGamesTable .actionColumn {
-  padding-left: 0.45rem;
-  padding-right: 0.45rem;
+  box-sizing: border-box;
+  max-width: 2.25rem;
+  min-width: 2.25rem;
+  overflow: hidden;
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
   text-align: center;
-  width: 1%;
+  width: 2.25rem;
 }
 
 .libraryGameNameWithCollectionMarker {

@@ -119,6 +119,22 @@ test("declare les controles admin de filtre, selection et badge Bibliotheque", (
     new URL("../src/hooks/library/useLibraryGames.js", import.meta.url),
     "utf8"
   );
+  const summaryHookSource = readFileSync(
+    new URL("../src/hooks/library/useGameValidationSummary.js", import.meta.url),
+    "utf8"
+  );
+  const viewModelSource = readFileSync(
+    new URL("../src/hooks/app/useCloudCollectionViewModel.js", import.meta.url),
+    "utf8"
+  );
+  const appSource = readFileSync(
+    new URL("../src/App.jsx", import.meta.url),
+    "utf8"
+  );
+  const pageLayoutSource = readFileSync(
+    new URL("../src/components/PageLayout.jsx", import.meta.url),
+    "utf8"
+  );
   const listSource = readFileSync(
     new URL("../src/components/LibraryEntityListView.jsx", import.meta.url),
     "utf8"
@@ -130,11 +146,19 @@ test("declare les controles admin de filtre, selection et badge Bibliotheque", (
 
   assert.equal(hookSource.includes("validationStatusFilter"), true);
   assert.equal(hookSource.includes("canManageGameValidation"), true);
+  assert.equal(summaryHookSource.includes("loadGameValidationSummaryFromGameList"), true);
+  assert.equal(summaryHookSource.includes('status: "WAITING_VALIDATION"'), true);
   assert.equal(listSource.includes("library-validation-status-filter"), true);
-  assert.equal(listSource.includes("Selection visible"), true);
+  assert.equal(listSource.includes("Tout selectionner"), true);
   assert.equal(listSource.includes("<span>Selectionner</span>"), false);
   assert.equal(listSource.includes("actionColumnLabel"), true);
+  assert.equal(listSource.includes('actionColumnPosition={listState.validationWorkflow ? "left" : "right"}'), true);
+  assert.equal(viewModelSource.includes('session.authenticatedProfile === "ADMIN"'), true);
+  assert.equal(viewModelSource.includes("libraryValidationBadgeCount"), true);
+  assert.equal(appSource.includes("LibraryValidationBadgeContext.Provider"), true);
+  assert.equal(pageLayoutSource.includes("contextLibraryValidationBadgeCount"), true);
   assert.equal(menuSource.includes("mainNavigationBadge"), true);
+  assert.equal(menuSource.includes("data-badge-count"), true);
 });
 
 test("affiche la colonne statut Bibliotheque uniquement pour ADMIN", () => {

@@ -377,11 +377,14 @@ class TableComponent extends Component {
       getRowClassName,
       renderRowActions,
       actionColumnLabel = "Action",
+      actionColumnPosition = "right",
       tableClassName,
       onRowClick,
     } = this.props;
     const rows = this.getRows();
     const hasFilters = Boolean(this.props.onColumnFiltersChange || this.props.renderColumnFilter);
+    const shouldRenderLeftActions = renderRowActions && actionColumnPosition === "left";
+    const shouldRenderRightActions = renderRowActions && actionColumnPosition !== "left";
 
     return (
       <>
@@ -389,6 +392,9 @@ class TableComponent extends Component {
           <table className={tableClassName || undefined}>
             <thead>
               <tr>
+                {shouldRenderLeftActions ? (
+                  <th className="actionColumn">{actionColumnLabel}</th>
+                ) : null}
                 {columns.map((column) => (
                   <th
                     key={column}
@@ -414,10 +420,13 @@ class TableComponent extends Component {
                     )}
                   </th>
                 ))}
-                {renderRowActions ? <th className="actionColumn">{actionColumnLabel}</th> : null}
+                {shouldRenderRightActions ? (
+                  <th className="actionColumn">{actionColumnLabel}</th>
+                ) : null}
               </tr>
               {hasFilters ? (
                 <tr>
+                  {shouldRenderLeftActions ? <th className="filterCell actionColumn" /> : null}
                   {columns.map((column) => (
                     <th
                       key={`${column}-filter`}
@@ -427,7 +436,7 @@ class TableComponent extends Component {
                       {this.renderColumnFilter(column)}
                     </th>
                   ))}
-                  {renderRowActions ? <th className="filterCell actionColumn" /> : null}
+                  {shouldRenderRightActions ? <th className="filterCell actionColumn" /> : null}
                 </tr>
               ) : null}
             </thead>
@@ -444,6 +453,9 @@ class TableComponent extends Component {
                   role={onRowClick ? "button" : undefined}
                   tabIndex={onRowClick ? 0 : undefined}
                 >
+                  {shouldRenderLeftActions ? (
+                    <td className="actionColumn">{renderRowActions(row)}</td>
+                  ) : null}
                   {columns.map((column) => (
                     <td
                       key={`${column}-${index}`}
@@ -453,7 +465,7 @@ class TableComponent extends Component {
                       {this.renderCellValue(row, column)}
                     </td>
                   ))}
-                  {renderRowActions ? (
+                  {shouldRenderRightActions ? (
                     <td className="actionColumn">{renderRowActions(row)}</td>
                   ) : null}
                 </tr>
