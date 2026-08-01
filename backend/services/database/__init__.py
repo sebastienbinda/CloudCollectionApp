@@ -19,6 +19,7 @@ from .collection_share_repository import SqlAlchemyCollectionShareRepository
 from .game import Game
 from .game_alias import GameAlias
 from .game_duplicate_repository import SqlAlchemyGameDuplicateRepository
+from .game_validation_repository import SqlAlchemyGameValidationRepository
 from .game_matching_configuration import GameMatchingConfiguration
 from .game_matching_service import GameMatchingService
 from .game_release_date_score_adjuster import GameReleaseDateScoreAdjuster
@@ -83,6 +84,7 @@ __all__ = [
     "LibraryResetPlatformImageSnapshot",
     "SqlAlchemyGameRepository",
     "SqlAlchemyGameDuplicateRepository",
+    "SqlAlchemyGameValidationRepository",
     "SqlAlchemyCollectionShareRepository",
     "SqlAlchemyLibraryResetRepository",
     "SqlAlchemyPlatformImageRepository",

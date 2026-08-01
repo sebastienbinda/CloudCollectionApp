@@ -1,0 +1,13 @@
+Bonjour,
+
+Un ou plusieurs jeux ajoutes a votre collection n'ont pas ete retenus dans la Bibliotheque globale :
+
+$game_lines
+
+Les entrees correspondantes ont ete retirees de votre collection.
+
+Vous pouvez consulter votre collection ici :
+$collection_url
+
+Cordialement,
+CloudCollectionApp
