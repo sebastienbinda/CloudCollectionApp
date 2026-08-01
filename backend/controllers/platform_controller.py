@@ -15,7 +15,8 @@ from functools import wraps
 
 from flask import Flask, jsonify, request
 
-from services import DatabaseConfiguration, LibraryQueryParser, LibraryService
+from services import AuthGuard, DatabaseConfiguration, LibraryQueryParser, LibraryService, UserProfile
+from services.auth import ExpiredAccessTokenError
 
 
 class PlatformController:
@@ -31,12 +32,14 @@ class PlatformController:
 
     def __init__(
         self,
+        auth_guard: AuthGuard | None = None,
         library_service_factory=None,
         library_query_parser=None,
     ):
         """Initialise le controleur des plateformes.
 
         Args:
+            auth_guard (AuthGuard | None): Garde pour Bearer optionnel des compteurs.
             library_service_factory (Callable | None): Fabrique du service Bibliotheque.
             library_query_parser (LibraryQueryParser | None): Parseur de requetes Bibliotheque.
 
@@ -46,6 +49,7 @@ class PlatformController:
 
         self._library_service = None
         self._library_service_factory = None
+        self.auth_guard = auth_guard
         self.library_service_factory = library_service_factory or self._create_default_library_service
         self.library_query_parser = library_query_parser or LibraryQueryParser()
 
@@ -101,7 +105,14 @@ class PlatformController:
         """
 
         try:
-            return jsonify(self._get_library_service().count_entities())
+            requester_profile = self._optional_requester_profile()
+        except ExpiredAccessTokenError as exc:
+            return jsonify({"error": str(exc)}), 401
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 401
+
+        try:
+            return jsonify(self._get_library_service().count_entities(requester_profile))
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 503
         except Exception as exc:
@@ -197,6 +208,28 @@ class PlatformController:
         """
 
         return LibraryService(DatabaseConfiguration.from_environment())
+
+    def _optional_requester_profile(self) -> str:
+        """Retourne le profil optionnel de la requete publique.
+
+        Args:
+            Aucun.
+
+        Returns:
+            str: Profil normalise, ou `PUBLIC` sans Bearer.
+
+        Raises:
+            ValueError: Si un Bearer fourni est invalide.
+            ExpiredAccessTokenError: Si un Bearer fourni est expire.
+        """
+
+        if self.auth_guard is None:
+            return "PUBLIC"
+        token = self.auth_guard.extract_bearer_token()
+        if not token:
+            return "PUBLIC"
+        payload = self.auth_guard.get_current_token_payload()
+        return UserProfile.normalize(payload.get("profile")).value
 
     def _as_view(self, route_handler):
         """Transforme une methode liee en fonction Flask annotable.

@@ -286,7 +286,9 @@ reference data from platforms, studios and games. They must not expose connected
 user data or imported collection file paths. `GET /api/library/games` may add
 `in_current_user_collection` and `in_current_user_wishlist` when a valid `USER`
 Bearer is provided; the booleans only indicate that the game is attached to the
-current user with `wishlist = false` or `wishlist = true`.
+current user with `wishlist = false` or `wishlist = true`. The same games routes
+may accept an optional valid `ADMIN` Bearer to include games waiting for
+validation.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -305,6 +307,8 @@ List endpoints support these query parameters:
 - `platform`: optional filter for `/api/library/games`, matched exactly after
   removing case, accents and spaces;
 - `duplicate_flag`: optional `true` or `false` filter for `/api/library/games`;
+- `status`: optional `WAITING_VALIDATION` or `ACCEPTED` filter for
+  `/api/library/games`, honored only for an `ADMIN` Bearer;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule, where direction is `asc` or
@@ -541,6 +545,7 @@ are separate from the public read-only Library consultation endpoints.
 | --- | --- | --- |
 | `POST` | `/api/library/reset` | Starts an asynchronous reset and rebuild of the global Library. |
 | `POST` | `/api/library/platform-catalog/sync` | Adds missing platforms and aliases from backend CSV resources. |
+| `GET` | `/api/library/games/validation/summary` | Returns the number of Library games waiting for administrator validation. |
 | `GET` | `/api/library/games/<game_id>/doublon` | Loads one Library game for duplicate correction. |
 | `GET` | `/api/library/games/<game_id>/doublon/candidates` | Lists same-platform candidate games for duplicate correction. |
 | `POST` | `/api/library/games/doublon` | Rejects or merges a reported duplicate game. |
@@ -624,6 +629,61 @@ Access and error status:
 
 - `403` when the Bearer token is missing or does not carry profile `ADMIN`;
 - `500` when the CSV read or SQL update fails unexpectedly.
+
+### Game Validation Summary
+
+```http
+GET /api/library/games/validation/summary
+Authorization: Bearer <admin-token>
+```
+
+The route returns a compact administrator summary for pending Library game
+validation. It is protected even though public Library reads remain accessible
+without a Bearer token.
+
+Successful response:
+
+```json
+{
+  "summary": {
+    "waiting_validation_count": 3,
+    "has_waiting_validation": true
+  }
+}
+```
+
+with status `200`.
+
+Access and error status:
+
+- `403` when the Bearer token is missing or does not carry profile `ADMIN`;
+- `500` when the database count fails unexpectedly.
+
+```http
+POST /api/library/games/validation
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "game_ids": [12, 18]
+}
+```
+
+Validates the selected games still waiting for administrator validation and
+returns `{"result": {"validated_count": 2}}` with status `200`.
+
+```http
+POST /api/library/games/refusal
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "game_ids": [12, 18]
+}
+```
+
+Refuses the selected waiting games, removes their collection links and returns
+`{"result": {"refused_count": 2}}` with status `200`.
 
 ### Manage Game Duplicates
 
@@ -1495,6 +1555,14 @@ defaulting to `04:00`. When at least one global Library game has
 `duplicate_flag = true`, the same address receives a templated email with the
 number of games to process and links to `FRONTEND_PUBLIC_URL` plus the filtered
 `/bibliotheque/jeux?duplicate_flag=true` page.
+
+The backend also runs a daily pending-game validation check at
+`GAME_VALIDATION_DAILY_NOTIFICATION_TIME`, using local `HH:MM` format and
+defaulting to `04:15`. When at least one global Library game has
+`status = WAITING_VALIDATION`, the same address receives a templated email with
+the number of games to validate and links to `FRONTEND_PUBLIC_URL` plus the
+filtered `/bibliotheque/jeux?status=WAITING_VALIDATION` page. If the recipient
+is not configured, the backend logs a warning and keeps running.
 
 Users impacted by an administrator merge of a flagged duplicate receive a
 separate templated email. The message names the removed game, the kept game,

@@ -38,6 +38,7 @@ class UserCollectionImportRepository(Protocol):
         collection_file_path: str,
         import_data: CollectionImportData,
         collection_file_description: dict,
+        initial_game_validation_status: str,
     ) -> UserCollectionImportPersistenceResult:
         """Persiste les donnees importees dans une transaction.
 
@@ -46,6 +47,7 @@ class UserCollectionImportRepository(Protocol):
             collection_file_path (str): Chemin final du fichier.
             import_data (CollectionImportData): Donnees lues depuis le fichier.
             collection_file_description (dict): Description valide ayant servi a l'import.
+            initial_game_validation_status (str): Statut des jeux crees par cet import.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de persistance.

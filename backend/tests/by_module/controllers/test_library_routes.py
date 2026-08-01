@@ -38,6 +38,22 @@ class LibraryRoutesTest(BaseAppRoutesTest):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual({"platforms": 2, "studios": 3, "games": 4}, response.get_json())
+        self.assertEqual("PUBLIC", FakeLibraryService.last_entities_requester_profile)
+
+    def test_library_entities_route_uses_optional_admin_bearer(self):
+        """Verifie le profil admin optionnel des compteurs.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte de visibilite.
+        """
+
+        response = self.client.get("/api/library/entities", headers=self.get_admin_auth_headers())
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("ADMIN", FakeLibraryService.last_entities_requester_profile)
 
     def test_library_controller_reuses_single_service_instance(self):
         """Verifie que les controleurs Bibliotheque reutilisent leur service.
@@ -143,6 +159,7 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual("nes", criteria.normalized_platform)
         self.assertEqual("developer", criteria.sort_rules[0].column)
         self.assertIsNone(criteria.current_user_id)
+        self.assertEqual("PUBLIC", criteria.requester_profile)
 
     def test_library_games_route_enriches_user_collection_status_with_user_token(self):
         """Verifie l'enrichissement optionnel collection pour un USER connecte.
@@ -161,6 +178,24 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual(200, response.status_code)
         self.assertTrue(game["in_current_user_collection"])
         self.assertEqual(7, criteria.current_user_id)
+        self.assertEqual("USER", criteria.requester_profile)
+
+    def test_library_games_route_uses_admin_visibility_context(self):
+        """Verifie que la liste jeux transmet le profil ADMIN au service.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte de visibilite.
+        """
+
+        response = self.client.get("/api/library/games", headers=self.get_admin_auth_headers())
+        criteria = FakeLibraryService.last_games_criteria
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("ADMIN", criteria.requester_profile)
+        self.assertIsNone(criteria.current_user_id)
 
     def test_library_games_route_rejects_invalid_optional_bearer(self):
         """Verifie qu'un Bearer optionnel invalide reste refuse proprement.
@@ -231,6 +266,37 @@ class LibraryRoutesTest(BaseAppRoutesTest):
         self.assertEqual("1995-08-14", game["platform_end_date"])
         self.assertEqual("NES", game["platform_common_alias"])
         self.assertNotIn("collection_file_path", game)
+        self.assertEqual(("PUBLIC", None), FakeLibraryService.last_game_detail_context)
+
+    def test_library_game_detail_route_uses_user_owner_context(self):
+        """Verifie le contexte proprietaire optionnel du detail jeu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident profil et utilisateur transmis.
+        """
+
+        response = self.client.get("/api/library/games/3", headers=self.get_user_auth_headers())
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(("USER", 7), FakeLibraryService.last_game_detail_context)
+
+    def test_library_game_detail_route_uses_admin_context(self):
+        """Verifie le contexte administrateur optionnel du detail jeu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le profil transmis.
+        """
+
+        response = self.client.get("/api/library/games/3", headers=self.get_admin_auth_headers())
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(("ADMIN", None), FakeLibraryService.last_game_detail_context)
 
     def test_library_game_detail_route_returns_404_for_unknown_game(self):
         """Verifie l'absence de jeu public.

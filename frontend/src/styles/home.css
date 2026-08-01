@@ -315,6 +315,7 @@
   font-weight: 800;
   gap: 0.38rem;
   line-height: 1;
+  position: relative;
   text-decoration: none;
 }
 
@@ -419,6 +420,23 @@
 
 .mainNavigationShortLabel {
   display: none;
+}
+
+.mainNavigationBadge {
+  align-items: center;
+  background: #b91c1c;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(127, 29, 29, 0.32);
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 900;
+  height: 1.18rem;
+  justify-content: center;
+  min-width: 1.18rem;
+  padding: 0 0.28rem;
 }
 
 .mobileNavigation,
@@ -531,6 +549,7 @@
   min-height: 3rem;
   min-width: 0;
   padding: 0.28rem 0.18rem;
+  position: relative;
   text-decoration: none;
   width: 100%;
 }
@@ -559,12 +578,23 @@
   width: 1.35rem;
 }
 
-.mobileDockItem .mainNavigationIconGraphic {
-  height: 1rem;
-  width: 1rem;
-}
+  .mobileDockItem .mainNavigationIconGraphic {
+    height: 1rem;
+    width: 1rem;
+  }
 
-.pageHeaderActions .secondaryButton {
+  .mobileDockItem .mainNavigationBadge {
+    border-width: 1px;
+    font-size: 0.58rem;
+    height: 0.95rem;
+    min-width: 0.95rem;
+    padding: 0 0.2rem;
+    position: absolute;
+    right: 0.28rem;
+    top: 0.16rem;
+  }
+
+  .pageHeaderActions .secondaryButton {
   align-items: center;
   appearance: none;
   background: #111827;

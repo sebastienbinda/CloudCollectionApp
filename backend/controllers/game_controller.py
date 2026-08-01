@@ -121,7 +121,7 @@ class GameController:
         """
 
         try:
-            current_user_id = self._optional_current_user_id()
+            requester_profile, current_user_id = self._optional_request_context()
         except ExpiredAccessTokenError as exc:
             return jsonify({"error": str(exc)}), 401
         except ValueError as exc:
@@ -132,6 +132,7 @@ class GameController:
                 "games",
                 request.args,
                 current_user_id=current_user_id,
+                requester_profile=requester_profile,
             )
             return jsonify(self._get_library_service().list_games(criteria))
         except ValueError as exc:
@@ -150,7 +151,18 @@ class GameController:
         """
 
         try:
-            game = self._get_library_service().get_game(game_id)
+            requester_profile, current_user_id = self._optional_request_context()
+        except ExpiredAccessTokenError as exc:
+            return jsonify({"error": str(exc)}), 401
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 401
+
+        try:
+            game = self._get_library_service().get_game(
+                game_id,
+                requester_profile=requester_profile,
+                current_user_id=current_user_id,
+            )
             if game is None:
                 return jsonify({"error": "Game not found."}), 404
             return jsonify({"game": game})
@@ -264,14 +276,14 @@ class GameController:
             raise ValueError("Utilisateur introuvable.")
         return int(user_id)
 
-    def _optional_current_user_id(self) -> int | None:
-        """Retourne l'utilisateur USER connecte pour enrichir la liste publique.
+    def _optional_request_context(self) -> tuple[str, int | None]:
+        """Retourne le profil et l'utilisateur optionnels de la requete publique.
 
         Args:
             Aucun.
 
         Returns:
-            int | None: Identifiant utilisateur, ou absence d'enrichissement.
+            tuple[str, int | None]: Profil demandeur et identifiant utilisateur optionnel.
 
         Raises:
             ValueError: Si un Bearer fourni est invalide.
@@ -279,17 +291,20 @@ class GameController:
         """
 
         if self.auth_guard is None:
-            return None
+            return "PUBLIC", None
         token = self.auth_guard.extract_bearer_token()
         if not token:
-            return None
+            return "PUBLIC", None
         payload = self.auth_guard.get_current_token_payload()
-        if UserProfile.normalize(payload.get("profile")) is not UserProfile.USER:
-            return None
+        requester_profile = UserProfile.normalize(payload.get("profile"))
+        if requester_profile is not UserProfile.USER:
+            return requester_profile.value, None
         user_id = self.user_repository_class(
             self.database_configuration_class.from_environment()
         ).find_user_id_by_email(payload.get("sub"))
-        return None if user_id is None else int(user_id)
+        if user_id is None:
+            raise ValueError("Utilisateur introuvable.")
+        return requester_profile.value, int(user_id)
 
     def _as_view(self, route_handler):
         """Transforme une methode liee en fonction Flask annotable.

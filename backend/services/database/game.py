@@ -14,7 +14,17 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Sequence, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Sequence,
+    String,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -33,10 +43,17 @@ class Game(DatabaseModelBase):
         platform (int): Identifiant de la plateforme du jeu.
         description (Optional[dict]): Description structuree stockee en JSONB.
         duplicate_flag (bool): Indique si le jeu a ete signale comme doublon.
+        status (str): Statut de validation du jeu dans la Bibliotheque.
     """
 
     __tablename__ = "t_game"
-    __table_args__ = (UniqueConstraint("name", "platform", name="uq_t_game_name_platform"),)
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('WAITING_VALIDATION', 'ACCEPTED')",
+            name="ck_t_game_status",
+        ),
+        UniqueConstraint("name", "platform", name="uq_t_game_name_platform"),
+    )
 
     id: Mapped[int] = mapped_column(
         BigInteger,
@@ -50,3 +67,9 @@ class Game(DatabaseModelBase):
     platform: Mapped[int] = mapped_column(ForeignKey("t_platform.id"), nullable=False)
     description: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     duplicate_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="ACCEPTED",
+        server_default=text("'ACCEPTED'"),
+    )

@@ -72,6 +72,7 @@ class StoredUserCollectionImportServiceTest(unittest.TestCase):
             self.assertTrue(source_file.exists())
             self.assertEqual(str(source_file), reader.read_paths[0])
             self.assertEqual(str(source_file), repository.import_calls[0][1])
+            self.assertEqual("ACCEPTED", repository.import_calls[0][4])
             self.assertEqual(1, result.associated_games)
 
 

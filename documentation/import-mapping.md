@@ -58,8 +58,11 @@ becomes `80`.
   row wins unless a wishlist duplicate rule applies.
 - Existing games are reused first by exact normalized `(platform, name)` key,
   including names stored in `t_game_alias` after duplicate correction. When no
-  exact game key exists, candidates are limited to the same matched platform and
-  scored with the shared normalized similarity function. The
+  exact game key exists, fuzzy candidates are limited to reference games already
+  present on the same matched platform at the start of persistence and scored
+  with the shared normalized similarity function. Games created earlier in the
+  same import remain available for exact normalized-key reuse, but are not added
+  to the fuzzy candidate set of later rows. The
   imported game is attached to an existing game only when the best candidate is
   unique and reaches `GAME_MATCHING_HIGH_LEVEL_RATING` (default `75`); scores
   below `GAME_MATCHING_LOW_LVL_RATING` (default `25`) and ambiguous or medium

@@ -197,6 +197,11 @@ Use the following domain folders for new or modified hooks:
 - The Bibliotheque games list may expose the `duplicate_flag` filter only to
   `ADMIN` sessions. The hook owns this criterion and sends it to the backend;
   the generic list component only renders the provided filter state.
+- The same list may expose the `status` filter and validation/refusal selection
+  workflow only when route discovery grants game validation administration. The
+  state stays in `useLibraryGames`, protected calls stay in `LibraryAdminApi`,
+  and the generic list component renders only the provided controls, messages
+  and callbacks.
 - Game duplicate correction belongs to the Library admin frontend domain:
   protected HTTP calls stay in `LibraryAdminApi`, state and user actions stay in
   `useGameDuplicateAdminPage`, and `/configuration/doublons/<game_id>` must be

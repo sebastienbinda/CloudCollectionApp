@@ -290,16 +290,21 @@ class FakeStudioRepository:
 class FakeGameRepository:
     """Repository jeux factice pour la Bibliotheque."""
 
-    def count_public_library_games(self, connection):
+    last_count_include_waiting_validation = None
+    last_find_call = None
+
+    def count_public_library_games(self, connection, include_waiting_validation=False):
         """Compte les jeux factices.
 
         Args:
             connection (object): Connexion recue.
+            include_waiting_validation (bool): Inclut les jeux en attente si `True`.
 
         Returns:
             int: Nombre de jeux.
         """
 
+        self.__class__.last_count_include_waiting_validation = include_waiting_validation
         return 9
 
     def count_public_library_games_by_criteria(self, connection, criteria):
@@ -371,17 +376,30 @@ class FakeGameRepository:
             return set()
         return {game_id for game_id in game_ids if game_id == 11}
 
-    def find_public_library_game(self, connection, game_id):
+    def find_public_library_game(
+        self,
+        connection,
+        game_id,
+        include_waiting_validation=False,
+        current_user_id=None,
+    ):
         """Recherche un jeu factice.
 
         Args:
             connection (object): Connexion recue.
             game_id (int): Identifiant du jeu recherche.
+            include_waiting_validation (bool): Inclut les jeux en attente si `True`.
+            current_user_id (int | None): Utilisateur proprietaire optionnel.
 
         Returns:
             dict | None: Jeu factice ou absence.
         """
 
+        self.__class__.last_find_call = (
+            game_id,
+            include_waiting_validation,
+            current_user_id,
+        )
         if game_id != 11:
             return None
         return {
@@ -438,6 +456,21 @@ class LibraryServiceTest(unittest.TestCase):
 
         self.assertEqual({"platforms": 2, "studios": 3, "games": 9}, payload)
         self.assertEqual(1, self.engine.connect_count)
+        self.assertFalse(FakeGameRepository.last_count_include_waiting_validation)
+
+    def test_count_entities_includes_waiting_games_for_admin(self):
+        """Verifie que les compteurs admin incluent les jeux en attente.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le flag transmis au repository.
+        """
+
+        self.service.count_entities("ADMIN")
+
+        self.assertTrue(FakeGameRepository.last_count_include_waiting_validation)
 
     def test_library_service_provider_reuses_singleton_instance(self):
         """Verifie que le fournisseur Bibliotheque construit une seule instance.
@@ -624,6 +657,35 @@ class LibraryServiceTest(unittest.TestCase):
         self.assertEqual("NES", game["platform"])
         self.assertEqual("1995-08-14", game["platform_end_date"])
         self.assertEqual("NES", game["platform_common_alias"])
+        self.assertEqual((11, False, None), FakeGameRepository.last_find_call)
+
+    def test_get_game_allows_admin_waiting_visibility(self):
+        """Verifie que le detail jeu transmet la visibilite admin.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte repository.
+        """
+
+        self.service.get_game(11, requester_profile="ADMIN")
+
+        self.assertEqual((11, True, None), FakeGameRepository.last_find_call)
+
+    def test_get_game_allows_owner_waiting_visibility(self):
+        """Verifie que le detail jeu transmet l'utilisateur proprietaire.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte repository.
+        """
+
+        self.service.get_game(11, requester_profile="USER", current_user_id=7)
+
+        self.assertEqual((11, False, 7), FakeGameRepository.last_find_call)
 
     def test_get_game_returns_none_for_unknown_game(self):
         """Verifie l'absence de jeu public.

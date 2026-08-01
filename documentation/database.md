@@ -140,6 +140,7 @@ Constraints:
 | `platform` | `BIGINT` | No | Game platform. |
 | `description` | `JSONB` | Yes | Structured game description. |
 | `duplicate_flag` | `BOOLEAN` | No | Indicates whether a connected user reported the game as a possible duplicate. |
+| `status` | `VARCHAR(32)` | No | Library validation status, either `WAITING_VALIDATION` or `ACCEPTED`. |
 
 Constraints:
 
@@ -148,11 +149,16 @@ Constraints:
 - Foreign key: `developer` -> `t_studio.id`
 - Foreign key: `editor` -> `t_studio.id`
 - Foreign key: `platform` -> `t_platform.id`
+- Check: `status` in `WAITING_VALIDATION`, `ACCEPTED`
 
 Indexes:
 
 - `ix_t_game_platform`: `platform`
 - `ix_t_game_developer`: `developer`
+- `ix_t_game_status`: `status`
+
+Existing games are initialized with `status = ACCEPTED` when the validation
+status migration is applied.
 
 #### `t_game_alias`
 

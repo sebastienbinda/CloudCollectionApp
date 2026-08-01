@@ -37,6 +37,7 @@ from services import (
     DatabaseConfiguration,
     DatabaseSchemaService,
     GameDuplicateDailyNotificationScheduler,
+    GameValidationDailyNotificationScheduler,
     LibraryResetJobCoordinator,
     LibraryServiceProvider,
     PlatformImageConfiguration,
@@ -121,12 +122,13 @@ library_controller = LibraryController(
     library_reset_job_coordinator,
     library_service_provider=library_service_provider,
 )
-platform_controller = PlatformController(library_service_factory=library_service_provider)
+platform_controller = PlatformController(auth_guard, library_service_factory=library_service_provider)
 platform_image_controller = PlatformImageController(auth_guard)
 studio_controller = StudioController(library_service_factory=library_service_provider)
 game_controller = GameController(auth_guard, library_service_factory=library_service_provider)
 
 game_duplicate_daily_notification_scheduler = None
+game_validation_daily_notification_scheduler = None
 if database_configuration.is_database_enabled() and (
     __name__ != "__main__" or os.getenv("WERKZEUG_RUN_MAIN") == "true"
 ):
@@ -138,6 +140,16 @@ if database_configuration.is_database_enabled() and (
     except Exception as exc:
         app.logger.exception(
             "Planification de la notification quotidienne des doublons impossible: %s",
+            exc,
+        )
+    try:
+        game_validation_daily_notification_scheduler = (
+            GameValidationDailyNotificationScheduler.from_environment()
+        )
+        game_validation_daily_notification_scheduler.start()
+    except Exception as exc:
+        app.logger.exception(
+            "Planification de la notification quotidienne des jeux a valider impossible: %s",
             exc,
         )
 

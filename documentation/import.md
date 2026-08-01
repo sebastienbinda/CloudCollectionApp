@@ -178,7 +178,11 @@ database structure in `documentation/database.md`, and frontend navigation in
   matching rules from `documentation/import-mapping.md`.
 - Games are first matched by exact normalized `(platform, name)` key. When no
   exact key exists, the backend computes the normalized name similarity score
-  against existing games on the same matched platform. A game is automatically
+  against reference games already present on the same matched platform at the
+  start of persistence. Games newly created earlier in the same import are
+  still reused by exact normalized key, but they are not added to the fuzzy
+  candidate set of later rows so large same-platform imports remain bounded.
+  A game is automatically
   attached to an existing reference only when the best score is unique and
   greater than or equal to `GAME_MATCHING_HIGH_LEVEL_RATING`; scores lower than
   `GAME_MATCHING_LOW_LVL_RATING` are rejected immediately, and other

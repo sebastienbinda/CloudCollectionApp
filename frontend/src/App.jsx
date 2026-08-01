@@ -14,6 +14,7 @@
  */
 import AuthSessionModal from "./components/AuthSessionModal";
 import AppViewSwitch from "./components/AppViewSwitch";
+import { LibraryValidationBadgeContext } from "./components/PageLayout";
 import useCloudCollectionViewModel from "./hooks/app/useCloudCollectionViewModel";
 
 /**
@@ -25,10 +26,10 @@ function App() {
   const { viewProps, authModalProps } = useCloudCollectionViewModel();
 
   return (
-    <>
+    <LibraryValidationBadgeContext.Provider value={viewProps.libraryValidationBadgeCount || 0}>
       {AppViewSwitch.render(viewProps)}
       <AuthSessionModal {...authModalProps} />
-    </>
+    </LibraryValidationBadgeContext.Provider>
   );
 }
 

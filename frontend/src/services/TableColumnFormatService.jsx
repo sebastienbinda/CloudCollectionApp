@@ -20,6 +20,7 @@ const profileLabels = {
 };
 
 const statusLabels = {
+  ACCEPTED: "Accepte",
   ACTIVE: "Actif",
   WAITING_VALIDATION: "En attente de validation",
   LOCKED: "Bloque",
@@ -56,6 +57,10 @@ class TableColumnFormatService {
   static formatGameValue(column, value, row = null) {
     if (column === "Version") {
       return this.formatVersionValue(value);
+    }
+
+    if (column === "status") {
+      return statusLabels[String(value || "").toUpperCase()] || formatCellValue(column, value);
     }
 
     if (column === "Prix d'achat") {

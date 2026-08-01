@@ -195,6 +195,71 @@
   grid-column: 1 / -1;
 }
 
+.libraryValidationToolbar {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.75rem;
+}
+
+.libraryValidationActions,
+.libraryValidationRowSelection,
+.libraryValidationSelectAll {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.libraryValidationActions {
+  flex-wrap: wrap;
+}
+
+.libraryValidationActions span {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.libraryValidationToolbar .success,
+.libraryValidationToolbar .error {
+  flex: 1 0 100%;
+  margin: 0;
+}
+
+.libraryValidationRowSelection {
+  box-sizing: border-box;
+  display: grid;
+  font-size: 0.82rem;
+  justify-items: center;
+  min-height: 1.05rem;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.libraryValidationRowSelection input {
+  height: 1.05rem;
+  margin: 0;
+  width: 1.05rem;
+}
+
+.libraryGamesTable .actionColumn {
+  box-sizing: border-box;
+  max-width: 2.25rem;
+  min-width: 2.25rem;
+  overflow: hidden;
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+  text-align: center;
+  width: 2.25rem;
+}
+
 .libraryGameNameWithCollectionMarker {
   align-items: center;
   display: inline-flex;

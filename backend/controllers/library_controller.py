@@ -23,6 +23,8 @@ from services.library import (
     GameDuplicateError,
     GameDuplicateNotFoundError,
     GameDuplicateService,
+    GameValidationError,
+    GameValidationService,
 )
 from services.library.admin_library_import_service import (
     AdminLibraryImportInvalidFileError,
@@ -42,6 +44,7 @@ class LibraryController:
         platform_catalog_update_service_factory=None,
         admin_import_service_factory=None,
         duplicate_service_factory=None,
+        game_validation_service_factory=None,
         library_service_provider=None,
     ):
         """Initialise le controleur admin Bibliotheque.
@@ -55,6 +58,8 @@ class LibraryController:
             admin_import_service_factory (Callable | None): Fabrique du service d'import CSV
                 admin Bibliotheque.
             duplicate_service_factory (Callable | None): Fabrique du service doublons.
+            game_validation_service_factory (Callable | None): Fabrique du service de moderation
+                des jeux.
             library_service_provider (LibraryServiceProvider | None): Cache de services
                 Bibliotheque a invalider apres actualisation.
 
@@ -74,6 +79,9 @@ class LibraryController:
             or AdminLibraryImportService.from_environment
         )
         self.duplicate_service_factory = duplicate_service_factory or GameDuplicateService.from_environment
+        self.game_validation_service_factory = (
+            game_validation_service_factory or GameValidationService.from_environment
+        )
         self.library_service_provider = library_service_provider
 
     def register_routes(self, flask_app: Flask) -> None:
@@ -129,6 +137,30 @@ class LibraryController:
             endpoint="manage_library_game_duplicate",
             view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
                 self.manage_library_game_duplicate
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/games/validation",
+            endpoint="validate_library_games",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.validate_library_games
+            ),
+            methods=["POST"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/games/validation/summary",
+            endpoint="get_library_game_validation_summary",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.get_library_game_validation_summary
+            ),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
+            "/api/library/games/refusal",
+            endpoint="refuse_library_games",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.refuse_library_games
             ),
             methods=["POST"],
         )
@@ -282,6 +314,69 @@ class LibraryController:
         except Exception:
             current_app.logger.exception("Erreur pendant la correction admin doublon.")
             return jsonify({"error": "Unable to manage duplicate game."}), 500
+
+    def validate_library_games(self):
+        """Valide des jeux en attente dans la Bibliotheque.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Compteurs JSON ou erreur JSON.
+        """
+
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = self.game_validation_service_factory().accept_games(
+                payload.get("game_ids"),
+            )
+            self._reset_library_service_provider()
+            return jsonify({"result": result.to_dict("validated_count")}), 200
+        except GameValidationError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant la validation admin de jeux.")
+            return jsonify({"error": "Unable to validate games."}), 500
+
+    def get_library_game_validation_summary(self):
+        """Retourne le resume admin des jeux en attente de validation.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Resume JSON ou erreur JSON.
+        """
+
+        try:
+            summary = self.game_validation_service_factory().get_summary()
+            return jsonify({"summary": summary}), 200
+        except Exception:
+            current_app.logger.exception("Erreur pendant le resume admin validation jeux.")
+            return jsonify({"error": "Unable to read game validation summary."}), 500
+
+    def refuse_library_games(self):
+        """Refuse des jeux en attente dans la Bibliotheque.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Compteurs JSON ou erreur JSON.
+        """
+
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = self.game_validation_service_factory().refuse_games(
+                payload.get("game_ids"),
+            )
+            self._reset_library_service_provider()
+            return jsonify({"result": result.to_dict("refused_count")}), 200
+        except GameValidationError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            current_app.logger.exception("Erreur pendant le refus admin de jeux.")
+            return jsonify({"error": "Unable to refuse games."}), 500
 
     def _run_reset_job(self, job):
         """Execute le service de reset dans le thread de job.

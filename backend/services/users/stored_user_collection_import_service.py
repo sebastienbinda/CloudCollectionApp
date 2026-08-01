@@ -16,6 +16,7 @@ from services.collection.imports import (
     CollectionFileDescription,
     CollectionFileDescriptionValidationError,
 )
+from services.database.game_repository import GAME_STATUS_ACCEPTED
 
 from .user_collection_import_service import (
     UserCollectionImportResult,
@@ -71,4 +72,5 @@ class StoredUserCollectionImportService(UserCollectionImportService):
             stored_file_path.name,
             file_description,
             copy_to_workspace=False,
+            initial_game_validation_status=GAME_STATUS_ACCEPTED,
         )

@@ -174,6 +174,44 @@ class LibraryQueryParserTest(unittest.TestCase):
         self.assertFalse(unflagged_criteria.duplicate_flag)
         self.assertIsNone(ignored_criteria.duplicate_flag)
 
+    def test_parse_accepts_game_validation_status_filter(self):
+        """Verifie le parsing du filtre admin de statut de validation jeu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident les statuts autorises.
+        """
+
+        waiting_criteria = self.parser.parse("games", {"status": "waiting_validation"})
+        accepted_criteria = self.parser.parse("games", {"status": "ACCEPTED"})
+        ignored_criteria = self.parser.parse("games", {"status": "refused"})
+
+        self.assertEqual("WAITING_VALIDATION", waiting_criteria.status)
+        self.assertEqual("ACCEPTED", accepted_criteria.status)
+        self.assertEqual("", ignored_criteria.status)
+
+    def test_filtered_validation_status_is_admin_only(self):
+        """Verifie que le filtre statut ne s'applique qu'aux administrateurs.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la protection du filtre.
+        """
+
+        public_criteria = self.parser.parse("games", {"status": "WAITING_VALIDATION"})
+        admin_criteria = self.parser.parse(
+            "games",
+            {"status": "WAITING_VALIDATION"},
+            requester_profile="ADMIN",
+        )
+
+        self.assertEqual("", public_criteria.filtered_validation_status)
+        self.assertEqual("WAITING_VALIDATION", admin_criteria.filtered_validation_status)
+
     def test_parse_accepts_multiple_sort_parameters(self):
         """Verifie le parsing de plusieurs tris autorises.
 

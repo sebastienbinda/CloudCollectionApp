@@ -30,6 +30,7 @@ class BackendRouteAccessService {
       canImportLibraryCsv: false,
       canReportGameDuplicate: false,
       canCorrectGameDuplicate: false,
+      canManageGameValidation: false,
       canSyncPlatformCatalog: false,
       canModeratePlatformImages: false,
       canUpdatePlatformImageStatus: false,
@@ -178,6 +179,11 @@ class BackendRouteAccessService {
         this.canAccess("GET", "/api/library/games/<int:game_id>/doublon") &&
         this.canAccess("GET", "/api/library/games/<int:game_id>/doublon/candidates") &&
         this.canAccess("POST", "/api/library/games/doublon")
+      ),
+      canManageGameValidation: (
+        this.canAccess("GET", "/api/library/games/validation/summary") &&
+        this.canAccess("POST", "/api/library/games/validation") &&
+        this.canAccess("POST", "/api/library/games/refusal")
       ),
       canSyncPlatformCatalog: this.canAccess("POST", "/api/library/platform-catalog/sync"),
       canModeratePlatformImages: this.canAccess("GET", "/api/library/platforms/images"),

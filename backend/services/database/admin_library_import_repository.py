@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from services.collection.imports import CollectionImportData
 
 from .collection_import_data_synchronizer import CollectionImportDataSynchronizer
+from .game_repository import GAME_STATUS_ACCEPTED
 from .user_collection_import_repository import SqlAlchemyUserCollectionImportRepository
 
 
@@ -71,6 +72,7 @@ class SqlAlchemyAdminLibraryImportRepository(SqlAlchemyUserCollectionImportRepos
                     matched_import_data,
                     platform_ids,
                     studio_ids,
+                    GAME_STATUS_ACCEPTED,
                 )
             )
         self.platform_repository.invalidate_cache()

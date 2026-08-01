@@ -24,6 +24,7 @@ import useWishlistPage from "../games/useWishlistPage";
 import useHomePage from "../home/useHomePage";
 import useLibraryEntities from "../library/useLibraryEntities";
 import useLibraryGames from "../library/useLibraryGames";
+import useGameValidationSummary from "../library/useGameValidationSummary";
 import useGameDuplicateAdminPage from "../library/useGameDuplicateAdminPage";
 import useLibraryHomeSearch from "../library/useLibraryHomeSearch";
 import useLibraryPlatformDetailPage from "../library/useLibraryPlatformDetailPage";
@@ -160,12 +161,19 @@ function useCloudCollectionViewModel() {
   const libraryStudios = useLibraryStudios({
     enabled: navigation.currentView === "libraryStudios",
   });
+  const gameValidationSummary = useGameValidationSummary({
+    enabled: session.hasAccessToken && session.authenticatedProfile === "ADMIN",
+  });
   const libraryGames = useLibraryGames({
     enabled: navigation.currentView === "libraryGames",
     authenticatedProfile: session.authenticatedProfile,
+    canManageGameValidation: session.actionPermissions.canManageGameValidation,
+    onGameValidationSummaryRefresh: gameValidationSummary.reloadGameValidationSummary,
   });
   const adminLibraryCsvImportAction = useAdminLibraryCsvImportAction();
-  const libraryResetAction = useLibraryResetAction();
+  const libraryResetAction = useLibraryResetAction({
+    waitingValidationCount: gameValidationSummary.gameValidationSummary.waiting_validation_count,
+  });
   const platformCatalogSyncAction = usePlatformCatalogSyncAction();
   const platformImageModeration = usePlatformImageModeration({
     enabled: (
@@ -258,6 +266,9 @@ function useCloudCollectionViewModel() {
       guestCollectionLabel: session.viewAccess.collectionLabel,
       guestWishlistLabel: session.viewAccess.wishlistLabel,
       canManageCollectionShares,
+      libraryValidationBadgeCount: (
+        gameValidationSummary.gameValidationSummary.waiting_validation_count
+      ),
       authenticatedUsername: session.authenticatedUsername,
       authenticatedProfile: session.authenticatedProfile,
       selectedPlatformStats: homePage.selectedPlatformStats || platformsCatalog.platforms.find(

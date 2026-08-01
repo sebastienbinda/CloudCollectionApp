@@ -12,8 +12,8 @@
  *
  * Description : client frontend dedie aux actions admin Bibliotheque.
  */
-import AuthApi from "./AuthApi";
-import BackendAvailabilityGuard from "./BackendAvailabilityGuard";
+import AuthApi from "./AuthApi.js";
+import BackendAvailabilityGuard from "./BackendAvailabilityGuard.js";
 
 /**
  * Represente une erreur exploitable par l'interface admin Bibliotheque.
@@ -108,6 +108,59 @@ class LibraryAdminApi {
       throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
     }
     return data;
+  }
+
+  /**
+   * Charge le resume des jeux en attente de validation.
+   *
+   * @returns {Promise<Object>} Resume admin retourne par le backend.
+   * @throws {LibraryAdminApiError} Si la lecture est refusee ou impossible.
+   */
+  static async fetchGameValidationSummary() {
+    const requestOptions = {
+      method: "GET",
+      headers: AuthApi.getAuthorizationHeaders(),
+    };
+    const fallbackMessage = "Impossible de charger le resume de validation des jeux.";
+    const response = await BackendAvailabilityGuard.fetch(
+      "/api/library/games/validation/summary",
+      requestOptions
+    );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
+   * Valide une selection de jeux en attente.
+   *
+   * @param {Array<number|string>} gameIds - Identifiants de jeux a valider.
+   * @returns {Promise<Object>} Resultat de validation retourne par le backend.
+   * @throws {LibraryAdminApiError} Si la validation echoue.
+   */
+  static async validateGames(gameIds) {
+    return this.manageGameValidationSelection(
+      "/api/library/games/validation",
+      gameIds,
+      "Impossible de valider les jeux selectionnes."
+    );
+  }
+
+  /**
+   * Refuse une selection de jeux en attente.
+   *
+   * @param {Array<number|string>} gameIds - Identifiants de jeux a refuser.
+   * @returns {Promise<Object>} Resultat de refus retourne par le backend.
+   * @throws {LibraryAdminApiError} Si le refus echoue.
+   */
+  static async refuseGames(gameIds) {
+    return this.manageGameValidationSelection(
+      "/api/library/games/refusal",
+      gameIds,
+      "Impossible de refuser les jeux selectionnes."
+    );
   }
 
   /**
@@ -265,6 +318,32 @@ class LibraryAdminApi {
       "/api/library/games/doublon",
       requestOptions
     );
+    const data = await this.parseJsonResponse(response, fallbackMessage);
+    if (!response.ok) {
+      throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);
+    }
+    return data;
+  }
+
+  /**
+   * Execute une action admin sur une selection de jeux en validation.
+   *
+   * @param {string} url - URL backend de validation ou refus.
+   * @param {Array<number|string>} gameIds - Identifiants de jeux selectionnes.
+   * @param {string} fallbackMessage - Message de repli pour l'interface.
+   * @returns {Promise<Object>} Resultat JSON de l'action.
+   * @throws {LibraryAdminApiError} Si l'action echoue.
+   */
+  static async manageGameValidationSelection(url, gameIds, fallbackMessage) {
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        ...AuthApi.getAuthorizationHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ game_ids: gameIds }),
+    };
+    const response = await BackendAvailabilityGuard.fetch(url, requestOptions);
     const data = await this.parseJsonResponse(response, fallbackMessage);
     if (!response.ok) {
       throw this.createErrorFromResponse(response, data, fallbackMessage, requestOptions);

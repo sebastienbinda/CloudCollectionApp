@@ -30,7 +30,9 @@
 - `/bibliotheque/studios`: public paginated studio reference list.
 - `/bibliotheque/jeux`: public paginated game reference list.
   Authenticated administrators get an additional filter for games reported or
-  not reported as duplicates.
+  not reported as duplicates, a validation status column and filter, and bulk
+  validation/refusal actions for waiting games. Non-administrators must not see
+  the validation status column on this public list.
 - `/bibliotheque/jeux/<game_id>`: public game detail from the global
   reference Library. Connected `USER` accounts with an imported collection can
   report the displayed Library game as a possible duplicate after an explicit

@@ -12,12 +12,13 @@
  *
  * Description : layout React commun pour les pages applicatives.
  */
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import AppFooter from "./AppFooter";
 import MainMenu from "./MainMenu";
 import ProjectIcon from "./ProjectIcon";
 
 const SCROLL_TOP_VISIBILITY_THRESHOLD = 520;
+const LibraryValidationBadgeContext = createContext(0);
 
 /**
  * Deduit l'entree de menu active depuis l'URL courante.
@@ -73,6 +74,7 @@ function resolveActiveNavigationKeyFromLocation() {
  * @param {boolean} props.canUseCollectionViews - Indique si les vues collection sont accessibles.
  * @param {string} props.authenticatedUsername - Identifiant affiche pour l'utilisateur connecte.
  * @param {string} props.authenticatedProfile - Profil de l'utilisateur connecte.
+ * @param {number} props.libraryValidationBadgeCount - Nombre de jeux admin en attente.
  * @param {Function} props.onOpenAbout - Callback ouvrant la page A propos.
  * @param {Function} props.onOpenAuth - Callback ouvrant la page Connexion.
  * @param {Function} props.onOpenHome - Callback ouvrant Ma collection.
@@ -104,6 +106,7 @@ function PageLayout({
   canAccessConfiguration = true,
   authenticatedUsername,
   authenticatedProfile,
+  libraryValidationBadgeCount,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
@@ -117,6 +120,10 @@ function PageLayout({
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const resolvedActiveNavigationKey = (
     activeNavigationKey || resolveActiveNavigationKeyFromLocation()
+  );
+  const contextLibraryValidationBadgeCount = useContext(LibraryValidationBadgeContext);
+  const resolvedLibraryValidationBadgeCount = (
+    libraryValidationBadgeCount ?? contextLibraryValidationBadgeCount
   );
   const renderedTitleContent = titleContent || (
     <span className="pageTitleWithIcon">
@@ -176,6 +183,7 @@ function PageLayout({
           canAccessConfiguration={canAccessConfiguration}
           username={authenticatedUsername}
           profile={authenticatedProfile}
+          libraryValidationBadgeCount={resolvedLibraryValidationBadgeCount}
           onOpenAbout={onOpenAbout}
           onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}
@@ -204,4 +212,5 @@ function PageLayout({
   );
 }
 
+export { LibraryValidationBadgeContext };
 export default PageLayout;

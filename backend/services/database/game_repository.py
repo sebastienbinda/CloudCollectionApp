@@ -23,6 +23,14 @@ from .library_query_sql_builder import LibraryQuerySqlBuilder
 from .platform_alias_sql_selector import PlatformAliasSqlSelector
 
 
+GAME_STATUS_WAITING_VALIDATION = "WAITING_VALIDATION"
+GAME_STATUS_ACCEPTED = "ACCEPTED"
+ALLOWED_GAME_VALIDATION_STATUSES = frozenset({
+    GAME_STATUS_WAITING_VALIDATION,
+    GAME_STATUS_ACCEPTED,
+})
+
+
 class SqlAlchemyGameRepository:
     """Persiste les jeux de collection dans `t_game`."""
 
@@ -121,6 +129,7 @@ class SqlAlchemyGameRepository:
         game: CollectionImportGame,
         platform_id: int,
         studio_id: int | None,
+        initial_validation_status: str,
     ) -> int:
         """Insere un jeu absent.
 
@@ -129,16 +138,25 @@ class SqlAlchemyGameRepository:
             game (CollectionImportGame): Jeu a creer.
             platform_id (int): Identifiant de plateforme.
             studio_id (int | None): Identifiant du studio developpeur.
+            initial_validation_status (str): Statut de validation initial.
 
         Returns:
             int: Identifiant genere.
+
+        Raises:
+            ValueError: Si le statut initial est inconnu.
         """
 
+        normalized_status = str(initial_validation_status or "").strip().upper()
+        if normalized_status not in ALLOWED_GAME_VALIDATION_STATUSES:
+            raise ValueError("Statut de validation jeu invalide.")
         return int(connection.execute(
             text(
                 f'INSERT INTO "{self.schema_name}".t_game '
-                "(name, release_date, developer, editor, platform, description, duplicate_flag) "
-                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL, FALSE) "
+                "(name, release_date, developer, editor, platform, description, "
+                "duplicate_flag, status) "
+                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL, "
+                "FALSE, :status) "
                 "RETURNING id"
             ),
             {
@@ -146,6 +164,7 @@ class SqlAlchemyGameRepository:
                 "release_date": self.date_validator.validate_release_date(game.release_date),
                 "developer": studio_id,
                 "platform": platform_id,
+                "status": normalized_status,
             },
         ).scalar_one())
 
@@ -164,11 +183,16 @@ class SqlAlchemyGameRepository:
             self.name_normalizer.game_comparison_key(game.name),
         )
 
-    def count_public_library_games(self, connection: Connection) -> int:
+    def count_public_library_games(
+        self,
+        connection: Connection,
+        include_waiting_validation: bool = False,
+    ) -> int:
         """Compte tous les jeux globaux de reference.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
+            include_waiting_validation (bool): Inclut les jeux en attente si `True`.
 
         Returns:
             int: Nombre total de jeux globaux.
@@ -177,8 +201,10 @@ class SqlAlchemyGameRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+        where_clause = "" if include_waiting_validation else " WHERE status = :accepted_status"
         return int(connection.execute(
-            text(f'SELECT COUNT(*) FROM "{self.schema_name}".t_game')
+            text(f'SELECT COUNT(*) FROM "{self.schema_name}".t_game{where_clause}'),
+            {"accepted_status": GAME_STATUS_ACCEPTED},
         ).scalar_one())
 
     def count_public_library_games_by_criteria(
@@ -235,6 +261,7 @@ class SqlAlchemyGameRepository:
             text(
                 "SELECT "
                 "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
+                "game.status, "
                 "game.developer AS developer_id, developer_studio.name AS developer, "
                 "game.editor AS editor_id, editor_studio.name AS editor, "
                 "game.platform AS platform_id, platform.name AS platform, "
@@ -330,12 +357,16 @@ class SqlAlchemyGameRepository:
         self,
         connection: Connection,
         game_id: int,
+        include_waiting_validation: bool = False,
+        current_user_id: int | None = None,
     ) -> dict[str, object] | None:
         """Recherche un jeu global par identifiant.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             game_id (int): Identifiant du jeu recherche.
+            include_waiting_validation (bool): Inclut les jeux en attente si `True`.
+            current_user_id (int | None): Utilisateur proprietaire optionnel.
 
         Returns:
             dict[str, object] | None: Jeu public trouve ou absence.
@@ -348,6 +379,7 @@ class SqlAlchemyGameRepository:
             text(
                 "SELECT "
                 "game.id, game.name, game.release_date, game.description, game.duplicate_flag, "
+                "game.status, "
                 "developer_studio.name AS developer, editor_studio.name AS editor, "
                 "platform.name AS platform, "
                 f"{self._platform_common_alias_select()}"
@@ -358,9 +390,23 @@ class SqlAlchemyGameRepository:
                 f'LEFT JOIN "{self.schema_name}".t_studio editor_studio '
                 "ON editor_studio.id = game.editor "
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
-                "WHERE game.id = :game_id"
+                "WHERE game.id = :game_id "
+                "AND ("
+                ":include_waiting_validation = TRUE "
+                "OR game.status = :accepted_status "
+                "OR EXISTS ("
+                f'SELECT 1 FROM "{self.schema_name}".t_user_collection user_collection '
+                "WHERE user_collection.user_id = :current_user_id "
+                "AND user_collection.game_id = game.id"
+                ")"
+                ")"
             ),
-            {"game_id": game_id},
+            {
+                "game_id": game_id,
+                "accepted_status": GAME_STATUS_ACCEPTED,
+                "current_user_id": current_user_id or -1,
+                "include_waiting_validation": bool(include_waiting_validation),
+            },
         ).mappings().first()
         return None if row is None else dict(row)
 
@@ -400,5 +446,12 @@ class SqlAlchemyGameRepository:
         if criteria.duplicate_flag is not None:
             parameters["duplicate_flag"] = criteria.duplicate_flag
             filters.append("game.duplicate_flag = :duplicate_flag")
+
+        if criteria.filtered_validation_status:
+            parameters["validation_status"] = criteria.filtered_validation_status
+            filters.append("game.status = :validation_status")
+        elif not criteria.include_waiting_validation_games:
+            parameters["accepted_status"] = GAME_STATUS_ACCEPTED
+            filters.append("game.status = :accepted_status")
 
         return f"WHERE {' AND '.join(filters)}" if filters else ""

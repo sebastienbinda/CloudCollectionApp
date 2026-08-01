@@ -46,6 +46,30 @@ function LibraryEntityListView({
   onLogout,
   onBackToLibrary,
 }) {
+  const renderValidationRowSelection = (row) => {
+    const workflow = listState.validationWorkflow;
+    const isWaitingValidation = String(row.status || "").toUpperCase() === "WAITING_VALIDATION";
+    if (!workflow || !isWaitingValidation) {
+      return null;
+    }
+    const isSelected = workflow.selectedGameIds.includes(row.id);
+    return (
+      <label className="libraryValidationRowSelection">
+        <input
+          type="checkbox"
+          aria-label={`Selectionner ${row.name || "ce jeu"}`}
+          checked={isSelected}
+          disabled={workflow.isRunningAction}
+          onChange={() => workflow.onToggleGameSelection(row.id)}
+        />
+      </label>
+    );
+  };
+
+  const resolvedRenderRowActions = listState.validationWorkflow
+    ? renderValidationRowSelection
+    : renderRowActions;
+
   return (
     <PageLayout
       shellClassName="appShell libraryShell"
@@ -139,7 +163,70 @@ function LibraryEntityListView({
               </select>
             </div>
           ) : null}
+          {listState.validationStatusFilter ? (
+            <div className="libraryPlatformFilter">
+              <select
+                id="library-validation-status-filter"
+                value={listState.validationStatusFilter.selectedValue}
+                onChange={(event) => listState.validationStatusFilter.onChange(event.target.value)}
+                aria-label="Filtrer par statut de validation"
+              >
+                {listState.validationStatusFilter.options.map((option) => (
+                  <option key={option.value || "all"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </form>
+
+        {listState.validationWorkflow ? (
+          <div className="libraryValidationToolbar">
+            <label className="libraryValidationSelectAll">
+              <input
+                type="checkbox"
+                checked={listState.validationWorkflow.areAllVisibleWaitingGamesSelected}
+                disabled={
+                  listState.validationWorkflow.isRunningAction ||
+                  listState.validationWorkflow.visibleWaitingValidationGameIds.length === 0
+                }
+                onChange={listState.validationWorkflow.onToggleVisibleSelection}
+              />
+              <span>Tout selectionner</span>
+            </label>
+            <div className="libraryValidationActions">
+              <span>{listState.validationWorkflow.selectedCount} selection(s)</span>
+              <button
+                type="button"
+                disabled={
+                  listState.validationWorkflow.isRunningAction ||
+                  listState.validationWorkflow.selectedCount === 0
+                }
+                onClick={listState.validationWorkflow.onValidateSelection}
+              >
+                Valider
+              </button>
+              <button
+                type="button"
+                className="secondaryButton"
+                disabled={
+                  listState.validationWorkflow.isRunningAction ||
+                  listState.validationWorkflow.selectedCount === 0
+                }
+                onClick={listState.validationWorkflow.onRefuseSelection}
+              >
+                Refuser
+              </button>
+            </div>
+            {listState.validationWorkflow.message ? (
+              <p className="success">{listState.validationWorkflow.message}</p>
+            ) : null}
+            {listState.validationWorkflow.error ? (
+              <p className="error">{listState.validationWorkflow.error}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         {listState.isLoading ? <ProgressBar label="Chargement de la liste" /> : null}
         {listState.error ? <p className="error">{listState.error}</p> : null}
@@ -160,7 +247,9 @@ function LibraryEntityListView({
             formatCellValue={listState.formatCellValue}
             onToggleSort={listState.toggleSort}
             pagination={listState.pagination}
-            renderRowActions={renderRowActions}
+            renderRowActions={resolvedRenderRowActions}
+            actionColumnLabel={listState.validationWorkflow ? "" : undefined}
+            actionColumnPosition={listState.validationWorkflow ? "left" : "right"}
             onRowClick={onRowClick}
             getRowKey={(row) => row.id || row.name}
           />
