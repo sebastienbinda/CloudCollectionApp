@@ -48,7 +48,8 @@ avoid unnecessary calls, but all real protection must remain on the backend side
     expose public reference games. `GET /api/library/games` also accepts an
     optional valid `USER` Bearer to expose only the booleans
     `in_current_user_collection` and `in_current_user_wishlist` for current-user
-    collection and wishlist matches.
+    collection and wishlist matches. A valid `ADMIN` Bearer may include and
+    filter games waiting for validation without making the route private.
 - CORS `OPTIONS` requests remain exempt to allow preflights.
 - Routes must be protected globally with `AuthGuard.protect_all_routes`.
 - Do not add a new public route without an explicit decision and without

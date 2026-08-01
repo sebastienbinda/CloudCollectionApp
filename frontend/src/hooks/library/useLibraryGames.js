@@ -15,11 +15,16 @@
 import { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import LibraryApi from "../../services/LibraryApi";
 import TableColumnFormatService from "../../services/TableColumnFormatService.jsx";
+import useLibraryGamePlatformFilter from "./useLibraryGamePlatformFilter";
+import useGameValidationWorkflow from "./useGameValidationWorkflow";
 import useLibraryEntityList from "./useLibraryEntityList";
+import {
+  getLibraryGameColumns,
+  getLibraryGameMobileVisibleColumns,
+} from "./libraryGameColumns.js";
 
 const GAME_CONFIGURATION = {
   rowsKey: "games",
-  columns: ["name", "release_date", "developer", "editor", "platform", "status"],
   columnLabels: {
     name: "Nom",
     release_date: "Sortie",
@@ -28,7 +33,6 @@ const GAME_CONFIGURATION = {
     platform: "Plateforme",
     status: "Statut",
   },
-  mobileVisibleColumns: ["name", "release_date"],
   sortableColumns: ["name", "release_date", "developer", "platform"],
   tableClassName: "libraryGamesTable",
   defaultSortColumn: "name",
@@ -36,7 +40,11 @@ const GAME_CONFIGURATION = {
   fetchList: (criteria) => LibraryApi.fetchGames(criteria),
   formatCellValue: formatLibraryGameCellValue,
 };
-const PLATFORM_PAGE_SIZE = 500;
+const GAME_VALIDATION_STATUS_FILTERS = [
+  { value: "", label: "Tous les statuts de validation" },
+  { value: "WAITING_VALIDATION", label: "En attente de validation" },
+  { value: "ACCEPTED", label: "Acceptes" },
+];
 
 /**
  * Charge et pilote la table publique des jeux Bibliotheque.
@@ -46,63 +54,44 @@ const PLATFORM_PAGE_SIZE = 500;
  */
 function useLibraryGames(options = {}) {
   const enabled = options.enabled !== false;
+  const onGameValidationSummaryRefresh = options.onGameValidationSummaryRefresh;
   const canFilterDuplicateFlag = options.authenticatedProfile === "ADMIN";
-  const [platformOptions, setPlatformOptions] = useState([]);
-  const [selectedPlatform, setSelectedPlatform] = useState("");
+  const columns = useMemo(
+    () => getLibraryGameColumns(options.authenticatedProfile),
+    [options.authenticatedProfile]
+  );
+  const mobileVisibleColumns = useMemo(
+    () => getLibraryGameMobileVisibleColumns(columns),
+    [columns]
+  );
+  const canManageGameValidation = (
+    options.authenticatedProfile === "ADMIN" &&
+    options.canManageGameValidation === true
+  );
   const [selectedDuplicateFlag, setSelectedDuplicateFlag] = useState("");
-  const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
-  const [platformError, setPlatformError] = useState("");
+  const [selectedValidationStatus, setSelectedValidationStatus] = useState("");
+  const gamePlatformFilter = useLibraryGamePlatformFilter({ enabled });
   const extraCriteria = useMemo(
     () => ({
       duplicate_flag: canFilterDuplicateFlag ? selectedDuplicateFlag : "",
-      platform: selectedPlatform,
+      platform: gamePlatformFilter.selectedPlatform,
+      status: canManageGameValidation ? selectedValidationStatus : "",
     }),
-    [canFilterDuplicateFlag, selectedDuplicateFlag, selectedPlatform]
+    [
+      canFilterDuplicateFlag,
+      canManageGameValidation,
+      gamePlatformFilter.selectedPlatform,
+      selectedDuplicateFlag,
+      selectedValidationStatus,
+    ]
   );
-
-  useEffect(() => {
-    if (!enabled) {
-      setPlatformOptions([]);
-      return;
-    }
-
-    let isMounted = true;
-    const loadPlatforms = async () => {
-      try {
-        setIsLoadingPlatforms(true);
-        setPlatformError("");
-        const data = await LibraryApi.fetchPlatforms({
-          page: 0,
-          size: PLATFORM_PAGE_SIZE,
-          sort: [{ column: "name", direction: "asc" }],
-        });
-        if (isMounted) {
-          setPlatformOptions(filterPlatformsWithGames(data.platforms));
-        }
-      } catch (caughtError) {
-        if (isMounted) {
-          setPlatformOptions([]);
-          setPlatformError(caughtError.message || "Impossible de charger les plateformes.");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingPlatforms(false);
-        }
-      }
-    };
-
-    loadPlatforms();
-    return () => {
-      isMounted = false;
-    };
-  }, [enabled]);
-
-  const handlePlatformChange = useCallback((platformName) => {
-    setSelectedPlatform(platformName);
-  }, []);
 
   const handleDuplicateFlagChange = useCallback((duplicateFlag) => {
     setSelectedDuplicateFlag(duplicateFlag);
+  }, []);
+
+  const handleValidationStatusChange = useCallback((validationStatus) => {
+    setSelectedValidationStatus(validationStatus);
   }, []);
 
   useEffect(() => {
@@ -112,20 +101,30 @@ function useLibraryGames(options = {}) {
   }, [canFilterDuplicateFlag, selectedDuplicateFlag]);
 
   useEffect(() => {
-    if (
-      selectedPlatform
-      && !platformOptions.some((platform) => platform.name === selectedPlatform)
-    ) {
-      setSelectedPlatform("");
+    if (!canManageGameValidation && selectedValidationStatus) {
+      setSelectedValidationStatus("");
     }
-  }, [platformOptions, selectedPlatform]);
+  }, [canManageGameValidation, selectedValidationStatus]);
 
   const listState = useLibraryEntityList({
     ...GAME_CONFIGURATION,
     autoSearchEnabled: true,
+    columns,
     enabled,
     extraCriteria,
+    mobileVisibleColumns,
   });
+  const { clearSelection, workflow: gameValidationWorkflow } = useGameValidationWorkflow({
+    enabled: canManageGameValidation,
+    rows: listState.rows,
+    reloadList: listState.reload,
+    reloadSummary: onGameValidationSummaryRefresh,
+  });
+
+  useEffect(() => {
+    clearSelection();
+  }, [clearSelection, selectedValidationStatus]);
+
   const fetchGameResultPage = useCallback(
     async (page) => {
       const data = await LibraryApi.fetchGames({
@@ -161,31 +160,18 @@ function useLibraryGames(options = {}) {
       totalElements: listState.pagination.totalElements,
       fetchPage: fetchGameResultPage,
     },
-    platformFilter: {
-      error: platformError,
-      isLoading: isLoadingPlatforms,
-      options: platformOptions,
-      selectedValue: selectedPlatform,
-      onChange: handlePlatformChange,
-    },
+    platformFilter: gamePlatformFilter.platformFilter,
     duplicateFlagFilter: canFilterDuplicateFlag ? {
       selectedValue: selectedDuplicateFlag,
       onChange: handleDuplicateFlagChange,
     } : null,
+    validationStatusFilter: canManageGameValidation ? {
+      options: GAME_VALIDATION_STATUS_FILTERS,
+      selectedValue: selectedValidationStatus,
+      onChange: handleValidationStatusChange,
+    } : null,
+    validationWorkflow: gameValidationWorkflow,
   };
-}
-
-/**
- * Garde les plateformes utilisables comme filtre de jeux Bibliotheque.
- *
- * @param {Array<Object>} platforms - Plateformes retournees par l'API.
- * @returns {Array<Object>} Plateformes ayant au moins un jeu associe.
- */
-function filterPlatformsWithGames(platforms) {
-  if (!Array.isArray(platforms)) {
-    return [];
-  }
-  return platforms.filter((platform) => Number(platform.total_games || 0) > 0);
 }
 
 /**

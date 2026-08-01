@@ -102,6 +102,7 @@ class AppViewSwitch {
       guestWishlistLabel: props.guestWishlistLabel,
       authenticatedUsername: props.authenticatedUsername,
       authenticatedProfile: props.authenticatedProfile,
+      libraryValidationBadgeCount: props.libraryValidationBadgeCount,
       onOpenAbout: props.openAbout,
       onOpenAuth: props.openAuth,
       onOpenHome: props.goHome,

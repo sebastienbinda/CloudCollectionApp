@@ -91,6 +91,7 @@ const renderMenuIcon = (iconName) => (
  * Affiche le menu principal de navigation applicative.
  *
  * @param {Object} props - Etat d'authentification, plateformes et callbacks de navigation.
+ * @param {number} props.libraryValidationBadgeCount - Nombre de jeux en attente a signaler.
  * @returns {import("react").JSX.Element} Menu principal avec acces A propos, Ma collection et session.
  */
 function MainMenu({
@@ -102,6 +103,7 @@ function MainMenu({
   canAccessConfiguration = true,
   username,
   profile,
+  libraryValidationBadgeCount = 0,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
@@ -185,6 +187,10 @@ function MainMenu({
   };
 
   const normalizedProfile = String(profile || "").trim().toUpperCase();
+  const normalizedLibraryValidationBadgeCount = Math.max(
+    0,
+    Number.parseInt(libraryValidationBadgeCount, 10) || 0
+  );
   const { canOpenConfiguration, canOpenWishlist, canOpenHome, canOpenStatistics } = resolveMainMenuAccess({
     isAuthenticated,
     canAccessConfiguration,
@@ -209,6 +215,7 @@ function MainMenu({
     label: "Bibliotheque",
     shortLabel: "Biblio",
     icon: "library",
+    badgeCount: normalizedLibraryValidationBadgeCount,
     disabled: typeof onOpenLibrary !== "function",
     action: onOpenLibrary,
   };
@@ -317,6 +324,15 @@ function MainMenu({
         <span className="mainNavigationIcon" aria-hidden="true">{renderMenuIcon(item.icon)}</span>
         <span className="mainNavigationLabel">{item.label}</span>
         <span className="mainNavigationShortLabel">{item.shortLabel}</span>
+        {item.badgeCount > 0 ? (
+          <span
+            className="mainNavigationBadge"
+            aria-label={`${item.badgeCount} jeux en attente de validation`}
+            title={`${item.badgeCount} jeux en attente de validation`}
+          >
+            {item.badgeCount > 99 ? "99+" : item.badgeCount}
+          </span>
+        ) : null}
       </button>
     );
   };

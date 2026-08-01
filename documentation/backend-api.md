@@ -286,7 +286,9 @@ reference data from platforms, studios and games. They must not expose connected
 user data or imported collection file paths. `GET /api/library/games` may add
 `in_current_user_collection` and `in_current_user_wishlist` when a valid `USER`
 Bearer is provided; the booleans only indicate that the game is attached to the
-current user with `wishlist = false` or `wishlist = true`.
+current user with `wishlist = false` or `wishlist = true`. The same games routes
+may accept an optional valid `ADMIN` Bearer to include games waiting for
+validation.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -305,6 +307,8 @@ List endpoints support these query parameters:
 - `platform`: optional filter for `/api/library/games`, matched exactly after
   removing case, accents and spaces;
 - `duplicate_flag`: optional `true` or `false` filter for `/api/library/games`;
+- `status`: optional `WAITING_VALIDATION` or `ACCEPTED` filter for
+  `/api/library/games`, honored only for an `ADMIN` Bearer;
 - `page`: zero-based page index, default `0`;
 - `size`: page size, default `500`, maximum `500`;
 - `sort`: repeatable `column,direction` rule, where direction is `asc` or
@@ -654,6 +658,32 @@ Access and error status:
 
 - `403` when the Bearer token is missing or does not carry profile `ADMIN`;
 - `500` when the database count fails unexpectedly.
+
+```http
+POST /api/library/games/validation
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "game_ids": [12, 18]
+}
+```
+
+Validates the selected games still waiting for administrator validation and
+returns `{"result": {"validated_count": 2}}` with status `200`.
+
+```http
+POST /api/library/games/refusal
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "game_ids": [12, 18]
+}
+```
+
+Refuses the selected waiting games, removes their collection links and returns
+`{"result": {"refused_count": 2}}` with status `200`.
 
 ### Manage Game Duplicates
 

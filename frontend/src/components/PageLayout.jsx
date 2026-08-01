@@ -73,6 +73,7 @@ function resolveActiveNavigationKeyFromLocation() {
  * @param {boolean} props.canUseCollectionViews - Indique si les vues collection sont accessibles.
  * @param {string} props.authenticatedUsername - Identifiant affiche pour l'utilisateur connecte.
  * @param {string} props.authenticatedProfile - Profil de l'utilisateur connecte.
+ * @param {number} props.libraryValidationBadgeCount - Nombre de jeux admin en attente.
  * @param {Function} props.onOpenAbout - Callback ouvrant la page A propos.
  * @param {Function} props.onOpenAuth - Callback ouvrant la page Connexion.
  * @param {Function} props.onOpenHome - Callback ouvrant Ma collection.
@@ -104,6 +105,7 @@ function PageLayout({
   canAccessConfiguration = true,
   authenticatedUsername,
   authenticatedProfile,
+  libraryValidationBadgeCount = 0,
   onOpenAbout,
   onOpenAuth,
   onOpenHome,
@@ -176,6 +178,7 @@ function PageLayout({
           canAccessConfiguration={canAccessConfiguration}
           username={authenticatedUsername}
           profile={authenticatedProfile}
+          libraryValidationBadgeCount={libraryValidationBadgeCount}
           onOpenAbout={onOpenAbout}
           onOpenAuth={onOpenAuth}
           onOpenHome={onOpenHome}

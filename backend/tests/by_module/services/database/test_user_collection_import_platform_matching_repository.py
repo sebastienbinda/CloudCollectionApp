@@ -468,7 +468,6 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual(77, studio_ids["accclaim entertainment"])
         self.assertEqual(77, studio_ids["acclaim"])
 
-
 class AdminLibraryImportRepositoryTest(unittest.TestCase):
     """Valide le repository d'import admin Bibliotheque."""
 

@@ -101,6 +101,7 @@ class LibraryQueryCriteria:
         platform (str): Filtre `platform` brut nettoye.
         normalized_platform (str): Filtre `platform` sans casse ni accents.
         duplicate_flag (bool | None): Filtre optionnel des jeux signales doublons.
+        status (str): Filtre optionnel admin du statut de validation des jeux.
         current_user_id (int | None): Utilisateur connecte optionnel pour enrichir les jeux.
         requester_profile (str): Profil du demandeur, ou `PUBLIC` sans Bearer.
         sort_rules (tuple[LibrarySortRule, ...]): Tris autorises et normalises.
@@ -112,6 +113,7 @@ class LibraryQueryCriteria:
     platform: str
     normalized_platform: str
     duplicate_flag: bool | None
+    status: str
     current_user_id: int | None
     requester_profile: str
     sort_rules: tuple[LibrarySortRule, ...]
@@ -132,6 +134,24 @@ class LibraryQueryCriteria:
 
         return str(self.requester_profile or "").strip().upper() == "ADMIN"
 
+    @property
+    def filtered_validation_status(self) -> str:
+        """Retourne le statut de validation explicitement filtre.
+
+        Args:
+            Aucun.
+
+        Returns:
+            str: Statut filtre uniquement pour un administrateur, sinon chaine vide.
+
+        Raises:
+            Aucun.
+        """
+
+        if not self.include_waiting_validation_games:
+            return ""
+        return self.status
+
 
 class LibraryQueryParser:
     """Parse les parametres HTTP des endpoints Bibliotheque publique."""
@@ -141,6 +161,7 @@ class LibraryQueryParser:
     MAX_SIZE = 500
     DEFAULT_SORT_COLUMN = "name"
     DEFAULT_SORT_DIRECTION = "asc"
+    ALLOWED_GAME_STATUSES = frozenset({"WAITING_VALIDATION", "ACCEPTED"})
     ALLOWED_SORT_COLUMNS = {
         "platforms": frozenset({"name", "release_date", "end_date", "manufacturer"}),
         "studios": frozenset({"name", "country", "creation_date"}),
@@ -200,6 +221,7 @@ class LibraryQueryParser:
             duplicate_flag=self._parse_duplicate_flag(
                 self._get_first_value(query_parameters, "duplicate_flag")
             ),
+            status=self._parse_status(self._get_first_value(query_parameters, "status")),
             current_user_id=current_user_id,
             requester_profile=str(requester_profile or "PUBLIC").strip().upper() or "PUBLIC",
             sort_rules=tuple(
@@ -282,6 +304,19 @@ class LibraryQueryParser:
         if normalized_value in {"false", "0", "no", "non"}:
             return False
         return None
+
+    def _parse_status(self, value: Any) -> str:
+        """Parse le filtre de statut de validation des jeux.
+
+        Args:
+            value (Any): Valeur brute du parametre `status`.
+
+        Returns:
+            str: Statut autorise ou chaine vide pour tous les statuts.
+        """
+
+        normalized_value = str(value or "").strip().upper()
+        return normalized_value if normalized_value in self.ALLOWED_GAME_STATUSES else ""
 
     def _parse_sort_rules(
         self,

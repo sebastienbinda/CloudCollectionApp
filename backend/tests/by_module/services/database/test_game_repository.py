@@ -321,6 +321,36 @@ class GameRepositoryTest(unittest.TestCase):
         self.assertNotIn("game.status = :accepted_status", sql)
         self.assertNotIn("accepted_status", parameters)
 
+    def test_list_public_library_games_filters_validation_status_for_admin(self):
+        """Verifie que la liste admin peut filtrer le statut de validation.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre SQL admin.
+        """
+
+        connection = FakeConnection()
+        connection.mapping_results = [[]]
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+
+        repository.list_public_library_games(
+            connection,
+            _library_criteria(
+                requester_profile="ADMIN",
+                status=GAME_STATUS_WAITING_VALIDATION,
+            ),
+        )
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertIn("game.status = :validation_status", sql)
+        self.assertEqual(GAME_STATUS_WAITING_VALIDATION, parameters["validation_status"])
+        self.assertNotIn("accepted_status", parameters)
+
     def test_find_public_library_game_selects_validation_status(self):
         """Verifie que le detail Bibliotheque expose le statut lu en base.
 
@@ -544,11 +574,12 @@ class GameRepositoryTest(unittest.TestCase):
         )
 
 
-def _library_criteria(requester_profile="PUBLIC"):
+def _library_criteria(requester_profile="PUBLIC", status=""):
     """Construit des criteres Bibliotheque minimaux pour les tests repository.
 
     Args:
         requester_profile (str): Profil de visibilite.
+        status (str): Filtre optionnel de statut de validation.
 
     Returns:
         LibraryQueryCriteria: Criteres de liste sans filtre.
@@ -567,6 +598,7 @@ def _library_criteria(requester_profile="PUBLIC"):
         platform="",
         normalized_platform="",
         duplicate_flag=None,
+        status=status,
         current_user_id=None,
         requester_profile=requester_profile,
         sort_rules=(LibrarySortRule("name", "asc"),),

@@ -447,7 +447,10 @@ class SqlAlchemyGameRepository:
             parameters["duplicate_flag"] = criteria.duplicate_flag
             filters.append("game.duplicate_flag = :duplicate_flag")
 
-        if not criteria.include_waiting_validation_games:
+        if criteria.filtered_validation_status:
+            parameters["validation_status"] = criteria.filtered_validation_status
+            filters.append("game.status = :validation_status")
+        elif not criteria.include_waiting_validation_games:
             parameters["accepted_status"] = GAME_STATUS_ACCEPTED
             filters.append("game.status = :accepted_status")
 

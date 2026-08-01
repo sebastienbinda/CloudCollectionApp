@@ -13,7 +13,7 @@
  * Description : hook dedie au reset admin de la Bibliotheque.
  */
 import { useState } from "react";
-import LibraryAdminApi, { LibraryAdminApiError } from "../../services/LibraryAdminApi";
+import LibraryAdminApi, { LibraryAdminApiError } from "../../services/LibraryAdminApi.js";
 
 const RESET_STARTED_MESSAGE = (
   "Le reset de la Bibliotheque est en cours. Le resultat sera envoye par email."
@@ -26,10 +26,14 @@ const RESET_ALREADY_RUNNING_MESSAGE = "Un reset de la Bibliotheque est deja en c
  * @returns {Object} Etat et callback exposes a la page Configuration.
  * @throws {void} Ne leve pas d'exception pendant le rendu React.
  */
-function useLibraryResetAction() {
+function useLibraryResetAction(options = {}) {
   const [libraryResetMessage, setLibraryResetMessage] = useState("");
   const [libraryResetError, setLibraryResetError] = useState("");
   const [isResettingLibrary, setIsResettingLibrary] = useState(false);
+  const waitingValidationCount = Math.max(
+    0,
+    Number.parseInt(options.waitingValidationCount, 10) || 0
+  );
 
   /**
    * Demande confirmation puis appelle le backend de reset Bibliotheque.
@@ -40,9 +44,7 @@ function useLibraryResetAction() {
   const resetLibrary = async () => {
     setLibraryResetMessage("");
     setLibraryResetError("");
-    const confirmed = window.confirm(
-      "ATTENTION : ce reset supprime et reconstruit toute la Bibliotheque globale a partir des imports utilisateur. Confirmer le lancement ?"
-    );
+    const confirmed = window.confirm(buildLibraryResetConfirmationMessage(waitingValidationCount));
     if (!confirmed) {
       return;
     }
@@ -72,4 +74,22 @@ function useLibraryResetAction() {
   };
 }
 
+/**
+ * Construit le message de confirmation du reset Bibliotheque.
+ *
+ * @param {number} waitingValidationCount - Nombre de jeux actuellement en attente.
+ * @returns {string} Message de confirmation affiche a l'administrateur.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function buildLibraryResetConfirmationMessage(waitingValidationCount = 0) {
+  const baseMessage = (
+    "ATTENTION : ce reset supprime et reconstruit toute la Bibliotheque globale a partir des imports utilisateur."
+  );
+  const waitingMessage = Number(waitingValidationCount) > 0
+    ? ` ${waitingValidationCount} jeu(x) en attente seront valides automatiquement par le reset.`
+    : "";
+  return `${baseMessage}${waitingMessage} Confirmer le lancement ?`;
+}
+
+export { buildLibraryResetConfirmationMessage };
 export default useLibraryResetAction;

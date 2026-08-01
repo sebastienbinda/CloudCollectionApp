@@ -376,6 +376,7 @@ class TableComponent extends Component {
       onToggleSort,
       getRowClassName,
       renderRowActions,
+      actionColumnLabel = "Action",
       tableClassName,
       onRowClick,
     } = this.props;
@@ -413,7 +414,7 @@ class TableComponent extends Component {
                     )}
                   </th>
                 ))}
-                {renderRowActions ? <th className="actionColumn">Action</th> : null}
+                {renderRowActions ? <th className="actionColumn">{actionColumnLabel}</th> : null}
               </tr>
               {hasFilters ? (
                 <tr>

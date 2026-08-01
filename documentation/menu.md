@@ -69,6 +69,9 @@ session state received through props.
 
 - `A propos` always remains accessible and opens `/about`.
 - `Bibliotheque` always remains accessible.
+  When an `ADMIN` session has Library games waiting for validation, the menu may
+  show a prop-driven badge on this entry. The menu must not fetch the summary
+  itself.
 - `Liste de souhaits` requires an active local non-`ADMIN` collection session
   and opens `/wishlist`.
 - `Ma collection` requires an active local non-`ADMIN` collection session and

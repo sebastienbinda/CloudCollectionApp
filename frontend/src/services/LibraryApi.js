@@ -134,7 +134,8 @@ class LibraryApi {
   static async fetchGame(gameId) {
     return this.fetchJson(
       `/api/library/games/${encodeURIComponent(gameId)}`,
-      "Impossible de charger le jeu Bibliotheque."
+      "Impossible de charger le jeu Bibliotheque.",
+      this.getOptionalFreshAuthorizationOptions()
     );
   }
 
@@ -186,6 +187,10 @@ class LibraryApi {
       : String(criteria.duplicate_flag || "").trim();
     if (["true", "false"].includes(duplicateFlag)) {
       query.set("duplicate_flag", duplicateFlag);
+    }
+    const status = String(criteria.status || "").trim().toUpperCase();
+    if (["WAITING_VALIDATION", "ACCEPTED"].includes(status)) {
+      query.set("status", status);
     }
     if (Number.isFinite(criteria.page)) {
       query.set("page", String(criteria.page));

@@ -462,13 +462,6 @@ class SqlAlchemyUserCollectionImportRepository:
                     initial_game_validation_status,
                 )
                 existing_game_id = existing_game_ids[game_key]
-                self.game_matching_service.add_to_platform_index(
-                    game_key,
-                    existing_game_id,
-                    game.name,
-                    games_by_platform,
-                    game.release_date,
-                )
                 created_count += 1
             imported_game_match_reports.append(
                 UserCollectionImportGameMatchReportBuilder.build_imported_game_match_report(
