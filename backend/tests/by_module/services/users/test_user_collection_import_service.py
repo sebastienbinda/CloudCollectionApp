@@ -92,6 +92,7 @@ class FakeUserCollectionImportRepository:
         collection_file_path,
         import_data,
         collection_file_description,
+        initial_game_validation_status,
     ):
         """Memorise l'appel de persistance ou leve une erreur.
 
@@ -100,6 +101,7 @@ class FakeUserCollectionImportRepository:
             collection_file_path (str): Chemin final du fichier.
             import_data (OdsCollectionImportData): Donnees importees.
             collection_file_description (dict): Description sauvegardee.
+            initial_game_validation_status (str): Statut des jeux crees.
 
         Returns:
             UserCollectionImportPersistenceResult: Resultat configure.
@@ -109,7 +111,13 @@ class FakeUserCollectionImportRepository:
         """
 
         self.import_calls.append(
-            (user_id, collection_file_path, import_data, collection_file_description)
+            (
+                user_id,
+                collection_file_path,
+                import_data,
+                collection_file_description,
+                initial_game_validation_status,
+            )
         )
         if self.import_error:
             raise self.import_error
@@ -314,6 +322,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 self._valid_description().to_dict(),
                 repository.import_calls[0][3],
             )
+            self.assertEqual("WAITING_VALIDATION", repository.import_calls[0][4])
 
     def test_import_collection_sends_report_context_after_success(self):
         """Verifie l'envoi du contexte complet apres import reussi.

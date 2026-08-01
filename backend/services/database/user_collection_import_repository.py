@@ -22,7 +22,7 @@ from services.users.user_collection_name_normalizer import UserCollectionNameNor
 from .database_configuration import DatabaseConfiguration
 from .collection_import_data_synchronizer import CollectionImportDataSynchronizer
 from .game_matching_service import GameMatchingService
-from .game_repository import SqlAlchemyGameRepository
+from .game_repository import GAME_STATUS_WAITING_VALIDATION, SqlAlchemyGameRepository
 from .platform_matching_service import PlatformMatchingService
 from .platform_repository import SqlAlchemyPlatformRepository
 from .query_timing_connection import QueryTimingConnection
@@ -154,6 +154,7 @@ class SqlAlchemyUserCollectionImportRepository:
         collection_file_path: str,
         import_data: CollectionImportData,
         collection_file_description: dict,
+        initial_game_validation_status: str = GAME_STATUS_WAITING_VALIDATION,
     ) -> UserCollectionImportPersistenceResult:
         """Importe les donnees de collection dans une transaction SQL.
 
@@ -162,6 +163,7 @@ class SqlAlchemyUserCollectionImportRepository:
             collection_file_path (str): Chemin final du fichier de collection.
             import_data (CollectionImportData): Donnees de collection deja validees.
             collection_file_description (dict): Description valide ayant servi a l'import.
+            initial_game_validation_status (str): Statut des jeux crees par cet import.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs de l'import.
@@ -201,6 +203,7 @@ class SqlAlchemyUserCollectionImportRepository:
                 matched_import_data,
                 platform_ids,
                 studio_ids,
+                initial_game_validation_status,
             )
             association_calculation_duration_seconds = round(
                 max(0.0, perf_counter() - association_calculation_started_at),
@@ -399,6 +402,7 @@ class SqlAlchemyUserCollectionImportRepository:
         import_data: CollectionImportData,
         platform_ids: dict[str, int],
         studio_ids: dict[str, int],
+        initial_game_validation_status: str = GAME_STATUS_WAITING_VALIDATION,
     ) -> tuple[
         list[UserGameAssociation],
         int,
@@ -412,6 +416,7 @@ class SqlAlchemyUserCollectionImportRepository:
             import_data (CollectionImportData): Donnees importees.
             platform_ids (dict[str, int]): Plateformes par cle normalisee.
             studio_ids (dict[str, int]): Studios par cle normalisee.
+            initial_game_validation_status (str): Statut des jeux crees par cet import.
 
         Returns:
             tuple[list[UserGameAssociation], int, list[CreatedGameMatchReport],
@@ -454,6 +459,7 @@ class SqlAlchemyUserCollectionImportRepository:
                     game,
                     platform_ids[game_key[0]],
                     studio_ids.get(self.name_normalizer.comparison_key(game.studio_name)),
+                    initial_game_validation_status,
                 )
                 existing_game_id = existing_game_ids[game_key]
                 self.game_matching_service.add_to_platform_index(

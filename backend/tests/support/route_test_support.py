@@ -462,6 +462,7 @@ class FakeUserCollectionImportRepository:
         collection_file_path,
         import_data,
         collection_file_description=None,
+        initial_game_validation_status=None,
     ):
         """Retourne des compteurs de persistance.
 
@@ -470,6 +471,7 @@ class FakeUserCollectionImportRepository:
             collection_file_path (str): Chemin final.
             import_data (object): Donnees ignorees.
             collection_file_description (dict | None): Description ignoree.
+            initial_game_validation_status (str | None): Statut des jeux crees.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs factices.

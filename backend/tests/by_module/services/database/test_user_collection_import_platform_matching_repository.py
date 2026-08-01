@@ -35,6 +35,10 @@ from services.database import (
     StudioMatchingConfiguration,
     StudioMatchingService,
 )
+from services.database.game_repository import (
+    GAME_STATUS_ACCEPTED,
+    GAME_STATUS_WAITING_VALIDATION,
+)
 from services.users import UserCollectionNameNormalizer
 
 
@@ -143,6 +147,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             notify_import_report=lambda warnings: None,
         )
         repository.studio_repository = SimpleNamespace(load_ids_by_key=lambda connection: {})
+        inserted_statuses = []
         repository.game_repository = SimpleNamespace(
             load_references_by_key=lambda connection: {},
             load_ids_by_key=lambda connection: {},
@@ -150,7 +155,9 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
                 repository.name_normalizer.comparison_key(game.platform_name),
                 repository.name_normalizer.comparison_key(game.name),
             ),
-            insert=lambda connection, game, platform_id, studio_id: 11,
+            insert=lambda connection, game, platform_id, studio_id, status: (
+                inserted_statuses.append(status) or 11
+            ),
         )
         repository.user_collection_repository = SimpleNamespace(
             ensure_user_game_associations=lambda connection, user_id, associations: len(associations),
@@ -176,6 +183,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual("importer@example.com", result.user_email)
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(1, result.created_games)
+        self.assertEqual([GAME_STATUS_WAITING_VALIDATION], inserted_statuses)
 
     def test_import_collection_exposes_platform_matching_warnings_to_caller(self):
         """Verifie la propagation des warnings de matching vers le service.
@@ -216,7 +224,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
                 repository.name_normalizer.comparison_key(game.platform_name),
                 repository.name_normalizer.comparison_key(game.name),
             ),
-            insert=lambda connection, game, platform_id, studio_id: 11,
+            insert=lambda connection, game, platform_id, studio_id, status: 11,
         )
         repository.user_collection_repository = SimpleNamespace(
             ensure_user_game_associations=lambda connection, user_id, associations: len(associations),
@@ -266,7 +274,9 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
                 repository.name_normalizer.comparison_key(game.platform_name),
                 repository.name_normalizer.comparison_key(game.name),
             ),
-            insert=lambda connection, game, platform_id, studio_id: insert_calls.append(game),
+            insert=lambda connection, game, platform_id, studio_id, status: (
+                insert_calls.append((game, status))
+            ),
         )
 
         (
@@ -323,7 +333,9 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
                 repository.name_normalizer.comparison_key(game.platform_name),
                 repository.name_normalizer.game_comparison_key(game.name),
             ),
-            insert=lambda connection, game, platform_id, studio_id: insert_calls.append(game),
+            insert=lambda connection, game, platform_id, studio_id, status: (
+                insert_calls.append((game, status))
+            ),
         )
 
         (
@@ -368,6 +380,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
             GameMatchingConfiguration(low_level_rating=25, high_level_rating=90),
             repository.name_normalizer,
         )
+        inserted_statuses = []
         repository.game_repository = SimpleNamespace(
             load_references_by_key=lambda connection: {
                 ("switch", "mario kart"): (31, "Mario Kart")
@@ -376,7 +389,9 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
                 repository.name_normalizer.comparison_key(game.platform_name),
                 repository.name_normalizer.comparison_key(game.name),
             ),
-            insert=lambda connection, game, platform_id, studio_id: 41,
+            insert=lambda connection, game, platform_id, studio_id, status: (
+                inserted_statuses.append(status) or 41
+            ),
         )
 
         (
@@ -397,6 +412,7 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
 
         self.assertEqual(1, created_games)
         self.assertEqual(41, associations[0].game_id)
+        self.assertEqual([GAME_STATUS_WAITING_VALIDATION], inserted_statuses)
         self.assertEqual(1, len(created_game_match_reports))
         self.assertEqual("Zelda", created_game_match_reports[0].imported_game_name)
         self.assertEqual("Switch", created_game_match_reports[0].platform_name)
@@ -488,6 +504,7 @@ class AdminLibraryImportRepositoryTest(unittest.TestCase):
             load_ids_by_key=lambda connection: {},
             insert=lambda connection, name: 13,
         )
+        inserted_statuses = []
         repository.game_repository = SimpleNamespace(
             load_references_by_key=lambda connection: {},
             load_ids_by_key=lambda connection: {},
@@ -495,7 +512,9 @@ class AdminLibraryImportRepositoryTest(unittest.TestCase):
                 repository.name_normalizer.comparison_key(game.platform_name),
                 repository.name_normalizer.comparison_key(game.name),
             ),
-            insert=lambda connection, game, platform_id, studio_id: 11,
+            insert=lambda connection, game, platform_id, studio_id, status: (
+                inserted_statuses.append(status) or 11
+            ),
         )
         repository.user_collection_repository = SimpleNamespace(
             ensure_user_game_associations=lambda connection, user_id, associations: (
@@ -517,6 +536,7 @@ class AdminLibraryImportRepositoryTest(unittest.TestCase):
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(0, result.created_studios)
         self.assertEqual(1, result.created_games)
+        self.assertEqual([GAME_STATUS_ACCEPTED], inserted_statuses)
 
 
 if __name__ == "__main__":

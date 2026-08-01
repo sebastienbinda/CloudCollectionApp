@@ -40,7 +40,15 @@ except ModuleNotFoundError:
 class RecordingUserCollectionImportService(UserCollectionImportService):
     """Service d'import factice enregistrant l'appel au coeur centralise."""
 
-    def _import_collection_file(self, user_id, source_file_path, original_filename, file_description, copy_to_workspace):
+    def _import_collection_file(
+        self,
+        user_id,
+        source_file_path,
+        original_filename,
+        file_description,
+        copy_to_workspace,
+        initial_game_validation_status,
+    ):
         """Enregistre les arguments recus par le coeur centralise.
 
         Args:
@@ -49,6 +57,7 @@ class RecordingUserCollectionImportService(UserCollectionImportService):
             original_filename (str): Nom original transmis.
             file_description (object): Description d'import.
             copy_to_workspace (bool): Mode de copie demande.
+            initial_game_validation_status (str): Statut des jeux crees.
 
         Returns:
             UserCollectionImportResult: Resultat factice.
@@ -60,6 +69,7 @@ class RecordingUserCollectionImportService(UserCollectionImportService):
             original_filename,
             file_description,
             copy_to_workspace,
+            initial_game_validation_status,
         )
         return UserCollectionImportResult(0, 0, 0, 0)
 
@@ -97,6 +107,7 @@ class UserCollectionImportCoreFactorizationTest(unittest.TestCase):
             self.assertEqual("collection.ods", service.recorded_core_call[2])
             self.assertIs(description, service.recorded_core_call[3])
             self.assertTrue(service.recorded_core_call[4])
+            self.assertEqual("WAITING_VALIDATION", service.recorded_core_call[5])
 
     def test_stored_import_delegates_to_central_import_core_without_copy(self):
         """Verifie que l'import reset utilise le fichier stocke sans copie.
@@ -121,6 +132,7 @@ class UserCollectionImportCoreFactorizationTest(unittest.TestCase):
             self.assertEqual("7-collection.ods", service.recorded_core_call[2])
             self.assertIs(description, service.recorded_core_call[3])
             self.assertFalse(service.recorded_core_call[4])
+            self.assertEqual("ACCEPTED", service.recorded_core_call[5])
 
     def _build_service(self, service_class, directory):
         return service_class(

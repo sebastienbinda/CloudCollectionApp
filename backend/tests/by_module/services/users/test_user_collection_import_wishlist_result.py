@@ -47,7 +47,14 @@ class FakeImportRepository:
 
         return False
 
-    def import_collection(self, user_id, collection_file_path, import_data, description):
+    def import_collection(
+        self,
+        user_id,
+        collection_file_path,
+        import_data,
+        description,
+        initial_game_validation_status,
+    ):
         """Retourne des compteurs de persistance factices."""
 
         return UserCollectionImportPersistenceResult(1, 1, 2, len(import_data.games))
@@ -56,7 +63,14 @@ class FakeImportRepository:
 class FakePlatformWarningImportRepository(FakeImportRepository):
     """Simule une persistance ajoutant des warnings de matching plateforme."""
 
-    def import_collection(self, user_id, collection_file_path, import_data, description):
+    def import_collection(
+        self,
+        user_id,
+        collection_file_path,
+        import_data,
+        description,
+        initial_game_validation_status,
+    ):
         """Ajoute un warning plateforme puis retourne des compteurs factices.
 
         Args:
@@ -64,6 +78,7 @@ class FakePlatformWarningImportRepository(FakeImportRepository):
             collection_file_path (str): Chemin de fichier ignore.
             import_data (CollectionImportData): Donnees d'import a enrichir.
             description (dict): Description d'import ignoree.
+            initial_game_validation_status (str): Statut des jeux crees.
 
         Returns:
             UserCollectionImportPersistenceResult: Compteurs factices.

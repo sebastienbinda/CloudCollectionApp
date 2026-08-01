@@ -23,6 +23,14 @@ from .library_query_sql_builder import LibraryQuerySqlBuilder
 from .platform_alias_sql_selector import PlatformAliasSqlSelector
 
 
+GAME_STATUS_WAITING_VALIDATION = "WAITING_VALIDATION"
+GAME_STATUS_ACCEPTED = "ACCEPTED"
+ALLOWED_GAME_VALIDATION_STATUSES = frozenset({
+    GAME_STATUS_WAITING_VALIDATION,
+    GAME_STATUS_ACCEPTED,
+})
+
+
 class SqlAlchemyGameRepository:
     """Persiste les jeux de collection dans `t_game`."""
 
@@ -121,6 +129,7 @@ class SqlAlchemyGameRepository:
         game: CollectionImportGame,
         platform_id: int,
         studio_id: int | None,
+        initial_validation_status: str,
     ) -> int:
         """Insere un jeu absent.
 
@@ -129,16 +138,25 @@ class SqlAlchemyGameRepository:
             game (CollectionImportGame): Jeu a creer.
             platform_id (int): Identifiant de plateforme.
             studio_id (int | None): Identifiant du studio developpeur.
+            initial_validation_status (str): Statut de validation initial.
 
         Returns:
             int: Identifiant genere.
+
+        Raises:
+            ValueError: Si le statut initial est inconnu.
         """
 
+        normalized_status = str(initial_validation_status or "").strip().upper()
+        if normalized_status not in ALLOWED_GAME_VALIDATION_STATUSES:
+            raise ValueError("Statut de validation jeu invalide.")
         return int(connection.execute(
             text(
                 f'INSERT INTO "{self.schema_name}".t_game '
-                "(name, release_date, developer, editor, platform, description, duplicate_flag) "
-                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL, FALSE) "
+                "(name, release_date, developer, editor, platform, description, "
+                "duplicate_flag, status) "
+                "VALUES (:name, :release_date, :developer, NULL, :platform, NULL, "
+                "FALSE, :status) "
                 "RETURNING id"
             ),
             {
@@ -146,6 +164,7 @@ class SqlAlchemyGameRepository:
                 "release_date": self.date_validator.validate_release_date(game.release_date),
                 "developer": studio_id,
                 "platform": platform_id,
+                "status": normalized_status,
             },
         ).scalar_one())
 

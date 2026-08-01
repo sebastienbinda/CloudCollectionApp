@@ -15,6 +15,10 @@ import unittest
 from datetime import date
 
 from services.database import DatabaseModelBase, SqlAlchemyGameRepository
+from services.database.game_repository import (
+    GAME_STATUS_ACCEPTED,
+    GAME_STATUS_WAITING_VALIDATION,
+)
 from services.ods import OdsCollectionImportGame
 from services.users import UserCollectionNameNormalizer
 
@@ -189,16 +193,56 @@ class GameRepositoryTest(unittest.TestCase):
             release_date=None,
         )
 
-        game_id = repository.insert(connection, game, platform_id=7, studio_id=11)
+        game_id = repository.insert(
+            connection,
+            game,
+            platform_id=7,
+            studio_id=11,
+            initial_validation_status=GAME_STATUS_WAITING_VALIDATION,
+        )
 
         sql, parameters = connection.executed_statements[0]
         self.assertEqual(42, game_id)
         self.assertIn("developer", sql)
         self.assertIn("duplicate_flag", sql)
         self.assertIn("FALSE", sql)
-        self.assertNotIn("status", sql)
+        self.assertIn("status", sql)
+        self.assertEqual(GAME_STATUS_WAITING_VALIDATION, parameters["status"])
         self.assertEqual("Chrono Trigger", parameters["name"])
         self.assertEqual(11, parameters["developer"])
+
+    def test_insert_rejects_invalid_validation_status(self):
+        """Verifie que l'insertion refuse un statut de validation inconnu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur fonctionnelle.
+        """
+
+        connection = FakeConnection()
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+        game = OdsCollectionImportGame(
+            name="Chrono Trigger",
+            platform_name="Super Nintendo",
+            studio_name="Square",
+            release_date=None,
+        )
+
+        with self.assertRaises(ValueError):
+            repository.insert(
+                connection,
+                game,
+                platform_id=7,
+                studio_id=11,
+                initial_validation_status="REFUSED",
+            )
+
+        self.assertEqual([], connection.executed_statements)
 
     def test_list_public_library_games_selects_validation_status(self):
         """Verifie que la liste Bibliotheque expose le statut lu en base.
@@ -269,7 +313,13 @@ class GameRepositoryTest(unittest.TestCase):
             release_date=None,
         )
 
-        repository.insert(connection, game, platform_id=7, studio_id=11)
+        repository.insert(
+            connection,
+            game,
+            platform_id=7,
+            studio_id=11,
+            initial_validation_status=GAME_STATUS_ACCEPTED,
+        )
 
         _sql, parameters = connection.executed_statements[0]
         self.assertEqual("Oddworld : L'Odyssée d'Abe", parameters["name"])
@@ -296,7 +346,13 @@ class GameRepositoryTest(unittest.TestCase):
             release_date="48113-11-21 00:00:01",
         )
 
-        repository.insert(connection, game, platform_id=7, studio_id=11)
+        repository.insert(
+            connection,
+            game,
+            platform_id=7,
+            studio_id=11,
+            initial_validation_status=GAME_STATUS_ACCEPTED,
+        )
 
         _sql, parameters = connection.executed_statements[0]
         self.assertIsNone(parameters["release_date"])
@@ -323,7 +379,13 @@ class GameRepositoryTest(unittest.TestCase):
             release_date=date(200, 11, 24),
         )
 
-        repository.insert(connection, game, platform_id=7, studio_id=11)
+        repository.insert(
+            connection,
+            game,
+            platform_id=7,
+            studio_id=11,
+            initial_validation_status=GAME_STATUS_ACCEPTED,
+        )
 
         _sql, parameters = connection.executed_statements[0]
         self.assertIsNone(parameters["release_date"])

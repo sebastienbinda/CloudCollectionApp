@@ -29,6 +29,7 @@ from services.collection.imports import (
 from services.database.user_collection_import_persistence_result import (
     UserCollectionImportPersistenceResult,
 )
+from services.database.game_repository import GAME_STATUS_WAITING_VALIDATION
 from services.database.user_collection_import_repository import (
     UserCollectionImportUserNotFoundError,
     UserCollectionReinitializationNotFoundError,
@@ -278,11 +279,19 @@ class UserCollectionImportService:
             raise CollectionFileDescriptionValidationError(
                 ["collection_file_description est requis."]
             )
-        return self._import_collection_file(user_id, source_file_path, original_filename, file_description, True)
+        return self._import_collection_file(
+            user_id,
+            source_file_path,
+            original_filename,
+            file_description,
+            True,
+            GAME_STATUS_WAITING_VALIDATION,
+        )
 
     def _import_collection_file(
         self, user_id: int, source_file_path: Path, original_filename: str | None,
         file_description: CollectionFileDescription, copy_to_workspace: bool,
+        initial_game_validation_status: str,
     ) -> UserCollectionImportResult:
         import_started_at = perf_counter()
         reader = self.reader_factory.create(file_description.file_type)
@@ -305,6 +314,7 @@ class UserCollectionImportService:
                 str(import_file_path),
                 import_data,
                 file_description.to_dict(),
+                initial_game_validation_status,
             )
             self._set_total_import_duration(import_data, import_started_at)
             result = self._map_result(persistence_result, import_data)
