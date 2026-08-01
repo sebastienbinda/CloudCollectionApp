@@ -269,6 +269,58 @@ class GameRepositoryTest(unittest.TestCase):
         sql, _parameters = connection.executed_statements[0]
         self.assertIn("game.status", sql)
 
+    def test_list_public_library_games_filters_waiting_validation_by_default(self):
+        """Verifie que la liste publique masque les jeux en attente.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le filtre SQL.
+        """
+
+        connection = FakeConnection()
+        connection.mapping_results = [[]]
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+
+        repository.list_public_library_games(
+            connection,
+            _library_criteria(),
+        )
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertIn("game.status = :accepted_status", sql)
+        self.assertEqual(GAME_STATUS_ACCEPTED, parameters["accepted_status"])
+
+    def test_list_public_library_games_does_not_filter_waiting_validation_for_admin(self):
+        """Verifie que la liste admin inclut tous les statuts.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de filtre statut.
+        """
+
+        connection = FakeConnection()
+        connection.mapping_results = [[]]
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+
+        repository.list_public_library_games(
+            connection,
+            _library_criteria(requester_profile="ADMIN"),
+        )
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertNotIn("game.status = :accepted_status", sql)
+        self.assertNotIn("accepted_status", parameters)
+
     def test_find_public_library_game_selects_validation_status(self):
         """Verifie que le detail Bibliotheque expose le statut lu en base.
 
@@ -288,8 +340,57 @@ class GameRepositoryTest(unittest.TestCase):
 
         repository.find_public_library_game(connection, 42)
 
-        sql, _parameters = connection.executed_statements[0]
+        sql, parameters = connection.executed_statements[0]
         self.assertIn("game.status", sql)
+        self.assertIn("game.status = :accepted_status", sql)
+        self.assertIn("t_user_collection", sql)
+        self.assertEqual(GAME_STATUS_ACCEPTED, parameters["accepted_status"])
+        self.assertEqual(-1, parameters["current_user_id"])
+        self.assertFalse(parameters["include_waiting_validation"])
+
+    def test_find_public_library_game_allows_admin_visibility(self):
+        """Verifie que le detail admin ne filtre pas les jeux en attente.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le parametre SQL.
+        """
+
+        connection = FakeConnection()
+        connection.mapping_results = [[]]
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+
+        repository.find_public_library_game(connection, 42, True)
+
+        _sql, parameters = connection.executed_statements[0]
+        self.assertTrue(parameters["include_waiting_validation"])
+
+    def test_find_public_library_game_allows_current_user_collection_owner(self):
+        """Verifie que le detail public accepte le proprietaire collection.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le parametre utilisateur.
+        """
+
+        connection = FakeConnection()
+        connection.mapping_results = [[]]
+        repository = SqlAlchemyGameRepository(
+            "collection",
+            UserCollectionNameNormalizer(),
+        )
+
+        repository.find_public_library_game(connection, 42, False, 7)
+
+        _sql, parameters = connection.executed_statements[0]
+        self.assertEqual(7, parameters["current_user_id"])
 
     def test_insert_standardizes_new_game_name(self):
         """Verifie que les nouveaux jeux sont stockes avec un nom standardise.
@@ -443,11 +544,11 @@ class GameRepositoryTest(unittest.TestCase):
         )
 
 
-def _library_criteria():
+def _library_criteria(requester_profile="PUBLIC"):
     """Construit des criteres Bibliotheque minimaux pour les tests repository.
 
     Args:
-        Aucun.
+        requester_profile (str): Profil de visibilite.
 
     Returns:
         LibraryQueryCriteria: Criteres de liste sans filtre.
@@ -467,6 +568,7 @@ def _library_criteria():
         normalized_platform="",
         duplicate_flag=None,
         current_user_id=None,
+        requester_profile=requester_profile,
         sort_rules=(LibrarySortRule("name", "asc"),),
     )
 

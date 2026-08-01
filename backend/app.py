@@ -121,7 +121,7 @@ library_controller = LibraryController(
     library_reset_job_coordinator,
     library_service_provider=library_service_provider,
 )
-platform_controller = PlatformController(library_service_factory=library_service_provider)
+platform_controller = PlatformController(auth_guard, library_service_factory=library_service_provider)
 platform_image_controller = PlatformImageController(auth_guard)
 studio_controller = StudioController(library_service_factory=library_service_provider)
 game_controller = GameController(auth_guard, library_service_factory=library_service_provider)

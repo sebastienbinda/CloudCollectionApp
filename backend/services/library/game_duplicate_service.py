@@ -361,6 +361,7 @@ class GameDuplicateService:
             normalized_platform=self.name_normalizer.comparison_key(platform_name) or "",
             duplicate_flag=None,
             current_user_id=None,
+            requester_profile="ADMIN",
             sort_rules=(LibrarySortRule("name", "asc"),),
         )
 

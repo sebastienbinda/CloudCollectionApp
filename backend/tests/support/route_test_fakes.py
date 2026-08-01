@@ -20,17 +20,20 @@ class FakeLibraryService:
     last_platforms_criteria = None
     last_studios_criteria = None
     last_games_criteria = None
+    last_entities_requester_profile = None
+    last_game_detail_context = None
 
-    def count_entities(self):
+    def count_entities(self, requester_profile="PUBLIC"):
         """Retourne les compteurs globaux.
 
         Args:
-            Aucun.
+            requester_profile (str): Profil du demandeur.
 
         Returns:
             dict[str, int]: Compteurs factices.
         """
 
+        self.__class__.last_entities_requester_profile = requester_profile
         return {"platforms": 2, "studios": 3, "games": 4}
 
     def list_platforms(self, criteria):
@@ -133,11 +136,13 @@ class FakeLibraryService:
             ],
         }
 
-    def get_game(self, game_id):
+    def get_game(self, game_id, requester_profile="PUBLIC", current_user_id=None):
         """Retourne un jeu public factice.
 
         Args:
             game_id (int): Identifiant du jeu recherche.
+            requester_profile (str): Profil du demandeur.
+            current_user_id (int | None): Identifiant utilisateur optionnel.
 
         Returns:
             dict[str, object] | None: Jeu factice ou absence.
@@ -145,6 +150,7 @@ class FakeLibraryService:
 
         if game_id != 3:
             return None
+        self.__class__.last_game_detail_context = (requester_profile, current_user_id)
         return {"id": 3, "name": "Final Fantasy", "release_date": "1987-12-18", "developer": "Square", "editor": "", "status": "", "platform": "NES", "platform_end_date": "1995-08-14", "platform_common_alias": "NES", "duplicate_flag": True}
 
     def _page(self, criteria):

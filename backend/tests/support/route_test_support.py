@@ -634,6 +634,8 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeLibraryService.last_platforms_criteria = None
         FakeLibraryService.last_studios_criteria = None
         FakeLibraryService.last_games_criteria = None
+        FakeLibraryService.last_entities_requester_profile = None
+        FakeLibraryService.last_game_detail_context = None
         FakePlatformImageRouteService.next_upload_error = None
         FakePlatformImageRouteService.next_public_error = None
         FakePlatformImageRouteService.next_admin_file_error = None

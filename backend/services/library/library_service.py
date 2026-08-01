@@ -11,10 +11,10 @@
 #
 # Description : service metier de consultation publique de la Bibliotheque.
 
-from typing import Any, Callable, Protocol
+from typing import Any, Callable
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.engine import Engine
 
 from services.database.database_configuration import DatabaseConfiguration
 from services.database.game_repository import SqlAlchemyGameRepository
@@ -26,265 +26,15 @@ from services.users import UserCollectionNameNormalizer
 from .current_user_collection_marker import CurrentUserCollectionMarker
 from .library_query_contract import LibraryQueryCriteria
 from .library_payload_serializer import LibraryPayloadSerializer
+from .library_repository_protocols import (
+    PublicLibraryGameRepository,
+    PublicLibraryPlatformImageRepository,
+    PublicLibraryPlatformRepository,
+    PublicLibraryStudioRepository,
+)
 
 EngineFactory = Callable[[str], Engine]
 
-
-class PublicLibraryPlatformRepository(Protocol):
-    """Decrit les lectures publiques attendues pour les plateformes."""
-
-    def count_public_library_platforms(self, connection: Connection) -> int:
-        """Compte les plateformes globales.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-
-        Returns:
-            int: Nombre total de plateformes.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def count_public_library_platforms_by_criteria(
-        self,
-        connection: Connection,
-        criteria: LibraryQueryCriteria,
-    ) -> int:
-        """Compte les plateformes correspondant aux criteres.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            criteria (LibraryQueryCriteria): Criteres Bibliotheque.
-
-        Returns:
-            int: Nombre de plateformes filtrees.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def list_public_library_platforms(
-        self,
-        connection: Connection,
-        criteria: LibraryQueryCriteria,
-    ) -> list[dict[str, Any]]:
-        """Liste les plateformes correspondant aux criteres.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            criteria (LibraryQueryCriteria): Criteres Bibliotheque.
-
-        Returns:
-            list[dict[str, Any]]: Plateformes lues.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def find_public_library_platform(
-        self,
-        connection: Connection,
-        platform_id: int,
-    ) -> dict[str, Any] | None:
-        """Retourne une plateforme correspondant a l'identifiant.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            platform_id (int): Identifiant de plateforme.
-
-        Returns:
-            dict[str, Any] | None: Plateforme lue ou absence.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-
-class PublicLibraryPlatformImageRepository(Protocol):
-    """Decrit les lectures publiques attendues pour les images de plateformes."""
-
-    def list_accepted_images(
-        self,
-        connection: Connection,
-        platform_id: int,
-    ) -> list[dict[str, Any]]:
-        """Liste les images acceptees d'une plateforme.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            platform_id (int): Identifiant de plateforme.
-
-        Returns:
-            list[dict[str, Any]]: Images acceptees.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-
-class PublicLibraryStudioRepository(Protocol):
-    """Decrit les lectures publiques attendues pour les studios."""
-
-    def count_public_library_studios(self, connection: Connection) -> int:
-        """Compte les studios globaux.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-
-        Returns:
-            int: Nombre total de studios.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def count_public_library_studios_by_criteria(
-        self,
-        connection: Connection,
-        criteria: LibraryQueryCriteria,
-    ) -> int:
-        """Compte les studios correspondant aux criteres.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            criteria (LibraryQueryCriteria): Criteres Bibliotheque.
-
-        Returns:
-            int: Nombre de studios filtres.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def list_public_library_studios(
-        self,
-        connection: Connection,
-        criteria: LibraryQueryCriteria,
-    ) -> list[dict[str, Any]]:
-        """Liste les studios correspondant aux criteres.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            criteria (LibraryQueryCriteria): Criteres Bibliotheque.
-
-        Returns:
-            list[dict[str, Any]]: Studios lus.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-
-class PublicLibraryGameRepository(Protocol):
-    """Decrit les lectures publiques attendues pour les jeux."""
-
-    def count_public_library_games(self, connection: Connection) -> int:
-        """Compte les jeux globaux.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-
-        Returns:
-            int: Nombre total de jeux.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def count_public_library_games_by_criteria(
-        self,
-        connection: Connection,
-        criteria: LibraryQueryCriteria,
-    ) -> int:
-        """Compte les jeux correspondant aux criteres.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            criteria (LibraryQueryCriteria): Criteres Bibliotheque.
-
-        Returns:
-            int: Nombre de jeux filtres.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def list_public_library_games(
-        self,
-        connection: Connection,
-        criteria: LibraryQueryCriteria,
-    ) -> list[dict[str, Any]]:
-        """Liste les jeux correspondant aux criteres.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            criteria (LibraryQueryCriteria): Criteres Bibliotheque.
-
-        Returns:
-            list[dict[str, Any]]: Jeux lus.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def list_current_user_collection_game_ids(
-        self,
-        connection: Connection,
-        user_id: int,
-        game_ids: list[int],
-    ) -> set[int]:
-        """Liste les jeux de la page deja presents dans la collection utilisateur.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            user_id (int): Identifiant utilisateur connecte.
-            game_ids (list[int]): Identifiants de jeux a verifier.
-
-        Returns:
-            set[int]: Identifiants en collection hors wishlist.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def list_current_user_wishlist_game_ids(
-        self,
-        connection: Connection,
-        user_id: int,
-        game_ids: list[int],
-    ) -> set[int]:
-        """Liste les jeux de la page deja presents dans la liste de souhaits.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            user_id (int): Identifiant utilisateur connecte.
-            game_ids (list[int]): Identifiants de jeux a verifier.
-
-        Returns:
-            set[int]: Identifiants en liste de souhaits.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
-
-    def find_public_library_game(
-        self,
-        connection: Connection,
-        game_id: int,
-    ) -> dict[str, Any] | None:
-        """Retourne un jeu correspondant a l'identifiant.
-
-        Args:
-            connection (Connection): Connexion SQL transactionnelle.
-            game_id (int): Identifiant de jeu.
-
-        Returns:
-            dict[str, Any] | None: Jeu lu ou absence.
-
-        Raises:
-            sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
-        """
 
 
 class LibraryService:
@@ -347,11 +97,11 @@ class LibraryService:
         self.current_user_collection_marker = CurrentUserCollectionMarker(self.game_repository)
         self.payload_serializer = payload_serializer or LibraryPayloadSerializer()
 
-    def count_entities(self) -> dict[str, int]:
+    def count_entities(self, requester_profile: str = "PUBLIC") -> dict[str, int]:
         """Compte les entites globales exposees par la Bibliotheque.
 
         Args:
-            Aucun.
+            requester_profile (str): Profil du demandeur, ou `PUBLIC` sans Bearer.
 
         Returns:
             dict[str, int]: Compteurs `platforms`, `studios` et `games`.
@@ -364,7 +114,10 @@ class LibraryService:
             return {
                 "platforms": self.platform_repository.count_public_library_platforms(connection),
                 "studios": self.studio_repository.count_public_library_studios(connection),
-                "games": self.game_repository.count_public_library_games(connection),
+                "games": self.game_repository.count_public_library_games(
+                    connection,
+                    str(requester_profile or "").strip().upper() == "ADMIN",
+                ),
             }
 
     def list_platforms(self, criteria: LibraryQueryCriteria) -> dict[str, Any]:
@@ -454,11 +207,18 @@ class LibraryService:
             "games": [self.payload_serializer.game_payload(row) for row in rows],
         }
 
-    def get_game(self, game_id: int) -> dict[str, Any] | None:
+    def get_game(
+        self,
+        game_id: int,
+        requester_profile: str = "PUBLIC",
+        current_user_id: int | None = None,
+    ) -> dict[str, Any] | None:
         """Retourne le detail public d'un jeu global.
 
         Args:
             game_id (int): Identifiant du jeu recherche.
+            requester_profile (str): Profil du demandeur, ou `PUBLIC` sans Bearer.
+            current_user_id (int | None): Utilisateur proprietaire optionnel.
 
         Returns:
             dict[str, Any] | None: Jeu serialisable ou absence.
@@ -468,7 +228,12 @@ class LibraryService:
         """
 
         with self.engine.connect() as connection:
-            row = self.game_repository.find_public_library_game(connection, game_id)
+            row = self.game_repository.find_public_library_game(
+                connection,
+                game_id,
+                str(requester_profile or "").strip().upper() == "ADMIN",
+                current_user_id,
+            )
         return None if row is None else self.payload_serializer.game_payload(row)
 
     def get_platform(self, platform_id: int) -> dict[str, Any] | None:

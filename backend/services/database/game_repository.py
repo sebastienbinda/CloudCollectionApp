@@ -183,11 +183,16 @@ class SqlAlchemyGameRepository:
             self.name_normalizer.game_comparison_key(game.name),
         )
 
-    def count_public_library_games(self, connection: Connection) -> int:
+    def count_public_library_games(
+        self,
+        connection: Connection,
+        include_waiting_validation: bool = False,
+    ) -> int:
         """Compte tous les jeux globaux de reference.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
+            include_waiting_validation (bool): Inclut les jeux en attente si `True`.
 
         Returns:
             int: Nombre total de jeux globaux.
@@ -196,8 +201,10 @@ class SqlAlchemyGameRepository:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
 
+        where_clause = "" if include_waiting_validation else " WHERE status = :accepted_status"
         return int(connection.execute(
-            text(f'SELECT COUNT(*) FROM "{self.schema_name}".t_game')
+            text(f'SELECT COUNT(*) FROM "{self.schema_name}".t_game{where_clause}'),
+            {"accepted_status": GAME_STATUS_ACCEPTED},
         ).scalar_one())
 
     def count_public_library_games_by_criteria(
@@ -350,12 +357,16 @@ class SqlAlchemyGameRepository:
         self,
         connection: Connection,
         game_id: int,
+        include_waiting_validation: bool = False,
+        current_user_id: int | None = None,
     ) -> dict[str, object] | None:
         """Recherche un jeu global par identifiant.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             game_id (int): Identifiant du jeu recherche.
+            include_waiting_validation (bool): Inclut les jeux en attente si `True`.
+            current_user_id (int | None): Utilisateur proprietaire optionnel.
 
         Returns:
             dict[str, object] | None: Jeu public trouve ou absence.
@@ -379,9 +390,23 @@ class SqlAlchemyGameRepository:
                 f'LEFT JOIN "{self.schema_name}".t_studio editor_studio '
                 "ON editor_studio.id = game.editor "
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
-                "WHERE game.id = :game_id"
+                "WHERE game.id = :game_id "
+                "AND ("
+                ":include_waiting_validation = TRUE "
+                "OR game.status = :accepted_status "
+                "OR EXISTS ("
+                f'SELECT 1 FROM "{self.schema_name}".t_user_collection user_collection '
+                "WHERE user_collection.user_id = :current_user_id "
+                "AND user_collection.game_id = game.id"
+                ")"
+                ")"
             ),
-            {"game_id": game_id},
+            {
+                "game_id": game_id,
+                "accepted_status": GAME_STATUS_ACCEPTED,
+                "current_user_id": current_user_id or -1,
+                "include_waiting_validation": bool(include_waiting_validation),
+            },
         ).mappings().first()
         return None if row is None else dict(row)
 
@@ -421,5 +446,9 @@ class SqlAlchemyGameRepository:
         if criteria.duplicate_flag is not None:
             parameters["duplicate_flag"] = criteria.duplicate_flag
             filters.append("game.duplicate_flag = :duplicate_flag")
+
+        if not criteria.include_waiting_validation_games:
+            parameters["accepted_status"] = GAME_STATUS_ACCEPTED
+            filters.append("game.status = :accepted_status")
 
         return f"WHERE {' AND '.join(filters)}" if filters else ""
