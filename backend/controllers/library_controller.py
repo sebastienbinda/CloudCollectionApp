@@ -149,6 +149,14 @@ class LibraryController:
             methods=["POST"],
         )
         flask_app.add_url_rule(
+            "/api/library/games/validation/summary",
+            endpoint="get_library_game_validation_summary",
+            view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
+                self.get_library_game_validation_summary
+            ),
+            methods=["GET"],
+        )
+        flask_app.add_url_rule(
             "/api/library/games/refusal",
             endpoint="refuse_library_games",
             view_func=self.auth_guard.require_profile(UserProfile.ADMIN.value)(
@@ -329,6 +337,23 @@ class LibraryController:
         except Exception:
             current_app.logger.exception("Erreur pendant la validation admin de jeux.")
             return jsonify({"error": "Unable to validate games."}), 500
+
+    def get_library_game_validation_summary(self):
+        """Retourne le resume admin des jeux en attente de validation.
+
+        Args:
+            Aucun.
+
+        Returns:
+            tuple[flask.Response, int]: Resume JSON ou erreur JSON.
+        """
+
+        try:
+            summary = self.game_validation_service_factory().get_summary()
+            return jsonify({"summary": summary}), 200
+        except Exception:
+            current_app.logger.exception("Erreur pendant le resume admin validation jeux.")
+            return jsonify({"error": "Unable to read game validation summary."}), 500
 
     def refuse_library_games(self):
         """Refuse des jeux en attente dans la Bibliotheque.

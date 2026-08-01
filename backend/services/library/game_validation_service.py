@@ -142,6 +142,23 @@ class GameValidationService:
             ignored_ids=self._ignored_ids(game_ids, accepted_ids),
         )
 
+    def get_summary(self) -> dict[str, Any]:
+        """Retourne le resume administrateur des jeux en attente.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict[str, Any]: Compteur et indicateur de presence de jeux a valider.
+        """
+
+        with self.engine.connect() as connection:
+            waiting_validation_count = self.repository.count_waiting_validation_games(connection)
+        return {
+            "waiting_validation_count": waiting_validation_count,
+            "has_waiting_validation": waiting_validation_count > 0,
+        }
+
     def refuse_games(self, raw_game_ids: Any) -> GameValidationBatchResult:
         """Refuse les jeux en attente demandes et notifie les utilisateurs impactes.
 

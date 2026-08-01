@@ -17,7 +17,9 @@ from sqlalchemy import bindparam, text
 from sqlalchemy.engine import Connection
 
 from .game_duplicate_repository import SqlAlchemyGameDuplicateRepository
-from .game_repository import GAME_STATUS_ACCEPTED, GAME_STATUS_WAITING_VALIDATION
+
+GAME_STATUS_WAITING_VALIDATION = "WAITING_VALIDATION"
+GAME_STATUS_ACCEPTED = "ACCEPTED"
 
 
 class SqlAlchemyGameValidationRepository:
@@ -79,6 +81,24 @@ class SqlAlchemyGameValidationRepository:
             },
         ).mappings()
         return [int(row["id"]) for row in rows]
+
+    def count_waiting_validation_games(self, connection: Connection) -> int:
+        """Compte les jeux en attente de validation administrateur.
+
+        Args:
+            connection (Connection): Connexion SQL transactionnelle ou de lecture.
+
+        Returns:
+            int: Nombre de jeux `WAITING_VALIDATION`.
+        """
+
+        return int(connection.execute(
+            text(
+                f'SELECT COUNT(*) FROM "{self.schema_name}".t_game '
+                "WHERE status = :waiting_status"
+            ),
+            {"waiting_status": GAME_STATUS_WAITING_VALIDATION},
+        ).scalar_one())
 
     def list_refusable_games(self, connection: Connection, game_ids: list[int]) -> list[dict[str, Any]]:
         """Liste les jeux en attente pouvant etre refuses.

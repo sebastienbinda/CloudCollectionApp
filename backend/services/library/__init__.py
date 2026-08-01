@@ -32,6 +32,8 @@ from .game_validation_service import (
     GameValidationError,
     GameValidationService,
 )
+from .game_validation_daily_notification_scheduler import GameValidationDailyNotificationScheduler
+from .game_validation_daily_notification_service import GameValidationDailyNotificationService
 from .game_validation_user_notifier import GameValidationUserNotifier
 from .library_reset_job_coordinator import (
     LibraryResetAlreadyRunningError,
@@ -62,6 +64,8 @@ __all__ = [
     "GameDuplicateDailyNotificationService",
     "GameDuplicateUserNotifier",
     "GameValidationBatchResult",
+    "GameValidationDailyNotificationScheduler",
+    "GameValidationDailyNotificationService",
     "GameValidationError",
     "GameValidationService",
     "GameValidationUserNotifier",

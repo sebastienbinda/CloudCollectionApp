@@ -1,0 +1,9 @@
+Notification quotidienne des jeux en attente de validation.
+
+${waiting_validation_count} jeu(x) sont actuellement en attente de validation dans la Bibliotheque.
+
+Vous pouvez acceder au site ici:
+${site_url}
+
+Acces direct a la liste des jeux a valider:
+${library_games_url}

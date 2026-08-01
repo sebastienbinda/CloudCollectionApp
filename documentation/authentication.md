@@ -165,6 +165,7 @@ Protected administrator routes include:
 - `POST /api/library/reset`
 - `POST /api/library/platform-catalog/sync`
 - `GET /api/library/platforms/images`
+- `GET /api/library/games/validation/summary`
 - `GET /api/library/games/<game_id>/doublon`
 - `GET /api/library/games/<game_id>/doublon/candidates`
 - `POST /api/library/games/doublon`
