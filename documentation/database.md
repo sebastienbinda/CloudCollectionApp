@@ -268,7 +268,8 @@ global Library game several times when the imported region/version differs.
 When an import row has no valid region/version, `EU-FR` is persisted.
 `game_additional_name` remains nullable and is not filled by the current import
 workflow. `wishlist` defaults to `false`; existing rows are backfilled to
-`false` by the schema migration.
+`false` by the schema migration. A later import always replaces `wishlist` with
+the imported value for an existing `(user_id, game_id, region)` row.
 Private information remains nullable. A later import updates only non-null
 private values and never clears an existing value because the new file omitted
 its optional column. The file-level `price_unit` is copied to each association

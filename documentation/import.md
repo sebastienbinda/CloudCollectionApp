@@ -102,10 +102,11 @@ database structure in `documentation/database.md`, and frontend navigation in
 - The copied file must be removed when import parsing or persistence fails.
 - The copied file must be writable by its owner and executable by owner and group:
   `0750`.
-- Existing platforms, studios, games and user-game associations must be reused,
-  not overwritten.
-- Reused user-game associations update only private values that are non-null in
-  the new import. Missing optional columns never erase previously stored data.
+- Existing platforms, studios, games and user-game-region associations must be
+  reused, not overwritten.
+- Reused user-game-region associations always update `wishlist` from the new
+  import. They update only private values that are non-null in the new import.
+  Missing optional columns never erase previously stored data.
 - Each configured private field is optional: `purchase_price`, `buy_location`,
   `buy_date`, `grade`, `condition`, `has_manual`, `is_collector`,
   `has_steelbook`, `is_digital`, `region` and `description`.
@@ -124,8 +125,9 @@ database structure in `documentation/database.md`, and frontend navigation in
 - When the imported region/version is absent or invalid, the persisted default
   region/version is `EU-FR`.
 - `game_additional_name` is not filled by the current import workflow.
-- `t_user_collection.wishlist` is persisted for every inserted association:
-  `false` means an owned collection entry and `true` means a wishlist entry.
+- `t_user_collection.wishlist` is persisted for every inserted or reused
+  association: `false` means an owned collection entry and `true` means a
+  wishlist entry.
 - Reinitialization deletes only the connected user's `t_user_collection` rows,
   clears `t_user.collection_file_path`, keeps
   `t_user.collection_file_description` for future import prefill, and deletes
