@@ -398,6 +398,7 @@ class SqlAlchemyUserCollectionQueryRepository:
         connection: Connection,
         user_id: int,
         game_id: int,
+        region: str | None = None,
     ) -> dict[str, Any] | None:
         """Recherche un jeu rattache a la collection de l'utilisateur.
 
@@ -405,6 +406,7 @@ class SqlAlchemyUserCollectionQueryRepository:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant de l'utilisateur connecte.
             game_id (int): Identifiant du jeu recherche.
+            region (str | None): Region de l'exemplaire recherche, ou absence.
 
         Returns:
             dict[str, Any] | None: Jeu trouve ou absence.
@@ -412,6 +414,17 @@ class SqlAlchemyUserCollectionQueryRepository:
         Raises:
             sqlalchemy.exc.SQLAlchemyError: Si PostgreSQL refuse la requete.
         """
+
+        parameters: dict[str, Any] = {"user_id": user_id, "game_id": game_id}
+        region_filter = ""
+        order_by = (
+            " ORDER BY CASE WHEN user_collection.region = 'EU-FR' THEN 0 ELSE 1 END, "
+            "user_collection.region"
+        )
+        if region is not None:
+            region_filter = " AND user_collection.region = :region"
+            parameters["region"] = str(region).strip()
+            order_by = ""
 
         row = connection.execute(
             text(
@@ -433,9 +446,10 @@ class SqlAlchemyUserCollectionQueryRepository:
                 f'JOIN "{self.schema_name}".t_game game ON game.id = user_collection.game_id '
                 f'JOIN "{self.schema_name}".t_platform platform ON platform.id = game.platform '
                 f'LEFT JOIN "{self.schema_name}".t_studio studio ON studio.id = game.developer '
-                "WHERE user_collection.user_id = :user_id AND game.id = :game_id"
+                f"WHERE user_collection.user_id = :user_id AND game.id = :game_id{region_filter}"
+                f"{order_by} LIMIT 1"
             ),
-            {"user_id": user_id, "game_id": game_id},
+            parameters,
         ).mappings().first()
         return None if row is None else dict(row)
 

@@ -289,19 +289,20 @@ class FakeUserCollectionQueryRepository:
             }
         ]
 
-    def find_game(self, connection, user_id, game_id):
+    def find_game(self, connection, user_id, game_id, region=None):
         """Recherche un jeu de collection factice.
 
         Args:
             connection (object): Connexion recue.
             user_id (int): Identifiant utilisateur.
             game_id (int): Identifiant du jeu recherche.
+            region (str | None): Region de l'exemplaire recherche.
 
         Returns:
             dict | None: Jeu factice ou absence.
         """
 
-        self.calls.append(("find_game", connection, user_id, game_id))
+        self.calls.append(("find_game", connection, user_id, game_id, region))
         if game_id != 11:
             return None
         return {
@@ -613,6 +614,23 @@ class UserCollectionQueryServiceTest(unittest.TestCase):
         self.assertEqual("1995-08-14", game["platform_end_date"])
         self.assertEqual("NES", game["platform_common_alias"])
         self.assertTrue(game["wishlist"])
+
+    def test_get_game_passes_region_filter_to_repository(self):
+        """Verifie le filtrage d'un exemplaire de collection par region.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'appel repository.
+        """
+
+        self.service.get_game(7, 11, "EU-FR")
+
+        self.assertIn(
+            ("find_game", self.engine.connection, 7, 11, "EU-FR"),
+            self.repository.calls,
+        )
 
     def test_get_game_returns_none_for_unknown_collection_game(self):
         """Verifie l'absence de jeu dans la collection.

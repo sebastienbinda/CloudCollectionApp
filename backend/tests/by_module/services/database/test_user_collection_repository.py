@@ -69,7 +69,8 @@ class FakeRepositoryConnection:
         """Initialise la connexion factice.
 
         Args:
-            existing_wishlist_values (dict[int, bool] | None): Valeurs wishlist existantes.
+            existing_wishlist_values (dict[int | tuple[int, str], bool] | None): Valeurs
+                wishlist existantes.
             association_count (int): Nombre d'associations retourne par COUNT.
 
         Returns:
@@ -100,8 +101,15 @@ class FakeRepositoryConnection:
         if sql.strip().startswith("SELECT"):
             return FakeRepositoryResult(
                 [
-                    {"game_id": game_id, "wishlist": wishlist}
-                    for game_id, wishlist in sorted(self.existing_wishlist_values.items())
+                    {
+                        "game_id": key[0] if isinstance(key, tuple) else key,
+                        "region": key[1] if isinstance(key, tuple) else "EU-FR",
+                        "wishlist": wishlist,
+                    }
+                    for key, wishlist in sorted(
+                        self.existing_wishlist_values.items(),
+                        key=lambda item: str(item[0]),
+                    )
                 ]
             )
         return FakeRepositoryResult()
@@ -135,6 +143,7 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         self.assertIn("wishlist", insert_sql)
         self.assertEqual(7, parameters["user_id"])
         self.assertEqual(42, parameters["game_id"])
+        self.assertEqual("EU-FR", parameters["region"])
         self.assertFalse(parameters["wishlist"])
         self.assertIsNone(parameters["purchase_price"])
 
@@ -146,8 +155,8 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         values = self.repository.find_user_game_wishlist_values(connection, 7)
 
         sql, parameters = connection.executed_statements[0]
-        self.assertEqual({42: True, 43: False}, values)
-        self.assertIn("SELECT game_id, wishlist", sql)
+        self.assertEqual({(42, "EU-FR"): True, (43, "EU-FR"): False}, values)
+        self.assertIn("SELECT game_id, region, wishlist", sql)
         self.assertEqual({"user_id": 7}, parameters)
 
     def test_creates_association_with_wishlist_true(self):
@@ -171,7 +180,7 @@ class UserCollectionRepositoryTest(unittest.TestCase):
     def test_does_not_duplicate_existing_user_game_association(self):
         """Verifie qu'une association existante n'est pas reinseree."""
 
-        connection = FakeRepositoryConnection(existing_wishlist_values={42: False})
+        connection = FakeRepositoryConnection(existing_wishlist_values={(42, "EU-FR"): False})
 
         count = self.repository.ensure_user_game_associations(
             connection,
@@ -181,8 +190,31 @@ class UserCollectionRepositoryTest(unittest.TestCase):
 
         self.assertEqual(1, count)
         self.assertEqual(2, len(connection.executed_statements))
-        self.assertIn("SELECT game_id, wishlist", connection.executed_statements[0][0])
+        self.assertIn("SELECT game_id, region, wishlist", connection.executed_statements[0][0])
         self.assertIn("UPDATE", connection.executed_statements[1][0])
+
+    def test_creates_distinct_association_for_existing_game_with_different_region(self):
+        """Verifie qu'une autre region cree un nouvel exemplaire utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'insertion distincte.
+        """
+
+        connection = FakeRepositoryConnection(existing_wishlist_values={(42, "US"): False})
+
+        count = self.repository.ensure_user_game_associations(
+            connection,
+            7,
+            [UserGameAssociation(42, True, region="EU-FR")],
+        )
+
+        insert_sql, parameter_batch = connection.executed_statements[1]
+        self.assertEqual(1, count)
+        self.assertIn("INSERT INTO", insert_sql)
+        self.assertEqual("EU-FR", parameter_batch[0]["region"])
 
     def test_updates_only_non_null_private_information_for_existing_association(self):
         """Verifie l'upsert non destructif des informations privees.
@@ -194,7 +226,7 @@ class UserCollectionRepositoryTest(unittest.TestCase):
             None: Les assertions valident SQL et parametres.
         """
 
-        connection = FakeRepositoryConnection(existing_wishlist_values={42: False})
+        connection = FakeRepositoryConnection(existing_wishlist_values={(42, "EU-FR"): False})
         association = UserGameAssociation(
             game_id=42,
             purchase_price=Decimal("120.25"),
@@ -208,6 +240,7 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         sql, parameter_batch = connection.executed_statements[1]
         parameters = parameter_batch[0]
         self.assertIn("purchase_price = COALESCE(:purchase_price, purchase_price)", sql)
+        self.assertIn("AND region = :region", sql)
         self.assertEqual(Decimal("120.25"), parameters["purchase_price"])
         self.assertEqual("EUR", parameters["price_unit"])
         self.assertEqual("EU-FR", parameters["region"])
@@ -224,7 +257,7 @@ class UserCollectionRepositoryTest(unittest.TestCase):
             None: Les assertions valident les lots de parametres transmis.
         """
 
-        connection = FakeRepositoryConnection(existing_wishlist_values={42: False})
+        connection = FakeRepositoryConnection(existing_wishlist_values={(42, "EU-FR"): False})
 
         count = self.repository.ensure_user_game_associations(
             connection,
@@ -258,11 +291,11 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         self.repository.ASSOCIATION_BATCH_SIZE = 2
         connection = FakeRepositoryConnection(
             existing_wishlist_values={
-                42: False,
-                43: False,
-                44: False,
-                45: False,
-                46: False,
+                (42, "EU-FR"): False,
+                (43, "EU-FR"): False,
+                (44, "EU-FR"): False,
+                (45, "EU-FR"): False,
+                (46, "EU-FR"): False,
             }
         )
 

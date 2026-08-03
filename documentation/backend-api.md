@@ -834,7 +834,7 @@ routes require at least `USER`; GUEST receives `403`.
 | `GET` | `/collections/statistics` | Returns detailed owned-collection statistics from SQL. |
 | `GET` | `/collections/videogames/platforms/search` | Lists platforms owned by the connected user from SQL. |
 | `GET` | `/collections/videogames/games/search` | Lists connected-user games from SQL. |
-| `GET` | `/collections/videogames/games/<game_id>` | Returns one game only when attached to the connected user. |
+| `GET` | `/collections/videogames/games/<game_id>` | Returns one game only when attached to the connected user; accepts optional `region` query parameter to select one collection copy. |
 | `GET` | `/collections/videogames/download` | Downloads the connected user's imported ODS file as raw bytes. |
 | `POST` | `/collections/videogames/games` | Reserved for a future add action and returns `501`. |
 | `PUT` | `/collections/videogames/games` | Reserved for a future update action and returns `501`. |
@@ -1117,7 +1117,10 @@ Empty response:
 ### Collection Game Detail Response
 
 `GET /collections/videogames/games/<game_id>` returns `404` when the game is not
-attached to the connected user's `t_user_collection` rows.
+attached to the connected user's `t_user_collection` rows. When the connected
+user owns the same Library game in several regions/versions, callers may pass
+`?region=<code>` to select the exact collection row. Without `region`, the
+backend selects the default user-copy version `EU-FR`.
 
 ```json
 {
@@ -1432,10 +1435,11 @@ either provide the sheets to import or the sheets to exclude; without either
 list, every sheet is imported. CSV imports one tabular file using its configured
 header mapping. Platforms are matched against the application reference catalog
 and are not created by this endpoint. Missing studios and games are created;
-existing records are reused. User-game associations are inserted in
+existing records are reused. User-game-region associations are inserted in
 `t_user_collection` when missing with their `wishlist` value and ignored when
-already present. No existing platform, studio, game or user association is
-updated by this endpoint.
+already present. Existing user associations may receive non-null private values
+from an additive import; no existing platform, studio or game is overwritten by
+this endpoint.
 
 Successful response:
 

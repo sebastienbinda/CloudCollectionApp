@@ -111,8 +111,9 @@ Game rows follow these rules:
   ambiguous or unknown non-empty values stay null with an `invalid_games` warning;
 - game release dates before 1950 are invalid because they are not plausible
   video game release dates;
-- duplicate games after normalized `(platform, name)` matching keep the first
-  retained game unless a documented duplicate policy says otherwise.
+- duplicate games after normalized `(platform, name, region)` matching keep the
+  first retained game unless a documented duplicate policy says otherwise. Rows
+  without a valid region use `EU-FR` for that key.
 
 Use shared normalizers where possible:
 

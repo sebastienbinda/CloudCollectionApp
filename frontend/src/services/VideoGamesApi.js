@@ -137,11 +137,16 @@ class VideoGamesApi {
    * Charge le detail d'un jeu de la collection connectee.
    *
    * @param {string|number} gameId - Identifiant du jeu recherche.
+   * @param {string} region - Region de l'exemplaire collection.
    * @returns {Promise<Object>} Objet contenant `game`.
    */
-  static async fetchGame(gameId) {
+  static async fetchGame(gameId, region = "") {
+    const normalizedRegion = String(region || "").trim();
+    const regionQuery = normalizedRegion
+      ? `?region=${encodeURIComponent(normalizedRegion)}`
+      : "";
     const data = await this.fetchJson(
-      `/collections/videogames/games/${encodeURIComponent(gameId)}`,
+      `/collections/videogames/games/${encodeURIComponent(gameId)}${regionQuery}`,
       "Impossible de recuperer le jeu video.",
       {
         headers: AuthApi.getAuthorizationHeaders(),

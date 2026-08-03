@@ -55,6 +55,17 @@ class AppRouting {
   }
 
   /**
+   * Lit la region d'exemplaire collection presente dans l'URL courante.
+   *
+   * @param {void} Aucun - Utilise `window.location.search`.
+   * @returns {string} Region issue du parametre `region`, ou chaine vide.
+   */
+  static getGameRegionFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("region") || "";
+  }
+
+  /**
    * Lit l'identifiant de doublon jeu depuis l'URL courante.
    *
    * @param {void} Aucun - Utilise `window.location.pathname`.

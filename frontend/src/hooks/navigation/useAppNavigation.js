@@ -33,6 +33,9 @@ function useAppNavigation(options) {
     AppRouting.getLibraryPlatformDetailIdFromUrl()
   );
   const [selectedGameId, setSelectedGameId] = useState(() => AppRouting.getGameIdFromUrl());
+  const [selectedGameRegion, setSelectedGameRegion] = useState(() =>
+    AppRouting.getGameRegionFromUrl()
+  );
   const [selectedGameSource, setSelectedGameSource] = useState(() =>
     AppRouting.getGameDetailSourceFromUrl()
   );
@@ -50,6 +53,7 @@ function useAppNavigation(options) {
     options.clearDeleteGameFeedback();
     if (view !== "gameDetail") {
       setSelectedGameId("");
+      setSelectedGameRegion("");
     }
     if (view !== "libraryPlatformDetail") {
       setSelectedLibraryPlatformId("");
@@ -88,6 +92,9 @@ function useAppNavigation(options) {
 
   const openGameDetail = (game, source = "library") => {
     const gameId = typeof game === "object" && game !== null ? game.id : game;
+    const gameRegion = typeof game === "object" && game !== null
+      ? String(game.region || game.Region || game.version || game.Version || "")
+      : "";
     if (!gameId) {
       return;
     }
@@ -98,11 +105,12 @@ function useAppNavigation(options) {
     }
     options.clearDeleteGameFeedback();
     setSelectedGameId(String(gameId));
+    setSelectedGameRegion(resolvedSource === "collection" ? gameRegion : "");
     setSelectedLibraryPlatformId("");
     setSelectedGameSource(resolvedSource);
     setCurrentView("gameDetail");
     const path = resolvedSource === "collection"
-      ? `/collection/jeux/${encodeURIComponent(gameId)}`
+      ? buildCollectionGameDetailPath(gameId, gameRegion)
       : `/bibliotheque/jeux/${encodeURIComponent(gameId)}`;
     window.history.pushState({}, "", path);
   };
@@ -114,6 +122,7 @@ function useAppNavigation(options) {
     }
     options.clearDeleteGameFeedback();
     setSelectedGameId("");
+    setSelectedGameRegion("");
     setSelectedLibraryPlatformId(String(platformId));
     setCurrentView("libraryPlatformDetail");
     window.history.pushState({}, "", `/bibliotheque/plateformes/${encodeURIComponent(platformId)}`);
@@ -126,6 +135,7 @@ function useAppNavigation(options) {
     }
     options.clearDeleteGameFeedback();
     setSelectedGameId(String(gameId));
+    setSelectedGameRegion("");
     setSelectedLibraryPlatformId("");
     setSelectedGameSource("library");
     setCurrentView("gameDuplicateAdmin");
@@ -151,6 +161,7 @@ function useAppNavigation(options) {
       options.setGlobalError("Ce partage a expire ou a ete revoque.");
       setSelectedPlatform("");
       setSelectedGameId("");
+      setSelectedGameRegion("");
       setSelectedGameSource("library");
       setCurrentView("about");
       window.history.replaceState({}, "", "/about");
@@ -170,11 +181,13 @@ function useAppNavigation(options) {
       if (/^\/bibliotheque\/plateformes\/\d+$/.test(pathname)) {
         setSelectedLibraryPlatformId(AppRouting.getLibraryPlatformDetailIdFromUrl());
         setSelectedGameId("");
+        setSelectedGameRegion("");
         setCurrentView("libraryPlatformDetail");
         return;
       }
       if (/^\/bibliotheque\/jeux\/\d+$/.test(pathname)) {
         setSelectedGameId(AppRouting.getGameIdFromUrl());
+        setSelectedGameRegion("");
         setSelectedLibraryPlatformId("");
         setSelectedGameSource("library");
         setCurrentView("gameDetail");
@@ -182,6 +195,7 @@ function useAppNavigation(options) {
       }
       if (/^\/collection\/jeux\/\d+$/.test(pathname)) {
         setSelectedGameId(AppRouting.getGameIdFromUrl());
+        setSelectedGameRegion(AppRouting.getGameRegionFromUrl());
         setSelectedLibraryPlatformId("");
         setSelectedGameSource("collection");
         setCurrentView("gameDetail");
@@ -189,6 +203,7 @@ function useAppNavigation(options) {
       }
       if (/^\/configuration\/doublons\/\d+$/.test(pathname)) {
         setSelectedGameId(AppRouting.getGameDuplicateIdFromUrl());
+        setSelectedGameRegion("");
         setSelectedLibraryPlatformId("");
         setSelectedGameSource("library");
         setCurrentView("gameDuplicateAdmin");
@@ -302,6 +317,7 @@ function useAppNavigation(options) {
     setSelectedPlatform,
     selectedLibraryPlatformId,
     selectedGameId,
+    selectedGameRegion,
     selectedGameSource,
     goHome: () => {
       if (!options.canViewCollection) {
@@ -364,6 +380,22 @@ function useAppNavigation(options) {
     openGameDuplicateAdmin,
     openLibraryPlatformDetail,
   };
+}
+
+/**
+ * Construit l'URL de detail d'un exemplaire de collection.
+ *
+ * @param {string|number} gameId - Identifiant du jeu Bibliotheque.
+ * @param {string} region - Region de l'exemplaire utilisateur.
+ * @returns {string} URL relative du detail collection.
+ */
+function buildCollectionGameDetailPath(gameId, region) {
+  const path = `/collection/jeux/${encodeURIComponent(gameId)}`;
+  const normalizedRegion = String(region || "").trim();
+  if (!normalizedRegion) {
+    return path;
+  }
+  return `${path}?region=${encodeURIComponent(normalizedRegion)}`;
 }
 
 export default useAppNavigation;

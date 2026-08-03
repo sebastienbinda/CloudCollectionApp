@@ -92,7 +92,7 @@ category; it may leave the criterion open only when both categories are shared.
 | GUEST/USER | `GET /collections/statistics` | Read owned-collection detailed statistics when collection is permitted. |
 | GUEST/USER/ADMIN | `GET /collections/videogames/platforms/search` | Read permitted platforms. |
 | GUEST/USER/ADMIN | `GET /collections/videogames/games/search` | Read permitted games. |
-| GUEST/USER/ADMIN | `GET /collections/videogames/games/<game_id>` | Read a permitted game detail. |
+| GUEST/USER/ADMIN | `GET /collections/videogames/games/<game_id>` | Read a permitted game detail, optionally selected with `region`. |
 
 Download, game mutations, import, reinitialization, share management and image
 upload remain unavailable to GUEST.

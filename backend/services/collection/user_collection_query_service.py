@@ -214,6 +214,7 @@ class UserCollectionQueryRepository(Protocol):
         connection: Connection,
         user_id: int,
         game_id: int,
+        region: str | None = None,
     ) -> dict[str, Any] | None:
         """Recherche un jeu rattache a l'utilisateur.
 
@@ -221,6 +222,7 @@ class UserCollectionQueryRepository(Protocol):
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
             game_id (int): Identifiant du jeu recherche.
+            region (str | None): Region de l'exemplaire recherche, ou absence.
 
         Returns:
             dict[str, Any] | None: Jeu trouve ou absence.
@@ -408,12 +410,18 @@ class UserCollectionQueryService:
             "games": [self._game_payload(row) for row in rows],
         }
 
-    def get_game(self, user_id: int, game_id: int) -> dict[str, Any] | None:
+    def get_game(
+        self,
+        user_id: int,
+        game_id: int,
+        region: str | None = None,
+    ) -> dict[str, Any] | None:
         """Retourne le detail d'un jeu de la collection utilisateur.
 
         Args:
             user_id (int): Identifiant de l'utilisateur connecte.
             game_id (int): Identifiant du jeu recherche.
+            region (str | None): Region de l'exemplaire recherche, ou absence.
 
         Returns:
             dict[str, Any] | None: Jeu serialisable ou absence.
@@ -423,8 +431,8 @@ class UserCollectionQueryService:
         """
 
         with self.engine.connect() as connection:
-            row = self.repository.find_game(connection, user_id, game_id)
-        return None if row is None else self._game_payload(row)
+            row = self.repository.find_game(connection, user_id, game_id, region)
+            return None if row is None else self._game_payload(row)
 
     def get_collection_file_path(self, user_id: int) -> str:
         """Retourne le chemin du fichier de collection utilisateur.

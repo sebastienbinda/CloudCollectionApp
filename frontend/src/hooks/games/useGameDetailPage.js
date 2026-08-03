@@ -62,7 +62,7 @@ function useGameDetailPage(options) {
         setDuplicateReportMessage("");
         setDuplicateReportError("");
         const data = options.source === "collection"
-          ? await VideoGamesApi.fetchGame(options.gameId)
+          ? await VideoGamesApi.fetchGame(options.gameId, options.gameRegion)
           : await LibraryApi.fetchGame(options.gameId);
         setGameDetail(data.game || null);
       } catch (error) {
@@ -77,7 +77,13 @@ function useGameDetailPage(options) {
     };
 
     loadGameDetail();
-  }, [options.currentView, options.gameId, options.hasAccessToken, options.source]);
+  }, [
+    options.currentView,
+    options.gameId,
+    options.gameRegion,
+    options.hasAccessToken,
+    options.source,
+  ]);
 
   useEffect(() => {
     if (options.currentView !== "gameDetail" || !gameDetail?.id) {

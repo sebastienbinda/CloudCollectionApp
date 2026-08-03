@@ -34,7 +34,8 @@ The current collection consultation uses:
 - `GET /collections/videogames/games/search` for collection and wishlist
   games;
 - `GET /collections/videogames/games/<game_id>` for one connected-user game
-  detail;
+  detail, with optional `region` query parameter when several user copies share
+  the same Library game id;
 - `GET /collections/videogames/download` for the raw imported ODS file.
 
 `POST`, `PUT` and `DELETE /collections/videogames/games` are reserved for
@@ -85,9 +86,10 @@ collection entries. It must request `wishlist=false` for:
 
 The collection game detail page is reachable from collection search results,
 platform game tables and wishlist tables. It must call
-`GET /collections/videogames/games/<game_id>` and the backend must return a
-game only when the connected user owns the corresponding `t_user_collection`
-association.
+`GET /collections/videogames/games/<game_id>` with `?region=<code>` when the
+row provides one, and the backend must return a game only when the connected
+user owns the corresponding `t_user_collection` association. When no region is
+provided, the backend uses the default user-copy version `EU-FR`.
 
 Platform game tables and wishlist tables must open game detail by clicking or
 keyboard-activating the whole game row. They must not reserve a dedicated

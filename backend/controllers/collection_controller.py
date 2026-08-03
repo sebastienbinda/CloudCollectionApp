@@ -255,9 +255,11 @@ class CollectionController:
 
         try:
             context = self._current_access_context()
+            region = request.args.get("region")
             game = self._create_collection_query_service().get_game(
                 context.user_id,
                 game_id,
+                None if region is None else region,
             )
             if game is None:
                 return jsonify({"error": "Collection game not found."}), 404

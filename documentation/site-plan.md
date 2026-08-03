@@ -62,11 +62,13 @@ public pages.
   users with a collection. It displays backend-computed owned-collection
   diagrams and the games whose normalized note is greater than or equal to `90`.
 - `/collection/jeux/<game_id>`: authenticated game detail, only for games
-  attached to the connected user's collection. Nullable private purchase and
-  copy information is shown only when available, including region flag and
-  purchase-price unit. The connected `USER` can report the displayed game as a
-  possible duplicate after an explicit confirmation. The page shows an
-  ownership indicator.
+  attached to the connected user's collection. It may include `?region=<code>`
+  to select one copy when the same Library game exists in several user
+  regions/versions; without this parameter, the backend selects `EU-FR`.
+  Nullable private purchase and copy information is shown only when available,
+  including region flag and purchase-price unit. The connected `USER` can
+  report the displayed game as a possible duplicate after an explicit
+  confirmation. The page shows an ownership indicator.
 - `/wishlist`: authenticated wishlist page for non-`ADMIN` users who already
   have a collection. It displays wished games from the connected user's SQL
   collection data and keeps the `wishlist_buy_status` filter in the URL.
@@ -101,7 +103,8 @@ claims:
   `Liste de souhaits de <pseudonyme>` and initializes the buy-status filter
   from the share claim when the URL does not already define it;
 - `/collection/jeux/<game_id>` is available only when backend confirms that
-  the game belongs to a shared category;
+  the game, optionally selected with `?region=<code>`, belongs to a shared
+  category;
 - `/bibliotheque/**`, `/about` and Logout remain available;
 - `/configuration`, every `/configuration/**` subroute, `/users`, `/add-game`
   and `/collection/import` are unavailable. Direct navigation redirects to the

@@ -176,7 +176,7 @@ class OdsCollectionImportReader:
         if not sheet_names:
             raise OdsCollectionImportValidationError("Le fichier ODS ne contient aucun onglet.")
         games: list[CollectionImportGame] = []
-        game_indexes_by_key: dict[tuple[str, str], int] = {}
+        game_indexes_by_key: dict[tuple[str, str, str], int] = {}
         warnings = {"invalid_wishlist": 0, "invalid_values": [], "invalid_games": []}
         if description.single_sheet_conf is not None:
             self.game_builder.merge_games(

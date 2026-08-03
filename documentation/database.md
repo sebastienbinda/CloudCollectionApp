@@ -245,27 +245,30 @@ cleanup.
 | `is_collector` | `BOOLEAN` | Yes | Whether the owned copy is a collector edition. |
 | `has_steelbook` | `BOOLEAN` | Yes | Whether the owned copy includes a steelbook. |
 | `is_digital` | `BOOLEAN` | Yes | Whether the owned copy is digital. |
-| `region` | `VARCHAR(8)` | Yes | Controlled private region code. |
+| `region` | `VARCHAR(8)` | No | Controlled private region/version code. Defaults to `EU-FR` when no version is imported. |
 | `description` | `TEXT` | Yes | Free private description. |
 
 Constraints:
 
-- Primary key: `user_id`, `game_id`
+- Primary key: `user_id`, `game_id`, `region`
 - Foreign key: `user_id` -> `t_user.id`
 - Foreign key: `game_id` -> `t_game.id`
 - Check: `condition` is null or between `0` and `4`.
 - Check: `price_unit` is null or one of `EUR`, `USD`, `GBP`, `JPY`, `AUD`, `CAD`, `CHF`, `CNY`, `KRW`.
-- Check: `region` is null or one of `JAP`, `US`, `EU-FR`, `EU-UK`, `EU-DE`, `EU-ES`, `EU-IT`, `AU`, `ASIA`, `KOR`, `TWN`, `HK`, `CHN`.
+- Check: `region` is one of `JAP`, `US`, `EU-FR`, `EU-UK`, `EU-DE`, `EU-ES`, `EU-IT`, `AU`, `ASIA`, `KOR`, `TWN`, `HK`, `CHN`.
 
 Indexes:
 
 - `ix_t_user_collection_game_id`: `game_id`
 
 Rows are created by the user collection import workflow for every imported game
-attached to the connected user. Existing `(user_id, game_id)` rows are reused and
-must not be treated as errors. `game_additional_name` remains nullable and is not
-filled by the current import workflow. `wishlist` defaults to `false`; existing
-rows are backfilled to `false` by the schema migration.
+attached to the connected user. Existing `(user_id, game_id, region)` rows are
+reused and must not be treated as errors. A same user may therefore own the same
+global Library game several times when the imported region/version differs.
+When an import row has no valid region/version, `EU-FR` is persisted.
+`game_additional_name` remains nullable and is not filled by the current import
+workflow. `wishlist` defaults to `false`; existing rows are backfilled to
+`false` by the schema migration.
 Private information remains nullable. A later import updates only non-null
 private values and never clears an existing value because the new file omitted
 its optional column. The file-level `price_unit` is copied to each association
@@ -371,7 +374,8 @@ During import:
   `t_game.release_date` values when both exist, subtracting `10`, `20` or `35`
   points when the absolute date gap is greater than six, eighteen or thirty-six
   months;
-- duplicate rows in the ODS file are ignored after the first normalized match;
+- duplicate rows in the ODS file are ignored after the first normalized
+  `(platform, name, region)` match;
 - invalid or empty game release dates are stored as `NULL`.
 
 The platform catalog CSV resources in `backend/resources` are idempotent seed

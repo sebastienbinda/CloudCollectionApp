@@ -651,6 +651,7 @@ class BaseAppRoutesTest(unittest.TestCase):
         FakeUserCollectionQueryService.collection_file_path = __file__
         FakeUserCollectionQueryService.last_user_id = None
         FakeUserCollectionQueryService.last_statistics_scope = None
+        FakeUserCollectionQueryService.last_game_region = None
         FakeEmailSender.sent_emails = []
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()

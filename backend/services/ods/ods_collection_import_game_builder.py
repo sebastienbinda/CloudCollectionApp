@@ -127,7 +127,7 @@ class OdsCollectionImportGameBuilder:
     def merge_games(
         self,
         games: list[CollectionImportGame],
-        game_indexes_by_key: dict[tuple[str, str], int],
+        game_indexes_by_key: dict[tuple[str, str, str], int],
         candidates: list[CollectionImportGame],
         wishlist_mode: WishlistImportMode,
     ) -> None:
@@ -135,7 +135,7 @@ class OdsCollectionImportGameBuilder:
 
         Args:
             games (list[CollectionImportGame]): Jeux deja retenus.
-            game_indexes_by_key (dict[tuple[str, str], int]): Index par cle jeu.
+            game_indexes_by_key (dict[tuple[str, str, str], int]): Index par cle jeu.
             candidates (list[CollectionImportGame]): Jeux candidats.
             wishlist_mode (WishlistImportMode): Mode wishlist courant.
 
@@ -148,7 +148,11 @@ class OdsCollectionImportGameBuilder:
             platform_key = self.value_mapper.comparison_key(candidate.platform_name)
             if game_key is None or platform_key is None:
                 continue
-            deduplication_key = (platform_key, game_key)
+            deduplication_key = (
+                platform_key,
+                game_key,
+                self._deduplication_region_key(candidate.region),
+            )
             existing_index = game_indexes_by_key.get(deduplication_key)
             if existing_index is None:
                 game_indexes_by_key[deduplication_key] = len(games)
@@ -166,6 +170,19 @@ class OdsCollectionImportGameBuilder:
                 candidate.platform_name,
                 candidate.name,
             )
+
+    def _deduplication_region_key(self, region: str | None) -> str:
+        """Construit la partie region de la cle de deduplication.
+
+        Args:
+            region (str | None): Region importee et normalisee.
+
+        Returns:
+            str: Cle region stable, `EU-FR` quand absente.
+        """
+
+        normalized_region = "" if region is None else str(region).strip()
+        return normalized_region or "EU-FR"
 
     def _build_game(
         self,
