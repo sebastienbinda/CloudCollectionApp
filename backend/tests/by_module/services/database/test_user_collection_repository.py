@@ -193,6 +193,31 @@ class UserCollectionRepositoryTest(unittest.TestCase):
         self.assertIn("SELECT game_id, region, wishlist", connection.executed_statements[0][0])
         self.assertIn("UPDATE", connection.executed_statements[1][0])
 
+    def test_updates_wishlist_for_existing_user_game_association(self):
+        """Verifie qu'un import remplace la valeur wishlist existante.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident SQL et parametres.
+        """
+
+        connection = FakeRepositoryConnection(existing_wishlist_values={(42, "EU-FR"): True})
+
+        count = self.repository.ensure_user_game_associations(
+            connection,
+            7,
+            [UserGameAssociation(42, False, region="EU-FR")],
+        )
+
+        update_sql, parameter_batch = connection.executed_statements[1]
+        parameters = parameter_batch[0]
+        self.assertEqual(1, count)
+        self.assertIn("UPDATE", update_sql)
+        self.assertIn("wishlist = :wishlist", update_sql)
+        self.assertFalse(parameters["wishlist"])
+
     def test_creates_distinct_association_for_existing_game_with_different_region(self):
         """Verifie qu'une autre region cree un nouvel exemplaire utilisateur.
 

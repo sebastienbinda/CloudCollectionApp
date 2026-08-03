@@ -169,7 +169,7 @@ class SqlAlchemyUserCollectionRepository:
         user_id: int,
         associations: list[UserGameAssociation],
     ) -> None:
-        """Met a jour en groupe les informations privees non nulles.
+        """Met a jour en groupe wishlist et les informations privees non nulles.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
@@ -183,8 +183,11 @@ class SqlAlchemyUserCollectionRepository:
         if not associations:
             return
         assignments = ", ".join(
-            f"{field} = COALESCE(:{field}, {field})"
-            for field in self._private_field_names()
+            ["wishlist = :wishlist"]
+            + [
+                f"{field} = COALESCE(:{field}, {field})"
+                for field in self._private_field_names()
+            ]
         )
         update_statement = text(
             f'UPDATE "{self.schema_name}".t_user_collection SET {assignments} '
