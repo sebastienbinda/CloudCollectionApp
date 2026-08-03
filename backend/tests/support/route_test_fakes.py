@@ -174,6 +174,7 @@ class FakeUserCollectionQueryService:
     collection_file_path = str(Path(__file__))
     last_user_id = None
     last_statistics_scope = None
+    last_game_region = None
 
     def get_statistics(self, user_id, include_collection=True, include_wishlist=True):
         """Retourne les statistiques de collection factices.
@@ -292,12 +293,13 @@ class FakeUserCollectionQueryService:
 
         return self.__class__.collection_file_path
 
-    def get_game(self, user_id, game_id):
+    def get_game(self, user_id, game_id, region=None):
         """Retourne un jeu de collection factice.
 
         Args:
             user_id (int): Identifiant utilisateur.
             game_id (int): Identifiant du jeu recherche.
+            region (str | None): Region de l'exemplaire recherche.
 
         Returns:
             dict[str, object] | None: Jeu factice ou absence.
@@ -306,6 +308,7 @@ class FakeUserCollectionQueryService:
         if game_id not in (3, 4):
             return None
         self.__class__.last_user_id = user_id
+        self.__class__.last_game_region = region
         return {
             "id": game_id,
             "name": "Mario Kart",

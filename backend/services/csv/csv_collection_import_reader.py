@@ -202,7 +202,7 @@ class CsvCollectionImportReader:
         description: CollectionFileDescription,
     ) -> tuple[list[CollectionImportGame], CollectionImportWarnings]:
         games: list[CollectionImportGame] = []
-        game_indexes_by_key: dict[tuple[str, str], int] = {}
+        game_indexes_by_key: dict[tuple[str, str, str], int] = {}
         warnings = {"invalid_wishlist": 0, "invalid_values": [], "invalid_games": []}
         for row_index, row in enumerate(rows, start=2):
             game = self._build_game(row, row_index, description, warnings)
@@ -282,7 +282,7 @@ class CsvCollectionImportReader:
     def _merge_game(
         self,
         games: list[CollectionImportGame],
-        game_indexes_by_key: dict[tuple[str, str], int],
+        game_indexes_by_key: dict[tuple[str, str, str], int],
         candidate: CollectionImportGame,
         wishlist_mode: WishlistImportMode,
     ) -> None:
@@ -290,7 +290,11 @@ class CsvCollectionImportReader:
         platform_key = self.value_mapper.comparison_key(candidate.platform_name)
         if game_key is None or platform_key is None:
             return
-        deduplication_key = (platform_key, game_key)
+        deduplication_key = (
+            platform_key,
+            game_key,
+            self._deduplication_region_key(candidate.region),
+        )
         existing_index = game_indexes_by_key.get(deduplication_key)
         if existing_index is None:
             game_indexes_by_key[deduplication_key] = len(games)
@@ -308,6 +312,19 @@ class CsvCollectionImportReader:
             candidate.platform_name,
             candidate.name,
         )
+
+    def _deduplication_region_key(self, region: str | None) -> str:
+        """Construit la partie region de la cle de deduplication CSV.
+
+        Args:
+            region (str | None): Region importee et normalisee.
+
+        Returns:
+            str: Cle region stable, `EU-FR` quand absente.
+        """
+
+        normalized_region = "" if region is None else str(region).strip()
+        return normalized_region or "EU-FR"
 
     def _build_studios(
         self,

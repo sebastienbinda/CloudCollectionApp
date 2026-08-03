@@ -270,10 +270,10 @@ class SqlAlchemyGameDuplicateRepository:
                 "OR COALESCE(duplicate.has_steelbook, false), "
                 "is_digital = COALESCE(target.is_digital, false) "
                 "OR COALESCE(duplicate.is_digital, false), "
-                "region = COALESCE(NULLIF(target.region, ''), duplicate.region), "
                 "description = COALESCE(target.description, duplicate.description) "
                 f'FROM "{self.schema_name}".t_user_collection duplicate '
                 "WHERE target.user_id = duplicate.user_id "
+                "AND target.region = duplicate.region "
                 "AND target.game_id = :target_game_id "
                 "AND duplicate.game_id = :duplicate_game_id"
             ),
@@ -284,6 +284,7 @@ class SqlAlchemyGameDuplicateRepository:
                 f'DELETE FROM "{self.schema_name}".t_user_collection duplicate '
                 f'USING "{self.schema_name}".t_user_collection target '
                 "WHERE duplicate.user_id = target.user_id "
+                "AND duplicate.region = target.region "
                 "AND duplicate.game_id = :duplicate_game_id "
                 "AND target.game_id = :target_game_id"
             ),

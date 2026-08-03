@@ -38,7 +38,7 @@ reader architecture rules in `documentation/reader.md`.
 | `grade` | Text, number or `<grade>/<base>` text | Raw text in `grade` and integer base-100 value in `grade_normalized`, rounded down when numeric | `NULL` + warning only for invalid non-empty numeric rating |
 | `condition` | French/English physical-condition label | `0` Mauvais, `1` Correct, `2` Bon, `3` Très bon, `4` Neuf | `NULL` + warning |
 | `has_manual`, `is_collector`, `has_steelbook`, `is_digital` | Native boolean or mapped text | SQL boolean or `NULL` | `NULL` + warning |
-| `region` | Controlled code, exact alias or unique fuzzy match | Controlled region code or `NULL` | `NULL` + warning |
+| `region` | Controlled code, exact alias or unique fuzzy match | Controlled region code, or `EU-FR` when absent/invalid | `EU-FR` + warning |
 | `description` | Text | Trimmed text or `NULL` | — |
 
 Plain numeric `grade` values are normalized with the file-level `rating_base`.
@@ -54,8 +54,11 @@ becomes `80`.
   when they are complete words or complete `-` separated parts (`Xiii-3` becomes
   `XIII-3`, but `xiom` becomes `Xiom`), and `:` is stored with one surrounding
   space. Comparison keys are trimmed, lowercased and accent-free.
-- Games are deduplicated by normalized `(platform, name)`; the first retained
-  row wins unless a wishlist duplicate rule applies.
+- Imported collection rows are deduplicated by normalized `(platform, name,
+  region)`; the first retained row wins unless a wishlist duplicate rule
+  applies. The region is the user's copy version and does not participate in
+  global Library game matching. Rows without a valid region use `EU-FR` for
+  this deduplication key.
 - Existing games are reused first by exact normalized `(platform, name)` key,
   including names stored in `t_game_alias` after duplicate correction. When no
   exact game key exists, fuzzy candidates are limited to reference games already

@@ -214,7 +214,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         """
 
         response = self.client.get(
-            "/collections/videogames/games/3",
+            "/collections/videogames/games/3?region=EU-FR",
             headers=self.get_user_auth_headers(),
         )
         game = response.get_json()["game"]
@@ -225,6 +225,7 @@ class CollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual("", game["platform_end_date"])
         self.assertEqual("Switch", game["platform_common_alias"])
         self.assertFalse(game["wishlist"])
+        self.assertEqual("EU-FR", FakeUserCollectionQueryService.last_game_region)
 
     def test_collection_game_detail_returns_404_for_unknown_game(self):
         """Verifie l'absence d'un jeu dans la collection de l'utilisateur.

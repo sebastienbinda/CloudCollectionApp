@@ -27,6 +27,7 @@ class UserCollection(DatabaseModelBase):
     Attributes:
         user_id (int): Identifiant de l'utilisateur proprietaire de l'entree.
         game_id (int): Identifiant du jeu rattache a la collection.
+        region (str): Version commerciale de l'exemplaire utilisateur.
         game_additional_name (Optional[str]): Nom complementaire du jeu dans la
             collection utilisateur.
         wishlist (bool): Indique si l'association represente un souhait.
@@ -38,6 +39,7 @@ class UserCollection(DatabaseModelBase):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("t_user.id"), primary_key=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("t_game.id"), primary_key=True)
+    region: Mapped[str] = mapped_column(String(8), primary_key=True, server_default=text("'EU-FR'"))
     game_additional_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     wishlist: Mapped[bool] = mapped_column(
         Boolean,
@@ -58,5 +60,4 @@ class UserCollection(DatabaseModelBase):
     is_collector: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     has_steelbook: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     is_digital: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
-    region: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

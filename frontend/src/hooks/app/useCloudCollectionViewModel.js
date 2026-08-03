@@ -200,6 +200,7 @@ function useCloudCollectionViewModel() {
   const gameDetailPage = useGameDetailPage({
     currentView: navigation.currentView,
     gameId: navigation.selectedGameId,
+    gameRegion: navigation.selectedGameRegion,
     source: navigation.selectedGameSource,
     hasAccessToken: canUseCollectionViews,
     canCorrectDuplicate: session.actionPermissions.canCorrectGameDuplicate,

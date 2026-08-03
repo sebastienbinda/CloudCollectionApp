@@ -119,7 +119,10 @@ database structure in `documentation/database.md`, and frontend navigation in
   the same rating as an integer on base 100, rounded down. Ratings may be plain
   numbers using the global `rating_base`, or text formatted as `<grade>/<base>`.
 - `t_user_collection` rows are inserted only when missing. Existing
-  `(user_id, game_id)` rows are not errors.
+  `(user_id, game_id, region)` rows are not errors. The same user may import the
+  same Library game several times when the imported region/version differs.
+- When the imported region/version is absent or invalid, the persisted default
+  region/version is `EU-FR`.
 - `game_additional_name` is not filled by the current import workflow.
 - `t_user_collection.wishlist` is persisted for every inserted association:
   `false` means an owned collection entry and `true` means a wishlist entry.
@@ -258,8 +261,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   `wishlist.mode = "sheet"`.
 - Structurally invalid CSV files, empty headers, unnamed columns and duplicate
   column names are invalid input.
-- Duplicate CSV entries after normalized `(platform, name)` matching keep the
-  first occurrence and ignore later duplicates with warning-level logging.
+- Duplicate CSV entries after normalized `(platform, name, region)` matching
+  keep the first occurrence and ignore later duplicates with warning-level
+  logging.
 - CSV readers must delegate value conversion to the shared
   `CollectionImportValueMapper`; private-field, date, region, condition,
   boolean and wishlist parsing rules are identical to ODS.
@@ -286,8 +290,8 @@ database structure in `documentation/database.md`, and frontend navigation in
 - If the same game appears both in the collection and in a dedicated wishlist
   sheet, the collection value wins and the final association is
   `wishlist=false`.
-- If duplicate rows appear inside wishlist input, the first normalized game is
-  kept.
+- If duplicate rows appear inside wishlist input, the first normalized
+  `(platform, name, region)` entry is kept.
 - If duplicate rows in column mode contain `wishlist=true` and `wishlist=false`,
   the final retained row is `wishlist=true`.
 
@@ -402,13 +406,13 @@ When changing this feature, update or run tests covering:
 - successful import returns counters;
 - successful import returns `wishlisted_games` and `warnings`;
 - additive import with an existing collection succeeds and does not duplicate
-  existing user-game associations;
+  existing user-game-region associations;
 - invalid file returns `400`;
 - oversized file returns `413`;
 - copied file cleanup happens on failure;
 - `t_user.collection_file_path` is set only on success;
 - `t_user_collection` associations are created without duplicating existing
-  rows.
+  user-game-region rows.
 - successful reinitialization clears user associations and collection path while
   keeping the saved import configuration;
 - missing collection reinitialization returns `404`;

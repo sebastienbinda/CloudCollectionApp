@@ -512,6 +512,8 @@ class GameDuplicateServiceTest(unittest.TestCase):
         sql, parameters = connection.executed_statements[0]
         self.assertEqual({"merged_rows": 1, "updated_rows": 1}, result)
         self.assertIn('"condition" = COALESCE(target."condition", duplicate."condition")', sql)
+        self.assertIn("AND target.region = duplicate.region", sql)
+        self.assertNotIn("region = COALESCE", sql)
         self.assertNotIn("NULLIF(target.condition", sql)
         self.assertNotIn("NULLIF(target.\"condition\"", sql)
         self.assertEqual({"duplicate_game_id": 1590, "target_game_id": 1676}, parameters)

@@ -76,6 +76,25 @@ class DatabaseConfigurationTest(unittest.TestCase):
         self.assertIn("grade_normalized", table.columns)
         self.assertTrue(table.columns["grade_normalized"].nullable)
 
+    def test_user_collection_model_uses_region_in_primary_key(self):
+        """Verifie que la region identifie un exemplaire utilisateur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la cle primaire ORM.
+        """
+
+        table = DatabaseModelBase.metadata.tables["t_user_collection"]
+
+        self.assertEqual(
+            ["user_id", "game_id", "region"],
+            [column.name for column in table.primary_key.columns],
+        )
+        self.assertFalse(table.columns["region"].nullable)
+        self.assertEqual("'EU-FR'", str(table.columns["region"].server_default.arg))
+
     def test_collection_share_model_exposes_recipient_column(self):
         """Verifie que le modele ORM expose le destinataire optionnel.
 

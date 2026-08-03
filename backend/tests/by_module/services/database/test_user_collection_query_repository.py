@@ -17,6 +17,22 @@ from services.collection import UserCollectionQueryParser
 from services.database import SqlAlchemyUserCollectionQueryRepository
 
 
+class FakeRepositoryMappings(list):
+    """Liste de mappings SQL factice exposant `first`."""
+
+    def first(self):
+        """Retourne la premiere ligne, ou aucune.
+
+        Args:
+            Aucun.
+
+        Returns:
+            dict | None: Premiere ligne disponible.
+        """
+
+        return self[0] if self else None
+
+
 class FakeRepositoryResult:
     """Resultat SQL factice compatible avec les appels du repository."""
 
@@ -68,7 +84,7 @@ class FakeRepositoryResult:
             list[dict]: Lignes de resultat.
         """
 
-        return self.rows
+        return FakeRepositoryMappings(self.rows)
 
 class FakeRepositoryConnection:
     """Connexion SQLAlchemy factice capturant les requetes executees."""
@@ -469,6 +485,25 @@ class UserCollectionQueryRepositoryTest(unittest.TestCase):
         self.assertNotIn("LIMIT", sql)
         self.assertEqual(12, parameters["user_id"])
         self.assertEqual(5, parameters["platform_id"])
+
+    def test_find_game_filters_by_region_when_provided(self):
+        """Verifie le filtrage du detail collection par region.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident SQL et parametres.
+        """
+
+        connection = FakeRepositoryConnection(rows=[{"id": 3, "name": "Zelda"}])
+
+        self.repository.find_game(connection, 12, 3, "EU-FR")
+
+        sql, parameters = connection.executed_statements[0]
+        self.assertIn("user_collection.region = :region", sql)
+        self.assertIn("LIMIT 1", sql)
+        self.assertEqual({"user_id": 12, "game_id": 3, "region": "EU-FR"}, parameters)
 
 
 if __name__ == "__main__":

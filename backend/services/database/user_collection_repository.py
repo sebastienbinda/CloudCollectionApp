@@ -26,11 +26,13 @@ class UserGameAssociation:
     Attributes:
         game_id (int): Identifiant du jeu rattache.
         wishlist (bool): Indique si le jeu est un souhait.
+        region (str | None): Version commerciale de l'exemplaire utilisateur.
         purchase_price (Decimal | None): Prix d'achat decimal optionnel.
     """
 
     game_id: int
     wishlist: bool = False
+    region: str | None = None
     purchase_price: Decimal | None = None
     price_unit: str | None = None
     buy_location: str | None = None
@@ -42,7 +44,6 @@ class UserGameAssociation:
     is_collector: bool | None = None
     has_steelbook: bool | None = None
     is_digital: bool | None = None
-    region: str | None = None
     description: str | None = None
 
 
@@ -50,6 +51,7 @@ class SqlAlchemyUserCollectionRepository:
     """Persiste les associations de jeux dans `t_user_collection`."""
 
     ASSOCIATION_BATCH_SIZE = 500
+    DEFAULT_REGION = "EU-FR"
 
     def __init__(self, schema_name: str):
         """Initialise le repository d'association utilisateur-collection.
@@ -67,22 +69,22 @@ class SqlAlchemyUserCollectionRepository:
         self,
         connection: Connection,
         user_id: int,
-    ) -> dict[int, bool]:
-        """Lit les valeurs wishlist des jeux deja associes a un utilisateur.
+    ) -> dict[tuple[int, str], bool]:
+        """Lit les valeurs wishlist des exemplaires deja associes a un utilisateur.
 
         Args:
             connection (Connection): Connexion SQL transactionnelle.
             user_id (int): Identifiant utilisateur.
 
         Returns:
-            dict[int, bool]: Valeur wishlist par identifiant de jeu.
+            dict[tuple[int, str], bool]: Valeur wishlist par identifiant et region.
         """
 
         return {
-            int(row["game_id"]): bool(row["wishlist"])
+            (int(row["game_id"]), self._normalized_region(row.get("region"))): bool(row["wishlist"])
             for row in connection.execute(
                 text(
-                    f'SELECT game_id, wishlist FROM "{self.schema_name}".t_user_collection '
+                    f'SELECT game_id, region, wishlist FROM "{self.schema_name}".t_user_collection '
                     "WHERE user_id = :user_id"
                 ),
                 {"user_id": user_id},
@@ -108,15 +110,16 @@ class SqlAlchemyUserCollectionRepository:
 
         normalized_associations = self._normalize_associations(game_associations)
         existing_wishlist_values = self.find_user_game_wishlist_values(connection, user_id)
-        existing_game_ids = set(existing_wishlist_values.keys())
+        existing_association_keys = set(existing_wishlist_values.keys())
         insert_associations = []
         update_associations = []
         for association in normalized_associations:
-            if association.game_id in existing_game_ids:
+            association_key = self._association_key(association)
+            if association_key in existing_association_keys:
                 update_associations.append(association)
                 continue
             insert_associations.append(association)
-            existing_game_ids.add(association.game_id)
+            existing_association_keys.add(association_key)
         self._insert_missing_associations(connection, user_id, insert_associations)
         self._update_private_information(connection, user_id, update_associations)
         return len(normalized_associations)
@@ -142,14 +145,14 @@ class SqlAlchemyUserCollectionRepository:
             return
         insert_statement = text(
             f'INSERT INTO "{self.schema_name}".t_user_collection '
-            "(user_id, game_id, game_additional_name, wishlist, purchase_price, "
+            "(user_id, game_id, region, game_additional_name, wishlist, purchase_price, "
             "price_unit, buy_location, buy_date, grade, grade_normalized, "
             "condition, has_manual, "
-            "is_collector, has_steelbook, is_digital, region, description) "
-            "VALUES (:user_id, :game_id, NULL, :wishlist, :purchase_price, "
+            "is_collector, has_steelbook, is_digital, description) "
+            "VALUES (:user_id, :game_id, :region, NULL, :wishlist, :purchase_price, "
             ":price_unit, :buy_location, :buy_date, :grade, :grade_normalized, "
             ":condition, :has_manual, "
-            ":is_collector, :has_steelbook, :is_digital, :region, :description)"
+            ":is_collector, :has_steelbook, :is_digital, :description)"
         )
         for association_batch in self._association_batches(associations):
             connection.execute(
@@ -185,7 +188,7 @@ class SqlAlchemyUserCollectionRepository:
         )
         update_statement = text(
             f'UPDATE "{self.schema_name}".t_user_collection SET {assignments} '
-            "WHERE user_id = :user_id AND game_id = :game_id"
+            "WHERE user_id = :user_id AND game_id = :game_id AND region = :region"
         )
         for association_batch in self._association_batches(associations):
             connection.execute(
@@ -232,6 +235,7 @@ class SqlAlchemyUserCollectionRepository:
         parameters = {
             "user_id": user_id,
             "game_id": association.game_id,
+            "region": self._normalized_region(association.region),
             "wishlist": association.wishlist,
         }
         parameters.update({field: getattr(association, field) for field in self._private_field_names()})
@@ -251,7 +255,7 @@ class SqlAlchemyUserCollectionRepository:
         return (
             "purchase_price", "price_unit", "buy_location", "buy_date", "grade",
             "grade_normalized", "condition", "has_manual", "is_collector",
-            "has_steelbook", "is_digital", "region", "description",
+            "has_steelbook", "is_digital", "description",
         )
 
     def count_user_game_associations(self, connection: Connection, user_id: int) -> int:
@@ -314,3 +318,32 @@ class SqlAlchemyUserCollectionRepository:
             else UserGameAssociation(int(association), False)
             for association in game_associations
         ]
+
+    @classmethod
+    def _association_key(cls, association: UserGameAssociation) -> tuple[int, str]:
+        """Construit la cle d'un exemplaire utilisateur.
+
+        Args:
+            association (UserGameAssociation): Association normalisee.
+
+        Returns:
+            tuple[int, str]: Identifiant jeu et region normalisee.
+        """
+
+        return (association.game_id, cls._normalized_region(association.region))
+
+    @staticmethod
+    def _normalized_region(region: object) -> str:
+        """Normalise la region absente vers la region par defaut persistable.
+
+        Args:
+            region (object): Region lue ou importee.
+
+        Returns:
+            str: Region sans espaces, ou region par defaut.
+        """
+
+        if region is None:
+            return SqlAlchemyUserCollectionRepository.DEFAULT_REGION
+        normalized_region = str(region).strip()
+        return normalized_region or SqlAlchemyUserCollectionRepository.DEFAULT_REGION
