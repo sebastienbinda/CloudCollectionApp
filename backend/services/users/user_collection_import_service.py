@@ -20,6 +20,8 @@ from threading import Lock
 from services.collection.imports import (
     CollectionFileDescription,
     CollectionFileDescriptionValidationError,
+    CollectionImportFailureAdminNotifier,
+    CollectionImportFailureNotificationService,
     CollectionFileReader,
     CollectionFileReaderFactory,
     CollectionFileReadError,
@@ -97,6 +99,7 @@ class UserCollectionImportService:
         reader_factory: CollectionFileReaderFactory,
         date_validator: CollectionImportDateValidator | None = None,
         report_notifier: UserCollectionImportReportNotifier | None = None,
+        failure_notifier=None,
         logger=None,
     ):
         """Initialise le service d'import de collection.
@@ -107,6 +110,7 @@ class UserCollectionImportService:
             reader_factory (CollectionFileReaderFactory): Factory de lecteurs.
             date_validator (CollectionImportDateValidator | None): Validateur des dates lues.
             report_notifier (UserCollectionImportReportNotifier | None): Notifier admin.
+            failure_notifier (object | None): Notifier admin des echecs d'import.
             logger (object | None): Logger injectable.
 
         Returns:
@@ -118,6 +122,8 @@ class UserCollectionImportService:
         self.reader_factory = reader_factory
         self.date_validator = date_validator or CollectionImportDateValidator()
         self.report_notifier = report_notifier or UserCollectionImportAdminNotifier()
+        self.failure_notifier = failure_notifier or CollectionImportFailureAdminNotifier()
+        self.failure_notification_service = CollectionImportFailureNotificationService()
         self.report_policy = UserCollectionImportReportPolicy()
         self.logger = logger or logging.getLogger(__name__)
 
@@ -181,12 +187,14 @@ class UserCollectionImportService:
         self,
         user_id: int,
         file_description: CollectionFileDescription | None,
+        requester_email: str = "",
     ) -> UserCollectionImportResult:
         """Importe la collection depuis le fichier temporaire utilisateur.
 
         Args:
             user_id (int): Identifiant utilisateur connecte.
             file_description (CollectionFileDescription | None): Description valide du fichier.
+            requester_email (str): Email du demandeur authentifie.
 
         Returns:
             UserCollectionImportResult: Compteurs de l'import reussi.
@@ -208,6 +216,10 @@ class UserCollectionImportService:
             str(temporary_file_path),
             temporary_file_path.name,
             file_description,
+            requester_email=requester_email,
+            initiated_by_function=(
+                "UserCollectionImportService.import_collection_from_temporary_file"
+            ),
         )
         self._delete_copied_file(temporary_file_path)
         return result
@@ -218,6 +230,8 @@ class UserCollectionImportService:
         source_file_path: str,
         original_filename: str | None = None,
         file_description: CollectionFileDescription | None = None,
+        requester_email: str = "",
+        initiated_by_function: str = "UserCollectionImportService.import_collection",
     ) -> UserCollectionImportResult:
         """Importe le fichier de collection d'un utilisateur.
 
@@ -226,6 +240,8 @@ class UserCollectionImportService:
             source_file_path (str): Chemin du fichier temporaire uploade.
             original_filename (str | None): Nom original du fichier uploade.
             file_description (CollectionFileDescription | None): Description valide du fichier.
+            requester_email (str): Email du demandeur authentifie.
+            initiated_by_function (str): Fonction applicative qui lance l'import.
 
         Returns:
             UserCollectionImportResult: Compteurs de l'import reussi.
@@ -238,12 +254,24 @@ class UserCollectionImportService:
 
         user_lock = self._lock_for_user(user_id)
         with user_lock:
-            return self._import_collection_locked(
-                user_id,
-                Path(source_file_path),
-                original_filename,
-                file_description,
-            )
+            try:
+                return self._import_collection_locked(
+                    user_id,
+                    Path(source_file_path),
+                    original_filename,
+                    file_description,
+                )
+            except Exception as exc:
+                self._notify_import_failure(
+                    exc,
+                    import_kind="collection_utilisateur",
+                    initiated_by_function=initiated_by_function,
+                    requester_user_id=user_id,
+                    requester_email=requester_email,
+                    file_type=self._failure_file_type(file_description),
+                    original_filename=original_filename or Path(source_file_path).name,
+                )
+                raise
 
     def reinitialize_collection(self, user_id: int) -> None:
         """Reinitialise la collection importee d'un utilisateur.
@@ -487,6 +515,33 @@ class UserCollectionImportService:
             self.report_notifier.notify_import_report(context)
         except Exception:
             self.logger.exception("Impossible d'envoyer le rapport d'import utilisateur.")
+
+    def _notify_import_failure(
+        self,
+        error: Exception,
+        import_kind: str,
+        initiated_by_function: str,
+        requester_user_id: int | None,
+        requester_email: str,
+        file_type: str,
+        original_filename: str,
+    ) -> None:
+        self.failure_notification_service.notify_failure(
+            self.failure_notifier,
+            self.logger,
+            error,
+            import_kind,
+            initiated_by_function,
+            requester_user_id,
+            requester_email,
+            file_type,
+            original_filename,
+        )
+
+    def _failure_file_type(self, file_description: CollectionFileDescription | None) -> str:
+        if file_description is None:
+            return ""
+        return str(file_description.file_type.value)
 
     def _set_total_import_duration(
         self,

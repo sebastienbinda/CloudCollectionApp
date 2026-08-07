@@ -22,6 +22,7 @@
  */
 function ImportSummary({
   actionLabel = "Ouvrir Ma collection",
+  contributionNotice,
   counters,
   onAction,
   result,
@@ -58,6 +59,9 @@ function ImportSummary({
           </div>
         ))}
       </dl>
+      {contributionNotice ? (
+        <div className="importContributionNotice">{contributionNotice}</div>
+      ) : null}
       {invalidWishlist ? (
         <p className="warningText">
           {invalidWishlist} ligne(s) wishlist ignoree(s).

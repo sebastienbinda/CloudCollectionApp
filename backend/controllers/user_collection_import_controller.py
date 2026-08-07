@@ -286,6 +286,7 @@ class UserCollectionImportController:
             result = self._create_import_service().import_collection_from_temporary_file(
                 user_id,
                 file_description,
+                requester_email=self._current_user_email(),
             )
             return jsonify(result.to_dict()), 201
         except CollectionFileDescriptionValidationError as exc:
@@ -378,6 +379,25 @@ class UserCollectionImportController:
         if user_id is None:
             raise ValueError("Utilisateur connecte introuvable.")
         return user_id
+
+    def _current_user_email(self) -> str:
+        """Retourne l'email authentifie de l'utilisateur connecte.
+
+        Args:
+            Aucun.
+
+        Returns:
+            str: Sujet email normalise du token Bearer courant.
+
+        Raises:
+            ValueError: Si le token ne contient pas d'utilisateur exploitable.
+        """
+
+        payload = self.auth_guard.get_current_token_payload()
+        subject = str(payload.get("sub") or "").strip().lower()
+        if not subject:
+            raise ValueError("Utilisateur connecte invalide.")
+        return subject
 
     def _save_temporary_upload(self, collection_file) -> Path:
         """Sauvegarde l'upload multipart dans un fichier temporaire.

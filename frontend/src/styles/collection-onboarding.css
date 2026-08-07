@@ -197,6 +197,20 @@
   margin: 0.25rem 0 0;
 }
 
+.importContributionNotice {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #14532d;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+}
+
+.importContributionNotice p {
+  margin: 0;
+}
+
 .warningText {
   background: #fffbeb;
   border: 1px solid #fde68a;

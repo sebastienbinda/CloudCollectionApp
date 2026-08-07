@@ -227,6 +227,7 @@ class LibraryController:
             result = self.admin_import_service_factory().import_csv_file(
                 temporary_path,
                 uploaded_file.filename,
+                requester_email=self._current_requester_email(),
             )
             self._reset_library_service_provider()
             return jsonify(result.to_dict()), 201
@@ -393,6 +394,19 @@ class LibraryController:
     def _reset_library_service_provider(self) -> None:
         if self.library_service_provider is not None:
             self.library_service_provider.reset()
+
+    def _current_requester_email(self) -> str:
+        """Retourne le sujet authentifie de la requete courante.
+
+        Args:
+            Aucun.
+
+        Returns:
+            str: Email ou sujet du token Bearer courant.
+        """
+
+        payload = self.auth_guard.get_current_token_payload()
+        return str(payload.get("sub") or "").strip().lower()
 
     def _delete_temporary_file(self, file_path: str) -> None:
         if not file_path:

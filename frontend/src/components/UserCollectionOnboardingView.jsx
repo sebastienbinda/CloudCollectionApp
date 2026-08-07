@@ -131,7 +131,11 @@ function UserCollectionOnboardingView({
         </div>
 
         {importResult ? (
-          <ImportSummary result={importResult} onAction={onOpenHome} />
+          <ImportSummary
+            result={importResult}
+            contributionNotice={<UserImportContributionNotice />}
+            onAction={onOpenHome}
+          />
         ) : (
           <form className="collectionImportForm" onSubmit={handleSubmit}>
           <label>
@@ -190,6 +194,26 @@ function UserCollectionOnboardingView({
         )}
       </section>
     </PageLayout>
+  );
+}
+
+/**
+ * Affiche le message de contribution apres un import utilisateur reussi.
+ *
+ * @returns {import("react").JSX.Element} Message de validation Bibliotheque.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function UserImportContributionNotice() {
+  return (
+    <>
+      <p>
+        Tous les jeux que vous avez importes et qui n'existaient pas encore dans
+        la Bibliotheque commune sont accessibles dans votre collection privee.
+        Ils seront visibles dans la Bibliotheque commune apres validation par un
+        administrateur.
+      </p>
+      <p>Merci pour votre contribution.</p>
+    </>
   );
 }
 

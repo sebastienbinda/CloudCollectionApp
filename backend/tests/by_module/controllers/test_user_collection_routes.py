@@ -201,6 +201,7 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         )
         self.assertEqual(7, FakeUserCollectionImportService.last_call[0])
         self.assertIsNotNone(FakeUserCollectionImportService.last_call[1])
+        self.assertEqual("user@example.com", FakeUserCollectionImportService.last_call[2])
 
     def test_reinitialize_current_user_collection_requires_authentication(self):
         """Verifie que la reinitialisation collection exige un token.

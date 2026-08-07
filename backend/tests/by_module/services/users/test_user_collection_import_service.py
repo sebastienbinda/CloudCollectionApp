@@ -284,6 +284,40 @@ class DisabledImportReportNotifier(FakeImportReportNotifier):
         return False
 
 
+class FakeImportFailureNotifier:
+    """Capture les notifications d'echec d'import."""
+
+    def __init__(self, error=None):
+        """Initialise le notifier factice.
+
+        Args:
+            error (Exception | None): Erreur optionnelle a lever.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.error = error
+        self.contexts = []
+
+    def notify_import_failure(self, context):
+        """Memorise le contexte d'echec ou leve l'erreur configuree.
+
+        Args:
+            context (object): Contexte d'echec d'import.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+
+        Raises:
+            Exception: Erreur configuree pour le test.
+        """
+
+        if self.error:
+            raise self.error
+        self.contexts.append(context)
+
+
 class UserCollectionImportServiceTest(unittest.TestCase):
     """Valide le service metier d'import de collection utilisateur."""
 
@@ -696,6 +730,45 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(1, len(repository.import_calls))
             self.assertEqual(1, len(reader.read_paths))
 
+    def test_import_collection_notifies_admin_when_unexpected_error_occurs(self):
+        """Verifie le mail admin en cas d'exception non prevue pendant l'import.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte d'echec transmis.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            failure_notifier = FakeImportFailureNotifier()
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(import_error=RuntimeError("db")),
+                failure_notifier=failure_notifier,
+            )
+
+            with self.assertRaises(UserCollectionImportUnexpectedError):
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                    requester_email="user@example.com",
+                )
+
+            self.assertEqual(1, len(failure_notifier.contexts))
+            context = failure_notifier.contexts[0]
+            self.assertEqual("collection_utilisateur", context.import_kind)
+            self.assertEqual("UserCollectionImportService.import_collection", context.initiated_by_function)
+            self.assertEqual(7, context.requester_user_id)
+            self.assertEqual("user@example.com", context.requester_email)
+            self.assertEqual("collection.ods", context.original_filename)
+            self.assertEqual("libreoffice_ods", context.file_type)
+            self.assertEqual("UserCollectionImportUnexpectedError", context.error_type)
+            self.assertIn("Erreur pendant l'import.", context.error_message)
+            self.assertIn("RuntimeError: db", context.traceback_text)
+
     def test_import_collection_returns_existing_game_association_counts(self):
         """Verifie les compteurs quand les jeux existent deja.
 
@@ -741,6 +814,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
         source_filename="collection.ods",
         source_content=b"ods-content",
         report_notifier=None,
+        failure_notifier=None,
     ):
         source_file = Path(directory) / source_filename
         source_file.write_bytes(source_content)
@@ -756,6 +830,7 @@ class UserCollectionImportServiceTest(unittest.TestCase):
                 repository,
                 FakeCollectionFileReaderFactory(reader),
                 report_notifier=report_notifier,
+                failure_notifier=failure_notifier,
             ),
             repository,
             reader,

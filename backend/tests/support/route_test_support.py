@@ -549,10 +549,15 @@ class FakeUserCollectionImportService:
             raise self.next_error
         return ["Switch", "NES"]
 
-    def import_collection_from_temporary_file(self, user_id, file_description=None):
+    def import_collection_from_temporary_file(
+        self,
+        user_id,
+        file_description=None,
+        requester_email="",
+    ):
         """Importe une collection depuis un fichier temporaire factice."""
 
-        self.__class__.last_call = (user_id, file_description)
+        self.__class__.last_call = (user_id, file_description, requester_email)
         if self.next_error:
             raise self.next_error
         return UserCollectionImportResult(1, 2, 3, 4)

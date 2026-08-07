@@ -141,16 +141,17 @@ class FakeAdminLibraryImportConfigurationLoader:
 class FakeAdminLibraryImportRepository:
     """Repository factice pour capturer les imports admin."""
 
-    def __init__(self):
+    def __init__(self, error=None):
         """Initialise le repository factice.
 
         Args:
-            Aucun.
+            error (Exception | None): Erreur optionnelle a lever pendant l'import.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
+        self.error = error
         self.import_calls = []
 
     def import_library(self, import_data):
@@ -164,11 +165,41 @@ class FakeAdminLibraryImportRepository:
         """
 
         self.import_calls.append(import_data)
+        if self.error:
+            raise self.error
         return AdminLibraryImportPersistenceResult(
             linked_platforms=1,
             created_studios=1,
             created_games=1,
         )
+
+
+class FakeImportFailureNotifier:
+    """Capture les notifications d'echec d'import admin."""
+
+    def __init__(self):
+        """Initialise le notifier factice.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Le constructeur ne retourne aucune valeur.
+        """
+
+        self.contexts = []
+
+    def notify_import_failure(self, context):
+        """Memorise le contexte d'echec.
+
+        Args:
+            context (object): Contexte transmis par le service.
+
+        Returns:
+            None: La methode ne retourne aucune valeur.
+        """
+
+        self.contexts.append(context)
 
 
 class AdminLibraryImportServiceTest(unittest.TestCase):
@@ -247,6 +278,43 @@ class AdminLibraryImportServiceTest(unittest.TestCase):
 
         self.assertEqual(["mapping.name doit etre valide."], context.exception.details)
         self.assertEqual([], repository.import_calls)
+
+    def test_import_csv_file_notifies_admin_when_unexpected_error_occurs(self):
+        """Verifie le mail admin en cas d'erreur inattendue d'import CSV.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le contexte de notification.
+        """
+
+        failure_notifier = FakeImportFailureNotifier()
+        service = AdminLibraryImportService(
+            FakeAdminLibraryImportRepository(error=RuntimeError("db")),
+            FakeAdminLibraryImportReader(),
+            FakeAdminLibraryImportConfigurationLoader(),
+            failure_notifier=failure_notifier,
+        )
+
+        with self.assertRaises(RuntimeError):
+            service.import_csv_file(
+                "/tmp/import.csv",
+                "admin.csv",
+                requester_email="admin@example.com",
+            )
+
+        self.assertEqual(1, len(failure_notifier.contexts))
+        context = failure_notifier.contexts[0]
+        self.assertEqual("bibliotheque_admin_csv", context.import_kind)
+        self.assertEqual("AdminLibraryImportService.import_csv_file", context.initiated_by_function)
+        self.assertIsNone(context.requester_user_id)
+        self.assertEqual("admin@example.com", context.requester_email)
+        self.assertEqual("csv", context.file_type)
+        self.assertEqual("admin.csv", context.original_filename)
+        self.assertEqual("RuntimeError", context.error_type)
+        self.assertEqual("db", context.error_message)
+        self.assertIn("RuntimeError: db", context.traceback_text)
 
 
 class AdminLibraryImportConfigurationLoaderTest(unittest.TestCase):
