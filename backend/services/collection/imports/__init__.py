@@ -32,6 +32,11 @@ from .collection_file_reader import (
     CollectionFileValidationError,
 )
 from .collection_file_reader_factory import CollectionFileReaderFactory
+from .collection_import_failure_admin_notifier import CollectionImportFailureAdminNotifier
+from .collection_import_failure_context import CollectionImportFailureContext
+from .collection_import_failure_notification_service import (
+    CollectionImportFailureNotificationService,
+)
 from .collection_import_models import (
     CollectionImportData,
     CollectionImportGame,
@@ -58,6 +63,9 @@ __all__ = [
     "CollectionFileType",
     "CollectionImportData",
     "CollectionImportDateValidator",
+    "CollectionImportFailureAdminNotifier",
+    "CollectionImportFailureContext",
+    "CollectionImportFailureNotificationService",
     "CollectionImportField",
     "CollectionImportGame",
     "CollectionImportPlatform",

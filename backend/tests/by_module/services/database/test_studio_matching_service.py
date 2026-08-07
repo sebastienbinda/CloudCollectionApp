@@ -13,6 +13,7 @@
 
 import unittest
 
+import services.database.studio_matching_service as studio_matching_service_module
 from services.database import StudioMatchingConfiguration, StudioMatchingService
 
 
@@ -133,6 +134,36 @@ class StudioMatchingServiceTest(unittest.TestCase):
             [("acclaim", "acclaim studios"), ("acclaim", "nintendo")],
             calls,
         )
+
+    def test_evaluate_existing_studio_caches_repeated_suffix_alternatives(self):
+        """Verifie que les suffixes repetes ne sont pas reevalues par candidat.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le cache des suffixes de studios.
+        """
+
+        service = self._service()
+        original_matching_score = studio_matching_service_module.matching_score
+        suffix_score_calls = []
+
+        def tracked_matching_score(imported_key, candidate_key):
+            if imported_key == "sutiods":
+                suffix_score_calls.append((imported_key, candidate_key))
+            return original_matching_score(imported_key, candidate_key)
+
+        studio_matching_service_module.matching_score = tracked_matching_score
+        try:
+            service.evaluate_existing_studio(
+                "Acclaim",
+                {f"team {index} sutiods": index for index in range(1, 101)},
+            )
+        finally:
+            studio_matching_service_module.matching_score = original_matching_score
+
+        self.assertLessEqual(len(suffix_score_calls), len(service.STUDIO_SUFFIX_ALTERNATIVES))
 
     def _service(self):
         return StudioMatchingService(

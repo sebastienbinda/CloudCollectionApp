@@ -60,6 +60,8 @@ class StudioMatchingService:
         self.name_normalizer = name_normalizer or UserCollectionNameNormalizer()
         self._matching_results_cache: dict[tuple[str, tuple[str, ...]], StudioMatchingResult] = {}
         self._score_cache: dict[tuple[str, str], int] = {}
+        self._key_parts_cache: dict[str, tuple[str, bool]] = {}
+        self._suffix_alternative_cache: dict[str, bool] = {}
 
     def match_existing_studio_key(
         self,
@@ -141,39 +143,54 @@ class StudioMatchingService:
         return self._score_cache[score_key]
 
     def _studio_matching_score(self, imported_key: str, candidate_key: str) -> int:
-        imported_words = self._words(imported_key)
-        candidate_words = self._words(candidate_key)
-        if self._has_suffix_alternative_equivalence(imported_words, candidate_words):
+        imported_base_key, imported_has_suffix = self._key_parts(imported_key)
+        candidate_base_key, candidate_has_suffix = self._key_parts(candidate_key)
+        if self._has_suffix_alternative_equivalence(
+            imported_key,
+            imported_base_key,
+            imported_has_suffix,
+            candidate_key,
+            candidate_base_key,
+            candidate_has_suffix,
+        ):
             return 100
         return matching_score(imported_key, candidate_key)
 
     def _has_suffix_alternative_equivalence(
         self,
-        imported_words: list[str],
-        candidate_words: list[str],
+        imported_key: str,
+        imported_base_key: str,
+        imported_has_suffix: bool,
+        candidate_key: str,
+        candidate_base_key: str,
+        candidate_has_suffix: bool,
     ) -> bool:
-        imported_base_words = self._without_studio_suffix(imported_words)
-        candidate_base_words = self._without_studio_suffix(candidate_words)
-        if imported_base_words == imported_words and candidate_base_words == candidate_words:
+        if not imported_has_suffix and not candidate_has_suffix:
             return False
-        imported_base_key = " ".join(imported_base_words)
-        candidate_base_key = " ".join(candidate_base_words)
         if not imported_base_key or not candidate_base_key:
+            return False
+        if imported_base_key == imported_key and candidate_base_key == candidate_key:
             return False
         return matching_score(imported_base_key, candidate_base_key) >= (
             self.configuration.high_level_rating
         )
 
-    def _without_studio_suffix(self, words: list[str]) -> list[str]:
-        if not words or not self._is_studio_suffix_alternative(words[-1]):
-            return list(words)
-        return list(words[:-1])
+    def _key_parts(self, key: str) -> tuple[str, bool]:
+        if key not in self._key_parts_cache:
+            words = self._words(key)
+            if words and self._is_studio_suffix_alternative(words[-1]):
+                self._key_parts_cache[key] = (" ".join(words[:-1]), True)
+            else:
+                self._key_parts_cache[key] = (key, False)
+        return self._key_parts_cache[key]
 
     def _is_studio_suffix_alternative(self, word: str) -> bool:
-        return any(
-            matching_score(word, suffix) >= self.STUDIO_SUFFIX_ALTERNATIVE_MIN_SCORE
-            for suffix in self.STUDIO_SUFFIX_ALTERNATIVES
-        )
+        if word not in self._suffix_alternative_cache:
+            self._suffix_alternative_cache[word] = word in self.STUDIO_SUFFIX_ALTERNATIVES or any(
+                matching_score(word, suffix) >= self.STUDIO_SUFFIX_ALTERNATIVE_MIN_SCORE
+                for suffix in self.STUDIO_SUFFIX_ALTERNATIVES
+            )
+        return self._suffix_alternative_cache[word]
 
     def _comparison_key(self, value: object) -> str:
         return self.name_normalizer.comparison_key(value) or ""

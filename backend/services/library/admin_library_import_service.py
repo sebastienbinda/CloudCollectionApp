@@ -12,12 +12,15 @@
 # Description : service metier d'import CSV admin Bibliotheque.
 
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 
 from services.collection.imports import (
     CollectionFileDescriptionValidationError,
     CollectionFileReadError,
     CollectionFileValidationError,
+    CollectionImportFailureAdminNotifier,
+    CollectionImportFailureNotificationService,
     CollectionImportDateValidator,
 )
 from services.csv.csv_collection_import_reader import CsvCollectionImportReader
@@ -92,6 +95,8 @@ class AdminLibraryImportService:
         reader: CsvCollectionImportReader | None = None,
         configuration_loader: AdminLibraryImportConfigurationLoader | None = None,
         date_validator: CollectionImportDateValidator | None = None,
+        failure_notifier=None,
+        logger=None,
     ):
         """Initialise le service d'import admin.
 
@@ -100,6 +105,8 @@ class AdminLibraryImportService:
             reader (CsvCollectionImportReader | None): Lecteur CSV injectable.
             configuration_loader (AdminLibraryImportConfigurationLoader | None): Chargeur JSON.
             date_validator (CollectionImportDateValidator | None): Validateur de dates.
+            failure_notifier (object | None): Notifier admin des echecs d'import.
+            logger (object | None): Logger injectable.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
@@ -109,6 +116,9 @@ class AdminLibraryImportService:
         self.reader = reader or CsvCollectionImportReader()
         self.configuration_loader = configuration_loader or AdminLibraryImportConfigurationLoader()
         self.date_validator = date_validator or CollectionImportDateValidator()
+        self.failure_notifier = failure_notifier or CollectionImportFailureAdminNotifier()
+        self.failure_notification_service = CollectionImportFailureNotificationService()
+        self.logger = logger or logging.getLogger(__name__)
 
     @classmethod
     def from_environment(cls) -> "AdminLibraryImportService":
@@ -132,12 +142,14 @@ class AdminLibraryImportService:
         self,
         csv_file_path: str,
         original_filename: str = "",
+        requester_email: str = "",
     ) -> AdminLibraryImportResult:
         """Importe un CSV admin dans la Bibliotheque globale.
 
         Args:
             csv_file_path (str): Chemin temporaire du fichier televerse.
             original_filename (str): Nom original transmis par le navigateur.
+            requester_email (str): Email ou sujet d'authentification du demandeur admin.
 
         Returns:
             AdminLibraryImportResult: Compteurs et warnings d'import.
@@ -147,21 +159,55 @@ class AdminLibraryImportService:
             sqlalchemy.exc.SQLAlchemyError: Si la persistance echoue.
         """
 
-        self._validate_extension(original_filename or csv_file_path)
         try:
+            self._validate_extension(original_filename or csv_file_path)
             columns = self.reader.analyze_sheets(csv_file_path)
             description = self.configuration_loader.load_for_columns(columns)
             import_data = self.reader.read(csv_file_path, description)
             import_data = self.date_validator.validate(import_data)
             persistence_result = self.repository.import_library(import_data)
+        except AdminLibraryImportInvalidFileError as exc:
+            self._notify_import_failure(exc, csv_file_path, original_filename, requester_email)
+            raise
         except AdminLibraryImportConfigurationError as exc:
-            raise AdminLibraryImportInvalidFileError(exc.details) from exc
+            converted_error = AdminLibraryImportInvalidFileError(exc.details)
+            self._notify_import_failure(
+                converted_error,
+                csv_file_path,
+                original_filename,
+                requester_email,
+            )
+            raise converted_error from exc
         except CollectionFileDescriptionValidationError as exc:
-            raise AdminLibraryImportInvalidFileError(exc.details) from exc
+            converted_error = AdminLibraryImportInvalidFileError(exc.details)
+            self._notify_import_failure(
+                converted_error,
+                csv_file_path,
+                original_filename,
+                requester_email,
+            )
+            raise converted_error from exc
         except CollectionFileValidationError as exc:
-            raise AdminLibraryImportInvalidFileError([str(exc)]) from exc
+            converted_error = AdminLibraryImportInvalidFileError([str(exc)])
+            self._notify_import_failure(
+                converted_error,
+                csv_file_path,
+                original_filename,
+                requester_email,
+            )
+            raise converted_error from exc
         except CollectionFileReadError as exc:
-            raise AdminLibraryImportInvalidFileError([str(exc)]) from exc
+            converted_error = AdminLibraryImportInvalidFileError([str(exc)])
+            self._notify_import_failure(
+                converted_error,
+                csv_file_path,
+                original_filename,
+                requester_email,
+            )
+            raise converted_error from exc
+        except Exception as exc:
+            self._notify_import_failure(exc, csv_file_path, original_filename, requester_email)
+            raise
         return AdminLibraryImportResult(
             linked_platforms=persistence_result.linked_platforms,
             created_studios=persistence_result.created_studios,
@@ -173,3 +219,22 @@ class AdminLibraryImportService:
         extension = Path(filename or "").suffix.lower()
         if extension not in self.reader.accepted_extensions:
             raise AdminLibraryImportInvalidFileError(["Seuls les fichiers CSV sont acceptes."])
+
+    def _notify_import_failure(
+        self,
+        error: Exception,
+        csv_file_path: str,
+        original_filename: str,
+        requester_email: str,
+    ) -> None:
+        self.failure_notification_service.notify_failure(
+            self.failure_notifier,
+            self.logger,
+            error,
+            "bibliotheque_admin_csv",
+            "AdminLibraryImportService.import_csv_file",
+            None,
+            requester_email,
+            "csv",
+            str(original_filename or Path(csv_file_path).name),
+        )

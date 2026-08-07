@@ -142,12 +142,13 @@ class FakeAdminLibraryImportService:
     import_calls = []
     path_existed_during_call = False
 
-    def import_csv_file(self, csv_file_path, original_filename=""):
+    def import_csv_file(self, csv_file_path, original_filename="", requester_email=""):
         """Capture l'import CSV admin.
 
         Args:
             csv_file_path (str): Chemin temporaire recu.
             original_filename (str): Nom original recu.
+            requester_email (str): Email du demandeur authentifie.
 
         Returns:
             FakeAdminLibraryImportResult: Resultat factice.
@@ -156,7 +157,7 @@ class FakeAdminLibraryImportService:
             Exception: Si une erreur configuree existe.
         """
 
-        self.__class__.import_calls.append((csv_file_path, original_filename))
+        self.__class__.import_calls.append((csv_file_path, original_filename, requester_email))
         self.__class__.path_existed_during_call = Path(csv_file_path).exists()
         if self.next_error:
             raise self.next_error
@@ -464,7 +465,7 @@ class LibraryResetRoutesTest(BaseAppRoutesTest):
             data={"library_file": (BytesIO(b"name,platform\nZelda,Switch\n"), "admin.csv")},
         )
 
-        temporary_path, original_filename = FakeAdminLibraryImportService.import_calls[0]
+        temporary_path, original_filename, requester_email = FakeAdminLibraryImportService.import_calls[0]
         self.assertEqual(201, response.status_code)
         self.assertEqual(
             {
@@ -476,6 +477,7 @@ class LibraryResetRoutesTest(BaseAppRoutesTest):
             response.get_json(),
         )
         self.assertEqual("admin.csv", original_filename)
+        self.assertEqual("admin", requester_email)
         self.assertTrue(FakeAdminLibraryImportService.path_existed_during_call)
         self.assertFalse(Path(temporary_path).exists())
         self.assertEqual(1, FakeLibraryServiceProvider.reset_calls)
@@ -519,7 +521,7 @@ class LibraryResetRoutesTest(BaseAppRoutesTest):
             data={"library_file": (BytesIO(b"bad"), "admin.txt")},
         )
 
-        temporary_path, _ = FakeAdminLibraryImportService.import_calls[0]
+        temporary_path, _, _ = FakeAdminLibraryImportService.import_calls[0]
         self.assertEqual(400, response.status_code)
         self.assertEqual(
             {
