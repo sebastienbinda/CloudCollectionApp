@@ -77,6 +77,33 @@
   border-color: #991b1b;
 }
 
+.adminResetConfirmationDialog {
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  width: min(100%, 34rem);
+}
+
+.adminResetConfirmationDialog h2 {
+  color: #111827;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.adminResetConfirmationDialog p {
+  color: #334155;
+  margin: 0;
+}
+
+.adminResetValidationWarning strong {
+  color: #b91c1c;
+  font-weight: 900;
+}
+
 .usersTableSection {
   margin-top: 1.5rem;
 }

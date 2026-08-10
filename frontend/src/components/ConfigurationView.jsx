@@ -44,6 +44,8 @@ function ConfigurationView({
   libraryResetError,
   libraryResetMessage,
   isResettingLibrary,
+  isLibraryResetConfirmationOpen,
+  waitingValidationResetCount,
   platformCatalogSyncError,
   platformCatalogSyncMessage,
   isSyncingPlatformCatalog,
@@ -63,6 +65,8 @@ function ConfigurationView({
   onOpenCollectionShares,
   onDownloadOds,
   onResetLibrary,
+  onCancelLibraryReset,
+  onConfirmLibraryReset,
   onSyncPlatformCatalog,
   onReinitializeCollection,
   onLogout,
@@ -256,7 +260,80 @@ function ConfigurationView({
           </article>
         ) : null}
       </section>
+
+      <LibraryResetConfirmationDialog
+        isOpen={isLibraryResetConfirmationOpen}
+        isResettingLibrary={isResettingLibrary}
+        waitingValidationCount={waitingValidationResetCount}
+        onCancel={onCancelLibraryReset}
+        onConfirm={onConfirmLibraryReset}
+      />
     </PageLayout>
+  );
+}
+
+/**
+ * Affiche la confirmation du reset Bibliotheque.
+ *
+ * @param {Object} props - Etat de la pop-up et callbacks de confirmation.
+ * @returns {import("react").JSX.Element|null} Pop-up de confirmation ou rien.
+ * @throws {void} Ne leve pas d'exception pendant le rendu React.
+ */
+function LibraryResetConfirmationDialog({
+  isOpen,
+  isResettingLibrary,
+  waitingValidationCount,
+  onCancel,
+  onConfirm,
+}) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div className="modalOverlay" role="presentation">
+      <section
+        className="adminResetConfirmationDialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-reset-confirmation-title"
+      >
+        <header>
+          <p className="eyebrow">Confirmation</p>
+          <h2 id="admin-reset-confirmation-title">Confirmer le reset Bibliotheque</h2>
+        </header>
+        <p>
+          ATTENTION : ce reset supprime et reconstruit toute la Bibliotheque globale a partir des
+          imports utilisateur.
+        </p>
+        {Number(waitingValidationCount) > 0 ? (
+          <p className="adminResetValidationWarning">
+            <strong>{waitingValidationCount} jeu(x)</strong>
+            {" "}
+            marque(s) comme en attente de validation seront automatiquement acceptes si le reset est
+            lance.
+          </p>
+        ) : null}
+        <div className="formActions">
+          <button
+            className="secondaryButton"
+            type="button"
+            onClick={onCancel}
+            disabled={isResettingLibrary}
+          >
+            Annuler
+          </button>
+          <button
+            className="dangerButton"
+            type="button"
+            onClick={onConfirm}
+            disabled={isResettingLibrary}
+          >
+            Confirmer le reset
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 

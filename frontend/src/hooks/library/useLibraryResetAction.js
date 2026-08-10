@@ -30,13 +30,14 @@ function useLibraryResetAction(options = {}) {
   const [libraryResetMessage, setLibraryResetMessage] = useState("");
   const [libraryResetError, setLibraryResetError] = useState("");
   const [isResettingLibrary, setIsResettingLibrary] = useState(false);
+  const [isLibraryResetConfirmationOpen, setIsLibraryResetConfirmationOpen] = useState(false);
   const waitingValidationCount = Math.max(
     0,
     Number.parseInt(options.waitingValidationCount, 10) || 0
   );
 
   /**
-   * Demande confirmation puis appelle le backend de reset Bibliotheque.
+   * Ouvre la confirmation du reset Bibliotheque.
    *
    * @returns {Promise<void>} Met a jour les messages de resultat.
    * @throws {void} Les erreurs sont converties en message lisible.
@@ -44,11 +45,37 @@ function useLibraryResetAction(options = {}) {
   const resetLibrary = async () => {
     setLibraryResetMessage("");
     setLibraryResetError("");
-    const confirmed = window.confirm(buildLibraryResetConfirmationMessage(waitingValidationCount));
-    if (!confirmed) {
-      return;
-    }
+    setIsLibraryResetConfirmationOpen(true);
+  };
 
+  /**
+   * Confirme le reset apres affichage de la pop-up de confirmation.
+   *
+   * @returns {Promise<void>} Lance le reset apres fermeture de la pop-up.
+   * @throws {void} Les erreurs sont converties en message lisible.
+   */
+  const confirmLibraryReset = async () => {
+    setIsLibraryResetConfirmationOpen(false);
+    await launchLibraryReset();
+  };
+
+  /**
+   * Annule la demande de reset depuis la pop-up de confirmation.
+   *
+   * @returns {void} Ferme la pop-up sans appeler le backend.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  const cancelLibraryReset = () => {
+    setIsLibraryResetConfirmationOpen(false);
+  };
+
+  /**
+   * Appelle le backend de reset Bibliotheque apres confirmation.
+   *
+   * @returns {Promise<void>} Met a jour les messages de resultat.
+   * @throws {void} Les erreurs sont converties en message lisible.
+   */
+  const launchLibraryReset = async () => {
     try {
       setIsResettingLibrary(true);
       await LibraryAdminApi.resetLibrary();
@@ -67,29 +94,15 @@ function useLibraryResetAction(options = {}) {
   };
 
   return {
+    cancelLibraryReset,
+    confirmLibraryReset,
+    isLibraryResetConfirmationOpen,
     isResettingLibrary,
     libraryResetError,
     libraryResetMessage,
     resetLibrary,
+    waitingValidationCount,
   };
 }
 
-/**
- * Construit le message de confirmation du reset Bibliotheque.
- *
- * @param {number} waitingValidationCount - Nombre de jeux actuellement en attente.
- * @returns {string} Message de confirmation affiche a l'administrateur.
- * @throws {void} Ne leve pas d'exception.
- */
-function buildLibraryResetConfirmationMessage(waitingValidationCount = 0) {
-  const baseMessage = (
-    "ATTENTION : ce reset supprime et reconstruit toute la Bibliotheque globale a partir des imports utilisateur."
-  );
-  const waitingMessage = Number(waitingValidationCount) > 0
-    ? ` ${waitingValidationCount} jeu(x) en attente seront valides automatiquement par le reset.`
-    : "";
-  return `${baseMessage}${waitingMessage} Confirmer le lancement ?`;
-}
-
-export { buildLibraryResetConfirmationMessage };
 export default useLibraryResetAction;

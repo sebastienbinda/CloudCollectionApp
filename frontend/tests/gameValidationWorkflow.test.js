@@ -14,7 +14,6 @@ import BackendRouteAccessService from "../src/services/BackendRouteAccessService
 import LibraryAdminApi from "../src/services/LibraryAdminApi.js";
 import LibraryApi from "../src/services/LibraryApi.js";
 import { getLibraryGameColumns } from "../src/hooks/library/libraryGameColumns.js";
-import { buildLibraryResetConfirmationMessage } from "../src/hooks/library/useLibraryResetAction.js";
 
 class MemoryStorage {
   /** Initialise un stockage navigateur en memoire. */
@@ -107,11 +106,38 @@ test("derive la permission de gestion validation jeux depuis les routes admin", 
   assert.equal(userPermissions.canManageGameValidation, false);
 });
 
-test("ajoute l'avertissement de validation automatique dans la confirmation reset", () => {
-  const message = buildLibraryResetConfirmationMessage(4);
+test("declare la pop-up de confirmation reset permanente avec compteur colore", () => {
+  const hookSource = readFileSync(
+    new URL("../src/hooks/library/useLibraryResetAction.js", import.meta.url),
+    "utf8"
+  );
+  const configurationSource = readFileSync(
+    new URL("../src/components/ConfigurationView.jsx", import.meta.url),
+    "utf8"
+  );
+  const rendererSource = readFileSync(
+    new URL("../src/components/appViewSwitchConfigurationRenderer.jsx", import.meta.url),
+    "utf8"
+  );
+  const adminStyleSource = readFileSync(
+    new URL("../src/styles/admin.css", import.meta.url),
+    "utf8"
+  );
 
-  assert.equal(message.includes("4 jeu(x) en attente"), true);
-  assert.equal(message.includes("valides automatiquement"), true);
+  assert.equal(hookSource.includes("isLibraryResetConfirmationOpen"), true);
+  assert.equal(hookSource.includes("setIsLibraryResetConfirmationOpen(true)"), true);
+  assert.equal(hookSource.includes("window.confirm"), false);
+  assert.equal(configurationSource.includes("LibraryResetConfirmationDialog"), true);
+  assert.equal(configurationSource.includes("ATTENTION : ce reset supprime"), true);
+  assert.equal(configurationSource.includes("Number(waitingValidationCount) > 0"), true);
+  assert.equal(configurationSource.includes("<strong>{waitingValidationCount} jeu(x)</strong>"), true);
+  assert.equal(configurationSource.includes("seront automatiquement acceptes"), true);
+  assert.equal(configurationSource.includes("Annuler"), true);
+  assert.equal(configurationSource.includes("Confirmer le reset"), true);
+  assert.equal(rendererSource.includes("onCancelLibraryReset"), true);
+  assert.equal(rendererSource.includes("onConfirmLibraryReset"), true);
+  assert.equal(adminStyleSource.includes(".adminResetValidationWarning strong"), true);
+  assert.equal(adminStyleSource.includes("font-weight: 900"), true);
 });
 
 test("declare les controles admin de filtre, selection et badge Bibliotheque", () => {
