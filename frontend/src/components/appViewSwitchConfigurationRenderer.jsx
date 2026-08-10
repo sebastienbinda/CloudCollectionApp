@@ -33,6 +33,8 @@ function renderConfigurationView(props, pageLayoutProps) {
       libraryResetError={props.libraryResetError}
       libraryResetMessage={props.libraryResetMessage}
       isResettingLibrary={props.isResettingLibrary}
+      isLibraryResetConfirmationOpen={props.isLibraryResetConfirmationOpen}
+      waitingValidationResetCount={props.waitingValidationResetCount}
       platformCatalogSyncError={props.platformCatalogSyncError}
       platformCatalogSyncMessage={props.platformCatalogSyncMessage}
       isSyncingPlatformCatalog={props.isSyncingPlatformCatalog}
@@ -45,6 +47,8 @@ function renderConfigurationView(props, pageLayoutProps) {
       onOpenCollectionShares={props.openCollectionShares}
       onDownloadOds={props.downloadOdsFile}
       onResetLibrary={props.resetLibrary}
+      onCancelLibraryReset={props.cancelLibraryReset}
+      onConfirmLibraryReset={props.confirmLibraryReset}
       onSyncPlatformCatalog={props.syncPlatformCatalog}
       onReinitializeCollection={props.reinitializeCollection}
     />
