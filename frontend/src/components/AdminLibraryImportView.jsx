@@ -99,6 +99,35 @@ function AdminLibraryImportView({
           </article>
         </div>
 
+        <aside className="adminImportConfigurationHelp" aria-label="Configuration admin attendue">
+          <h2>Configuration CSV admin attendue</h2>
+          <p>
+            Le backend utilise la configuration fixe
+            {" "}
+            <code>backend/resources/admin_import_conf.json</code>
+            {" "}
+            et lit les colonnes par position dans le fichier.
+          </p>
+          <dl>
+            <div>
+              <dt>Type de fichier</dt>
+              <dd>CSV avec extension .csv, ligne d'en-tete obligatoire.</dd>
+            </div>
+            <div>
+              <dt>Separateurs acceptes</dt>
+              <dd>Virgule, point-virgule ou tabulation.</dd>
+            </div>
+            <div>
+              <dt>Colonnes utilisees</dt>
+              <dd>1 = Jeu, 2 = Plateforme, 3 = Studio, 4 = Date de sortie.</dd>
+            </div>
+          </dl>
+          <p>
+            Les colonnes Jeu et Plateforme sont obligatoires pour importer une ligne. Studio et
+            Date de sortie peuvent rester vides, mais les colonnes doivent exister.
+          </p>
+        </aside>
+
         {adminLibraryImportResult ? (
           <ImportSummary
             actionLabel="Ouvrir la Bibliotheque"

@@ -81,6 +81,61 @@
   padding: 1.25rem;
 }
 
+.adminImportConfigurationHelp {
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.adminImportConfigurationHelp h2 {
+  color: #111827;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.adminImportConfigurationHelp p {
+  color: #475569;
+  margin: 0;
+}
+
+.adminImportConfigurationHelp code {
+  background: #e2e8f0;
+  border-radius: 4px;
+  color: #0f172a;
+  font-size: 0.9em;
+  padding: 0.1rem 0.25rem;
+}
+
+.adminImportConfigurationHelp dl {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.adminImportConfigurationHelp dl div {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.adminImportConfigurationHelp dt {
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+
+.adminImportConfigurationHelp dd {
+  color: #111827;
+  margin: 0;
+}
+
 .collectionImportForm label {
   color: #334155;
   display: grid;
@@ -331,6 +386,10 @@
   }
 
   .importSummary dl {
+    grid-template-columns: 1fr;
+  }
+
+  .adminImportConfigurationHelp dl {
     grid-template-columns: 1fr;
   }
 
