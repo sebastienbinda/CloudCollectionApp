@@ -48,6 +48,7 @@ class RecordingUserCollectionImportService(UserCollectionImportService):
         file_description,
         copy_to_workspace,
         initial_game_validation_status,
+        requester_email="",
     ):
         """Enregistre les arguments recus par le coeur centralise.
 
@@ -58,6 +59,7 @@ class RecordingUserCollectionImportService(UserCollectionImportService):
             file_description (object): Description d'import.
             copy_to_workspace (bool): Mode de copie demande.
             initial_game_validation_status (str): Statut des jeux crees.
+            requester_email (str): Email utilisateur transmis.
 
         Returns:
             UserCollectionImportResult: Resultat factice.
@@ -70,6 +72,7 @@ class RecordingUserCollectionImportService(UserCollectionImportService):
             file_description,
             copy_to_workspace,
             initial_game_validation_status,
+            requester_email,
         )
         return UserCollectionImportResult(0, 0, 0, 0)
 

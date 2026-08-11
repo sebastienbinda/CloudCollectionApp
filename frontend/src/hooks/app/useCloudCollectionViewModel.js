@@ -331,6 +331,9 @@ function useCloudCollectionViewModel() {
       cancelLibraryReset: libraryResetAction.cancelLibraryReset,
       confirmLibraryReset: libraryResetAction.confirmLibraryReset,
       importAdminLibraryCsv: adminLibraryCsvImportAction.importAdminLibraryCsv,
+      prepareNewAdminLibraryImportAfterRefusal: (
+        adminLibraryCsvImportAction.prepareNewAdminLibraryImportAfterRefusal
+      ),
       selectAdminLibraryImportFile: adminLibraryCsvImportAction.selectAdminLibraryImportFile,
       syncPlatformCatalog: platformCatalogSyncAction.syncPlatformCatalog,
       reinitializeCollection: userCollectionReinitialization.reinitializeCollection,

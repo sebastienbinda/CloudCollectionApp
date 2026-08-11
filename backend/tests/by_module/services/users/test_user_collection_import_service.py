@@ -28,6 +28,7 @@ from services.collection.imports import (
     CollectionFileDescription,
     CollectionFileType,
     CollectionImportField,
+    CollectionImportWarnings,
     CollectionSheetLayout,
 )
 from services.ods import (
@@ -522,6 +523,55 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(1, result.associated_games)
             self.assertEqual(1, len(repository.import_calls))
             self.assertEqual(1, len(reader.read_paths))
+
+    def test_import_collection_refuses_file_when_more_than_half_games_have_errors(self):
+        """Verifie le refus sans persistance quand trop de jeux ont des erreurs.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le payload de refus.
+        """
+
+        import_data = OdsCollectionImportData(
+            platforms=[OdsCollectionImportPlatform("Switch")],
+            studios=[],
+            games=[
+                OdsCollectionImportGame("Zelda", "Switch", None, None),
+                OdsCollectionImportGame("Mario", "Switch", None, None),
+                OdsCollectionImportGame("Metroid", "Switch", None, None),
+            ],
+            warnings=CollectionImportWarnings(
+                invalid_games=[
+                    {"name": "Zelda", "invalid_fields": [{"field": "release_date"}]},
+                    {"name": "Mario", "invalid_fields": [{"field": "release_date"}]},
+                ]
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                reader=FakeOdsCollectionImportReader(import_data=import_data),
+            )
+
+            result = service.import_collection(
+                7,
+                str(source_file),
+                "collection.ods",
+                self._valid_description(),
+            )
+
+            target_file = Path(directory) / "workspace" / "7" / "7-collection.ods"
+            self.assertFalse(target_file.exists())
+            self.assertEqual([], repository.import_calls)
+            self.assertEqual(1, len(reader.read_paths))
+            self.assertEqual(0, result.associated_games)
+            self.assertTrue(result.refusal["refused"])
+            self.assertEqual("too_many_invalid_games", result.refusal["reason"])
+            self.assertEqual(2, result.refusal["invalid_games_count"])
+            self.assertEqual(3, result.refusal["total_games_count"])
+            self.assertIn("2/3", result.refusal["message"])
 
     def test_import_collection_replaces_read_only_collection_file(self):
         """Verifie le remplacement du fichier collection deja verrouille.

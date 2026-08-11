@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<body>
+<h1>Import refuse</h1>
+
+<h2>Contexte</h2>
+<table border="1" cellpadding="6" cellspacing="0">
+<tbody>
+<tr><th>Type d'import</th><td>${import_kind}</td></tr>
+<tr><th>Utilisateur demandeur</th><td>${requester_user_id}</td></tr>
+<tr><th>Email demandeur</th><td>${requester_email}</td></tr>
+<tr><th>Type de fichier</th><td>${file_type}</td></tr>
+<tr><th>Nom du fichier</th><td>${original_filename}</td></tr>
+</tbody>
+</table>
+
+<h2>Raison du rejet</h2>
+<p>${message}</p>
+<p>Code raison: ${reason}</p>
+<p>Jeux en erreur: ${invalid_games_count}/${total_games_count}</p>
+
+<h2>Resultat de l'import</h2>
+<ul>
+<li>Plateformes rattachees: ${linked_platforms}</li>
+<li>Studios crees: ${created_studios}</li>
+<li>Jeux crees: ${created_games}</li>
+<li>Jeux associes: ${associated_games}</li>
+<li>Jeux en liste de souhaits: ${wishlisted_games}</li>
+</ul>
+
+<h2>Erreurs des jeux</h2>
+${invalid_games}
+
+<h2>Warnings</h2>
+<pre>
+${warnings}
+</pre>
+</body>
+</html>

@@ -29,6 +29,7 @@ from services.collection.imports import (  # noqa: E402
     CollectionImportGame,
     CollectionImportPlatform,
     CollectionImportStudio,
+    CollectionImportWarnings,
     WishlistImportConfiguration,
 )
 from services.database.admin_library_import_repository import (  # noqa: E402
@@ -49,16 +50,17 @@ class FakeAdminLibraryImportReader:
 
     accepted_extensions = (".csv",)
 
-    def __init__(self):
+    def __init__(self, import_data=None):
         """Initialise le lecteur factice.
 
         Args:
-            Aucun.
+            import_data (CollectionImportData | None): Donnees retournees.
 
         Returns:
             None: Le constructeur ne retourne aucune valeur.
         """
 
+        self.import_data = import_data
         self.analyze_paths = []
         self.read_calls = []
 
@@ -87,7 +89,7 @@ class FakeAdminLibraryImportReader:
         """
 
         self.read_calls.append((file_path, description))
-        return CollectionImportData(
+        return self.import_data or CollectionImportData(
             platforms=[CollectionImportPlatform("Switch")],
             studios=[CollectionImportStudio("Nintendo")],
             games=[CollectionImportGame("Zelda", "Switch", "Nintendo", None)],
@@ -255,6 +257,48 @@ class AdminLibraryImportServiceTest(unittest.TestCase):
         self.assertEqual(["Seuls les fichiers CSV sont acceptes."], context.exception.details)
         self.assertEqual([], reader.analyze_paths)
         self.assertEqual([], repository.import_calls)
+
+    def test_import_csv_file_refuses_when_more_than_half_games_have_errors(self):
+        """Verifie le refus sans persistance quand le CSV contient trop d'erreurs.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident le resume de refus.
+        """
+
+        import_data = CollectionImportData(
+            platforms=[CollectionImportPlatform("Switch")],
+            studios=[],
+            games=[
+                CollectionImportGame("Zelda", "Switch", None, None),
+                CollectionImportGame("Mario", "Switch", None, None),
+                CollectionImportGame("Metroid", "Switch", None, None),
+            ],
+            warnings=CollectionImportWarnings(
+                invalid_games=[
+                    {"name": "Zelda", "invalid_fields": [{"field": "release_date"}]},
+                    {"name": "Mario", "invalid_fields": [{"field": "release_date"}]},
+                ]
+            ),
+        )
+        repository = FakeAdminLibraryImportRepository()
+        service = AdminLibraryImportService(
+            repository,
+            FakeAdminLibraryImportReader(import_data),
+            FakeAdminLibraryImportConfigurationLoader(),
+        )
+
+        result = service.import_csv_file("/tmp/import.csv", "admin.csv")
+
+        self.assertEqual([], repository.import_calls)
+        self.assertEqual(0, result.created_games)
+        self.assertTrue(result.refusal["refused"])
+        self.assertEqual("too_many_invalid_games", result.refusal["reason"])
+        self.assertEqual(2, result.refusal["invalid_games_count"])
+        self.assertEqual(3, result.refusal["total_games_count"])
+        self.assertIn("2/3", result.refusal["message"])
 
     def test_import_csv_file_exposes_configuration_errors(self):
         """Verifie la propagation des erreurs de configuration admin.

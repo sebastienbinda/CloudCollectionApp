@@ -12,7 +12,6 @@
 # Description : service metier d'import de collection utilisateur.
 
 import logging
-import shutil
 from time import perf_counter
 from pathlib import Path
 from threading import Lock
@@ -22,11 +21,13 @@ from services.collection.imports import (
     CollectionFileDescriptionValidationError,
     CollectionImportFailureAdminNotifier,
     CollectionImportFailureNotificationService,
-    CollectionFileReader,
     CollectionFileReaderFactory,
     CollectionFileReadError,
     CollectionFileValidationError,
     CollectionImportData,
+    CollectionImportRefusalAdminNotifier,
+    CollectionImportRefusalNotificationService,
+    CollectionImportRefusalPolicy,
 )
 from services.database.user_collection_import_persistence_result import (
     UserCollectionImportPersistenceResult,
@@ -40,50 +41,21 @@ from services.database.user_collection_import_repository import (
 from .user_collection_import_admin_notifier import UserCollectionImportAdminNotifier
 from services.collection.imports import CollectionImportDateValidator
 from .user_collection_import_configuration import UserCollectionImportConfiguration
+from .user_collection_import_errors import (
+    UserCollectionImportError,
+    UserCollectionImportInvalidFileError,
+    UserCollectionImportNotFoundError,
+    UserCollectionImportTemporaryFileMissingError,
+    UserCollectionImportTooLargeError,
+    UserCollectionImportUnexpectedError,
+)
+from .user_collection_import_file_manager import UserCollectionImportFileManager
 from .user_collection_import_report_notifier import UserCollectionImportReportNotifier
 from .user_collection_import_repository_protocol import UserCollectionImportRepository
 from .user_collection_import_report_context import UserCollectionImportReportContext
 from .user_collection_import_report_policy import UserCollectionImportReportPolicy
 from .user_collection_import_result import UserCollectionImportResult
 from .user_collection_import_timer import UserCollectionImportTimer
-
-
-class UserCollectionImportError(Exception):
-    """Classe de base des erreurs metier d'import de collection utilisateur."""
-
-
-class UserCollectionImportInvalidFileError(UserCollectionImportError):
-    """Signale qu'un fichier d'import est invalide ou illisible."""
-
-    def __init__(self, message: str, details: list[str] | None = None):
-        """Initialise l'erreur de fichier invalide.
-
-        Args:
-            message (str): Message fonctionnel principal.
-            details (list[str] | None): Raisons techniques affichables.
-
-        Returns:
-            None: Le constructeur ne retourne aucune valeur.
-        """
-
-        self.details = details or [message]
-        super().__init__(message)
-
-
-class UserCollectionImportTooLargeError(UserCollectionImportError):
-    """Signale qu'un fichier d'import depasse la taille maximale autorisee."""
-
-
-class UserCollectionImportTemporaryFileMissingError(UserCollectionImportError):
-    """Signale que le fichier temporaire d'import est absent."""
-
-
-class UserCollectionImportNotFoundError(UserCollectionImportError):
-    """Signale qu'aucune collection utilisateur ne peut etre reinitialisee."""
-
-
-class UserCollectionImportUnexpectedError(UserCollectionImportError):
-    """Signale une erreur non fonctionnelle pendant l'import."""
 
 
 class UserCollectionImportService:
@@ -100,6 +72,7 @@ class UserCollectionImportService:
         date_validator: CollectionImportDateValidator | None = None,
         report_notifier: UserCollectionImportReportNotifier | None = None,
         failure_notifier=None,
+        refusal_notifier=None,
         logger=None,
     ):
         """Initialise le service d'import de collection.
@@ -111,6 +84,7 @@ class UserCollectionImportService:
             date_validator (CollectionImportDateValidator | None): Validateur des dates lues.
             report_notifier (UserCollectionImportReportNotifier | None): Notifier admin.
             failure_notifier (object | None): Notifier admin des echecs d'import.
+            refusal_notifier (object | None): Notifier admin des refus d'import.
             logger (object | None): Logger injectable.
 
         Returns:
@@ -120,11 +94,15 @@ class UserCollectionImportService:
         self.configuration = configuration
         self.repository = repository
         self.reader_factory = reader_factory
+        self.file_manager = UserCollectionImportFileManager(configuration)
         self.date_validator = date_validator or CollectionImportDateValidator()
         self.report_notifier = report_notifier or UserCollectionImportAdminNotifier()
         self.failure_notifier = failure_notifier or CollectionImportFailureAdminNotifier()
+        self.refusal_notifier = refusal_notifier or CollectionImportRefusalAdminNotifier()
         self.failure_notification_service = CollectionImportFailureNotificationService()
+        self.refusal_notification_service = CollectionImportRefusalNotificationService()
         self.report_policy = UserCollectionImportReportPolicy()
+        self.refusal_policy = CollectionImportRefusalPolicy()
         self.logger = logger or logging.getLogger(__name__)
 
     def upload_import_file(
@@ -154,8 +132,11 @@ class UserCollectionImportService:
         with user_lock:
             reader = self.reader_factory.create(file_type)
             source_path = Path(source_file_path)
-            self._validate_source_file(source_path, original_filename, reader)
-            self._copy_file(source_path, self._temporary_file_path(user_id, reader))
+            self.file_manager.validate_source_file(source_path, original_filename, reader)
+            self.file_manager.copy_file(
+                source_path,
+                self.file_manager.temporary_file_path(user_id, reader),
+            )
 
     def analyze_import_file(self, user_id: int, file_type) -> list[str]:
         """Analyse le fichier temporaire et retourne ses onglets.
@@ -173,8 +154,8 @@ class UserCollectionImportService:
         """
 
         reader = self.reader_factory.create(file_type)
-        temporary_file_path = self._temporary_file_path(user_id, reader)
-        self._ensure_temporary_file_exists(temporary_file_path)
+        temporary_file_path = self.file_manager.temporary_file_path(user_id, reader)
+        self.file_manager.ensure_temporary_file_exists(temporary_file_path)
         try:
             return reader.analyze_sheets(str(temporary_file_path))
         except (CollectionFileReadError, CollectionFileValidationError) as exc:
@@ -209,8 +190,8 @@ class UserCollectionImportService:
                 ["collection_file_description est requis."]
             )
         reader = self.reader_factory.create(file_description.file_type)
-        temporary_file_path = self._temporary_file_path(user_id, reader)
-        self._ensure_temporary_file_exists(temporary_file_path)
+        temporary_file_path = self.file_manager.temporary_file_path(user_id, reader)
+        self.file_manager.ensure_temporary_file_exists(temporary_file_path)
         result = self.import_collection(
             user_id,
             str(temporary_file_path),
@@ -221,7 +202,7 @@ class UserCollectionImportService:
                 "UserCollectionImportService.import_collection_from_temporary_file"
             ),
         )
-        self._delete_copied_file(temporary_file_path)
+        self.file_manager.delete_copied_file(temporary_file_path)
         return result
 
     def import_collection(
@@ -260,16 +241,19 @@ class UserCollectionImportService:
                     Path(source_file_path),
                     original_filename,
                     file_description,
+                    requester_email,
                 )
             except Exception as exc:
-                self._notify_import_failure(
+                self.failure_notification_service.notify_failure(
+                    self.failure_notifier,
+                    self.logger,
                     exc,
-                    import_kind="collection_utilisateur",
-                    initiated_by_function=initiated_by_function,
-                    requester_user_id=user_id,
-                    requester_email=requester_email,
-                    file_type=self._failure_file_type(file_description),
-                    original_filename=original_filename or Path(source_file_path).name,
+                    "collection_utilisateur",
+                    initiated_by_function,
+                    user_id,
+                    requester_email,
+                    self._failure_file_type(file_description),
+                    original_filename or Path(source_file_path).name,
                 )
                 raise
 
@@ -302,6 +286,7 @@ class UserCollectionImportService:
         source_file_path: Path,
         original_filename: str | None,
         file_description: CollectionFileDescription | None,
+        requester_email: str = "",
     ) -> UserCollectionImportResult:
         if file_description is None:
             raise CollectionFileDescriptionValidationError(
@@ -314,21 +299,26 @@ class UserCollectionImportService:
             file_description,
             True,
             GAME_STATUS_WAITING_VALIDATION,
+            requester_email,
         )
 
     def _import_collection_file(
         self, user_id: int, source_file_path: Path, original_filename: str | None,
         file_description: CollectionFileDescription, copy_to_workspace: bool,
-        initial_game_validation_status: str,
+        initial_game_validation_status: str, requester_email: str = "",
     ) -> UserCollectionImportResult:
         import_started_at = perf_counter()
         reader = self.reader_factory.create(file_description.file_type)
-        self._validate_source_file(source_file_path, original_filename, reader)
+        self.file_manager.validate_source_file(source_file_path, original_filename, reader)
         import_file_path = source_file_path
         copied_file_path = None
         if copy_to_workspace:
-            target_file_path = self._target_file_path(user_id, original_filename or source_file_path.name, reader)
-            copied_file_path = self._copy_file(source_file_path, target_file_path)
+            target_file_path = self.file_manager.target_file_path(
+                user_id,
+                original_filename or source_file_path.name,
+                reader,
+            )
+            copied_file_path = self.file_manager.copy_file(source_file_path, target_file_path)
             import_file_path = copied_file_path
         try:
             file_read_started_at = perf_counter()
@@ -337,6 +327,23 @@ class UserCollectionImportService:
                 file_read_started_at
             )
             import_data = self.date_validator.validate(import_data)
+            self._set_total_import_duration(import_data, import_started_at)
+            refusal = self.refusal_policy.evaluate(import_data)
+            if refusal.refused:
+                self.file_manager.delete_copied_file(copied_file_path)
+                refusal_payload = refusal.to_dict()
+                self.refusal_notification_service.notify_refusal(
+                    self.refusal_notifier,
+                    self.logger,
+                    "collection_utilisateur",
+                    user_id,
+                    requester_email,
+                    str(file_description.file_type.value),
+                    original_filename or source_file_path.name,
+                    refusal_payload,
+                    import_data,
+                )
+                return self._map_refused_result(import_data, refusal_payload)
             persistence_result = self.repository.import_collection(
                 user_id,
                 str(import_file_path),
@@ -344,7 +351,6 @@ class UserCollectionImportService:
                 file_description.to_dict(),
                 initial_game_validation_status,
             )
-            self._set_total_import_duration(import_data, import_started_at)
             result = self._map_result(persistence_result, import_data)
             if self.report_policy.is_enabled(self.report_notifier):
                 self._notify_import_report(
@@ -361,96 +367,20 @@ class UserCollectionImportService:
                 )
             return result
         except CollectionFileDescriptionValidationError:
-            self._delete_copied_file(copied_file_path)
+            self.file_manager.delete_copied_file(copied_file_path)
             raise
         except (CollectionFileReadError, CollectionFileValidationError) as exc:
-            self._delete_copied_file(copied_file_path)
+            self.file_manager.delete_copied_file(copied_file_path)
             raise UserCollectionImportInvalidFileError(
                 "Fichier de collection invalide.",
                 self._import_invalid_file_details(exc),
             ) from exc
         except UserCollectionImportUserNotFoundError as exc:
-            self._delete_copied_file(copied_file_path)
+            self.file_manager.delete_copied_file(copied_file_path)
             raise UserCollectionImportUnexpectedError("Utilisateur introuvable.") from exc
         except Exception as exc:
-            self._delete_copied_file(copied_file_path)
+            self.file_manager.delete_copied_file(copied_file_path)
             raise UserCollectionImportUnexpectedError("Erreur pendant l'import.") from exc
-
-    def _validate_source_file(
-        self,
-        source_file_path: Path,
-        original_filename: str | None,
-        reader: CollectionFileReader,
-    ) -> None:
-        checked_filename = original_filename or source_file_path.name
-        if not self._has_accepted_extension(checked_filename, reader.accepted_extensions):
-            accepted_extensions = ", ".join(reader.accepted_extensions)
-            raise UserCollectionImportInvalidFileError(
-                f"Le fichier doit utiliser une extension acceptee: {accepted_extensions}."
-            )
-        try:
-            file_size = source_file_path.stat().st_size
-        except OSError as exc:
-            raise UserCollectionImportInvalidFileError("Le fichier source est illisible.") from exc
-        if file_size > self.configuration.max_upload_bytes:
-            raise UserCollectionImportTooLargeError("Le fichier depasse la taille maximale.")
-
-    def _copy_file(self, source_file_path: Path, target_file_path: Path) -> Path:
-        try:
-            target_file_path.parent.mkdir(parents=True, exist_ok=True)
-            target_file_path.unlink(missing_ok=True)
-            shutil.copyfile(source_file_path, target_file_path)
-            target_file_path.chmod(0o750)
-        except OSError as exc:
-            self._delete_copied_file(target_file_path)
-            raise UserCollectionImportUnexpectedError("Impossible de copier le fichier.") from exc
-        return target_file_path
-
-    def _target_file_path(
-        self,
-        user_id: int,
-        original_filename: str | None,
-        reader: CollectionFileReader,
-    ) -> Path:
-        workspace_directory = self.configuration.ensure_workspace_directory()
-        extension = self._validated_extension(original_filename, reader.accepted_extensions)
-        return workspace_directory / str(user_id) / f"{user_id}-collection{extension}"
-
-    def _temporary_file_path(self, user_id: int, reader: CollectionFileReader) -> Path:
-        workspace_directory = self.configuration.ensure_workspace_directory()
-        return workspace_directory / str(user_id) / f"current-import{reader.accepted_extensions[0]}"
-
-    def _ensure_temporary_file_exists(self, temporary_file_path: Path) -> None:
-        if not temporary_file_path.exists():
-            raise UserCollectionImportTemporaryFileMissingError(
-                "Fichier temporaire introuvable."
-            )
-
-    def _has_accepted_extension(
-        self,
-        filename: str,
-        accepted_extensions: tuple[str, ...],
-    ) -> bool:
-        return self._validated_extension(filename, accepted_extensions) is not None
-
-    def _validated_extension(
-        self,
-        filename: str | None,
-        accepted_extensions: tuple[str, ...],
-    ) -> str | None:
-        checked_filename = str(filename or "").lower().strip()
-        for extension in accepted_extensions:
-            if checked_filename.endswith(extension):
-                return extension
-        return None
-
-    def _delete_copied_file(self, copied_file_path: Path | None) -> None:
-        if copied_file_path is None:
-            return
-        try:
-            copied_file_path.unlink(missing_ok=True)
-        except OSError:
-            pass
 
     def _import_invalid_file_details(self, error: Exception) -> list[str]:
         messages = [str(error).strip()]
@@ -473,6 +403,28 @@ class UserCollectionImportService:
             associated_games=persistence_result.associated_games,
             wishlisted_games=sum(1 for game in import_data.games if game.wishlist),
             warnings=import_data.warnings.to_dict(),
+            refusal={
+                "refused": False,
+                "reason": "",
+                "invalid_games_count": len(import_data.warnings.invalid_games),
+                "total_games_count": len(import_data.games),
+                "message": "",
+            },
+        )
+
+    def _map_refused_result(
+        self,
+        import_data: CollectionImportData,
+        refusal: dict,
+    ) -> UserCollectionImportResult:
+        return UserCollectionImportResult(
+            linked_platforms=0,
+            created_studios=0,
+            created_games=0,
+            associated_games=0,
+            wishlisted_games=0,
+            warnings=import_data.warnings.to_dict(),
+            refusal=refusal,
         )
 
     def _build_import_report_context(
@@ -515,28 +467,6 @@ class UserCollectionImportService:
             self.report_notifier.notify_import_report(context)
         except Exception:
             self.logger.exception("Impossible d'envoyer le rapport d'import utilisateur.")
-
-    def _notify_import_failure(
-        self,
-        error: Exception,
-        import_kind: str,
-        initiated_by_function: str,
-        requester_user_id: int | None,
-        requester_email: str,
-        file_type: str,
-        original_filename: str,
-    ) -> None:
-        self.failure_notification_service.notify_failure(
-            self.failure_notifier,
-            self.logger,
-            error,
-            import_kind,
-            initiated_by_function,
-            requester_user_id,
-            requester_email,
-            file_type,
-            original_filename,
-        )
 
     def _failure_file_type(self, file_description: CollectionFileDescription | None) -> str:
         if file_description is None:
