@@ -27,6 +27,8 @@ function ImportSummary({
   onAction,
   result,
 }) {
+  const refusal = result.refusal || {};
+  const isRefused = Boolean(refusal.refused);
   const totalImportDuration = formatImportDuration(
     result.warnings?.total_import_duration_seconds
   );
@@ -50,7 +52,7 @@ function ImportSummary({
     : [];
   return (
     <section className="importSummary" aria-label="Resume de l'import">
-      <h2>Import termine</h2>
+      <h2>{isRefused ? "Import refuse" : "Import termine"}</h2>
       <dl>
         {displayedCounters.map(([label, value]) => (
           <div key={label}>
@@ -59,6 +61,9 @@ function ImportSummary({
           </div>
         ))}
       </dl>
+      {isRefused ? (
+        <p className="error">{formatImportRefusalMessage(refusal)}</p>
+      ) : null}
       {contributionNotice ? (
         <div className="importContributionNotice">{contributionNotice}</div>
       ) : null}
@@ -80,6 +85,25 @@ function ImportSummary({
         {actionLabel}
       </button>
     </section>
+  );
+}
+
+/**
+ * Formate le message de refus global d'un fichier d'import.
+ *
+ * @param {Object} refusal - Decision de refus retournee par le backend.
+ * @returns {string} Message clair pour corriger puis reimporter le fichier.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function formatImportRefusalMessage(refusal) {
+  const invalidGamesCount = Number(refusal.invalid_games_count || 0);
+  const totalGamesCount = Number(refusal.total_games_count || 0);
+  const ratio = totalGamesCount > 0
+    ? `${invalidGamesCount}/${totalGamesCount}`
+    : `${invalidGamesCount}/0`;
+  return (
+    `Le fichier a ete refuse a cause du nombre d'erreurs: ${ratio} jeux `
+    + "contiennent au moins une erreur. Corrigez votre fichier avant de le reimporter a nouveau."
   );
 }
 

@@ -66,6 +66,7 @@ function UserCollectionOnboardingView({
   onSubmitImport,
 }) {
   const isBusy = isCheckingCollection || isAnalyzingCollection || isImportingCollection;
+  const isImportRefused = Boolean(importResult?.refusal?.refused);
 
   /**
    * Transmet le fichier selectionne au hook d'orchestration.
@@ -132,9 +133,10 @@ function UserCollectionOnboardingView({
 
         {importResult ? (
           <ImportSummary
+            actionLabel={isImportRefused ? "Corriger et reimporter" : "Ouvrir Ma collection"}
             result={importResult}
-            contributionNotice={<UserImportContributionNotice />}
-            onAction={onOpenHome}
+            contributionNotice={isImportRefused ? null : <UserImportContributionNotice />}
+            onAction={isImportRefused ? () => onFileChange(null) : onOpenHome}
           />
         ) : (
           <form className="collectionImportForm" onSubmit={handleSubmit}>

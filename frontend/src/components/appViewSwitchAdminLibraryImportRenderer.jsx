@@ -25,6 +25,7 @@ function renderAdminLibraryImportView(props, pageLayoutProps) {
       isImportingAdminLibrary={props.isImportingAdminLibrary}
       selectedAdminLibraryImportFileName={props.selectedAdminLibraryImportFileName}
       onImportAdminLibraryCsv={props.importAdminLibraryCsv}
+      onPrepareNewImportAfterRefusal={props.prepareNewAdminLibraryImportAfterRefusal}
       onSelectAdminLibraryImportFile={props.selectAdminLibraryImportFile}
     />
   );

@@ -25,6 +25,7 @@ class UserCollectionImportResult:
         associated_games (int): Nombre de jeux associes a l'utilisateur.
         wishlisted_games (int): Nombre de jeux importes comme souhaits.
         warnings (dict): Avertissements fonctionnels de l'import.
+        refusal (dict | None): Decision de refus global du fichier.
     """
 
     linked_platforms: int
@@ -33,6 +34,7 @@ class UserCollectionImportResult:
     associated_games: int
     wishlisted_games: int = 0
     warnings: dict | None = None
+    refusal: dict | None = None
 
     def to_dict(self) -> dict[str, int | dict]:
         """Convertit le resultat en dictionnaire serialisable.
@@ -58,5 +60,12 @@ class UserCollectionImportResult:
                 "platform_matches": [],
                 "skipped_games": [],
                 "total_import_duration_seconds": 0.0,
+            },
+            "refusal": self.refusal or {
+                "refused": False,
+                "reason": "",
+                "invalid_games_count": 0,
+                "total_games_count": 0,
+                "message": "",
             },
         }

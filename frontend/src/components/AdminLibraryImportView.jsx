@@ -45,9 +45,11 @@ function AdminLibraryImportView({
   onOpenLibrary,
   onOpenStatistics,
   onOpenWishlist,
+  onPrepareNewImportAfterRefusal,
   onSelectAdminLibraryImportFile,
   selectedAdminLibraryImportFileName,
 }) {
+  const isImportRefused = Boolean(adminLibraryImportResult?.refusal?.refused);
   const handleFileChange = (event) => {
     onSelectAdminLibraryImportFile(event.target.files?.[0] || null);
   };
@@ -130,9 +132,9 @@ function AdminLibraryImportView({
 
         {adminLibraryImportResult ? (
           <ImportSummary
-            actionLabel="Ouvrir la Bibliotheque"
+            actionLabel={isImportRefused ? "Corriger et reimporter" : "Ouvrir la Bibliotheque"}
             counters={buildAdminImportCounters(adminLibraryImportResult)}
-            onAction={onOpenLibrary}
+            onAction={isImportRefused ? onPrepareNewImportAfterRefusal : onOpenLibrary}
             result={adminLibraryImportResult}
           />
         ) : (

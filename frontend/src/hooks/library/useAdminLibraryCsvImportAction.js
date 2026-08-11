@@ -68,11 +68,24 @@ function useAdminLibraryCsvImportAction() {
     }
   };
 
+  /**
+   * Remet l'import admin en mode selection apres un refus fonctionnel.
+   *
+   * @returns {void} Efface le resume courant et la selection.
+   * @throws {void} Ne leve pas d'exception.
+   */
+  const prepareNewAdminLibraryImportAfterRefusal = () => {
+    setSelectedAdminLibraryImportFile(null);
+    setAdminLibraryImportResult(null);
+    setAdminLibraryImportError("");
+  };
+
   return {
     adminLibraryImportError,
     adminLibraryImportResult,
     importAdminLibraryCsv,
     isImportingAdminLibrary,
+    prepareNewAdminLibraryImportAfterRefusal,
     selectedAdminLibraryImportFileName: selectedAdminLibraryImportFile?.name || "",
     selectAdminLibraryImportFile,
   };

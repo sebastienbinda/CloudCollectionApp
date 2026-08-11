@@ -398,11 +398,14 @@ function useUserCollectionOnboarding(options) {
     setOnboardingError("");
     try {
       const result = await UserCollectionApi.importCollection(description);
-      setHasCollection(true);
-      setSelectedCollectionFile(null);
+      const isRefused = Boolean(result.refusal?.refused);
+      setHasCollection((currentHasCollection) => (isRefused ? currentHasCollection : true));
+      setSelectedCollectionFile(isRefused ? selectedCollectionFile : null);
       setImportResult(result);
-      reloadOds();
-      reloadGames();
+      if (!isRefused) {
+        reloadOds();
+        reloadGames();
+      }
     } catch (error) {
       setOnboardingError(getUserCollectionErrorMessage(error));
     } finally {

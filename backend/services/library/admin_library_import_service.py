@@ -22,6 +22,9 @@ from services.collection.imports import (
     CollectionImportFailureAdminNotifier,
     CollectionImportFailureNotificationService,
     CollectionImportDateValidator,
+    CollectionImportRefusalAdminNotifier,
+    CollectionImportRefusalNotificationService,
+    CollectionImportRefusalPolicy,
 )
 from services.csv.csv_collection_import_reader import CsvCollectionImportReader
 from services.database.admin_library_import_repository import (
@@ -61,12 +64,14 @@ class AdminLibraryImportResult:
         created_studios (int): Nombre de studios crees.
         created_games (int): Nombre de jeux crees.
         warnings (dict): Avertissements produits pendant la lecture et le matching.
+        refusal (dict | None): Decision de refus global du fichier.
     """
 
     linked_platforms: int
     created_studios: int
     created_games: int
     warnings: dict
+    refusal: dict | None = None
 
     def to_dict(self) -> dict:
         """Convertit le resultat en payload JSON.
@@ -83,6 +88,13 @@ class AdminLibraryImportResult:
             "created_studios": self.created_studios,
             "created_games": self.created_games,
             "warnings": dict(self.warnings),
+            "refusal": self.refusal or {
+                "refused": False,
+                "reason": "",
+                "invalid_games_count": 0,
+                "total_games_count": 0,
+                "message": "",
+            },
         }
 
 
@@ -96,6 +108,7 @@ class AdminLibraryImportService:
         configuration_loader: AdminLibraryImportConfigurationLoader | None = None,
         date_validator: CollectionImportDateValidator | None = None,
         failure_notifier=None,
+        refusal_notifier=None,
         logger=None,
     ):
         """Initialise le service d'import admin.
@@ -106,6 +119,7 @@ class AdminLibraryImportService:
             configuration_loader (AdminLibraryImportConfigurationLoader | None): Chargeur JSON.
             date_validator (CollectionImportDateValidator | None): Validateur de dates.
             failure_notifier (object | None): Notifier admin des echecs d'import.
+            refusal_notifier (object | None): Notifier admin des refus d'import.
             logger (object | None): Logger injectable.
 
         Returns:
@@ -117,7 +131,10 @@ class AdminLibraryImportService:
         self.configuration_loader = configuration_loader or AdminLibraryImportConfigurationLoader()
         self.date_validator = date_validator or CollectionImportDateValidator()
         self.failure_notifier = failure_notifier or CollectionImportFailureAdminNotifier()
+        self.refusal_notifier = refusal_notifier or CollectionImportRefusalAdminNotifier()
         self.failure_notification_service = CollectionImportFailureNotificationService()
+        self.refusal_notification_service = CollectionImportRefusalNotificationService()
+        self.refusal_policy = CollectionImportRefusalPolicy()
         self.logger = logger or logging.getLogger(__name__)
 
     @classmethod
@@ -165,6 +182,27 @@ class AdminLibraryImportService:
             description = self.configuration_loader.load_for_columns(columns)
             import_data = self.reader.read(csv_file_path, description)
             import_data = self.date_validator.validate(import_data)
+            refusal = self.refusal_policy.evaluate(import_data)
+            if refusal.refused:
+                refusal_payload = refusal.to_dict()
+                self.refusal_notification_service.notify_refusal(
+                    self.refusal_notifier,
+                    self.logger,
+                    "bibliotheque_admin_csv",
+                    None,
+                    requester_email,
+                    "csv",
+                    original_filename or Path(csv_file_path).name,
+                    refusal_payload,
+                    import_data,
+                )
+                return AdminLibraryImportResult(
+                    linked_platforms=0,
+                    created_studios=0,
+                    created_games=0,
+                    warnings=import_data.warnings.to_dict(),
+                    refusal=refusal_payload,
+                )
             persistence_result = self.repository.import_library(import_data)
         except AdminLibraryImportInvalidFileError as exc:
             self._notify_import_failure(exc, csv_file_path, original_filename, requester_email)
@@ -213,6 +251,13 @@ class AdminLibraryImportService:
             created_studios=persistence_result.created_studios,
             created_games=persistence_result.created_games,
             warnings=import_data.warnings.to_dict(),
+            refusal={
+                "refused": False,
+                "reason": "",
+                "invalid_games_count": len(import_data.warnings.invalid_games),
+                "total_games_count": len(import_data.games),
+                "message": "",
+            },
         )
 
     def _validate_extension(self, filename: str) -> None:
