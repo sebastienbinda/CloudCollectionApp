@@ -81,6 +81,48 @@
   padding: 1.25rem;
 }
 
+.importFormStep {
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.importFormStepHeader {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.importFormStepHeader span {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.importFormStepHeader h2 {
+  color: #111827;
+  font-size: 1.12rem;
+  margin: 0;
+}
+
+.importFormStepHeader p,
+.importConfigurationIntro {
+  color: #475569;
+  margin: 0;
+}
+
+.importFileExpectation {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #334155;
+  font-weight: 600;
+  margin: 0;
+  padding: 0.75rem;
+}
+
 .adminImportConfigurationHelp {
   background: #f8fafc;
   border: 1px solid #dbe4f0;
@@ -166,7 +208,8 @@
   width: 100%;
 }
 
-.importConfiguration {
+.importConfiguration,
+.wishlistConfiguration {
   border: 1px solid #dbe4f0;
   border-radius: 8px;
   display: grid;
@@ -175,7 +218,28 @@
   padding: 1rem;
 }
 
-.importConfiguration legend {
+.importConfigurationIntro,
+.wishlistConfigurationIntro {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.wishlistConfigurationIntro {
+  color: #475569;
+  margin: 0;
+}
+
+.importGlobalOptions {
+  border-top: 1px solid #dbe4f0;
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 1rem;
+}
+
+.importConfiguration legend,
+.wishlistConfiguration legend {
   color: #111827;
   font-weight: 800;
   padding: 0 0.35rem;
@@ -204,8 +268,13 @@
   gap: 0.35rem;
 }
 
+.segmentedFieldHelp {
+  color: #64748b;
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .layoutFields,
-.wishlistConfiguration,
 .sheetConfigurationList {
   display: grid;
   gap: 0.85rem;
@@ -319,6 +388,27 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.columnGrid label { align-content: start; grid-template-rows: 2.4rem auto 1fr; min-width: 0; }
+
+.fieldLabelText { align-items: end; color: #334155; display: flex; }
+
+.fieldHelpText { color: #64748b; font-size: 0.86rem; font-weight: 500; line-height: 1.35; }
+
+.fieldHelpToggle { background: transparent; border: 0; color: #1d4ed8; cursor: pointer; font: inherit; padding: 0 0.2rem; text-decoration: underline; }
+.fieldHelpValues { display: block; margin-top: 0.3rem; }
+
+.requiredColumnField {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.requiredColumnField .fieldLabelText {
+  color: #1e3a8a;
+  font-weight: 900;
+}
+
 .sheetConfiguration {
   border: 1px solid #dbe4f0;
   border-radius: 8px;
@@ -356,14 +446,19 @@
 }
 
 .collectionSelectedFile {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  color: #1e3a8a;
-  font-weight: 700;
+  align-items: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+  color: #1e3a8a; display: flex; gap: 0.65rem; font-weight: 700; justify-content: space-between;
   margin-bottom: 0;
-  overflow-wrap: anywhere;
   padding: 0.65rem 0.75rem;
+}
+
+.collectionSelectedFile span:first-child {
+  overflow-wrap: anywhere;
+}
+
+.collectionSelectedFileChange {
+  background: #ffffff; border: 1px solid #93c5fd; border-radius: 999px; color: #1d4ed8;
+  flex: 0 0 auto; font-size: 1rem; height: 2rem; min-height: 0; padding: 0; width: 2rem;
 }
 
 @media (max-width: 760px) {

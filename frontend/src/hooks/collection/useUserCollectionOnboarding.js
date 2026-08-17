@@ -379,7 +379,7 @@ function useUserCollectionOnboarding(options) {
   const importSelectedCollection = useCallback(async () => {
     if (!selectedCollectionFile || importInProgressRef.current) {
       if (!selectedCollectionFile) {
-        setOnboardingError("Selectionnez un fichier de collection avant de lancer l'import.");
+        setOnboardingError("Sélectionnez un fichier de collection avant de lancer l'import.");
       }
       return;
     }

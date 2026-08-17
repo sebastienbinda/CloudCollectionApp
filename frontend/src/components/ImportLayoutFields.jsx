@@ -13,22 +13,24 @@
  * Description : champs reutilisables de layout tableur pour les imports.
  */
 
+import ImportFieldHelp from "./ImportFieldHelp";
+
 const FIELD_LABELS = Object.freeze({
   name: "Nom du jeu",
   platform: "Plateforme",
   studio: "Studio",
   release_date: "Date de sortie",
-  wishlist: "Wishlist",
+  wishlist: "Liste de souhaits",
   purchase_price: "Prix d'achat",
   buy_location: "Lieu d'achat",
   buy_date: "Date d'achat",
   grade: "Note",
-  condition: "Etat",
+  condition: "État",
   has_manual: "Notice",
   is_collector: "Collector",
   has_steelbook: "Steelbook",
-  is_digital: "Version digitale",
-  region: "Region",
+  is_digital: "Version dématérialisée",
+  region: "Région",
   description: "Description",
 });
 
@@ -49,34 +51,49 @@ function ImportLayoutFields({
   return (
     <div className="layoutFields">
       <label>
-        Plage de donnees
+        Plage de données
         <input
           type="text"
           value={layout.dataRange}
           onChange={(event) => onLayoutChange("dataRange", event.target.value)}
         />
+        <span className="fieldHelpText">
+          Zone du fichier à lire, par exemple A1:D200. Elle inclut la ligne d'en-tête.
+        </span>
       </label>
       <label>
-        Ligne d'en-tete
+        Ligne d'en-tête
         <input
           type="number"
           min="1"
           value={layout.headerRow}
           onChange={(event) => onLayoutChange("headerRow", event.target.value)}
         />
+        <span className="fieldHelpText">
+          Numéro de la ligne qui contient les titres de colonnes.
+        </span>
       </label>
       <div className="columnGrid">
-        {columnFields.map((fieldName) => (
-          <label key={fieldName}>
-            {FIELD_LABELS[fieldName]}{requiredFields.includes(fieldName) ? " *" : ""}
-            <input
-              type="text"
-              required={requiredFields.includes(fieldName)}
-              value={layout.columns[fieldName] || ""}
-              onChange={(event) => onLayoutColumnChange(fieldName, event.target.value)}
-            />
-          </label>
-        ))}
+        {columnFields.map((fieldName) => {
+          const isRequired = requiredFields.includes(fieldName);
+          return (
+            <label
+              className={isRequired ? "requiredColumnField" : ""}
+              key={fieldName}
+            >
+              <span className="fieldLabelText">
+                {FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
+              </span>
+              <input
+                type="text"
+                required={isRequired}
+                value={layout.columns[fieldName] || ""}
+                onChange={(event) => onLayoutColumnChange(fieldName, event.target.value)}
+              />
+              <ImportFieldHelp fieldName={fieldName} />
+            </label>
+          );
+        })}
       </div>
     </div>
   );

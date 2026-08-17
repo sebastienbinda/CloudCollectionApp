@@ -37,7 +37,7 @@ function ImportSummary({
     ["Studios crees", result.created_studios],
     ["Jeux crees", result.created_games],
     ["Jeux associes", result.associated_games],
-    ["Souhaits importes", result.wishlisted_games],
+    ["Jeux en liste de souhaits", result.wishlisted_games],
     ["Duree totale", totalImportDuration],
   ];
   const invalidWishlist = result.warnings?.invalid_wishlist || 0;
@@ -69,7 +69,7 @@ function ImportSummary({
       ) : null}
       {invalidWishlist ? (
         <p className="warningText">
-          {invalidWishlist} ligne(s) wishlist ignoree(s).
+          {invalidWishlist} ligne(s) de liste de souhaits ignorée(s).
         </p>
       ) : null}
       {invalidGames.length > 0 ? (
@@ -185,8 +185,8 @@ function SkippedGamesWarningsList({ skippedGames }) {
  */
 function InvalidImportedGamesList({ invalidGames }) {
   return (
-    <section className="invalidImportedGames" aria-label="Informations invalides importees">
-      <h3>Informations ignorees</h3>
+    <section className="invalidImportedGames" aria-label="Informations invalides importées">
+      <h3>Informations ignorées</h3>
       <ul>
         {invalidGames.map((gameWarning) => (
           <li key={`${gameWarning.name}-${JSON.stringify(gameWarning.invalid_fields || [])}`}>

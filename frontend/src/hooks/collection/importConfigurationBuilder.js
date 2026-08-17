@@ -13,6 +13,7 @@
  * Description : construction frontend de la description d'import de collection.
  */
 
+import { hasSpreadsheetImportColumn } from "./importGlobalOptionsVisibility.js";
 import { applyDataRangeDefaults } from "./importSpreadsheetColumnTools.js";
 import {
   buildCsvImportConfigurationDescription,
@@ -347,6 +348,7 @@ function normalizeSpreadsheetFileType(fileType) {
  * @returns {number} Base de notation.
  */
 function buildRatingBase(configuration, errors) {
+  if (!hasSpreadsheetImportColumn(configuration, "grade")) return 10;
   const ratingBase = Number.parseInt(configuration.ratingBase, 10);
   if (!Number.isInteger(ratingBase) || ratingBase <= 0) {
     errors.push("Renseignez une base de notation valide.");
@@ -415,12 +417,12 @@ function buildWishlistConfiguration(configuration, errors) {
     return { mode };
   }
   if (mode !== "sheet") {
-    errors.push("Selectionnez un mode wishlist valide.");
+    errors.push("Sélectionnez un mode de liste de souhaits valide.");
     return { mode: "none" };
   }
   const sheetName = String(configuration.wishlist.sheetName || "").trim();
   if (!sheetName) {
-    errors.push("Renseignez l'onglet wishlist.");
+    errors.push("Renseignez l'onglet de liste de souhaits.");
   }
   return {
     mode,
@@ -441,10 +443,10 @@ function buildLayout(layout, requiredFields, errors) {
   const dataRange = String(layout.dataRange || "").trim().toUpperCase();
   const headerRow = Number.parseInt(layout.headerRow, 10);
   if (!dataRange) {
-    errors.push("Renseignez la plage de donnees.");
+    errors.push("Renseignez la plage de données.");
   }
   if (!Number.isInteger(headerRow) || headerRow < 1) {
-    errors.push("Renseignez une ligne d'en-tete valide.");
+    errors.push("Renseignez une ligne d'en-tête valide.");
   }
   const columnInformation = {};
   requiredFields.forEach((field) => {

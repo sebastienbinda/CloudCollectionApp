@@ -14,10 +14,12 @@
  */
 import ImportLayoutFields from "./ImportLayoutFields";
 import ImportCsvConfigurationFields from "./ImportCsvConfigurationFields";
+import { ImportGlobalOptions } from "./ImportGlobalOptions";
 import {
   collectionColumnFields,
   wishlistSheetColumnFields,
 } from "../hooks/collection/importConfigurationBuilder";
+import { hasSpreadsheetImportColumn } from "../hooks/collection/importGlobalOptionsVisibility";
 
 /**
  * Affiche les champs frontend de configuration d'import.
@@ -58,93 +60,88 @@ function ImportConfigurationFields({
   const columnFields = collectionColumnFields(configuration, !configuration.multipleSheets);
 
   return (
-    <fieldset className="importConfiguration" disabled={disabled}>
-      <legend>Configuration du fichier</legend>
-      <p>* Champs obligatoires</p>
+    <>
+      <fieldset className="importConfiguration" disabled={disabled}>
+        <legend>Configuration du fichier</legend>
+        <p className="importConfigurationIntro">
+          Configurez la lecture de votre classeur. Les colonnes marquées avec un
+          astérisque sont indispensables pour créer votre collection.
+        </p>
 
-      <label>
-        Unite des prix
-        <select
-          value={configuration.priceUnit}
-          onChange={(event) => onConfigurationChange("priceUnit", event.target.value)}
-        >
-          {["EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "KRW"].map(
-            (priceUnit) => <option key={priceUnit} value={priceUnit}>{priceUnit}</option>
-          )}
-        </select>
-      </label>
+        <div className="segmentedField" role="group" aria-label="Nombre d'onglets du fichier">
+          <span>Votre fichier contient-il plusieurs onglets à importer ?</span>
+          <label>
+            <input
+              type="radio"
+              name="multipleSheets"
+              checked={!configuration.multipleSheets}
+              onChange={() => onConfigurationChange("multipleSheets", false)}
+            />
+            Non
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="multipleSheets"
+              checked={configuration.multipleSheets}
+              onChange={() => onConfigurationChange("multipleSheets", true)}
+            />
+            Oui
+          </label>
+          <p className="segmentedFieldHelp">
+            Choisissez Oui si vos jeux sont répartis sur plusieurs onglets. Choisissez Non si tous
+            les jeux à importer se trouvent dans un seul tableau.
+          </p>
+        </div>
 
-      <label>
-        Base de notation
-        <input
-          type="number"
-          min="1"
-          value={configuration.ratingBase}
-          onChange={(event) => onConfigurationChange("ratingBase", event.target.value)}
-        />
-      </label>
-
+        {!configuration.multipleSheets ? (
+          <ImportLayoutFields
+            layout={configuration.singleSheetLayout}
+            columnFields={columnFields}
+            requiredFields={["name", "platform"]}
+            onLayoutChange={(fieldName, value) => onLayoutChange(
+              "singleSheetLayout",
+              fieldName,
+              value
+            )}
+            onLayoutColumnChange={(fieldName, value) => onLayoutColumnChange(
+              "singleSheetLayout",
+              fieldName,
+              value
+            )}
+          />
+        ) : (
+          <MultipleSheetsFields
+            configuration={configuration}
+            availableSheetNames={availableSheetNames}
+            onConfigurationChange={onConfigurationChange}
+            onLayoutChange={onLayoutChange}
+            onLayoutColumnChange={onLayoutColumnChange}
+            onSheetChange={onSheetChange}
+            onSheetLayoutChange={onSheetLayoutChange}
+            onSheetColumnChange={onSheetColumnChange}
+            onAddSheet={onAddSheet}
+            onRemoveSheet={onRemoveSheet}
+          />
+        )}
+      </fieldset>
       <WishlistFields
         configuration={configuration}
         availableSheetNames={availableSheetNames}
+        disabled={disabled}
         onWishlistConfigurationChange={onWishlistConfigurationChange}
         onWishlistLayoutChange={onWishlistLayoutChange}
         onWishlistLayoutColumnChange={onWishlistLayoutColumnChange}
       />
-
-      <div className="segmentedField" role="group" aria-label="Import multi-onglets">
-        <span>Multiple onglets</span>
-        <label>
-          <input
-            type="radio"
-            name="multipleSheets"
-            checked={!configuration.multipleSheets}
-            onChange={() => onConfigurationChange("multipleSheets", false)}
-          />
-          Non
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="multipleSheets"
-            checked={configuration.multipleSheets}
-            onChange={() => onConfigurationChange("multipleSheets", true)}
-          />
-          Oui
-        </label>
-      </div>
-
-      {!configuration.multipleSheets ? (
-        <ImportLayoutFields
-          layout={configuration.singleSheetLayout}
-          columnFields={columnFields}
-          requiredFields={["name", "platform"]}
-          onLayoutChange={(fieldName, value) => onLayoutChange(
-            "singleSheetLayout",
-            fieldName,
-            value
-          )}
-          onLayoutColumnChange={(fieldName, value) => onLayoutColumnChange(
-            "singleSheetLayout",
-            fieldName,
-            value
-          )}
-        />
-      ) : (
-        <MultipleSheetsFields
-          configuration={configuration}
-          availableSheetNames={availableSheetNames}
-          onConfigurationChange={onConfigurationChange}
-          onLayoutChange={onLayoutChange}
-          onLayoutColumnChange={onLayoutColumnChange}
-          onSheetChange={onSheetChange}
-          onSheetLayoutChange={onSheetLayoutChange}
-          onSheetColumnChange={onSheetColumnChange}
-          onAddSheet={onAddSheet}
-          onRemoveSheet={onRemoveSheet}
-        />
-      )}
-    </fieldset>
+      <ImportGlobalOptions
+        showPriceUnit={hasSpreadsheetImportColumn(configuration, "purchase_price")}
+        showRatingBase={hasSpreadsheetImportColumn(configuration, "grade")}
+        priceUnit={configuration.priceUnit}
+        ratingBase={configuration.ratingBase}
+        disabled={disabled}
+        onConfigurationChange={onConfigurationChange}
+      />
+    </>
   );
 }
 
@@ -157,14 +154,21 @@ function ImportConfigurationFields({
 function WishlistFields({
   configuration,
   availableSheetNames,
+  disabled,
   onWishlistConfigurationChange,
   onWishlistLayoutChange,
   onWishlistLayoutColumnChange,
 }) {
   return (
-    <section className="wishlistConfiguration" aria-label="Configuration wishlist">
-      <div className="segmentedField" role="group" aria-label="Mode wishlist">
-        <span>Wishlist</span>
+    <fieldset className="wishlistConfiguration" disabled={disabled}>
+      <legend>Liste de souhaits</legend>
+      <p className="wishlistConfigurationIntro">
+        Indiquez comment reconnaître les jeux qui doivent aller dans votre liste
+        de souhaits. Sans source dédiée, toutes les lignes importées sont ajoutées
+        à votre collection.
+      </p>
+      <div className="segmentedField" role="group" aria-label="Mode liste de souhaits">
+        <span>Source</span>
         {["none", "sheet", "column"].map((mode) => (
           <label key={mode}>
             <input
@@ -180,7 +184,7 @@ function WishlistFields({
       {configuration.wishlist.mode === "sheet" ? (
         <>
           <label>
-            Onglet wishlist *
+            Onglet liste de souhaits *
             <SheetNameField
               value={configuration.wishlist.sheetName}
               availableSheetNames={availableSheetNames}
@@ -196,14 +200,14 @@ function WishlistFields({
           />
         </>
       ) : null}
-    </section>
+    </fieldset>
   );
 }
 
 const modeLabels = Object.freeze({
   none: "Aucune",
-  sheet: "Onglet dedie",
-  column: "Colonne",
+  sheet: "Onglet dédié",
+  column: "Colonne dédiée",
 });
 
 /**
@@ -216,7 +220,7 @@ function SheetNameField({ value, availableSheetNames, onChange }) {
   if (availableSheetNames.length) {
     return (
       <select required value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">Selectionner un onglet</option>
+        <option value="">Sélectionner un onglet</option>
         {availableSheetNames.map((sheetName) => (
           <option key={sheetName} value={sheetName}>{sheetName}</option>
         ))}
@@ -254,13 +258,17 @@ function MultipleSheetsFields({
   return (
     <>
       <label>
-        Information portee par l'onglet *
+        Le nom de chaque onglet correspond à *
         <select value={configuration.sheetInformation} disabled>
           <option value="platform">Plateforme</option>
         </select>
+        <span className="fieldHelpText">
+          Utilisez ce mode quand chaque onglet regroupe les jeux d'une plateforme, par exemple
+          un onglet Switch et un onglet PlayStation 2.
+        </span>
       </label>
       <div className="segmentedField" role="group" aria-label="Layout partage">
-        <span>Memes plages sur chaque onglet</span>
+        <span>Mêmes plages sur chaque onglet</span>
         <label>
           <input
             type="radio"
@@ -282,8 +290,8 @@ function MultipleSheetsFields({
       </div>
       {configuration.sharedLayout ? (
         <>
-          <div className="segmentedField" role="group" aria-label="Selection des onglets">
-            <span>Selection des onglets</span>
+          <div className="segmentedField" role="group" aria-label="Sélection des onglets">
+            <span>Sélection des onglets</span>
             <label>
               <input
                 type="radio"
@@ -320,6 +328,9 @@ function MultipleSheetsFields({
               configuration={configuration}
               onLayoutChange={onLayoutChange}
             />
+            <span className="fieldHelpText">
+              Laissez vide pour utiliser tous les onglets détectés.
+            </span>
           </label>
           <ImportLayoutFields
             layout={configuration.sharedSheetLayout}

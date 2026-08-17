@@ -34,8 +34,8 @@ test("user import summary displays private collection and admin validation notic
   assert.equal(summarySource.includes("contributionNotice"), true);
   assert.equal(summarySource.includes("importContributionNotice"), true);
   assert.equal(onboardingSource.includes("UserImportContributionNotice"), true);
-  assert.equal(onboardingSource.includes("collection privee"), true);
-  assert.equal(onboardingSource.includes("Bibliotheque commune apres validation"), true);
+  assert.equal(onboardingSource.includes("collection privée"), true);
+  assert.equal(onboardingSource.includes("Bibliothèque commune après validation"), true);
   assert.equal(onboardingSource.includes("Merci pour votre contribution."), true);
   assert.equal(styleSource.includes(".importContributionNotice"), true);
 });

@@ -17,6 +17,9 @@ import {
   OPTIONAL_CSV_FIELDS,
   REQUIRED_CSV_FIELDS,
 } from "../hooks/collection/csvImportConfigurationBuilder";
+import { hasCsvImportColumn } from "../hooks/collection/importGlobalOptionsVisibility";
+import { ImportGlobalOptions } from "./ImportGlobalOptions";
+import ImportFieldHelp from "./ImportFieldHelp";
 import { FIELD_LABELS } from "./ImportLayoutFields";
 
 /**
@@ -35,34 +38,82 @@ function ImportCsvConfigurationFields({
 }) {
   const requiredFields = csvRequiredFields(configuration);
   return (
-    <fieldset className="importConfiguration" disabled={disabled}>
-      <legend>Configuration du fichier</legend>
-      <p>* Champs obligatoires</p>
+    <>
+      <fieldset className="importConfiguration" disabled={disabled}>
+        <legend>Configuration du fichier</legend>
+        <p className="importConfigurationIntro">
+          Associez chaque information attendue à une colonne détectée dans votre
+          CSV. Les champs marqués avec un astérisque sont obligatoires.
+        </p>
 
-      <label>
-        Unite des prix
-        <select
-          value={configuration.priceUnit}
-          onChange={(event) => onConfigurationChange("priceUnit", event.target.value)}
-        >
-          {["EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "KRW"].map(
-            (priceUnit) => <option key={priceUnit} value={priceUnit}>{priceUnit}</option>
-          )}
-        </select>
-      </label>
+        <div className="columnGrid">
+          {[...REQUIRED_CSV_FIELDS, ...OPTIONAL_CSV_FIELDS].map((fieldName) => {
+            const isRequired = requiredFields.includes(fieldName);
+            return (
+              <label
+                className={isRequired ? "requiredColumnField" : ""}
+                key={fieldName}
+              >
+                <span className="fieldLabelText">
+                  {FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
+                </span>
+                <ColumnNameField
+                  required={isRequired}
+                  value={configuration.csvMapping[fieldName] || ""}
+                  availableColumnNames={availableColumnNames}
+                  onChange={(value) => onCsvMappingChange(fieldName, value)}
+                />
+                <ImportFieldHelp fieldName={fieldName} />
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+      <CsvWishlistFields
+        configuration={configuration}
+        availableColumnNames={availableColumnNames}
+        disabled={disabled}
+        requiredFields={requiredFields}
+        onCsvMappingChange={onCsvMappingChange}
+        onWishlistConfigurationChange={onWishlistConfigurationChange}
+      />
+      <ImportGlobalOptions
+        showPriceUnit={hasCsvImportColumn(configuration, "purchase_price")}
+        showRatingBase={hasCsvImportColumn(configuration, "grade")}
+        priceUnit={configuration.priceUnit}
+        ratingBase={configuration.ratingBase}
+        disabled={disabled}
+        onConfigurationChange={onConfigurationChange}
+      />
+    </>
+  );
+}
 
-      <label>
-        Base de notation
-        <input
-          type="number"
-          min="1"
-          value={configuration.ratingBase}
-          onChange={(event) => onConfigurationChange("ratingBase", event.target.value)}
-        />
-      </label>
-
-      <div className="segmentedField" role="group" aria-label="Mode wishlist">
-        <span>Wishlist</span>
+/**
+ * Affiche la configuration de liste de souhaits pour un import CSV.
+ *
+ * @param {Object} props - Etat CSV et callbacks wishlist.
+ * @returns {import("react").JSX.Element} Section liste de souhaits CSV.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function CsvWishlistFields({
+  configuration,
+  availableColumnNames,
+  disabled,
+  requiredFields,
+  onCsvMappingChange,
+  onWishlistConfigurationChange,
+}) {
+  return (
+    <fieldset className="wishlistConfiguration" disabled={disabled}>
+      <legend>Liste de souhaits</legend>
+      <p className="wishlistConfigurationIntro">
+        Indiquez si une colonne du CSV signale les jeux à placer dans votre liste
+        de souhaits. Sans colonne dédiée, toutes les lignes importées sont ajoutées
+        à votre collection.
+      </p>
+      <div className="segmentedField" role="group" aria-label="Mode liste de souhaits">
+        <span>Source</span>
         {["none", "column"].map((mode) => (
           <label key={mode}>
             <input
@@ -71,29 +122,22 @@ function ImportCsvConfigurationFields({
               checked={configuration.wishlist.mode === mode}
               onChange={() => onWishlistConfigurationChange("mode", mode)}
             />
-            {mode === "column" ? "Colonne" : "Aucune"}
+            {mode === "column" ? "Colonne dédiée" : "Aucune"}
           </label>
         ))}
       </div>
-
-      <div className="columnGrid">
-        {[...REQUIRED_CSV_FIELDS, ...OPTIONAL_CSV_FIELDS, "wishlist"].map((fieldName) => {
-          if (fieldName === "wishlist" && configuration.wishlist.mode !== "column") {
-            return null;
-          }
-          return (
-            <label key={fieldName}>
-              {FIELD_LABELS[fieldName]}{requiredFields.includes(fieldName) ? " *" : ""}
-              <ColumnNameField
-                required={requiredFields.includes(fieldName)}
-                value={configuration.csvMapping[fieldName] || ""}
-                availableColumnNames={availableColumnNames}
-                onChange={(value) => onCsvMappingChange(fieldName, value)}
-              />
-            </label>
-          );
-        })}
-      </div>
+      {configuration.wishlist.mode === "column" ? (
+        <label className="requiredColumnField">
+          <span className="fieldLabelText">Liste de souhaits *</span>
+          <ColumnNameField
+            required={requiredFields.includes("wishlist")}
+            value={configuration.csvMapping.wishlist || ""}
+            availableColumnNames={availableColumnNames}
+            onChange={(value) => onCsvMappingChange("wishlist", value)}
+          />
+          <ImportFieldHelp fieldName="wishlist" />
+        </label>
+      ) : null}
     </fieldset>
   );
 }
@@ -108,7 +152,7 @@ function ColumnNameField({ required, value, availableColumnNames, onChange }) {
   if (availableColumnNames.length) {
     return (
       <select required={required} value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">Selectionner une colonne</option>
+        <option value="">Sélectionner une colonne</option>
         {availableColumnNames.map((columnName) => (
           <option key={columnName} value={columnName}>{columnName}</option>
         ))}
