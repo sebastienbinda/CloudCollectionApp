@@ -17,10 +17,8 @@ import UserCollectionApi from "../../services/UserCollectionApi";
 import getUserCollectionErrorMessage from "./userCollectionImportMessages";
 import updatedLayoutValue from "./importLayoutState";
 import {
-  buildImportConfigurationDescription,
-  collectionRequiredFields,
-  createImportConfigurationFromDescription,
-  createDefaultImportConfiguration,
+  buildImportConfigurationDescription, collectionRequiredFields,
+  createImportConfigurationFromDescription, createDefaultImportConfiguration,
 } from "./importConfigurationBuilder";
 import {
   buildIncompatibleSavedConfigurationMessage,
@@ -29,6 +27,9 @@ import {
 } from "./importFileTypeTools";
 import buildImportConfigurationAfterAnalysis from "./importAnalysisConfiguration";
 import canCurrentTokenUseCollectionViews from "./collectionSessionPolicy";
+import { synchronizePerSheetConfigurations } from "./importSheetSelection";
+
+const defaultSheetConfiguration = createDefaultImportConfiguration().sheets[0];
 
 /**
  * Orchestre la verification de collection et l'import initial du fichier de collection.
@@ -210,12 +211,14 @@ function useUserCollectionOnboarding(options) {
   }, [applyAnalyzedSheets, applySavedImportConfigurationIfConfirmed, importConfiguration.fileType]);
 
   const updateImportConfiguration = useCallback((fieldName, value) => {
-    setImportConfiguration((currentConfiguration) => ({
-      ...currentConfiguration,
-      [fieldName]: value,
-    }));
+    setImportConfiguration((currentConfiguration) => {
+      const nextConfiguration = { ...currentConfiguration, [fieldName]: value };
+      return fieldName === "sharedLayout" && value === false
+        ? synchronizePerSheetConfigurations(nextConfiguration, availableImportSheets, defaultSheetConfiguration)
+        : nextConfiguration;
+    });
     setOnboardingError("");
-  }, []);
+  }, [availableImportSheets]);
 
   const updateCsvMapping = useCallback((fieldName, value) => {
     setImportConfiguration((currentConfiguration) => ({
@@ -229,22 +232,24 @@ function useUserCollectionOnboarding(options) {
   }, []);
 
   const updateImportLayout = useCallback((layoutName, fieldName, value) => {
-    setImportConfiguration((currentConfiguration) => ({
-      ...currentConfiguration,
-      [layoutName]: {
-        ...updatedLayoutValue(
-          currentConfiguration[layoutName],
-          fieldName,
-          value,
-          collectionRequiredFields(
-            currentConfiguration,
-            layoutName === "singleSheetLayout"
-          )
-        ),
-      },
-    }));
+    setImportConfiguration((currentConfiguration) => {
+      const nextConfiguration = {
+        ...currentConfiguration,
+        [layoutName]: {
+          ...updatedLayoutValue(
+            currentConfiguration[layoutName],
+            fieldName,
+            value,
+            collectionRequiredFields(currentConfiguration, layoutName === "singleSheetLayout")
+          ),
+        },
+      };
+      return layoutName === "sharedSheetLayout" && !nextConfiguration.sharedLayout
+        ? synchronizePerSheetConfigurations(nextConfiguration, availableImportSheets, defaultSheetConfiguration)
+        : nextConfiguration;
+    });
     setOnboardingError("");
-  }, []);
+  }, [availableImportSheets]);
 
   const updateImportLayoutColumn = useCallback((layoutName, fieldName, value) => {
     setImportConfiguration((currentConfiguration) => ({
@@ -308,26 +313,17 @@ function useUserCollectionOnboarding(options) {
     setOnboardingError("");
   }, []);
 
-  const addImportSheetConfiguration = useCallback(() => {
-    setImportConfiguration((currentConfiguration) => ({
-      ...currentConfiguration,
-      sheets: [
-        ...currentConfiguration.sheets,
-        {
-          sheetName: "",
-          sheetInformation: "platform",
-          layout: createDefaultImportConfiguration().sheets[0].layout,
-        },
-      ],
-    }));
-  }, []);
+  const addImportSheetConfiguration = useCallback(() => setImportConfiguration((currentConfiguration) => ({
+    ...currentConfiguration,
+    sheets: [...currentConfiguration.sheets, { ...defaultSheetConfiguration }],
+  })), []);
 
-  const removeImportSheetConfiguration = useCallback((sheetIndex) => {
-    setImportConfiguration((currentConfiguration) => ({
+  const removeImportSheetConfiguration = useCallback((sheetIndex) => setImportConfiguration(
+    (currentConfiguration) => ({
       ...currentConfiguration,
       sheets: currentConfiguration.sheets.filter((_, index) => index !== sheetIndex),
-    }));
-  }, []);
+    })
+  ), []);
 
   const updateWishlistConfiguration = useCallback((fieldName, value) => {
     setImportConfiguration((currentConfiguration) => ({
@@ -492,4 +488,12 @@ function useUserCollectionOnboarding(options) {
   };
 }
 
+/**
+ * Synchronise les configurations par onglet avec la selection d'onglets de collection.
+ *
+ * @param {Object} configuration - Configuration courante.
+ * @param {string[]} availableSheetNames - Onglets detectes dans le fichier.
+ * @returns {Object} Configuration avec onglets par feuille synchronises.
+ * @throws {void} Ne leve pas d'exception.
+ */
 export default useUserCollectionOnboarding;

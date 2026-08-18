@@ -23,20 +23,21 @@ const IMPORT_FIELD_HELPS = Object.freeze({
   name: textHelp("Titre du jeu tel qu'il apparaît dans votre fichier."),
   platform: textHelp("Nom de la console ou de la plateforme du jeu."),
   studio: textHelp("Studio, éditeur ou développeur principal si vous le connaissez."),
-  release_date: textHelp("Date de sortie, par exemple 1994, 1994-11-24 ou 24/11/1994."),
+  release_date: infoHelp("Date de sortie.", ["1994", "1994-11-24", "24/11/1994"]),
   wishlist: {
     description: "Valeur indiquant si la ligne appartient à votre liste de souhaits.",
-    examples: ["Oui", "Non", "Yes", "No"],
-    note: "Une cellule vide signifie Non.",
+    details: ["Exemples : Oui, Non, Yes, No.", "Une cellule vide signifie Non."],
   },
-  purchase_price: textHelp("Prix payé, sans devise. La devise est choisie une seule fois plus haut."),
+  purchase_price: infoHelp("Prix payé, sans devise.", [], "La devise est choisie une seule fois plus haut."),
   buy_location: textHelp("Boutique, site ou personne auprès de laquelle le jeu a été acheté."),
-  buy_date: textHelp("Date d'achat, par exemple 2024-03-15 ou 15/03/2024."),
-  grade: textHelp("Votre note personnelle. Une valeur comme 8, 8/10 ou 82/100 est acceptée."),
+  buy_date: infoHelp("Date d'achat.", ["2024-03-15", "15/03/2024"]),
+  grade: infoHelp("Votre note personnelle.", ["8", "8/10", "82/100"]),
   condition: {
     description: "État physique du jeu. Les libellés proches sont rapprochés automatiquement.",
-    examples: ["Mauvais", "Correct", "Bon", "Très bon", "Neuf"],
-    note: "Les descriptions de contenu comme complet, loose ou CIB ne sont pas des états.",
+    details: [
+      "Exemples : Mauvais, Correct, Bon, Très bon, Neuf.",
+      "Les descriptions de contenu comme complet, loose ou CIB ne sont pas des états.",
+    ],
   },
   has_manual: booleanFieldHelp("la présence de la notice"),
   is_collector: booleanFieldHelp("si l'exemplaire est une édition collector"),
@@ -44,7 +45,7 @@ const IMPORT_FIELD_HELPS = Object.freeze({
   is_digital: booleanFieldHelp("si l'exemplaire est dématérialisé"),
   region: {
     description: "Région ou version.",
-    examples: ["JAP", "US", "EU-FR", "PAL - UK"],
+    details: ["Exemples : JAP, US, EU-FR, PAL - UK."],
     acceptedValues: [
       "JAP", "US", "EU-FR", "EU-UK", "EU-DE", "EU-ES", "EU-IT", "AU", "ASIA",
       "KOR", "TWN", "HK", "CHN", "FR", "UK", "DE", "ES", "IT", "NTSC - US",
@@ -70,7 +71,7 @@ function ImportFieldHelp({ fieldName }) {
   return (
     <div className="fieldHelpText">
       <span>{formatShortHelp(help)}</span>
-      {help.acceptedValues?.length ? (
+      {hasAdditionalHelp(help) ? (
         <>
           <button
             type="button"
@@ -78,9 +79,9 @@ function ImportFieldHelp({ fieldName }) {
             aria-expanded={isExpanded}
             onClick={() => setIsExpanded((currentValue) => !currentValue)}
           >
-            {isExpanded ? "Masquer l'aide" : "Voir les valeurs acceptées"}
+            {isExpanded ? "Masquer l'info" : "Plus d'info"}
           </button>
-          {isExpanded ? <span className="fieldHelpValues">{help.acceptedValues.join(", ")}</span> : null}
+          {isExpanded ? <span className="fieldHelpValues">{formatAdditionalHelp(help)}</span> : null}
         </>
       ) : null}
     </div>
@@ -99,6 +100,26 @@ function textHelp(description) {
 }
 
 /**
+ * Construit une aide avec informations complémentaires repliées.
+ *
+ * @param {string} description - Description courte du champ.
+ * @param {string[]} examples - Exemples de valeurs.
+ * @param {string} note - Note additionnelle.
+ * @returns {Object} Aide structurée.
+ * @throws {void} Ne lève pas d'exception.
+ */
+function infoHelp(description, examples = [], note = "") {
+  const details = [];
+  if (examples.length) {
+    details.push(`Exemples : ${examples.join(", ")}.`);
+  }
+  if (note) {
+    details.push(note);
+  }
+  return { description, details };
+}
+
+/**
  * Construit l'aide des colonnes booleennes importables.
  *
  * @param {string} subject - Sujet du champ booléen.
@@ -108,7 +129,7 @@ function textHelp(description) {
 function booleanFieldHelp(subject) {
   return {
     description: `Indique ${subject}.`,
-    examples: ["Oui", "Non", "True", "False"],
+    details: ["Exemples : Oui, Non, True, False."],
     acceptedValues: booleanAcceptedValues,
   };
 }
@@ -132,15 +153,34 @@ function getImportFieldHelp(fieldName) {
  * @throws {void} Ne lève pas d'exception.
  */
 function formatShortHelp(help) {
-  const parts = [help.description];
-  if (help.examples?.length) {
-    parts.push(`Exemples : ${help.examples.join(", ")}.`);
-  }
-  if (help.note) {
-    parts.push(help.note);
+  return help.description;
+}
+
+/**
+ * Indique si une aide contient des informations complémentaires.
+ *
+ * @param {Object} help - Aide structurée.
+ * @returns {boolean} Vrai si un détail doit être affichable.
+ * @throws {void} Ne lève pas d'exception.
+ */
+function hasAdditionalHelp(help) {
+  return Boolean(help.details?.length || help.acceptedValues?.length);
+}
+
+/**
+ * Formate l'aide complémentaire dépliée.
+ *
+ * @param {Object} help - Aide structurée.
+ * @returns {string} Texte d'aide complémentaire.
+ * @throws {void} Ne lève pas d'exception.
+ */
+function formatAdditionalHelp(help) {
+  const parts = [...(help.details || [])];
+  if (help.acceptedValues?.length) {
+    parts.push(`Valeurs acceptées : ${help.acceptedValues.join(", ")}.`);
   }
   return parts.join(" ");
 }
 
-export { formatShortHelp, getImportFieldHelp };
+export { formatAdditionalHelp, formatShortHelp, getImportFieldHelp, hasAdditionalHelp };
 export default ImportFieldHelp;

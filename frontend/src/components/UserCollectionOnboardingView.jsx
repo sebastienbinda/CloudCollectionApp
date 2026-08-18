@@ -12,6 +12,7 @@
  *
  * Description : vue d'onboarding pour importer la collection utilisateur initiale.
  */
+import { useState } from "react";
 import ImportConfigurationFields from "./ImportConfigurationFields";
 import ImportSummary from "./ImportSummary";
 import PageLayout from "./PageLayout";
@@ -67,6 +68,7 @@ function UserCollectionOnboardingView({
 }) {
   const isBusy = isCheckingCollection || isAnalyzingCollection || isImportingCollection;
   const isImportRefused = Boolean(importResult?.refusal?.refused);
+  const [showFileExpectation, setShowFileExpectation] = useState(false);
 
   /**
    * Transmet le fichier selectionne au hook d'orchestration.
@@ -157,6 +159,7 @@ function UserCollectionOnboardingView({
                     disabled={isBusy}
                   >
                     <span aria-hidden="true">↺</span>
+                    Changer
                   </button>
                 </div>
               ) : (
@@ -169,15 +172,27 @@ function UserCollectionOnboardingView({
                       détecté automatiquement à partir du fichier fourni.
                     </p>
                   </div>
-                  <p className="importFileExpectation">
-                    Le fichier doit contenir une ligne par jeu, avec au minimum une
-                    information de nom de jeu et de plateforme. Vous pouvez aussi y
-                    ajouter des colonnes optionnelles comme studio, date de sortie,
-                    prix, note, état, région ou description. Il peut comporter
-                    plusieurs onglets. L'appartenance à votre collection ou à votre
-                    liste de souhaits peut être indiquée par une colonne ou par un
-                    onglet dédié.
-                  </p>
+                  <div className="importFileExpectation">
+                    <button
+                      type="button"
+                      className="fieldHelpToggle"
+                      aria-expanded={showFileExpectation}
+                      onClick={() => setShowFileExpectation((currentValue) => !currentValue)}
+                    >
+                      {showFileExpectation ? "Masquer les informations" : "Plus d'informations"}
+                    </button>
+                    {showFileExpectation ? (
+                      <span className="fieldHelpValues">
+                        Le fichier doit contenir une ligne par jeu, avec au minimum une
+                        information de nom de jeu et de plateforme. Vous pouvez aussi y
+                        ajouter des colonnes optionnelles comme studio, date de sortie,
+                        prix, note, état, région ou description. Il peut comporter
+                        plusieurs onglets. L'appartenance à votre collection ou à votre
+                        liste de souhaits peut être indiquée par une colonne ou par un
+                        onglet dédié.
+                      </span>
+                    ) : null}
+                  </div>
                   <label>
                     Fichier de collection
                     <input

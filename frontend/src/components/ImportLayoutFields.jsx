@@ -58,7 +58,8 @@ function ImportLayoutFields({
           onChange={(event) => onLayoutChange("dataRange", event.target.value)}
         />
         <span className="fieldHelpText">
-          Zone du fichier à lire, par exemple A1:D200. Elle inclut la ligne d'en-tête.
+          Indiquez la première et la dernière cellule du tableau à importer, par exemple A1:D200.
+          La plage doit inclure la ligne d'en-tête et les lignes de jeux, sans les notes ou totaux.
         </span>
       </label>
       <label>

@@ -81,13 +81,13 @@
   padding: 1.25rem;
 }
 
-.importFormStep {
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  display: grid;
-  gap: 1rem;
-  padding: 1rem;
-}
+.importFormStep { border: 1px solid #dbe4f0; border-radius: 8px; display: grid; gap: 1rem; padding: 1rem; }
+
+.importCollapsibleSection { border: 1px solid #dbe4f0; border-radius: 8px; overflow: hidden; }
+.importCollapsibleSection summary { background: #f0fdf4; cursor: pointer; display: grid; gap: 0.25rem; list-style-position: inside; padding: 0.85rem 1rem; }
+.importCollapsibleSection summary span { color: #14532d; font-weight: 900; }
+.importCollapsibleSection summary small { color: #166534; font-weight: 600; }
+.importCollapsibleContent { display: grid; gap: 1rem; padding: 1rem; }
 
 .importFormStepHeader {
   display: grid;
@@ -223,20 +223,15 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
+  color: #475569;
   padding: 0.75rem;
 }
 
 .wishlistConfigurationIntro {
-  color: #475569;
   margin: 0;
 }
 
-.importGlobalOptions {
-  border-top: 1px solid #dbe4f0;
-  display: grid;
-  gap: 0.85rem;
-  padding-top: 1rem;
-}
+.importGlobalOptions { display: grid; gap: 0.85rem; }
 
 .importConfiguration legend,
 .wishlistConfiguration legend {
@@ -269,9 +264,13 @@
 }
 
 .segmentedFieldHelp {
-  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #475569;
   flex-basis: 100%;
   margin: 0;
+  padding: 0.55rem 0.65rem;
 }
 
 .layoutFields,
@@ -393,8 +392,10 @@
 .fieldLabelText { align-items: end; color: #334155; display: flex; }
 
 .fieldHelpText { color: #64748b; font-size: 0.86rem; font-weight: 500; line-height: 1.35; }
+.fieldHelpText > span:first-child { -webkit-box-orient: vertical; -webkit-line-clamp: 2; display: -webkit-box; overflow: hidden; }
 
 .fieldHelpToggle { background: transparent; border: 0; color: #1d4ed8; cursor: pointer; font: inherit; padding: 0 0.2rem; text-decoration: underline; }
+.fieldHelpToggle:hover:not(:disabled) { background: transparent; color: #1e40af; }
 .fieldHelpValues { display: block; margin-top: 0.3rem; }
 
 .requiredColumnField {
@@ -409,13 +410,10 @@
   font-weight: 900;
 }
 
-.sheetConfiguration {
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  display: grid;
-  gap: 0.85rem;
-  padding: 0.85rem;
-}
+.sheetConfiguration { border: 1px solid #dbe4f0; border-radius: 8px; display: grid; gap: 0.85rem; padding: 0.85rem; }
+.sheetConfigurationTabs { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.sheetConfigurationTabs button { background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; padding: 0.45rem 0.7rem; }
+.sheetConfigurationTabs .activeSheetTab { background: #f0fdf4; border-color: #86efac; color: #14532d; }
 
 .sheetConfigurationHeader {
   align-items: center;
@@ -458,7 +456,7 @@
 
 .collectionSelectedFileChange {
   background: #ffffff; border: 1px solid #93c5fd; border-radius: 999px; color: #1d4ed8;
-  flex: 0 0 auto; font-size: 1rem; height: 2rem; min-height: 0; padding: 0; width: 2rem;
+  flex: 0 0 auto; font-size: 0.9rem; gap: 0.3rem; height: 2rem; min-height: 0; padding: 0 0.7rem;
 }
 
 @media (max-width: 760px) {

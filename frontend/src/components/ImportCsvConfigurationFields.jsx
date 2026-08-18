@@ -19,6 +19,7 @@ import {
 } from "../hooks/collection/csvImportConfigurationBuilder";
 import { hasCsvImportColumn } from "../hooks/collection/importGlobalOptionsVisibility";
 import { ImportGlobalOptions } from "./ImportGlobalOptions";
+import ImportCollapsibleSection from "./ImportCollapsibleSection";
 import ImportFieldHelp from "./ImportFieldHelp";
 import { FIELD_LABELS } from "./ImportLayoutFields";
 
@@ -37,54 +38,59 @@ function ImportCsvConfigurationFields({
   onWishlistConfigurationChange,
 }) {
   const requiredFields = csvRequiredFields(configuration);
+  const showPriceUnit = hasCsvImportColumn(configuration, "purchase_price");
+  const showRatingBase = hasCsvImportColumn(configuration, "grade");
   return (
     <>
-      <fieldset className="importConfiguration" disabled={disabled}>
-        <legend>Configuration du fichier</legend>
-        <p className="importConfigurationIntro">
-          Associez chaque information attendue à une colonne détectée dans votre
-          CSV. Les champs marqués avec un astérisque sont obligatoires.
-        </p>
-
-        <div className="columnGrid">
-          {[...REQUIRED_CSV_FIELDS, ...OPTIONAL_CSV_FIELDS].map((fieldName) => {
-            const isRequired = requiredFields.includes(fieldName);
-            return (
-              <label
-                className={isRequired ? "requiredColumnField" : ""}
-                key={fieldName}
-              >
-                <span className="fieldLabelText">
-                  {FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
-                </span>
-                <ColumnNameField
-                  required={isRequired}
-                  value={configuration.csvMapping[fieldName] || ""}
-                  availableColumnNames={availableColumnNames}
-                  onChange={(value) => onCsvMappingChange(fieldName, value)}
-                />
-                <ImportFieldHelp fieldName={fieldName} />
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
-      <CsvWishlistFields
-        configuration={configuration}
-        availableColumnNames={availableColumnNames}
-        disabled={disabled}
-        requiredFields={requiredFields}
-        onCsvMappingChange={onCsvMappingChange}
-        onWishlistConfigurationChange={onWishlistConfigurationChange}
-      />
-      <ImportGlobalOptions
-        showPriceUnit={hasCsvImportColumn(configuration, "purchase_price")}
-        showRatingBase={hasCsvImportColumn(configuration, "grade")}
-        priceUnit={configuration.priceUnit}
-        ratingBase={configuration.ratingBase}
-        disabled={disabled}
-        onConfigurationChange={onConfigurationChange}
-      />
+      <ImportCollapsibleSection title="1. Colonnes du CSV" description="Association des informations aux colonnes détectées.">
+        <fieldset className="importConfiguration" disabled={disabled}>
+          <legend>Colonnes du CSV</legend>
+          <p className="importConfigurationIntro">
+            Les champs marqués avec un astérisque sont obligatoires.
+          </p>
+          <div className="columnGrid">
+            {[...REQUIRED_CSV_FIELDS, ...OPTIONAL_CSV_FIELDS].map((fieldName) => {
+              const isRequired = requiredFields.includes(fieldName);
+              return (
+                <label className={isRequired ? "requiredColumnField" : ""} key={fieldName}>
+                  <span className="fieldLabelText">
+                    {FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
+                  </span>
+                  <ColumnNameField
+                    required={isRequired}
+                    value={configuration.csvMapping[fieldName] || ""}
+                    availableColumnNames={availableColumnNames}
+                    onChange={(value) => onCsvMappingChange(fieldName, value)}
+                  />
+                  <ImportFieldHelp fieldName={fieldName} />
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      </ImportCollapsibleSection>
+      <ImportCollapsibleSection title="2. Liste de souhaits" description="Source éventuelle des jeux souhaités.">
+        <CsvWishlistFields
+          configuration={configuration}
+          availableColumnNames={availableColumnNames}
+          disabled={disabled}
+          requiredFields={requiredFields}
+          onCsvMappingChange={onCsvMappingChange}
+          onWishlistConfigurationChange={onWishlistConfigurationChange}
+        />
+      </ImportCollapsibleSection>
+      {showPriceUnit || showRatingBase ? (
+        <ImportCollapsibleSection title="3. Options de prix et de note" description="Affichées seulement si les colonnes liées sont configurées.">
+          <ImportGlobalOptions
+            showPriceUnit={showPriceUnit}
+            showRatingBase={showRatingBase}
+            priceUnit={configuration.priceUnit}
+            ratingBase={configuration.ratingBase}
+            disabled={disabled}
+            onConfigurationChange={onConfigurationChange}
+          />
+        </ImportCollapsibleSection>
+      ) : null}
     </>
   );
 }
