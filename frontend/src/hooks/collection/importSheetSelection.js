@@ -40,6 +40,9 @@ function splitImportSheetNames(value) {
  */
 function resolveCollectionSheetNames(availableSheetNames, sharedSheetLayout) {
   const detectedSheetNames = Array.isArray(availableSheetNames) ? availableSheetNames : [];
+  if (sharedSheetLayout?.sheetSelectionMode === "all") {
+    return detectedSheetNames;
+  }
   if (sharedSheetLayout?.sheetSelectionMode === "excluded") {
     const excludedSheets = new Set(splitImportSheetNames(sharedSheetLayout.excludedSheets));
     return detectedSheetNames.filter((sheetName) => !excludedSheets.has(sheetName));

@@ -240,7 +240,8 @@ function useUserCollectionOnboarding(options) {
             currentConfiguration[layoutName],
             fieldName,
             value,
-            collectionRequiredFields(currentConfiguration, layoutName === "singleSheetLayout")
+            collectionRequiredFields(currentConfiguration, layoutName === "singleSheetLayout"
+              || currentConfiguration.sheetInformation !== "platform")
           ),
         },
       };
@@ -286,7 +287,7 @@ function useUserCollectionOnboarding(options) {
               sheet.layout,
               fieldName,
               value,
-              collectionRequiredFields(currentConfiguration, false)
+              collectionRequiredFields(currentConfiguration, currentConfiguration.sheetInformation !== "platform")
             ),
           }
           : sheet

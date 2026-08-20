@@ -20,18 +20,15 @@ import {
   buildFrontendCsvConfiguration,
   createDefaultCsvMapping,
 } from "./csvImportConfigurationBuilder.js";
-
-const REQUIRED_FIELDS = Object.freeze(["name", "platform"]);
-const REFERENCE_OPTIONAL_FIELDS = Object.freeze(["studio", "release_date"]);
-const PRIVATE_INFORMATION_FIELDS = Object.freeze([
-  "purchase_price", "buy_location", "buy_date", "grade", "condition",
-  "has_manual", "is_collector", "has_steelbook", "is_digital", "region", "description",
-]);
-const OPTIONAL_FIELDS = Object.freeze([
-  ...REFERENCE_OPTIONAL_FIELDS,
-  ...PRIVATE_INFORMATION_FIELDS,
-]);
-const SHEET_INFORMATION = "platform";
+import {
+  OPTIONAL_FIELDS,
+  PRIVATE_INFORMATION_FIELDS,
+  REQUIRED_FIELDS,
+  SHEET_INFORMATION,
+  collectionColumnFields,
+  collectionRequiredFields,
+  wishlistSheetColumnFields,
+} from "./importSpreadsheetFieldDefinitions.js";
 
 /**
  * Construit un layout d'import par defaut.
@@ -75,7 +72,7 @@ function createDefaultImportConfiguration() {
     singleSheetLayout: createDefaultLayout(true),
     sharedSheetLayout: {
       ...createDefaultLayout(false),
-      sheetSelectionMode: "included",
+      sheetSelectionMode: "all",
       includedSheets: "",
       excludedSheets: "",
     },
@@ -132,7 +129,7 @@ function createImportConfigurationFromDescription(description) {
       ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
       multipleSheets: true,
       sharedLayout: true,
-      sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
+      sheetInformation: multipleSheetsConfiguration.sheet_information || "",
       wishlist,
       sharedSheetLayout: buildFrontendSharedLayout(
         multipleSheetsConfiguration.shared_layout,
@@ -152,11 +149,11 @@ function createImportConfigurationFromDescription(description) {
       ratingBase: String(description.rating_base || defaultConfiguration.ratingBase),
       multipleSheets: true,
       sharedLayout: false,
-      sheetInformation: multipleSheetsConfiguration.sheet_information || SHEET_INFORMATION,
+      sheetInformation: multipleSheetsConfiguration.sheet_information || sheets[0]?.sheet_information || "",
       wishlist,
       sheets: sheets.map((sheet) => ({
         sheetName: sheet.sheet_name || "",
-        sheetInformation: sheet.sheet_information || SHEET_INFORMATION,
+        sheetInformation: sheet.sheet_information || "",
         layout: buildFrontendLayout(sheet, defaultConfiguration.sheets[0].layout),
       })),
     };
@@ -236,12 +233,18 @@ function buildFrontendSharedLayout(layoutDescription, defaultLayout) {
       includedSheets: "",
     };
   }
+  if (!Array.isArray(layoutDescription.included_sheets)) {
+    return {
+      ...baseLayout,
+      sheetSelectionMode: "all",
+      includedSheets: "",
+      excludedSheets: "",
+    };
+  }
   return {
     ...baseLayout,
     sheetSelectionMode: "included",
-    includedSheets: Array.isArray(layoutDescription.included_sheets)
-      ? layoutDescription.included_sheets
-      : "",
+    includedSheets: layoutDescription.included_sheets,
     excludedSheets: "",
   };
 }
@@ -278,7 +281,10 @@ function buildImportConfigurationDescription(configuration) {
     };
   }
   if (configuration.sharedLayout) {
-    const requiredFields = collectionRequiredFields(configuration, false);
+    const requiredFields = collectionRequiredFields(
+      configuration,
+      configuration.sheetInformation !== SHEET_INFORMATION
+    );
     const layout = buildLayout(configuration.sharedSheetLayout, requiredFields, errors);
     const selectionMode = configuration.sharedSheetLayout.sheetSelectionMode;
     if (selectionMode === "excluded") {
@@ -286,11 +292,15 @@ function buildImportConfigurationDescription(configuration) {
       if (excludedSheets.length) {
         layout.excluded_sheets = excludedSheets;
       }
-    } else {
+    } else if (selectionMode === "included") {
       const includedSheets = splitSheetNames(configuration.sharedSheetLayout.includedSheets);
       if (includedSheets.length) {
         layout.included_sheets = includedSheets;
       }
+    }
+    const multipleSheetsConf = { shared_layout: layout };
+    if (configuration.sheetInformation) {
+      multipleSheetsConf.sheet_information = configuration.sheetInformation;
     }
     return {
       description: errors.length ? null : {
@@ -298,10 +308,7 @@ function buildImportConfigurationDescription(configuration) {
         price_unit: configuration.priceUnit,
         rating_base: ratingBase,
         wishlist,
-        multiple_sheets_conf: {
-          sheet_information: SHEET_INFORMATION,
-          shared_layout: layout,
-        },
+        multiple_sheets_conf: multipleSheetsConf,
       },
       errors,
     };
@@ -311,12 +318,18 @@ function buildImportConfigurationDescription(configuration) {
     if (!sheetName) {
       errors.push(`Renseignez le nom de l'onglet ${index + 1}.`);
     }
-    const requiredFields = collectionRequiredFields(configuration, false);
-    return {
+    const requiredFields = collectionRequiredFields(
+      configuration,
+      configuration.sheetInformation !== SHEET_INFORMATION
+    );
+    const sheetDescription = {
       sheet_name: sheetName,
-      sheet_information: SHEET_INFORMATION,
       ...buildLayout(sheet.layout, requiredFields, errors),
     };
+    if (configuration.sheetInformation) {
+      sheetDescription.sheet_information = configuration.sheetInformation;
+    }
+    return sheetDescription;
   });
   return {
     description: errors.length ? null : {
@@ -355,53 +368,6 @@ function buildRatingBase(configuration, errors) {
     return 10;
   }
   return ratingBase;
-}
-
-/**
- * Retourne les champs requis pour les layouts collection.
- *
- * @param {Object} configuration - Etat frontend de configuration.
- * @param {boolean} includePlatformColumn - Indique si le layout porte la plateforme.
- * @returns {string[]} Champs requis dans `column_information`.
- */
-function collectionRequiredFields(configuration, includePlatformColumn) {
-  const fields = includePlatformColumn
-    ? [...REQUIRED_FIELDS]
-    : REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION);
-  if (configuration.wishlist.mode === "column") {
-    fields.push("wishlist");
-  }
-  return fields;
-}
-
-/**
- * Retourne les champs colonne a afficher pour un layout de collection ODS.
- *
- * @param {Object} configuration - Etat frontend de configuration.
- * @param {boolean} includePlatformColumn - Indique si la plateforme est une colonne.
- * @returns {string[]} Champs colonnes configurables.
- */
-function collectionColumnFields(configuration, includePlatformColumn) {
-  const fields = includePlatformColumn
-    ? [...REQUIRED_FIELDS, ...REFERENCE_OPTIONAL_FIELDS]
-    : [
-      ...REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION),
-      ...REFERENCE_OPTIONAL_FIELDS,
-    ];
-  if (configuration.wishlist.mode === "column") {
-    fields.push("wishlist");
-  }
-  fields.push(...PRIVATE_INFORMATION_FIELDS);
-  return fields;
-}
-
-/**
- * Retourne les champs colonne a afficher pour l'onglet wishlist dedie.
- *
- * @returns {string[]} Champs wishlist configurables.
- */
-function wishlistSheetColumnFields() {
-  return [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
 }
 
 /**

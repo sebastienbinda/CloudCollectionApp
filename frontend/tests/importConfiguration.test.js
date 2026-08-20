@@ -147,10 +147,23 @@ test("l'onboarding d'import detecte le type de fichier et guide la configuration
   assert.equal(csvSource.includes("Liste de souhaits"), true);
   assert.equal(csvSource.includes("wishlistConfigurationIntro"), true);
   assert.equal(
+    configurationSource.includes("Indiquez si les jeux sont dans un seul tableau"),
+    false
+  );
+  assert.equal(
     configurationSource.includes("Votre fichier contient-il plusieurs onglets à importer ?"),
+    false
+  );
+  assert.equal(
+    configurationSource.includes("Aucune configuration de structure n'est nécessaire"),
     true
   );
+  assert.equal(configurationSource.includes("singleSheetName"), true);
+  assert.equal(configurationSource.includes("name=\"multipleSheets\""), false);
   assert.equal(configurationSource.includes("Le nom de chaque onglet correspond à"), true);
+  assert.equal(configurationSource.includes("Tous"), true);
+  assert.equal(configurationSource.includes("selectionMode === \"all\" ? null"), true);
+  assert.equal(configurationSource.includes("availableSheetNames.length > 4 ? 8 : 4"), true);
   assert.equal(configurationSource.includes("configurez une seule plage de données"), true);
   assert.equal(configurationSource.includes("configurez séparément la plage et les colonnes"), true);
   assert.equal(configurationSource.includes("Onglets à importer"), true);

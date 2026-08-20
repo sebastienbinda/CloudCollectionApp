@@ -15,11 +15,21 @@ import { createDefaultImportConfiguration } from "../src/hooks/collection/import
 
 test("deduit les onglets de collection depuis les onglets inclus", () => {
   const configuration = createDefaultImportConfiguration();
+  configuration.sharedSheetLayout.sheetSelectionMode = "included";
   configuration.sharedSheetLayout.includedSheets = "Switch, PlayStation 2\nGameCube";
 
   assert.deepEqual(
     resolveCollectionSheetNames(["Switch", "Wishlist"], configuration.sharedSheetLayout),
     ["Switch", "PlayStation 2", "GameCube"]
+  );
+});
+
+test("deduit tous les onglets de collection avec le mode tous", () => {
+  const configuration = createDefaultImportConfiguration();
+
+  assert.deepEqual(
+    resolveCollectionSheetNames(["Switch", "Wishlist"], configuration.sharedSheetLayout),
+    ["Switch", "Wishlist"]
   );
 });
 
@@ -43,6 +53,7 @@ test("synchronise les configurations par onglet en conservant les saisies exista
       layout: { dataRange: "B2:D8", headerRow: "2", columns: { name: "B" } },
     },
   ];
+  configuration.sharedSheetLayout.sheetSelectionMode = "included";
   configuration.sharedSheetLayout.includedSheets = ["Switch", "GameCube"];
 
   const synchronizedConfiguration = synchronizePerSheetConfigurations(
