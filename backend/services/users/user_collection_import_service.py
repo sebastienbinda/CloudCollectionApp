@@ -50,6 +50,7 @@ from .user_collection_import_errors import (
     UserCollectionImportUnexpectedError,
 )
 from .user_collection_import_file_manager import UserCollectionImportFileManager
+from .user_collection_import_association_validator import UserCollectionImportAssociationValidator
 from .user_collection_import_report_notifier import UserCollectionImportReportNotifier
 from .user_collection_import_repository_protocol import UserCollectionImportRepository
 from .user_collection_import_report_context import UserCollectionImportReportContext
@@ -103,6 +104,7 @@ class UserCollectionImportService:
         self.refusal_notification_service = CollectionImportRefusalNotificationService()
         self.report_policy = UserCollectionImportReportPolicy()
         self.refusal_policy = CollectionImportRefusalPolicy()
+        self.association_validator = UserCollectionImportAssociationValidator()
         self.logger = logger or logging.getLogger(__name__)
 
     def upload_import_file(
@@ -328,6 +330,7 @@ class UserCollectionImportService:
             )
             import_data = self.date_validator.validate(import_data)
             self._set_total_import_duration(import_data, import_started_at)
+            self.association_validator.ensure_games_read(import_data)
             refusal = self.refusal_policy.evaluate(import_data)
             if refusal.refused:
                 self.file_manager.delete_copied_file(copied_file_path)
@@ -351,6 +354,7 @@ class UserCollectionImportService:
                 file_description.to_dict(),
                 initial_game_validation_status,
             )
+            self.association_validator.validate(import_data, persistence_result)
             result = self._map_result(persistence_result, import_data)
             if self.report_policy.is_enabled(self.report_notifier):
                 self._notify_import_report(
@@ -375,6 +379,9 @@ class UserCollectionImportService:
                 "Fichier de collection invalide.",
                 self._import_invalid_file_details(exc),
             ) from exc
+        except UserCollectionImportInvalidFileError:
+            self.file_manager.delete_copied_file(copied_file_path)
+            raise
         except UserCollectionImportUserNotFoundError as exc:
             self.file_manager.delete_copied_file(copied_file_path)
             raise UserCollectionImportUnexpectedError("Utilisateur introuvable.") from exc

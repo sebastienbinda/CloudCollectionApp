@@ -573,6 +573,92 @@ class UserCollectionImportServiceTest(unittest.TestCase):
             self.assertEqual(3, result.refusal["total_games_count"])
             self.assertIn("2/3", result.refusal["message"])
 
+    def test_import_collection_rejects_file_when_no_read_game_is_associated(self):
+        """Verifie le refus quand les jeux lus sont tous ecartes au matching.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur fonctionnelle.
+        """
+
+        import_data = OdsCollectionImportData(
+            platforms=[],
+            studios=[],
+            games=[OdsCollectionImportGame("Ace combat 2", "Namco", None, None)],
+            warnings=CollectionImportWarnings(
+                skipped_games=[{
+                    "game_name": "Ace combat 2",
+                    "imported_platform": "Namco",
+                    "score": 0,
+                    "reason": "no_match",
+                }]
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(
+                    result=UserCollectionImportPersistenceResult(
+                        linked_platforms=0,
+                        created_studios=0,
+                        created_games=0,
+                        associated_games=0,
+                    )
+                ),
+                reader=FakeOdsCollectionImportReader(import_data=import_data),
+            )
+
+            with self.assertRaises(UserCollectionImportInvalidFileError) as context:
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
+
+            self.assertEqual(1, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+            self.assertIn("Nom du jeu et Plateforme", context.exception.details[0])
+            self.assertIn("Namco", context.exception.details[0])
+
+    def test_import_collection_rejects_file_when_no_game_is_importable(self):
+        """Verifie le refus quand aucun jeu importable n'est lu.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'erreur fonctionnelle.
+        """
+
+        import_data = OdsCollectionImportData(
+            platforms=[],
+            studios=[],
+            games=[],
+            warnings=CollectionImportWarnings(),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            service, repository, reader, source_file = self._build_service(
+                directory,
+                repository=FakeUserCollectionImportRepository(),
+                reader=FakeOdsCollectionImportReader(import_data=import_data),
+            )
+
+            with self.assertRaises(UserCollectionImportInvalidFileError) as context:
+                service.import_collection(
+                    7,
+                    str(source_file),
+                    "collection.ods",
+                    self._valid_description(),
+                )
+
+            self.assertEqual(0, len(repository.import_calls))
+            self.assertEqual(1, len(reader.read_paths))
+            self.assertIn("Aucun jeu importable", context.exception.details[0])
+            self.assertIn("Nom du jeu et Plateforme", context.exception.details[0])
+
     def test_import_collection_replaces_read_only_collection_file(self):
         """Verifie le remplacement du fichier collection deja verrouille.
 
