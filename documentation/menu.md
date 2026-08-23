@@ -42,17 +42,17 @@ session state received through props.
   bar: `Connexion` for anonymous visitors, `Deconnexion` for authenticated
   users.
 - For authenticated users on desktop, the main navigation order is
-  `Ma collection`, `Liste de souhaits`, `Statistiques`, `Bibliotheque`, `Configuration`, then
-  `A propos`; `Deconnexion` remains the last action on the right side of the
-  navigation bar.
+  `Ma collection`, `Liste de souhaits`, `Statistiques`, `Bibliotheque`,
+  `Configuration`, `Faire un retour`, then `A propos`; `Deconnexion` remains
+  the last action on the right side of the navigation bar.
 - For authenticated users on mobile, `Collection`, `Souhaits`, `Stats`, `Biblio` and
   `Plus` are the primary dock entries, in that order.
 - Anonymous visitors see only public/session entries: `Bibliotheque`,
-  `Connexion` and `A propos` directly in the mobile dock; the `Plus` entry is
-  not rendered when no secondary action is available.
-- On mobile, authenticated users see `Configuration`, `A propos` and
-  `Deconnexion` as secondary actions opened from `Plus`, with `Deconnexion`
-  last.
+  `Connexion`, `Faire un retour` and `A propos` directly in the mobile dock; the
+  `Plus` entry is not rendered when no secondary action is available.
+- On mobile, authenticated users see `Configuration`, `Faire un retour`,
+  `A propos` and `Deconnexion` as secondary actions opened from `Plus`, with
+  `Deconnexion` last.
 - The secondary mobile panel closes when the mouse pointer leaves it.
 - On mobile and touch devices, pointer leave must not cause accidental closing;
   filter events by `pointerType`.
@@ -63,11 +63,14 @@ session state received through props.
   shortcuts.
 - A GUEST sees only the permitted Collection/Wishlist primary entries, followed
   by Bibliotheque and `Plus`; the dock grid adapts to the resulting item count.
-  `Plus` contains About and Logout, never Configuration.
+  `Plus` contains Faire un retour, About and Logout, never Configuration.
 
 ## Access Constraints
 
 - `A propos` always remains accessible and opens `/about`.
+- `Faire un retour` always remains accessible and opens `/feedback`; the page
+  itself decides whether the connected session can submit a protected feedback
+  request.
 - `Bibliotheque` always remains accessible.
   When an `ADMIN` session has Library games waiting for validation, the menu may
   show a prop-driven badge on this entry. The menu must not fetch the summary

@@ -47,6 +47,7 @@ function UserCollectionOnboardingView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenStatistics,
   onOpenConfiguration,
@@ -109,6 +110,7 @@ function UserCollectionOnboardingView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}

@@ -82,6 +82,7 @@ Use one controller per functional area when possible, for example:
   future game actions and raw user ODS download;
 - `CollectionShareController` for connected-owner share creation, listing and
   revocation HTTP contracts;
+- `FeedbackController` for authenticated feedback submission to GitHub;
 - `RouteController` for `/api/routes`;
 - `PlatformController`, `StudioController` and `GameController` for public
   Bibliotheque reads of global platforms, studios and games.
@@ -99,6 +100,7 @@ Use domain folders under `backend/services/`:
   initialization. The platform catalog seed/update services also live there
   because they own SQL synchronization from backend CSV resources;
 - `email/`: email configuration and sending;
+- `feedback/`: feedback validation and GitHub issue creation;
 - `formatting/`: value formatting helpers;
 - `collection/`: connected-user SQL collection consultation and query
   contracts; detailed collection statistics; `collection/imports/` also owns format-independent import

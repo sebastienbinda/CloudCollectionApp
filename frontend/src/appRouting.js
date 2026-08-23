@@ -158,6 +158,7 @@ class AppRouting {
     }
     return [
       "/about",
+      "/feedback",
       "/auth",
       "/auth/verify-email",
       "/bibliotheque",
@@ -171,7 +172,7 @@ class AppRouting {
    * Deduit la vue active depuis le chemin et les parametres d'URL.
    *
    * @param {void} Aucun - Utilise `window.location`.
-   * @returns {"about"|"home"|"games"|"statistics"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"adminLibraryImport"|"platformImageModeration"|"gameDuplicateAdmin"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
+   * @returns {"about"|"feedback"|"home"|"games"|"statistics"|"wishlist"|"addGame"|"configuration"|"auth"|"emailVerificationResult"|"users"|"adminLibraryImport"|"platformImageModeration"|"gameDuplicateAdmin"|"collectionOnboarding"|"library"|"libraryPlatforms"|"libraryPlatformDetail"|"libraryStudios"|"libraryGames"|"gameDetail"} Identifiant de vue.
    */
   static getViewFromUrl() {
     if (/^\/collection\/share\/[^/]+$/.test(window.location.pathname)) {
@@ -185,6 +186,9 @@ class AppRouting {
     }
     if (window.location.pathname === "/about") {
       return "about";
+    }
+    if (window.location.pathname === "/feedback") {
+      return "feedback";
     }
     if (window.location.pathname === "/auth") {
       return "auth";

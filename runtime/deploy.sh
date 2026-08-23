@@ -586,6 +586,7 @@ prepare_production_docker_secrets() {
     "AUTH_SECRET_KEY_ENCRYPTED"
     "POSTGRES_PASSWORD"
     "SMTP_PASSWORD"
+    "GITHUB_FEEDBACK_TOKEN"
   )
 
   echo "Preparation des secrets Docker de production..."

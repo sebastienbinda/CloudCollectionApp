@@ -208,6 +208,55 @@ Returns the backend route catalog, including:
 
 This route is protected and explicitly accepts `GUEST`, `USER` and `ADMIN`.
 
+## User Feedback
+
+### Submit User Feedback
+
+```http
+POST /api/feedback
+Content-Type: application/json
+Authorization: Bearer <access_token>
+```
+
+This route requires at least profile `USER`. It lets an authenticated
+application user send feedback without owning a GitHub account. The backend
+creates a GitHub issue with a server-side token; the token is never exposed to
+the frontend.
+
+Request:
+
+```json
+{
+  "category": "idea",
+  "title": "Ameliorer le partage",
+  "message": "Le bouton de partage pourrait etre plus visible.",
+  "page_url": "https://example.com/about",
+  "user_agent": "Mozilla/5.0 ..."
+}
+```
+
+`category` accepts `bug`, `idea`, `usability` or `other`. `title` is optional.
+`message` is mandatory and must contain at least 10 characters.
+
+Successful response:
+
+```json
+{
+  "feedback": {
+    "issue_number": 42,
+    "issue_url": "https://github.com/owner/repository/issues/42"
+  }
+}
+```
+
+Errors use:
+
+- `400` for invalid feedback payload;
+- `403` for missing Bearer token or insufficient profile;
+- `503` when GitHub feedback configuration is missing or GitHub cannot create
+  the issue;
+- `500` for unexpected failures.
+
 ## Collection Share Management
 
 These routes require a Bearer profile with at least `USER`. The share owner is

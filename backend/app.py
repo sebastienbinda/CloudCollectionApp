@@ -20,6 +20,7 @@ from controllers import (
     AuthenticationController,
     CollectionController,
     CollectionShareController,
+    FeedbackController,
     GameController,
     LibraryController,
     PlatformController,
@@ -110,6 +111,7 @@ collection_share_controller = CollectionShareController(
     auth_guard,
     collection_share_management_service,
 )
+feedback_controller = FeedbackController(auth_guard)
 user_controller = UserController(auth_guard)
 collection_controller = CollectionController(auth_guard)
 library_reset_job_coordinator = LibraryResetJobCoordinator()
@@ -159,6 +161,7 @@ if database_configuration.is_database_enabled() and (
 authentication_controller.register_routes(app)
 route_controller.register_routes(app)
 collection_share_controller.register_routes(app)
+feedback_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
 user_collection_import_help_controller.register_routes(app)

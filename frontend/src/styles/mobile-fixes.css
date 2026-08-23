@@ -101,23 +101,41 @@
     gap: 0.55rem;
   }
 
+  .feedbackContent {
+    width: 100%;
+  }
+
   .aboutIntro,
-  .aboutFeatureGrid article {
+  .aboutBetaNotice,
+  .aboutFeedbackPanel,
+  .aboutFeatureGrid article,
+  .aboutCallout {
     min-height: 0;
     padding: 0.65rem;
   }
 
   .aboutIntro h2,
-  .aboutFeatureGrid h3 {
+  .aboutBetaNotice h2,
+  .aboutFeedbackPanel h2,
+  .aboutFeatureGrid h3,
+  .aboutCallout h2 {
     font-size: 0.94rem;
     line-height: 1.1;
     margin-bottom: 0.32rem;
   }
 
   .aboutIntro p,
-  .aboutFeatureGrid p {
+  .aboutBetaNotice p,
+  .aboutFeedbackPanel p,
+  .aboutFeatureGrid p,
+  .aboutCallout p {
     font-size: 0.78rem;
     line-height: 1.35;
+  }
+
+  .aboutSecondaryAction {
+    justify-content: center;
+    width: 100%;
   }
 
   .homeSearchForm {

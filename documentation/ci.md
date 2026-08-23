@@ -11,8 +11,14 @@
   pushed Git tag.
 - Backend tests run only when backend-related files change, when the workflow
   file changes, and on every pushed Git tag.
+- Backend dependency audit runs only when backend-related files change, when
+  the workflow file changes, and on every pushed Git tag. Any Python dependency
+  vulnerability reported by `pip-audit` fails the job.
 - Frontend tests run only when frontend-related files change, when the workflow
   file changes, and on every pushed Git tag.
+- Frontend dependency audit runs only when frontend-related files change, when
+  the workflow file changes, and on every pushed Git tag. Any reported npm
+  vulnerability fails the job.
 - The frontend production build runs only when frontend-related files change,
   when the workflow file changes, and on every pushed Git tag.
 - Application Docker images are published only when a Git tag matching `X.Y.Z`
@@ -36,8 +42,12 @@ jobs:
 - `change-detection`: detects which validation and publication jobs are needed
   from the changed files.
 - `backend-tests`: runs `./scripts/test_backend.sh`.
+- `backend-audit`: installs `pip-audit` and runs
+  `python -m pip_audit -r backend/requirements.txt --strict`.
 - `frontend-tests`: installs frontend dependencies with `npm ci` and runs
   `npm test`.
+- `frontend-audit`: installs frontend dependencies with `npm ci` and runs
+  `npm audit --audit-level=low`.
 - `frontend-build`: installs frontend dependencies with `npm ci` and runs
   `npm run build`.
 - `deploy-archive`: for Git tags only, builds
@@ -50,11 +60,14 @@ jobs:
 On pull requests and branch pushes, backend tests run for every added, modified
 or removed path prefixed with `backend/`, for `scripts/test_backend.sh`, for
 `docker/backend.Dockerfile`, for `docker/backend.Dockerfile.dockerignore`, or
-for `.github/workflows/ci.yml`. Frontend tests and the frontend build run for
-every added, modified or removed path prefixed with `frontend/`, for
+for `.github/workflows/ci.yml`. The backend dependency audit runs for the same
+backend-related changes. Frontend tests, the frontend dependency audit and the
+frontend build run for every added, modified or removed path prefixed with
+`frontend/`, for
 `docker/frontend.Dockerfile`, for `docker/frontend.Dockerfile.dockerignore`, or
-for `.github/workflows/ci.yml`. On Git tags, both validations always run before
-Docker publication.
+for `.github/workflows/ci.yml`. On Git tags, backend tests, backend dependency
+audit, frontend tests, frontend dependency audit and frontend build always run
+before Docker publication.
 
 For branch push events, the workflow reads GitHub's event payload first so that
 file deletions and multi-commit branch pushes are detected reliably. It falls
@@ -62,17 +75,26 @@ back to Git diff commands when the payload does not contain changed paths. For
 release tags, the workflow may compare the tagged commit with the previous
 release tag when a publication job needs changed-file decisions.
 
-The `docker-images` and `deploy-archive` jobs depend on backend tests, frontend
-tests and the frontend build. Docker images and the deployment archive must not
-be published if tests or frontend build fail. Branch pushes never publish
-Docker images or deployment archives.
+The `docker-images` and `deploy-archive` jobs depend on backend tests, backend
+dependency audit, frontend tests, frontend dependency audit and the frontend
+build. Docker images and the deployment archive must not be published if tests,
+audit or frontend build fail. Branch pushes never publish Docker images or
+deployment archives.
 
 Backend tests run through `./scripts/test_backend.sh`, which prepares the Python
 environment and then executes the backend test suite. ODS fixtures are now
 loaded directly by import tests when needed.
 
+Backend dependency audit runs through `pip-audit` against
+`backend/requirements.txt`. The job uses Python `3.12`, installs `pip-audit`
+inside the CI runner, and fails for any vulnerability or audit-service failure
+because it runs with `--strict`.
+
 Frontend tests run through `npm test` in `frontend/`, using Node.js' native test
 runner against `frontend/tests/*.test.js`.
+
+Frontend dependency audit runs through `npm audit --audit-level=low` in
+`frontend/`. The job must fail for any vulnerability reported by npm audit.
 
 The deploy archive is built by `scripts/create_deploy_archive.sh` and named
 `cloud-application-deploy-<version>.zip`, where `<version>` is the release tag.

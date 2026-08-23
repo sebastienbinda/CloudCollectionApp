@@ -130,6 +130,7 @@ right even when its frontend does not expose collection ownership):
 - `POST /api/collection-shares`
 - `GET /api/collection-shares`
 - `DELETE /api/collection-shares/<share_id>`
+- `POST /api/feedback`
 - `GET /api/users/me/collection`
 - `POST /api/users/import/file/<file_type>`
 - `POST /api/users/import/analyze/<file_type>`

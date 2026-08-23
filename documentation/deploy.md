@@ -105,6 +105,7 @@ Required secrets inside the archive:
 - `AUTH_SECRET_KEY_ENCRYPTED`
 - `POSTGRES_PASSWORD`
 - `SMTP_PASSWORD`
+- `GITHUB_FEEDBACK_TOKEN`
 
 The production Compose file consumes:
 
@@ -113,6 +114,7 @@ The production Compose file consumes:
 - `AUTH_ENV_ENCRYPTION_KEY_FILE`, `AUTH_PASSWORD_ENCRYPTED_FILE` and
   `AUTH_SECRET_KEY_ENCRYPTED_FILE` for backend authentication.
 - `SMTP_PASSWORD_FILE` for backend email delivery.
+- `GITHUB_FEEDBACK_TOKEN_FILE` for authenticated feedback issue creation.
 
 By default, the temporary decrypted secret directory is created under `/tmp` if
 Docker can bind-mount a test file from there. Set `PRODUCTION_SECRETS_TMP_PARENT`
@@ -215,6 +217,29 @@ To test email delivery against the production Compose stack:
 ```bash
 ./scripts/test_email.sh -p --to destinataire@example.com
 ```
+
+## GitHub Feedback Runtime Configuration
+
+Authenticated feedback creates issues in GitHub from the backend. Users do not
+need a GitHub account; the backend uses the server-side
+`GITHUB_FEEDBACK_TOKEN` secret.
+
+Required configuration:
+
+```text
+GITHUB_FEEDBACK_REPOSITORY=owner/repository
+GITHUB_FEEDBACK_TOKEN
+```
+
+Optional non-secret variables:
+
+```text
+GITHUB_FEEDBACK_LABELS=feedback,remarque
+GITHUB_FEEDBACK_TITLE_PREFIX=[Retour utilisateur]
+```
+
+The GitHub token must be scoped only to the target repository and allowed to
+create issues. Store it in the encrypted age secret archive, not in `.env`.
 
 ## Compose Contract
 

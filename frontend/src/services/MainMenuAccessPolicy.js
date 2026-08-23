@@ -36,6 +36,7 @@ function resolveMainMenuAccess(options = {}) {
       options.canViewStatistics === true &&
       typeof options.onOpenStatistics === "function"
     ),
+    canOpenFeedback: typeof options.onOpenFeedback === "function",
   });
 }
 

@@ -36,6 +36,9 @@ function resolveActiveNavigationKeyFromLocation() {
   if (pathname === "/about") {
     return "about";
   }
+  if (pathname === "/feedback") {
+    return "feedback";
+  }
   if (
     pathname === "/configuration" ||
     pathname === "/configuration/images-plateformes" ||
@@ -80,6 +83,7 @@ function resolveActiveNavigationKeyFromLocation() {
  * @param {Function} props.onOpenHome - Callback ouvrant Ma collection.
  * @param {Function} props.onOpenStatistics - Callback ouvrant les statistiques.
  * @param {Function} props.onOpenLibrary - Callback ouvrant la Bibliotheque.
+ * @param {Function} props.onOpenFeedback - Callback ouvrant la page de retour utilisateur.
  * @param {Function} props.onOpenWishlist - Callback ouvrant la liste de souhaits.
  * @param {Function} props.onOpenConfiguration - Callback ouvrant la page Configuration.
  * @param {Function} props.onLogout - Callback de deconnexion.
@@ -112,6 +116,7 @@ function PageLayout({
   onOpenHome,
   onOpenStatistics,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
@@ -189,6 +194,7 @@ function PageLayout({
           onOpenHome={onOpenHome}
           onOpenStatistics={onOpenStatistics}
           onOpenLibrary={onOpenLibrary}
+          onOpenFeedback={onOpenFeedback}
           onOpenWishlist={onOpenWishlist}
           onOpenConfiguration={onOpenConfiguration}
           onLogout={onLogout}

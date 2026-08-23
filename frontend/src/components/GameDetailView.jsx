@@ -43,6 +43,7 @@ function GameDetailView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenStatistics,
   onOpenConfiguration,
@@ -85,6 +86,7 @@ function GameDetailView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}

@@ -43,6 +43,7 @@ function AdminLibraryImportView({
   onOpenConfiguration,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenStatistics,
   onOpenWishlist,
   onPrepareNewImportAfterRefusal,
@@ -77,6 +78,7 @@ function AdminLibraryImportView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}

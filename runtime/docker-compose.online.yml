@@ -83,12 +83,17 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD_FILE: /run/secrets/smtp_password
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      GITHUB_FEEDBACK_REPOSITORY: ${GITHUB_FEEDBACK_REPOSITORY:-}
+      GITHUB_FEEDBACK_TOKEN_FILE: /run/secrets/github_feedback_token
+      GITHUB_FEEDBACK_LABELS: ${GITHUB_FEEDBACK_LABELS:-feedback,remarque}
+      GITHUB_FEEDBACK_TITLE_PREFIX: ${GITHUB_FEEDBACK_TITLE_PREFIX:-[Retour utilisateur]}
     secrets:
       - auth_env_encryption_key
       - auth_password_encrypted
       - auth_secret_key_encrypted
       - database_url
       - smtp_password
+      - github_feedback_token
     volumes:
       - ${USERS_WORKSPACE:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/users-workspace}:/users/workspace
       - ${BACKEND_IMG_HOST_DIR:-${APPLICATION_WORKDIR:?APPLICATION_WORKDIR doit etre defini}/images}:/images
@@ -162,3 +167,5 @@ secrets:
     file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/POSTGRES_PASSWORD
   smtp_password:
     file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/SMTP_PASSWORD
+  github_feedback_token:
+    file: ${DOCKER_SECRETS_DIR:?DOCKER_SECRETS_DIR doit etre defini}/GITHUB_FEEDBACK_TOKEN

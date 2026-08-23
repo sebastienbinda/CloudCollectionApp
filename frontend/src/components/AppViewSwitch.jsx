@@ -16,6 +16,7 @@ import AddGameView from "./AddGameView";
 import AboutView from "./AboutView";
 import AuthView from "./AuthView";
 import EmailVerificationResultView from "./EmailVerificationResultView";
+import FeedbackView from "./FeedbackView";
 import GameDetailView from "./GameDetailView";
 import GameDuplicateAdminView from "./GameDuplicateAdminView";
 import LibraryEntityListView from "./LibraryEntityListView";
@@ -49,6 +50,9 @@ class AppViewSwitch {
     }
     if (props.currentView === "about") {
       return "about";
+    }
+    if (props.currentView === "feedback") {
+      return "feedback";
     }
     if ([
       "configuration",
@@ -108,6 +112,7 @@ class AppViewSwitch {
       onOpenHome: props.goHome,
       onOpenStatistics: props.openStatistics,
       onOpenLibrary: props.openLibrary,
+      onOpenFeedback: props.openFeedback,
       onOpenWishlist: props.openWishlist,
       onOpenConfiguration: props.openConfiguration,
       onLogout: props.logout,
@@ -138,6 +143,9 @@ class AppViewSwitch {
       return this.renderAbout(props);
     }
 
+    if (props.currentView === "feedback") {
+      return <FeedbackView {...this.buildPageLayoutProps(props)} />;
+    }
     if (props.currentView === "addGame") {
       return this.renderAddGame(props);
     }

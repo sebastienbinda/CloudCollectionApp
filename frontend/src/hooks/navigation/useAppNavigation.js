@@ -211,6 +211,7 @@ function useAppNavigation(options) {
       }
       const mappedView = {
         "/about": "about",
+        "/feedback": "feedback",
         "/auth": "auth",
         "/auth/verify-email": "emailVerificationResult",
         "/bibliotheque": "library",
@@ -335,6 +336,7 @@ function useAppNavigation(options) {
       openView("statistics", "/collection/statistics");
     },
     openAbout: () => openView("about", "/about"),
+    openFeedback: () => openView("feedback", "/feedback"),
     openAuth: () => openView("auth", "/auth"),
     openLibrary: () => openView("library", "/bibliotheque"),
     openLibraryPlatforms: () => openView("libraryPlatforms", "/bibliotheque/plateformes"),
