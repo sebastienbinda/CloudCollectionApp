@@ -17,6 +17,15 @@ reader architecture rules in `documentation/reader.md`.
   configured columns that are entirely empty or absent at the end of a sheet.
 - Invalid non-empty optional values become `None` and are appended to
   `warnings.invalid_games`; they do not reject the game or complete import.
+- Invalid optional-value warnings keep technical keys for backend processing,
+  but user-facing summaries must display the label chosen during import
+  configuration through the centralized frontend field-label mapping.
+- Detailed invalid-value help is served by
+  `GET /api/users/import/invalid-value-help`. Controlled fields such as
+  `region`, `condition` and boolean fields must expose their possible accepted
+  values there when available, so the final import response stays compact.
+- Rows skipped because a mandatory game name or platform is missing are counted
+  as rejected games for the import refusal policy.
 - Text cleaning uses `SheetValueFormatter.clean_text`: spreadsheet null/error
   values and blank text become `None`; other text is trimmed.
 - Matching uses normalized lowercase, accent-free text. Matching scores are
@@ -109,6 +118,9 @@ becomes `80`.
 - A unique platform score at or above `PLATFORM_MATCHING_HIGH_LEVEL_RATING` is accepted;
   a score from `PLATFORM_MATCHING_LOW_LVL_RATING` up to the high threshold is accepted
   with a manual-check warning; a lower or ambiguous score skips affected games.
+  Manual-check platform warnings are non-blocking: affected games are imported,
+  displayed as waiting for administrator validation and excluded from the
+  rejected-game counter.
 - Studios are scored against existing normalized `t_studio.name` values without
   alias lookup. A unique studio score at or above
   `STUDIO_MATCHING_HIGH_LEVEL_RATING` (default `87`) is reused; otherwise the
