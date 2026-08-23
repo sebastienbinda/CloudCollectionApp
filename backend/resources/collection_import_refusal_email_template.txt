@@ -19,6 +19,9 @@
 <p>Code raison: ${reason}</p>
 <p>Jeux en erreur: ${invalid_games_count}/${total_games_count}</p>
 
+<h2>Compteurs d'erreur</h2>
+${error_counters}
+
 <h2>Resultat de l'import</h2>
 <ul>
 <li>Plateformes rattachees: ${linked_platforms}</li>
@@ -31,9 +34,7 @@
 <h2>Erreurs des jeux</h2>
 ${invalid_games}
 
-<h2>Warnings</h2>
-<pre>
-${warnings}
-</pre>
+<h2>Plateformes à valider par l'admin</h2>
+${manual_platform_mappings}
 </body>
 </html>

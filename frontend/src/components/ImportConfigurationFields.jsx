@@ -12,12 +12,17 @@
  *
  * Description : champs de configuration d'import de collection.
  */
+import { useState } from "react";
 import ImportLayoutFields from "./ImportLayoutFields";
 import ImportCsvConfigurationFields from "./ImportCsvConfigurationFields";
+import ImportCollapsibleSection from "./ImportCollapsibleSection";
+import { ImportGlobalOptions } from "./ImportGlobalOptions";
+import ImportSpreadsheetWishlistFields from "./ImportSpreadsheetWishlistFields";
 import {
   collectionColumnFields,
-  wishlistSheetColumnFields,
+  collectionRequiredFields,
 } from "../hooks/collection/importConfigurationBuilder";
+import { hasSpreadsheetImportColumn } from "../hooks/collection/importGlobalOptionsVisibility";
 
 /**
  * Affiche les champs frontend de configuration d'import.
@@ -56,211 +61,205 @@ function ImportConfigurationFields({
   }
 
   const columnFields = collectionColumnFields(configuration, !configuration.multipleSheets);
+  const showPriceUnit = hasSpreadsheetImportColumn(configuration, "purchase_price");
+  const showRatingBase = hasSpreadsheetImportColumn(configuration, "grade");
 
   return (
-    <fieldset className="importConfiguration" disabled={disabled}>
-      <legend>Configuration du fichier</legend>
-      <p>* Champs obligatoires</p>
-
-      <label>
-        Unite des prix
-        <select
-          value={configuration.priceUnit}
-          onChange={(event) => onConfigurationChange("priceUnit", event.target.value)}
-        >
-          {["EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "KRW"].map(
-            (priceUnit) => <option key={priceUnit} value={priceUnit}>{priceUnit}</option>
+    <>
+      <ImportCollapsibleSection title="1. Structure du fichier" description="Onglets et organisation du classeur.">
+        <FileStructureFields configuration={configuration} disabled={disabled} availableSheetNames={availableSheetNames} onConfigurationChange={onConfigurationChange} onLayoutChange={onLayoutChange} />
+      </ImportCollapsibleSection>
+      <ImportCollapsibleSection title="2. Colonnes et plage de données" description="Emplacement des lignes et des informations à importer.">
+        <fieldset className="importConfiguration" disabled={disabled}>
+          <legend>Colonnes et plage de données</legend>
+          <p className="importConfigurationIntro">
+            Les colonnes marquées avec un astérisque sont indispensables pour créer votre collection.
+          </p>
+          {!configuration.multipleSheets ? (
+            <ImportLayoutFields
+              layout={configuration.singleSheetLayout}
+              columnFields={columnFields}
+              requiredFields={["name", "platform"]}
+              onLayoutChange={(fieldName, value) => onLayoutChange("singleSheetLayout", fieldName, value)}
+              onLayoutColumnChange={(fieldName, value) => onLayoutColumnChange("singleSheetLayout", fieldName, value)}
+            />
+          ) : (
+            <MultipleSheetsLayoutFields
+              configuration={configuration}
+              onConfigurationChange={onConfigurationChange}
+              onLayoutChange={onLayoutChange}
+              onLayoutColumnChange={onLayoutColumnChange}
+              onSheetChange={onSheetChange}
+              onSheetLayoutChange={onSheetLayoutChange}
+              onSheetColumnChange={onSheetColumnChange}
+            />
           )}
-        </select>
-      </label>
-
-      <label>
-        Base de notation
-        <input
-          type="number"
-          min="1"
-          value={configuration.ratingBase}
-          onChange={(event) => onConfigurationChange("ratingBase", event.target.value)}
-        />
-      </label>
-
-      <WishlistFields
-        configuration={configuration}
-        availableSheetNames={availableSheetNames}
-        onWishlistConfigurationChange={onWishlistConfigurationChange}
-        onWishlistLayoutChange={onWishlistLayoutChange}
-        onWishlistLayoutColumnChange={onWishlistLayoutColumnChange}
-      />
-
-      <div className="segmentedField" role="group" aria-label="Import multi-onglets">
-        <span>Multiple onglets</span>
-        <label>
-          <input
-            type="radio"
-            name="multipleSheets"
-            checked={!configuration.multipleSheets}
-            onChange={() => onConfigurationChange("multipleSheets", false)}
-          />
-          Non
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="multipleSheets"
-            checked={configuration.multipleSheets}
-            onChange={() => onConfigurationChange("multipleSheets", true)}
-          />
-          Oui
-        </label>
-      </div>
-
-      {!configuration.multipleSheets ? (
-        <ImportLayoutFields
-          layout={configuration.singleSheetLayout}
-          columnFields={columnFields}
-          requiredFields={["name", "platform"]}
-          onLayoutChange={(fieldName, value) => onLayoutChange(
-            "singleSheetLayout",
-            fieldName,
-            value
-          )}
-          onLayoutColumnChange={(fieldName, value) => onLayoutColumnChange(
-            "singleSheetLayout",
-            fieldName,
-            value
-          )}
-        />
-      ) : (
-        <MultipleSheetsFields
+        </fieldset>
+      </ImportCollapsibleSection>
+      <ImportCollapsibleSection title="3. Liste de souhaits" description="Source éventuelle des jeux souhaités.">
+        <ImportSpreadsheetWishlistFields
           configuration={configuration}
           availableSheetNames={availableSheetNames}
-          onConfigurationChange={onConfigurationChange}
-          onLayoutChange={onLayoutChange}
-          onLayoutColumnChange={onLayoutColumnChange}
-          onSheetChange={onSheetChange}
-          onSheetLayoutChange={onSheetLayoutChange}
-          onSheetColumnChange={onSheetColumnChange}
-          onAddSheet={onAddSheet}
-          onRemoveSheet={onRemoveSheet}
+          disabled={disabled}
+          onWishlistConfigurationChange={onWishlistConfigurationChange}
+          onWishlistLayoutChange={onWishlistLayoutChange}
+          onWishlistLayoutColumnChange={onWishlistLayoutColumnChange}
         />
+      </ImportCollapsibleSection>
+      {showPriceUnit || showRatingBase ? (
+      <ImportCollapsibleSection title="4. Options de prix et de note" description="Affichées seulement si les colonnes liées sont configurées.">
+        <ImportGlobalOptions
+          showPriceUnit={showPriceUnit}
+          showRatingBase={showRatingBase}
+          priceUnit={configuration.priceUnit}
+          ratingBase={configuration.ratingBase}
+          disabled={disabled}
+          onConfigurationChange={onConfigurationChange}
+        />
+      </ImportCollapsibleSection>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Affiche le choix des onglets a importer avec une configuration partagee.
+ *
+ * @param {Object} props - Etat et callbacks de selection des onglets.
+ * @returns {import("react").JSX.Element} Champs de selection des onglets.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function SheetSelectionFields({ availableSheetNames, configuration, onLayoutChange }) {
+  const selectionMode = configuration.sharedSheetLayout.sheetSelectionMode;
+  return (
+    <>
+      <div className="segmentedField" role="group" aria-label="Sélection des onglets">
+        <span>Onglets à importer</span>
+        <label>
+          <input
+            type="radio"
+            name="sheetSelectionMode"
+            checked={selectionMode === "all"}
+            onChange={() => onLayoutChange("sharedSheetLayout", "sheetSelectionMode", "all")}
+          />
+          Tous
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="sheetSelectionMode"
+            checked={selectionMode === "included"}
+            onChange={() => onLayoutChange("sharedSheetLayout", "sheetSelectionMode", "included")}
+          />
+          Choisir les onglets de collection
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="sheetSelectionMode"
+            checked={selectionMode === "excluded"}
+            onChange={() => onLayoutChange("sharedSheetLayout", "sheetSelectionMode", "excluded")}
+          />
+          Tout importer sauf certains onglets
+        </label>
+        <p className="segmentedFieldHelp">
+          Sélectionnez uniquement les onglets contenant les jeux de votre collection.
+          Un onglet dédié à la liste de souhaits doit être exclu ici, puis configuré
+          dans la section Liste de souhaits.
+        </p>
+      </div>
+      {selectionMode === "all" ? null : (
+      <label>
+        {selectionMode === "excluded"
+          ? "Onglets exclus"
+          : "Onglets inclus"}
+        <SheetSelectionField
+          availableSheetNames={availableSheetNames}
+          configuration={configuration}
+          onLayoutChange={onLayoutChange}
+        />
+        <span className="fieldHelpText">
+          {selectionMode === "excluded"
+            ? "Listez les onglets à ignorer, notamment un onglet dédié à la liste de souhaits. Laissez vide pour importer tous les onglets détectés."
+            : "Listez seulement les onglets qui contiennent les jeux de votre collection, sans l'onglet dédié à la liste de souhaits."}
+        </span>
+      </label>
+      )}
+    </>
+  );
+}
+
+/**
+ * Affiche la section de structure du fichier tableur.
+ *
+ * @param {Object} props - Etat de structure et callbacks.
+ * @returns {import("react").JSX.Element} Champs de structure.
+ * @throws {void} Ne leve pas d'exception.
+ */
+function FileStructureFields({
+  configuration,
+  disabled,
+  availableSheetNames,
+  onConfigurationChange,
+  onLayoutChange,
+}) {
+  const singleSheetName = availableSheetNames.length === 1 ? availableSheetNames[0] : "";
+  return (
+    <fieldset className="importConfiguration" disabled={disabled}>
+      <legend>Structure du fichier</legend>
+      {configuration.multipleSheets ? (
+        <>
+          <label>
+            Le nom de chaque onglet correspond à *
+            <select
+              value={configuration.sheetInformation}
+              onChange={(event) => onConfigurationChange("sheetInformation", event.target.value)}
+            >
+              <option value="platform">Plateforme</option>
+              <option value="">Aucune information</option>
+            </select>
+            <span className="fieldHelpText">
+              {configuration.sheetInformation === "platform"
+                ? "Utilisez ce mode quand chaque onglet regroupe les jeux d'une plateforme, par exemple un onglet Switch et un onglet PlayStation 2."
+                : "Utilisez ce mode quand le nom des onglets ne porte aucune information. La colonne Plateforme devient obligatoire dans chaque configuration d'onglet."}
+            </span>
+          </label>
+          <SheetSelectionFields
+            availableSheetNames={availableSheetNames}
+            configuration={configuration}
+            onLayoutChange={onLayoutChange}
+          />
+        </>
+      ) : (
+        <p className="importConfigurationIntro">
+          Aucune configuration de structure n'est nécessaire car le fichier ne contient qu'un seul onglet
+          {singleSheetName ? ` : ${singleSheetName}` : ""}.
+        </p>
       )}
     </fieldset>
   );
 }
 
 /**
- * Affiche la configuration wishlist commune aux modes d'import.
- *
- * @param {Object} props - Etat wishlist et callbacks.
- * @returns {import("react").JSX.Element} Champs wishlist.
- */
-function WishlistFields({
-  configuration,
-  availableSheetNames,
-  onWishlistConfigurationChange,
-  onWishlistLayoutChange,
-  onWishlistLayoutColumnChange,
-}) {
-  return (
-    <section className="wishlistConfiguration" aria-label="Configuration wishlist">
-      <div className="segmentedField" role="group" aria-label="Mode wishlist">
-        <span>Wishlist</span>
-        {["none", "sheet", "column"].map((mode) => (
-          <label key={mode}>
-            <input
-              type="radio"
-              name="wishlistMode"
-              checked={configuration.wishlist.mode === mode}
-              onChange={() => onWishlistConfigurationChange("mode", mode)}
-            />
-            {modeLabels[mode]}
-          </label>
-        ))}
-      </div>
-      {configuration.wishlist.mode === "sheet" ? (
-        <>
-          <label>
-            Onglet wishlist *
-            <SheetNameField
-              value={configuration.wishlist.sheetName}
-              availableSheetNames={availableSheetNames}
-              onChange={(value) => onWishlistConfigurationChange("sheetName", value)}
-            />
-          </label>
-          <ImportLayoutFields
-            layout={configuration.wishlist.layout}
-            columnFields={wishlistSheetColumnFields()}
-            requiredFields={["name", "platform"]}
-            onLayoutChange={onWishlistLayoutChange}
-            onLayoutColumnChange={onWishlistLayoutColumnChange}
-          />
-        </>
-      ) : null}
-    </section>
-  );
-}
-
-const modeLabels = Object.freeze({
-  none: "Aucune",
-  sheet: "Onglet dedie",
-  column: "Colonne",
-});
-
-/**
- * Affiche une selection d'onglet simple.
- *
- * @param {Object} props - Valeur courante, options et callback.
- * @returns {import("react").JSX.Element} Champ onglet.
- */
-function SheetNameField({ value, availableSheetNames, onChange }) {
-  if (availableSheetNames.length) {
-    return (
-      <select required value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">Selectionner un onglet</option>
-        {availableSheetNames.map((sheetName) => (
-          <option key={sheetName} value={sheetName}>{sheetName}</option>
-        ))}
-      </select>
-    );
-  }
-  return (
-    <input
-      type="text"
-      required
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  );
-}
-
-/**
- * Affiche les champs propres aux modes multi-onglets.
+ * Affiche les champs de colonnes propres aux modes multi-onglets.
  *
  * @param {Object} props - Etat multi-onglets et callbacks.
- * @returns {import("react").JSX.Element} Champs multi-onglets.
+ * @returns {import("react").JSX.Element} Champs de colonnes multi-onglets.
+ * @throws {void} Ne leve pas d'exception.
  */
-function MultipleSheetsFields({
+function MultipleSheetsLayoutFields({
   configuration,
-  availableSheetNames,
   onConfigurationChange,
   onLayoutChange,
   onLayoutColumnChange,
   onSheetChange,
   onSheetLayoutChange,
   onSheetColumnChange,
-  onAddSheet,
-  onRemoveSheet,
 }) {
   return (
     <>
-      <label>
-        Information portee par l'onglet *
-        <select value={configuration.sheetInformation} disabled>
-          <option value="platform">Plateforme</option>
-        </select>
-      </label>
       <div className="segmentedField" role="group" aria-label="Layout partage">
-        <span>Memes plages sur chaque onglet</span>
+        <span>Mêmes plages sur chaque onglet</span>
         <label>
           <input
             type="radio"
@@ -279,64 +278,30 @@ function MultipleSheetsFields({
           />
           Non
         </label>
+        <p className="segmentedFieldHelp">
+          Oui : configurez une seule plage de données et les mêmes colonnes pour tous les onglets
+          importés. Non : configurez séparément la plage et les colonnes de chaque onglet.
+        </p>
       </div>
       {configuration.sharedLayout ? (
-        <>
-          <div className="segmentedField" role="group" aria-label="Selection des onglets">
-            <span>Selection des onglets</span>
-            <label>
-              <input
-                type="radio"
-                name="sheetSelectionMode"
-                checked={configuration.sharedSheetLayout.sheetSelectionMode !== "excluded"}
-                onChange={() => onLayoutChange(
-                  "sharedSheetLayout",
-                  "sheetSelectionMode",
-                  "included"
-                )}
-              />
-              Inclure
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="sheetSelectionMode"
-                checked={configuration.sharedSheetLayout.sheetSelectionMode === "excluded"}
-                onChange={() => onLayoutChange(
-                  "sharedSheetLayout",
-                  "sheetSelectionMode",
-                  "excluded"
-                )}
-              />
-              Exclure
-            </label>
-          </div>
-          <label>
-            {configuration.sharedSheetLayout.sheetSelectionMode === "excluded"
-              ? "Onglets exclus"
-              : "Onglets inclus"}
-            <SheetSelectionField
-              availableSheetNames={availableSheetNames}
-              configuration={configuration}
-              onLayoutChange={onLayoutChange}
-            />
-          </label>
-          <ImportLayoutFields
-            layout={configuration.sharedSheetLayout}
-            columnFields={collectionColumnFields(configuration, false)}
-            requiredFields={["name"]}
-            onLayoutChange={(fieldName, value) => onLayoutChange(
-              "sharedSheetLayout",
-              fieldName,
-              value
-            )}
-            onLayoutColumnChange={(fieldName, value) => onLayoutColumnChange(
-              "sharedSheetLayout",
-              fieldName,
-              value
-            )}
-          />
-        </>
+        <ImportLayoutFields
+          layout={configuration.sharedSheetLayout}
+          columnFields={collectionColumnFields(configuration, false)}
+          requiredFields={collectionRequiredFields(
+            configuration,
+            configuration.sheetInformation !== "platform"
+          )}
+          onLayoutChange={(fieldName, value) => onLayoutChange(
+            "sharedSheetLayout",
+            fieldName,
+            value
+          )}
+          onLayoutColumnChange={(fieldName, value) => onLayoutColumnChange(
+            "sharedSheetLayout",
+            fieldName,
+            value
+          )}
+        />
       ) : (
         <PerSheetFields
           configuration={configuration}
@@ -344,8 +309,6 @@ function MultipleSheetsFields({
           onSheetChange={onSheetChange}
           onSheetLayoutChange={onSheetLayoutChange}
           onSheetColumnChange={onSheetColumnChange}
-          onAddSheet={onAddSheet}
-          onRemoveSheet={onRemoveSheet}
         />
       )}
     </>
@@ -364,9 +327,11 @@ function SheetSelectionField({ availableSheetNames, configuration, onLayoutChang
   const value = configuration.sharedSheetLayout[fieldName];
   if (availableSheetNames.length) {
     const selectedValues = Array.isArray(value) ? value : splitSheetNames(value);
+    const visibleRows = availableSheetNames.length > 4 ? 8 : 4;
     return (
       <select
         multiple
+        size={visibleRows}
         value={selectedValues}
         onChange={(event) => onLayoutChange(
           "sharedSheetLayout",
@@ -417,45 +382,49 @@ function PerSheetFields({
   onSheetChange,
   onSheetLayoutChange,
   onSheetColumnChange,
-  onAddSheet,
-  onRemoveSheet,
 }) {
+  const [activeSheetIndex, setActiveSheetIndex] = useState(0);
+  const activeIndex = Math.min(activeSheetIndex, Math.max(sheets.length - 1, 0));
+  const activeSheet = sheets[activeIndex];
+  if (!activeSheet) {
+    return (
+      <p className="segmentedFieldHelp">
+        Sélectionnez les onglets de collection dans la section Structure du fichier.
+      </p>
+    );
+  }
   return (
     <div className="sheetConfigurationList">
-      {sheets.map((sheet, index) => (
-        <section className="sheetConfiguration" key={`sheet-${index + 1}`}>
-          <div className="sheetConfigurationHeader">
-            <h2>Onglet {index + 1}</h2>
-            <button
-              type="button"
-              className="secondaryButton"
-              disabled={sheets.length === 1}
-              onClick={() => onRemoveSheet(index)}
-            >
-              Retirer
-            </button>
-          </div>
-          <label>
-            Nom de l'onglet *
-            <input
-              type="text"
-              required
-              value={sheet.sheetName}
-              onChange={(event) => onSheetChange(index, "sheetName", event.target.value)}
-            />
-          </label>
-          <ImportLayoutFields
-            layout={sheet.layout}
-            columnFields={collectionColumnFields(configuration, false)}
-            requiredFields={["name"]}
-            onLayoutChange={(fieldName, value) => onSheetLayoutChange(index, fieldName, value)}
-            onLayoutColumnChange={(fieldName, value) => onSheetColumnChange(index, fieldName, value)}
-          />
-        </section>
-      ))}
-      <button type="button" className="secondaryButton" onClick={onAddSheet}>
-        Ajouter un onglet
-      </button>
+      <div className="sheetConfigurationTabs" role="tablist" aria-label="Onglets à configurer">
+        {sheets.map((sheet, index) => (
+          <button
+            type="button"
+            role="tab"
+            className={index === activeIndex ? "activeSheetTab" : ""}
+            aria-selected={index === activeIndex}
+            key={sheet.sheetName || `sheet-${index + 1}`}
+            onClick={() => setActiveSheetIndex(index)}
+          >
+            {sheet.sheetName || `Onglet ${index + 1}`}
+          </button>
+        ))}
+      </div>
+      <section className="sheetConfiguration" role="tabpanel">
+        <div className="sheetConfigurationHeader">
+          <h2>{activeSheet.sheetName || `Onglet ${activeIndex + 1}`}</h2>
+        </div>
+        <input type="hidden" value={activeSheet.sheetName} onChange={(event) => onSheetChange(activeIndex, "sheetName", event.target.value)} />
+        <ImportLayoutFields
+          layout={activeSheet.layout}
+          columnFields={collectionColumnFields(configuration, false)}
+          requiredFields={collectionRequiredFields(
+            configuration,
+            configuration.sheetInformation !== "platform"
+          )}
+          onLayoutChange={(fieldName, value) => onSheetLayoutChange(activeIndex, fieldName, value)}
+          onLayoutColumnChange={(fieldName, value) => onSheetColumnChange(activeIndex, fieldName, value)}
+        />
+      </section>
     </div>
   );
 }

@@ -56,8 +56,8 @@ function buildImportConfigurationAfterAnalysis(
     sharedLayout: true,
     sharedSheetLayout: {
       ...currentConfiguration.sharedSheetLayout,
-      sheetSelectionMode: "included",
-      includedSheets: sheetNames,
+      sheetSelectionMode: "all",
+      includedSheets: [],
       excludedSheets: [],
     },
   };

@@ -246,6 +246,7 @@ class AdminLibraryImportService:
         except Exception as exc:
             self._notify_import_failure(exc, csv_file_path, original_filename, requester_email)
             raise
+        refusal = self.refusal_policy.evaluate(import_data)
         return AdminLibraryImportResult(
             linked_platforms=persistence_result.linked_platforms,
             created_studios=persistence_result.created_studios,
@@ -254,8 +255,8 @@ class AdminLibraryImportService:
             refusal={
                 "refused": False,
                 "reason": "",
-                "invalid_games_count": len(import_data.warnings.invalid_games),
-                "total_games_count": len(import_data.games),
+                "invalid_games_count": refusal.invalid_games_count,
+                "total_games_count": refusal.total_games_count,
                 "message": "",
             },
         )

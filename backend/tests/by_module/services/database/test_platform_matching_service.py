@@ -59,6 +59,8 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         ])
         self.assertEqual([], matched_data.warnings.platform_matches)
         self.assertEqual([], matched_data.warnings.skipped_games)
+        self.assertEqual([], matched_data.warnings.user_platform_matches)
+        self.assertEqual([], matched_data.warnings.user_skipped_games)
         self.assertEqual(59, matched_data.games[0].purchase_price)
         self.assertEqual("EUR", matched_data.games[0].price_unit)
         self.assertEqual("EU-FR", matched_data.games[0].region)
@@ -85,6 +87,14 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         self.assertEqual(["Switch"], [game.platform_name for game in matched_data.games])
         self.assertEqual("Sports", matched_data.warnings.platform_matches[0]["game_name"])
         self.assertEqual(
+            {
+                "game_name": "Sports",
+                "imported_platform": "Wii",
+                "message": "Correspondance a verifier avec Switch",
+            },
+            matched_data.warnings.user_platform_matches[0],
+        )
+        self.assertEqual(
             [
                 {
                     "imported_platform": "Wii",
@@ -101,6 +111,7 @@ class PlatformMatchingServiceTest(unittest.TestCase):
             matched_data.warnings.platform_mappings,
         )
         self.assertEqual([], matched_data.warnings.skipped_games)
+        self.assertEqual([], matched_data.warnings.user_skipped_games)
 
     def test_match_import_data_uses_alias_when_direct_score_is_not_high(self):
         """Verifie le recours aux alias quand le score direct est sous le seuil haut.
@@ -142,6 +153,8 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         self.assertEqual(1, matched_data.warnings.platform_mappings[0]["games_count"])
         self.assertEqual([], matched_data.warnings.platform_matches)
         self.assertEqual([], matched_data.warnings.skipped_games)
+        self.assertEqual([], matched_data.warnings.user_platform_matches)
+        self.assertEqual([], matched_data.warnings.user_skipped_games)
 
     def test_match_import_data_maps_pc_store_aliases_to_pc_platform(self):
         """Verifie que les boutiques PC importees sont rattachees a PC.
@@ -191,6 +204,8 @@ class PlatformMatchingServiceTest(unittest.TestCase):
         ])
         self.assertEqual([], matched_data.warnings.platform_matches)
         self.assertEqual([], matched_data.warnings.skipped_games)
+        self.assertEqual([], matched_data.warnings.user_platform_matches)
+        self.assertEqual([], matched_data.warnings.user_skipped_games)
         self.assertTrue(
             all(mapping["matched_by_alias"] for mapping in matched_data.warnings.platform_mappings)
         )
@@ -225,9 +240,32 @@ class PlatformMatchingServiceTest(unittest.TestCase):
 
         self.assertEqual([], matched_data.games)
         reasons = [warning["reason"] for warning in matched_data.warnings.skipped_games]
-        self.assertIn("low_score", reasons)
-        self.assertIn("no_match", reasons)
-        self.assertIn("ambiguous", reasons)
+        self.assertIn(
+            "Plateforme invalide (plateforme la plus proche détectée : \"Switch\").",
+            reasons,
+        )
+        self.assertIn("Plateforme invalide (aucune plateforme proche détectée).", reasons)
+        self.assertIn("Plateforme invalide (plusieurs plateformes proches détectées).", reasons)
+        self.assertEqual(
+            [
+                {
+                    "game_name": "Low",
+                    "imported_platform": "Unknown",
+                    "message": "Ne correspond a aucune plateforme existante",
+                },
+                {
+                    "game_name": "Zero",
+                    "imported_platform": "qqq",
+                    "message": "Ne correspond a aucune plateforme existante",
+                },
+                {
+                    "game_name": "Ambiguous",
+                    "imported_platform": "abc",
+                    "message": "Ne correspond a aucune plateforme existante",
+                },
+            ],
+            matched_data.warnings.user_skipped_games,
+        )
 
     def _service(self):
         return PlatformMatchingService(

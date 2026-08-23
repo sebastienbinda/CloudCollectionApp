@@ -44,6 +44,10 @@ from .collection_import_models import (
     CollectionImportStudio,
     CollectionImportWarnings,
 )
+from .collection_import_invalid_value_help_service import (
+    CollectionImportInvalidValueHelp,
+    CollectionImportInvalidValueHelpService,
+)
 from .collection_import_refusal_policy import (
     CollectionImportRefusal,
     CollectionImportRefusalPolicy,
@@ -77,6 +81,8 @@ __all__ = [
     "CollectionImportFailureNotificationService",
     "CollectionImportField",
     "CollectionImportGame",
+    "CollectionImportInvalidValueHelp",
+    "CollectionImportInvalidValueHelpService",
     "CollectionImportPlatform",
     "CollectionImportRefusal",
     "CollectionImportRefusalAdminNotifier",

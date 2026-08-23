@@ -16,7 +16,9 @@ database structure in `documentation/database.md`, and frontend navigation in
   to `/collection`.
 - From the Configuration page, a connected `USER` with collection access can
   open `/collection/import` to add games from a new file without
-  reinitializing the current collection.
+  reinitializing the current collection. This action must clear the frontend
+  import state, including selected file, analysis result, form values and the
+  previous import report, before opening the import page.
 - The frontend must call `GET /api/users/me/collection` to decide between those
   two paths.
 - The import page only collects the user collection file and displays
@@ -32,6 +34,15 @@ database structure in `documentation/database.md`, and frontend navigation in
 - After a successful import, the frontend displays an import summary using the
   backend counters and offers a link to `/collection`; it must not redirect
   automatically.
+- The import summary must separate blocking rejected games from non-blocking
+  platform checks. Games waiting for administrator platform validation are
+  imported, displayed as an administrator check, and excluded from the blocking
+  error counter used to reject the file.
+- User-facing import warnings must use clear business wording. Technical
+  matching details remain available in administrator emails. Invalid optional
+  values are displayed with the import-configuration field label and a simple
+  refused-value message; detailed refusal reasons and possible values are
+  fetched only when the user asks for more information.
 - From the Configuration page, a connected `USER` with collection access can
   reinitialize the current collection. After a successful reinitialization, the
   frontend redirects to `/collection/import` so the user can import a new file.
@@ -53,6 +64,10 @@ database structure in `documentation/database.md`, and frontend navigation in
   response field.
 - `GET /api/users/import/` returns the last saved import configuration, or
   `404` when none exists.
+- `GET /api/users/import/invalid-value-help` returns the detailed reason and
+  possible accepted values for a refused optional value. The summary must call
+  this endpoint lazily when the user opens the detail view, not include every
+  detail in the final import payload.
 - `POST /api/users/import` must use `application/json` and receives only the
   import configuration, including a mandatory top-level `wishlist` section.
 - The import configuration may contain a global `price_unit`. It is mandatory
@@ -157,9 +172,13 @@ database structure in `documentation/database.md`, and frontend navigation in
   without manual-verification warning.
 - Scores greater than or equal to `PLATFORM_MATCHING_LOW_LVL_RATING` and lower than
   `PLATFORM_MATCHING_HIGH_LEVEL_RATING` are imported and reported in
-  `warnings.platform_matches` for administrator verification.
+  `warnings.platform_matches` for administrator verification. These platform
+  warnings are non-blocking: affected games are imported and must not be counted
+  as rejected games.
 - Scores lower than `PLATFORM_MATCHING_LOW_LVL_RATING`, including `0`, skip the impacted
   games and report them in `warnings.skipped_games`.
+- Rows without a usable mandatory game name or platform are skipped and counted
+  in the blocking rejected-game counter.
 - The import warnings keep a `platform_mappings` list with the imported platform
   name, matched platform name, matching score, imported game count and alias
   usage flag for every platform read from the file.
@@ -168,17 +187,25 @@ database structure in `documentation/database.md`, and frontend navigation in
 - At the end of each import, the backend sends exactly one administrator report
   when `ADMIN_NOTIFICATION_EMAIL` is configured, even when the import has no
   warning. The report is sent outside the reader layer as an HTML email and
-  includes the import context, counters, validated configuration, total
-  duration, platform mappings and every import warning. The studio section is
-  an HTML table listing every imported studio with the original studio name,
-  whether a reference studio was created, the associated existing studio when
-  one was accepted and the matching score. The game section is an HTML table
-  listing every imported game with the original file name, whether a reference
-  game was created, the associated existing game when one was accepted, the
-  final matching score, the matching decision, the applied rule and the
-  explanatory reason. When a game reference is created because no exact or
+  includes the import context, counters, error counters, the platform values to
+  validate, validated configuration, total duration and diagnostic tables. The
+  platform-validation section must appear immediately after the error counters
+  and list each imported file platform value, the matched catalog platform and
+  the games waiting for administrator validation. The validated configuration is
+  formatted as readable colored JSON, not as a compact raw string. The studio
+  section is an HTML table listing every imported studio with the original
+  studio name, whether a reference studio was created, the associated existing
+  studio when one was accepted and the matching score. The game section is an
+  HTML table listing every imported game with the original file name, whether a
+  reference game was created, the associated existing game when one was
+  accepted, the final matching score, the matching decision, the applied rule
+  and the explanatory reason. Tables use visual state colors: created elements
+  in light green, values requiring verification in light orange, and refused
+  decisions in light red. When a game reference is created because no exact or
   high-confidence existing game match was accepted, the same diagnostic table
-  keeps the best existing same-platform candidate score and explanation.
+  keeps the best existing same-platform candidate score and explanation. The
+  email must not include an unformatted raw `Warnings` block when the same data
+  is already represented by structured sections.
 - Studios are matched by normalized studio name with the configurable studio
   matching rules from `documentation/import-mapping.md`.
 - Games are first matched by exact normalized `(platform, name)` key. When no

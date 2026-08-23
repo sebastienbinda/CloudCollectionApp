@@ -202,6 +202,9 @@ class OdsCollectionImportGameBuilder:
         )
         game_key = self.value_mapper.comparison_key(game_name)
         if not game_name or game_key is None:
+            warnings["skipped_mandatory_games"] = (
+                int(warnings.get("skipped_mandatory_games") or 0) + 1
+            )
             return None
         platform_name = self._normalized_field_value(
             row,
@@ -211,6 +214,9 @@ class OdsCollectionImportGameBuilder:
             sheet_name,
         )
         if platform_name is None:
+            warnings["skipped_mandatory_games"] = (
+                int(warnings.get("skipped_mandatory_games") or 0) + 1
+            )
             return None
         wishlist = self.value_mapper.map_wishlist(
             self._field_value(row, column_positions, CollectionImportField.WISHLIST),

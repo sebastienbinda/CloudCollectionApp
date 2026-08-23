@@ -81,18 +81,24 @@ class CollectionImportWarnings:
         invalid_wishlist (int): Nombre de lignes ignorees pour valeur wishlist invalide.
         invalid_wishlist_values_found (list[str]): Valeurs wishlist invalides distinctes.
         invalid_games (list[dict]): Jeux importes avec une information invalide ignoree.
+        skipped_mandatory_games (int): Lignes ignorees pour nom ou plateforme manquante.
         platform_mappings (list[dict]): Synthese des plateformes lues et rattachees.
         platform_matches (list[dict]): Plateformes rattachees avec verification manuelle.
         skipped_games (list[dict]): Jeux ignores pendant l'import.
+        user_platform_matches (list[dict]): Messages simplifiés pour les plateformes a verifier.
+        user_skipped_games (list[dict]): Messages simplifiés pour les jeux ignores.
         total_import_duration_seconds (float): Duree totale de l'import en secondes.
     """
 
     invalid_wishlist: int = 0
     invalid_wishlist_values_found: Optional[list[str]] = None
     invalid_games: Optional[list[dict]] = None
+    skipped_mandatory_games: int = 0
     platform_mappings: Optional[list[dict]] = None
     platform_matches: Optional[list[dict]] = None
     skipped_games: Optional[list[dict]] = None
+    user_platform_matches: Optional[list[dict]] = None
+    user_skipped_games: Optional[list[dict]] = None
     total_import_duration_seconds: float = 0.0
 
     def __post_init__(self):
@@ -115,6 +121,10 @@ class CollectionImportWarnings:
             object.__setattr__(self, "platform_matches", [])
         if self.skipped_games is None:
             object.__setattr__(self, "skipped_games", [])
+        if self.user_platform_matches is None:
+            object.__setattr__(self, "user_platform_matches", [])
+        if self.user_skipped_games is None:
+            object.__setattr__(self, "user_skipped_games", [])
 
     def to_dict(self) -> dict[str, object]:
         """Convertit les warnings en dictionnaire serialisable.
@@ -130,9 +140,12 @@ class CollectionImportWarnings:
             "invalid_wishlist": self.invalid_wishlist,
             "invalid_wishlist_values_found": list(self.invalid_wishlist_values_found),
             "invalid_games": list(self.invalid_games),
+            "skipped_mandatory_games": self.skipped_mandatory_games,
             "platform_mappings": list(self.platform_mappings),
             "platform_matches": list(self.platform_matches),
             "skipped_games": list(self.skipped_games),
+            "user_platform_matches": list(self.user_platform_matches),
+            "user_skipped_games": list(self.user_skipped_games),
             "total_import_duration_seconds": self.total_import_duration_seconds,
         }
 

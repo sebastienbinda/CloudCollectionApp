@@ -163,6 +163,28 @@ class UserCollectionApi {
   }
 
   /**
+   * Charge l'aide associee a une valeur d'import refusee.
+   *
+   * @param {string} field - Champ d'import refuse.
+   * @param {string} value - Valeur refusee.
+   * @returns {Promise<Object>} Raison du refus et valeurs possibles.
+   * @throws {UserCollectionApiError} Si l'aide ne peut pas etre chargee.
+   */
+  static async fetchImportInvalidValueHelp(field, value = "") {
+    const query = new URLSearchParams({
+      field: String(field || ""),
+      value: String(value || ""),
+    });
+    return this.fetchJson(
+      `/api/users/import/invalid-value-help?${query.toString()}`,
+      "Impossible de recuperer les informations de refus.",
+      {
+        headers: AuthApi.getAuthorizationHeaders(),
+      }
+    );
+  }
+
+  /**
    * Reinitialise la collection de l'utilisateur connecte.
    *
    * @param {void} Aucun - Le backend identifie l'utilisateur via le token Bearer.

@@ -53,6 +53,19 @@ class UserCollectionImportRepository(Protocol):
             UserCollectionImportPersistenceResult: Compteurs de persistance.
         """
 
+    def prepare_import_data_for_policy(
+        self,
+        import_data: CollectionImportData,
+    ) -> CollectionImportData:
+        """Prepare les donnees avant la politique de refus global.
+
+        Args:
+            import_data (CollectionImportData): Donnees lues depuis le fichier.
+
+        Returns:
+            CollectionImportData: Donnees enrichies des refus de plateforme.
+        """
+
     def reinitialize_collection(self, user_id: int) -> None:
         """Reinitialise la collection persistante d'un utilisateur.
 

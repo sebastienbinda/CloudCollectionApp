@@ -27,6 +27,7 @@ from controllers import (
     RouteController,
     StudioController,
     UserCollectionImportController,
+    UserCollectionImportHelpController,
     UserController,
 )
 from services import (
@@ -116,6 +117,7 @@ user_collection_import_controller = UserCollectionImportController(
     auth_guard,
     reset_job_coordinator=library_reset_job_coordinator,
 )
+user_collection_import_help_controller = UserCollectionImportHelpController(auth_guard)
 library_service_provider = LibraryServiceProvider()
 library_controller = LibraryController(
     auth_guard,
@@ -159,6 +161,7 @@ route_controller.register_routes(app)
 collection_share_controller.register_routes(app)
 user_controller.register_routes(app)
 user_collection_import_controller.register_routes(app)
+user_collection_import_help_controller.register_routes(app)
 collection_controller.register_routes(app)
 library_controller.register_routes(app)
 platform_controller.register_routes(app)

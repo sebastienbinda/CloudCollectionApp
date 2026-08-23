@@ -215,6 +215,10 @@ function useCloudCollectionViewModel() {
     onCollectionReinitialized: userCollectionOnboarding.markCollectionMissingAfterReinitialization,
     openCollectionOnboarding: navigation.openCollectionOnboarding,
   });
+  const openNewCollectionImport = () => {
+    userCollectionOnboarding.prepareNewCollectionImport();
+    navigation.openCollectionOnboarding();
+  };
   const canManageCollectionShares = (
     session.authenticatedProfile === "USER" &&
     userCollectionOnboarding.hasCollection === true &&
@@ -315,7 +319,7 @@ function useCloudCollectionViewModel() {
       openLibraryPlatformDetail: navigation.openLibraryPlatformDetail,
       openWishlist: navigation.openWishlist,
       openStatistics: navigation.openStatistics,
-      openCollectionOnboarding: navigation.openCollectionOnboarding,
+      openCollectionOnboarding: openNewCollectionImport,
       openUsersPage: navigation.openUsersPage,
       openAdminLibraryImport: navigation.openAdminLibraryImport,
       openPlatformImageModeration: navigation.openPlatformImageModeration,

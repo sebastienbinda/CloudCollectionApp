@@ -231,6 +231,7 @@ class OdsCollectionImportReader:
             invalid_wishlist=warnings["invalid_wishlist"],
             invalid_wishlist_values_found=warnings["invalid_values"],
             invalid_games=warnings["invalid_games"],
+            skipped_mandatory_games=int(warnings.get("skipped_mandatory_games") or 0),
         )
 
     def _read_multiple_sheets_games(

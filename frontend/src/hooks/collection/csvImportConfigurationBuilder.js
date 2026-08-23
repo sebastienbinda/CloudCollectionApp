@@ -13,6 +13,8 @@
  * Description : construction frontend de la configuration d'import CSV.
  */
 
+import { hasCsvImportColumn } from "./importGlobalOptionsVisibility.js";
+
 const REQUIRED_CSV_FIELDS = Object.freeze(["name", "platform"]);
 const OPTIONAL_CSV_FIELDS = Object.freeze([
   "studio", "release_date", "purchase_price", "buy_location", "buy_date", "grade",
@@ -94,6 +96,9 @@ function buildCsvImportConfigurationDescription(configuration) {
  * @returns {number} Base de notation.
  */
 function buildCsvRatingBase(configuration, errors) {
+  if (!hasCsvImportColumn(configuration, "grade")) {
+    return 10;
+  }
   const ratingBase = Number.parseInt(configuration.ratingBase, 10);
   if (!Number.isInteger(ratingBase) || ratingBase <= 0) {
     errors.push("Renseignez une base de notation valide.");
@@ -114,7 +119,9 @@ function buildCsvWishlistConfiguration(configuration, errors) {
   if (mode === "none" || mode === "column") {
     return { mode };
   }
-  errors.push("Le CSV accepte uniquement une wishlist absente ou portee par une colonne.");
+  errors.push(
+    "Le CSV accepte uniquement une liste de souhaits absente ou portée par une colonne."
+  );
   return { mode: "none" };
 }
 

@@ -1212,6 +1212,7 @@ modify another user's collection.
 | --- | --- | --- |
 | `GET` | `/api/users/me/collection` | Returns whether the connected user already has an imported collection. |
 | `GET` | `/api/users/import/` | Returns the connected user's last saved import configuration. |
+| `GET` | `/api/users/import/invalid-value-help` | Returns detailed help for one refused optional import value. |
 | `POST` | `/api/users/import/file/<file_type>` | Stores the connected user's temporary collection file. |
 | `POST` | `/api/users/import/analyze/<file_type>` | Analyzes the temporary file and returns ODS sheet names or CSV column names. |
 | `POST` | `/api/users/import` | Imports the connected user's collection from the temporary file and JSON configuration. |
@@ -1221,6 +1222,7 @@ When a Library reset job is running, the backend rejects the import workflow
 routes that can read, write or reinitialize user import state:
 
 - `GET /api/users/import/`;
+- `GET /api/users/import/invalid-value-help`;
 - `POST /api/users/import/file/<file_type>`;
 - `POST /api/users/import/analyze/<file_type>`;
 - `POST /api/users/import`;
@@ -1266,6 +1268,43 @@ When no saved configuration exists, the backend returns:
 ```
 
 with status `404`.
+
+### Get Refused Import Value Help
+
+```http
+GET /api/users/import/invalid-value-help?field=region&value=Ici%20ou%20parla
+```
+
+The frontend uses this endpoint only when the user opens the detail view for a
+refused optional value in the import summary. The final import response must
+keep the summary compact and must not inline all detailed refusal explanations.
+
+Query parameters:
+
+- `field`: required import field key, for example `region`, `condition`,
+  `purchase_price` or `has_steelbook`;
+- `value`: optional raw value read from the imported file.
+
+Successful response:
+
+```json
+{
+  "field": "region",
+  "value": "Ici ou parla",
+  "reason": "La valeur ne correspond pas a une region ou version reconnue.",
+  "possible_values": ["ASIA", "AU", "CHN", "EU-DE", "EU-ES", "EU-FR"]
+}
+```
+
+`possible_values` contains the accepted user-facing values when the field is
+controlled, such as region/version, physical condition or boolean fields. It is
+empty when the rejected field has no finite accepted-value list.
+
+Errors use:
+
+- `400` when `field` is missing or unknown;
+- `403` when a Library reset blocks the import workflow;
+- `500` for unexpected failures.
 
 ### Upload User Collection File
 
@@ -1382,7 +1421,9 @@ Every collection layout may map the nullable private fields `purchase_price`,
 `buy_location`, `buy_date`, `grade`, `condition`, `has_manual`, `is_collector`,
 `has_steelbook`, `is_digital`, `region` and `description`. Invalid non-empty
 values are ignored and reported in `warnings.invalid_games` without rejecting
-the complete import.
+the complete import. Each warning keeps the technical field key and raw value
+for backend diagnostics; frontend display must translate the field key through
+the centralized import field-label mapping before showing it to the user.
 `grade` keeps the original imported value, while `grade_normalized` persists
 the integer base-100 value rounded down. Values may be plain numbers using
 `rating_base`, or `<grade>/<base>` strings such as `8/10`.
@@ -1469,6 +1510,7 @@ Successful response:
     ],
     "platform_matches": [],
     "skipped_games": [],
+    "skipped_mandatory_games": 0,
     "total_import_duration_seconds": 2.431
   }
 }
@@ -1486,8 +1528,16 @@ alias produced the retained match.
 `warnings.platform_matches` lists games imported with a platform score greater
 than or equal to `PLATFORM_MATCHING_LOW_LVL_RATING` and lower than
 `PLATFORM_MATCHING_HIGH_LEVEL_RATING`; they are imported but require manual
-administrator verification. `warnings.skipped_games` lists games ignored
-because the platform score is lower than `PLATFORM_MATCHING_LOW_LVL_RATING`.
+administrator verification. These warnings are non-blocking and are excluded
+from the rejected-game counter used to refuse an import file.
+`warnings.skipped_games` lists games ignored because the platform score is
+lower than `PLATFORM_MATCHING_LOW_LVL_RATING`.
+`warnings.skipped_mandatory_games` counts rows skipped because a mandatory game
+name or platform is missing.
+The rejected-game counter used for import refusal includes games with invalid
+optional values, skipped low-platform-score games and rows skipped for missing
+mandatory values. It does not include games only waiting for administrator
+platform validation.
 `warnings.total_import_duration_seconds` contains the total backend import
 duration in seconds, measured around file validation, optional workspace copy,
 file reading, matching and SQL persistence.
@@ -1549,9 +1599,16 @@ errors when the rebuild is partial.
 The same address receives exactly one report after each user collection import
 when the import reaches its final backend step. This report is sent outside the
 file reader layer and does not depend on the imported file type. It is sent even
-when the import has no warning and includes the user import context, counters,
-validated import configuration, total duration, platform mappings and every
-import warning.
+when the import has no warning and includes the user import context, import
+counters, error counters, platform values waiting for administrator validation,
+validated import configuration, total duration and diagnostic studio/game
+tables. The platform-validation section appears immediately after the error
+counters and maps each platform value from the file to the matched catalog
+platform awaiting validation. The validated configuration is shown as formatted
+colored JSON. Diagnostic tables use color to highlight created rows,
+administrator-verification rows and refused decisions. The report must not add
+an unformatted raw `Warnings` section when the same information is already
+available in structured HTML sections.
 
 The backend also runs a daily duplicate-game check at
 `GAME_DUPLICATE_DAILY_NOTIFICATION_TIME`, using local `HH:MM` format and

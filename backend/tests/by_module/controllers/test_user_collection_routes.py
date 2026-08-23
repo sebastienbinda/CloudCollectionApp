@@ -124,6 +124,61 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
         self.assertEqual(404, response.status_code)
         self.assertEqual({"error": "Configuration d'import introuvable."}, response.get_json())
 
+    def test_import_invalid_value_help_requires_authentication(self):
+        """Verifie que l'aide des valeurs refusees exige un token.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident 403.
+        """
+
+        self.assertEqual(
+            403,
+            self.client.get("/api/users/import/invalid-value-help?field=region").status_code,
+        )
+
+    def test_import_invalid_value_help_requires_field(self):
+        """Verifie que le champ refuse doit etre fourni.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident 400.
+        """
+
+        response = self.client.get(
+            "/api/users/import/invalid-value-help",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({"error": "Le parametre field est requis."}, response.get_json())
+
+    def test_import_invalid_value_help_returns_reason_and_possible_values(self):
+        """Verifie le payload d'aide pour une valeur refusee.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident la reponse JSON.
+        """
+
+        response = self.client.get(
+            "/api/users/import/invalid-value-help?field=region&value=Ici%20ou%20parla",
+            headers=self.get_user_auth_headers(),
+        )
+
+        self.assertEqual(200, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("region", payload["field"])
+        self.assertEqual("Ici ou parla", payload["value"])
+        self.assertIn("region", payload["reason"])
+        self.assertIn("EU-FR", payload["possible_values"])
+
     def test_upload_current_user_collection_import_file_returns_created(self):
         """Verifie le depot temporaire nominal d'une collection.
 
@@ -192,9 +247,12 @@ class UserCollectionRoutesTest(BaseAppRoutesTest):
                 "invalid_wishlist": 0,
                 "invalid_wishlist_values_found": [],
                 "invalid_games": [],
+                "skipped_mandatory_games": 0,
                 "platform_mappings": [],
                 "platform_matches": [],
                 "skipped_games": [],
+                "user_platform_matches": [],
+                "user_skipped_games": [],
                 "total_import_duration_seconds": 0.0,
             },
             payload["warnings"],

@@ -38,7 +38,6 @@ from .platform_catalog_csv_reader import PlatformCatalogCsvReader
 from .platform_catalog_entry import PlatformCatalogEntry
 from .platform_catalog_seed_service import PlatformCatalogSeedResult, PlatformCatalogSeedService
 from .platform_catalog_update_service import PlatformCatalogUpdateService
-from .platform_matching_admin_notifier import PlatformMatchingAdminNotifier
 from .platform_matching_configuration import PlatformMatchingConfiguration
 from .platform_matching_service import PlatformMatchingService
 from .platform_image import PlatformImage
@@ -99,7 +98,6 @@ __all__ = [
     "PlatformCatalogSeedResult",
     "PlatformCatalogSeedService",
     "PlatformCatalogUpdateService",
-    "PlatformMatchingAdminNotifier",
     "PlatformMatchingConfiguration",
     "PlatformMatchingService",
     "SqlAlchemyPlatformRepository",

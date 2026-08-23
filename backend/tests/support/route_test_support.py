@@ -479,6 +479,11 @@ class FakeUserCollectionImportRepository:
 
         return UserCollectionImportPersistenceResult(1, 2, 3, 4)
 
+    def prepare_import_data_for_policy(self, import_data):
+        """Retourne les donnees sans preparation supplementaire."""
+
+        return import_data
+
 
 class FakeUserCollectionImportService:
     """Service d'import factice."""

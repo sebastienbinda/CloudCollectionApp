@@ -68,8 +68,8 @@ class CollectionImportRefusalPolicy:
             CollectionImportRefusal: Decision de refus global.
         """
 
-        total_games_count = len(import_data.games)
-        invalid_games_count = len(import_data.warnings.invalid_games)
+        invalid_games_count = self._invalid_games_count(import_data)
+        total_games_count = self._total_games_count(import_data)
         if total_games_count > 0 and invalid_games_count * 2 > total_games_count:
             return CollectionImportRefusal(
                 refused=True,
@@ -85,4 +85,18 @@ class CollectionImportRefusalPolicy:
             refused=False,
             invalid_games_count=invalid_games_count,
             total_games_count=total_games_count,
+        )
+
+    def _invalid_games_count(self, import_data: CollectionImportData) -> int:
+        return (
+            len(import_data.warnings.invalid_games)
+            + len(import_data.warnings.skipped_games)
+            + int(import_data.warnings.skipped_mandatory_games or 0)
+        )
+
+    def _total_games_count(self, import_data: CollectionImportData) -> int:
+        return (
+            len(import_data.games)
+            + len(import_data.warnings.skipped_games)
+            + int(import_data.warnings.skipped_mandatory_games or 0)
         )

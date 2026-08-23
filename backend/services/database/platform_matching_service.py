@@ -73,10 +73,12 @@ class PlatformMatchingService:
             match = matches_by_key.get(platform_key)
             if match is None or not match["accepted"]:
                 warnings.skipped_games.append(self._skipped_game_warning(game, match))
+                warnings.user_skipped_games.append(self._user_platform_warning(game))
                 continue
             matched_games.append(self._matched_game(game, str(match["matched_name"])))
             if match["manual_check"]:
                 warnings.platform_matches.append(self._platform_match_warning(game, match))
+                warnings.user_platform_matches.append(self._user_platform_match_warning(game, match))
         matched_platform_names = self._matched_platform_names(matched_games)
         return CollectionImportData(
             platforms=[CollectionImportPlatform(name) for name in matched_platform_names],
@@ -226,9 +228,13 @@ class PlatformMatchingService:
             invalid_wishlist=warnings.invalid_wishlist,
             invalid_wishlist_values_found=list(warnings.invalid_wishlist_values_found),
             invalid_games=list(warnings.invalid_games),
+            skipped_mandatory_games=warnings.skipped_mandatory_games,
             platform_mappings=list(warnings.platform_mappings),
             platform_matches=list(warnings.platform_matches),
             skipped_games=list(warnings.skipped_games),
+            user_platform_matches=list(warnings.user_platform_matches),
+            user_skipped_games=list(warnings.user_skipped_games),
+            total_import_duration_seconds=warnings.total_import_duration_seconds,
         )
 
     def _matched_game(self, game: CollectionImportGame, platform_name: str) -> CollectionImportGame:
@@ -277,7 +283,25 @@ class PlatformMatchingService:
             "game_name": game.name,
             "imported_platform": game.platform_name,
             "score": 0 if match is None else match["score"],
-            "reason": "no_match" if match is None else match["reason"],
+            "reason": self._platform_rejection_reason(match),
+        }
+
+    def _user_platform_warning(self, game: CollectionImportGame) -> dict[str, object]:
+        return {
+            "game_name": game.name,
+            "imported_platform": game.platform_name,
+            "message": "Ne correspond a aucune plateforme existante",
+        }
+
+    def _user_platform_match_warning(
+        self,
+        game: CollectionImportGame,
+        match: dict[str, object],
+    ) -> dict[str, object]:
+        return {
+            "game_name": game.name,
+            "imported_platform": game.platform_name,
+            "message": f"Correspondance a verifier avec {match['matched_name']}",
         }
 
     def _platform_mapping_warnings(
@@ -304,10 +328,24 @@ class PlatformMatchingService:
                     "matched_alias": "" if match is None else match["matched_alias"],
                     "accepted": False if match is None else match["accepted"],
                     "manual_check": False if match is None else match["manual_check"],
-                    "reason": "no_match" if match is None else match["reason"],
+                    "reason": "" if match is not None and match["accepted"]
+                    else self._platform_rejection_reason(match),
                 }
             )
         return platform_mappings
+
+    def _platform_rejection_reason(self, match: dict[str, object] | None) -> str:
+        if match is None or str(match.get("reason") or "") == "no_match":
+            return "Plateforme invalide (aucune plateforme proche détectée)."
+        matched_name = str(match.get("matched_name") or "").strip()
+        if str(match.get("reason") or "") == "ambiguous":
+            return "Plateforme invalide (plusieurs plateformes proches détectées)."
+        if matched_name:
+            return (
+                "Plateforme invalide (plateforme la plus proche détectée : "
+                f"\"{matched_name}\")."
+            )
+        return "Plateforme invalide."
 
     def _game_counts_by_imported_platform(
         self,

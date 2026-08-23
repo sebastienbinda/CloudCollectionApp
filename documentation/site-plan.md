@@ -75,7 +75,9 @@ public pages.
 - `/collection/import`: authenticated onboarding/import page shown when
   `GET /api/users/me/collection` returns `has_collection: false` for a
   non-`ADMIN` user, and reachable from Configuration when the same user already
-  has a collection and wants to add games from another file.
+  has a collection and wants to add games from another file. When opened from
+  Configuration, the page must start from a fresh import form and must not show
+  the previous import report.
 - `/configuration`: authenticated Configuration page for protected application
   actions.
 - `/configuration/partages`: authenticated owner page for creating, copying,

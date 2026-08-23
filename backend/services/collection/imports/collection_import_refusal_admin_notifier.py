@@ -112,31 +112,77 @@ class CollectionImportRefusalAdminNotifier:
                 "message": escape(str(context.refusal.get("message") or "")),
                 "invalid_games_count": int(context.refusal.get("invalid_games_count") or 0),
                 "total_games_count": int(context.refusal.get("total_games_count") or 0),
+                "error_counters": self._error_counters_html(context),
                 "linked_platforms": 0,
                 "created_studios": 0,
                 "created_games": 0,
                 "associated_games": 0,
                 "wishlisted_games": 0,
-                "warnings": escape(self._warnings_text(warnings)),
                 "invalid_games": self._invalid_games_html(warnings.invalid_games),
+                "manual_platform_mappings": self._manual_platform_mappings_html(
+                    warnings.platform_matches
+                ),
             },
         )
 
     def _requester_user_id(self, requester_user_id: int | None) -> str:
         return escape(str(requester_user_id)) if requester_user_id is not None else "inconnu"
 
-    def _warnings_text(self, warnings: object) -> str:
-        lines = [
-            "Warnings:",
-            f"- Wishlist invalide: {int(getattr(warnings, 'invalid_wishlist', 0) or 0)}",
-            f"- Jeux invalides: {len(getattr(warnings, 'invalid_games', []) or [])}",
-            f"- Jeux ignores: {len(getattr(warnings, 'skipped_games', []) or [])}",
-            f"- Plateformes a verifier: {len(getattr(warnings, 'platform_matches', []) or [])}",
+    def _error_counters_html(self, context: CollectionImportRefusalContext) -> str:
+        warnings = context.import_data.warnings
+        counters = [
+            (
+                "Jeux avec erreur bloquante",
+                int(context.refusal.get("invalid_games_count") or 0),
+                "Total utilise pour refuser le fichier.",
+            ),
+            (
+                "Jeux lus dans le fichier",
+                int(context.refusal.get("total_games_count") or 0),
+                "Base de calcul du seuil de refus.",
+            ),
+            (
+                "Jeux avec information invalide",
+                len(getattr(warnings, "invalid_games", []) or []),
+                "Au moins une valeur refusee dans un champ importe.",
+            ),
+            (
+                "Jeux refuses ou ignores",
+                len(getattr(warnings, "skipped_games", []) or []),
+                "Jeux non importes, par exemple plateforme non reconnue.",
+            ),
+            (
+                "Lignes sans nom ou plateforme obligatoire",
+                int(getattr(warnings, "skipped_mandatory_games", 0) or 0),
+                "Lignes non importables car une information obligatoire manque.",
+            ),
+            (
+                "Jeux avec plateforme a valider",
+                len(getattr(warnings, "platform_matches", []) or []),
+                "Non bloquant: validation admin attendue.",
+            ),
+            (
+                "Lignes wishlist ignorees",
+                int(getattr(warnings, "invalid_wishlist", 0) or 0),
+                "Valeur wishlist invalide ou inexploitable.",
+            ),
         ]
-        invalid_values = list(getattr(warnings, "invalid_wishlist_values_found", []) or [])
-        if invalid_values:
-            lines.append("- Valeurs wishlist invalides: " + ", ".join(map(str, invalid_values)))
-        return "\n".join(lines)
+        rows = []
+        for label, count, description in counters:
+            rows.append(
+                "<tr>"
+                f"<td>{escape(label)}</td>"
+                f"<td>{count}</td>"
+                f"<td>{escape(description)}</td>"
+                "</tr>"
+            )
+        return (
+            '<table border="1" cellpadding="6" cellspacing="0">'
+            "<thead><tr><th>Compteur</th><th>Valeur</th><th>Explication</th></tr></thead>"
+            "<tbody>"
+            + "".join(rows)
+            + "</tbody></table>"
+        )
 
     def _invalid_games_html(self, invalid_games: list[dict]) -> str:
         if not invalid_games:
@@ -155,6 +201,45 @@ class CollectionImportRefusalAdminNotifier:
             + "".join(rows)
             + "</tbody></table>"
         )
+
+    def _manual_platform_mappings_html(self, manual_matches: list[dict]) -> str:
+        if not manual_matches:
+            return "<p>Aucune plateforme en attente de validation admin.</p>"
+        rows = []
+        for mapping in self._manual_platform_mappings(manual_matches):
+            rows.append(
+                "<tr>"
+                f"<td>{escape(mapping['imported_platform'])}</td>"
+                f"<td>{escape(mapping['matched_platform'])}</td>"
+                f"<td>{mapping['games_count']}</td>"
+                f"<td>{escape(', '.join(mapping['game_names']))}</td>"
+                "<td>En attente de validation</td>"
+                "</tr>"
+            )
+        return (
+            '<table border="1" cellpadding="6" cellspacing="0">'
+            "<thead><tr><th>Valeur dans le fichier</th><th>Plateforme proposée</th>"
+            "<th>Jeux</th><th>Liste des jeux</th><th>Statut</th></tr></thead><tbody>"
+            + "".join(rows)
+            + "</tbody></table>"
+        )
+
+    def _manual_platform_mappings(self, manual_matches: list[dict]) -> list[dict]:
+        mappings_by_key = {}
+        for match in manual_matches:
+            imported_platform = str(match.get("imported_platform") or "").strip()
+            matched_platform = str(match.get("matched_platform") or "").strip()
+            key = (imported_platform, matched_platform)
+            mapping = mappings_by_key.get(key) or {
+                "imported_platform": imported_platform or "-",
+                "matched_platform": matched_platform or "-",
+                "games_count": 0,
+                "game_names": [],
+            }
+            mapping["games_count"] += 1
+            mapping["game_names"].append(str(match.get("game_name") or "-"))
+            mappings_by_key[key] = mapping
+        return list(mappings_by_key.values())
 
     def _invalid_fields_text(self, invalid_fields: list[dict]) -> str:
         values = []

@@ -109,7 +109,18 @@ Use the following domain folders for new or modified hooks:
   confirms `has_collection: true` outside the just-finished import workflow.
 - Reuse the same onboarding hook and route for additive imports opened from
   Configuration. The Configuration page only triggers navigation; it must not
-  own file upload, analysis, validation or persistence state.
+  own file upload, analysis, validation or persistence state. Before opening
+  the route from Configuration, the hook must reset the current import page
+  state so the user sees a fresh form instead of the previous report.
+- Render import warnings with user-facing labels and grouped summaries. Invalid
+  optional values are grouped by field, refused value and refusal reason; the
+  game names are shown as a list using the same warning color as the refused
+  value. Platform warnings are grouped by platform value from the user's file
+  and displayed as non-blocking administrator validations, separate from
+  rejected games.
+- Fetch invalid-value explanations lazily with
+  `GET /api/users/import/invalid-value-help` when the user opens the detail
+  control. The same control must close the detail when clicked again.
 - Own the connected-user collection reinitialization workflow in a dedicated
   hook separate from onboarding. The hook calls
   `POST /api/users/collection/reinit`, refreshes collection signals and opens
