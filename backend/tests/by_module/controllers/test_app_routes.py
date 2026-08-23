@@ -95,6 +95,7 @@ class AppRoutesTest(unittest.TestCase):
         self.assertTrue(
             routes_by_key[("/api/users/collection/reinit", ("POST",))]["requires_auth"]
         )
+        self.assertTrue(routes_by_key[("/api/feedback", ("POST",))]["requires_auth"])
         self.assertEqual(
             ["Bearer"],
             routes_by_key[("/collections/videogames/games", ("POST",))]["auth_schemes"],

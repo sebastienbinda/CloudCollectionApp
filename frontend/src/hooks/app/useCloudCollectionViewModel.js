@@ -324,6 +324,7 @@ function useCloudCollectionViewModel() {
       openAdminLibraryImport: navigation.openAdminLibraryImport,
       openPlatformImageModeration: navigation.openPlatformImageModeration,
       openAbout: navigation.openAbout,
+      openFeedback: navigation.openFeedback,
       openAuth: navigation.openAuth,
       openPlatform: navigation.openPlatform,
       setHomeSearchQuery: homePage.setHomeSearchQuery,

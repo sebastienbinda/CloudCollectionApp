@@ -59,7 +59,7 @@ fonctionnels et techniques sont dans `documentation/` :
 - [documentation/database.md](documentation/database.md) : schema PostgreSQL,
   migrations et persistance production.
 - [documentation/deploy.md](documentation/deploy.md) : deploiement, archive de
-  livraison, Docker Compose runtime et secrets production.
+  livraison, Docker Compose runtime, retours GitHub et secrets production.
 - [documentation/authentication.md](documentation/authentication.md) :
   authentification, profils et sessions.
 - [documentation/register.md](documentation/register.md) : inscription et

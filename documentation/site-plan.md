@@ -8,6 +8,9 @@
 ## Public Routes
 
 - `/about`: public About page for unauthenticated visitors.
+- `/feedback`: public feedback page. It displays the feedback form only for
+  authenticated non-GUEST application users; anonymous visitors are invited to
+  sign in, and the backend remains responsible for creating the GitHub issue.
 - `/auth`: sign-in page. When opened from an activation email with
   `email=<address>`, it redirects to `/about` if that account is already
   connected, or asks the connected user to sign out before reconnecting with
@@ -107,7 +110,7 @@ claims:
 - `/collection/jeux/<game_id>` is available only when backend confirms that
   the game, optionally selected with `?region=<code>`, belongs to a shared
   category;
-- `/bibliotheque/**`, `/about` and Logout remain available;
+- `/bibliotheque/**`, `/about`, `/feedback` and Logout remain available;
 - `/configuration`, every `/configuration/**` subroute, `/users`, `/add-game`
   and `/collection/import` are unavailable. Direct navigation redirects to the
   shared Collection first, otherwise Wishlist, otherwise About.

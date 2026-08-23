@@ -121,6 +121,29 @@ jobs:
       - name: Run backend tests
         run: ./scripts/test_backend.sh
 
+  backend-audit:
+    name: Backend dependency audit
+    runs-on: ubuntu-latest
+    needs:
+      - change-detection
+    if: needs.change-detection.outputs.backend == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+
+      - name: Audit backend dependencies
+        run: python -m pip_audit -r backend/requirements.txt --strict
+
   frontend-tests:
     name: Frontend tests
     runs-on: ubuntu-latest
@@ -145,6 +168,31 @@ jobs:
       - name: Run frontend tests
         working-directory: frontend
         run: npm test
+
+  frontend-audit:
+    name: Frontend dependency audit
+    runs-on: ubuntu-latest
+    needs:
+      - change-detection
+    if: needs.change-detection.outputs.frontend == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=low
 
   frontend-build:
     name: Frontend build
@@ -177,9 +225,11 @@ jobs:
     needs:
       - change-detection
       - backend-tests
+      - backend-audit
       - frontend-tests
+      - frontend-audit
       - frontend-build
-    if: startsWith(github.ref, 'refs/tags/') && needs.change-detection.outputs.age_secrets_image == 'true' && needs.backend-tests.result == 'success' && needs.frontend-tests.result == 'success' && needs.frontend-build.result == 'success'
+    if: startsWith(github.ref, 'refs/tags/') && needs.change-detection.outputs.age_secrets_image == 'true' && needs.backend-tests.result == 'success' && needs.backend-audit.result == 'success' && needs.frontend-tests.result == 'success' && needs.frontend-audit.result == 'success' && needs.frontend-build.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -215,9 +265,11 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - backend-tests
+      - backend-audit
       - frontend-tests
+      - frontend-audit
       - frontend-build
-    if: startsWith(github.ref, 'refs/tags/') && needs.backend-tests.result == 'success' && needs.frontend-tests.result == 'success' && needs.frontend-build.result == 'success'
+    if: startsWith(github.ref, 'refs/tags/') && needs.backend-tests.result == 'success' && needs.backend-audit.result == 'success' && needs.frontend-tests.result == 'success' && needs.frontend-audit.result == 'success' && needs.frontend-build.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -268,10 +320,12 @@ jobs:
   docker-images:
     name: Build and publish Docker images
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') && needs.backend-tests.result == 'success' && needs.frontend-tests.result == 'success' && needs.frontend-build.result == 'success'
+    if: startsWith(github.ref, 'refs/tags/') && needs.backend-tests.result == 'success' && needs.backend-audit.result == 'success' && needs.frontend-tests.result == 'success' && needs.frontend-audit.result == 'success' && needs.frontend-build.result == 'success'
     needs:
       - backend-tests
+      - backend-audit
       - frontend-tests
+      - frontend-audit
       - frontend-build
     steps:
       - name: Checkout repository

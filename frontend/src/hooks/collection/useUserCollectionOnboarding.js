@@ -427,6 +427,7 @@ function useUserCollectionOnboarding(options) {
     }
     if ([
       "about",
+      "feedback",
       "auth",
       "library",
       "libraryPlatforms",

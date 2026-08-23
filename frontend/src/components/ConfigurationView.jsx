@@ -55,6 +55,7 @@ function ConfigurationView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenStatistics,
   onOpenUsers,
@@ -91,6 +92,7 @@ function ConfigurationView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}

@@ -74,6 +74,7 @@ function EmailVerificationResultView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
@@ -94,6 +95,7 @@ function EmailVerificationResultView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}

@@ -22,6 +22,12 @@ available.
 - The content must remain descriptive and non-technical.
 - The text must describe use cases: importing a collection, exploring owned
   games, viewing the authenticated home page, and maintaining account data.
+- The page must expose a single in-progress application notice with a link to
+  `/feedback`; it must not embed the feedback form directly.
+- The dedicated `/feedback` page may expose a feedback form only to
+  authenticated non-GUEST application users. The form must call the protected
+  backend endpoint so users can send feedback without a GitHub account, while
+  unauthenticated visitors are invited to sign in first.
 - Navigation must go through `MainMenu`.
 - Actions reserved for an authenticated session must remain disabled through the
   menu when the user is not signed in.

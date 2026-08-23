@@ -87,15 +87,45 @@
   padding: 1.25rem;
 }
 
+.aboutLead {
+  border-left: 5px solid #2563eb;
+}
+
+.aboutBetaNotice {
+  background: #fffaf0;
+  border: 1px solid #fde68a;
+  border-left: 5px solid #d97706;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.aboutFeedbackPanel {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-left: 5px solid #0f766e;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+}
+
 .aboutIntro h2,
-.aboutFeatureGrid h3 {
+.aboutBetaNotice h2,
+.aboutFeedbackPanel h2,
+.aboutFeatureGrid h3,
+.aboutCallout h2 {
   color: #0f172a;
   letter-spacing: 0;
   margin: 0 0 0.55rem;
 }
 
 .aboutIntro p,
-.aboutFeatureGrid p {
+.aboutBetaNotice p,
+.aboutFeedbackPanel p,
+.aboutFeatureGrid p,
+.aboutCallout p {
   color: #475569;
   line-height: 1.65;
   margin: 0;
@@ -107,12 +137,183 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.aboutFeatureGrid article {
+.aboutFeatureCard {
   background: #ffffff;
   border: 1px solid #dbe4f0;
   border-radius: 8px;
-  min-height: 10rem;
+  display: grid;
+  gap: 0.65rem;
+  min-height: 9rem;
   padding: 1.1rem;
+}
+
+.aboutFeatureIcon,
+.aboutCalloutIcon {
+  align-items: center;
+  background: #eef4fb;
+  border-radius: 8px;
+  color: #2563eb;
+  display: inline-flex;
+  height: 2.65rem;
+  justify-content: center;
+  width: 2.65rem;
+}
+
+.aboutFeatureCardBlue {
+  border-top: 4px solid #2563eb;
+}
+
+.aboutFeatureCardGreen {
+  border-top: 4px solid #3b82f6;
+}
+
+.aboutFeatureCardGreen .aboutFeatureIcon {
+  color: #1d4ed8;
+}
+
+.aboutFeatureCardAmber {
+  border-top: 4px solid #64748b;
+}
+
+.aboutFeatureCardRose {
+  border-top: 4px solid #475569;
+}
+
+.aboutFeatureCardRose .aboutFeatureIcon {
+  color: #334155;
+}
+
+.aboutFeatureCardTeal {
+  border-top: 4px solid #0f766e;
+}
+
+.aboutFeatureCardTeal .aboutFeatureIcon {
+  color: #0f766e;
+}
+
+.aboutFeatureCardViolet {
+  border-top: 4px solid #64748b;
+}
+
+.aboutFeatureCardViolet .aboutFeatureIcon {
+  color: #334155;
+}
+
+.aboutCallout {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left: 5px solid #2563eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 1fr;
+  padding: 1.25rem;
+}
+
+.aboutCallout h2 {
+  grid-column: 1 / -1;
+}
+
+.aboutCalloutIcon {
+  background: #e0edf9;
+  color: #1d4ed8;
+}
+
+.aboutFeedbackPanel .aboutCalloutIcon {
+  background: #e7f6f4;
+  color: #0f766e;
+}
+
+.aboutFeedbackForm {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aboutFeedbackForm label {
+  color: #334155;
+  display: grid;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+
+.aboutFeedbackForm input,
+.aboutFeedbackForm select,
+.aboutFeedbackForm textarea {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f172a;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+}
+
+.aboutFeedbackForm textarea {
+  resize: vertical;
+}
+
+.aboutFeedbackMessageField,
+.aboutFeedbackForm .aboutPrimaryAction,
+.aboutFeedbackForm .success,
+.aboutFeedbackForm .error {
+  grid-column: 1 / -1;
+}
+
+.aboutFeedbackSignin {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.aboutPrimaryAction {
+  align-items: center;
+  background: #2563eb;
+  color: #ffffff;
+  display: inline-flex;
+  gap: 0.45rem;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.aboutPrimaryAction:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.aboutSecondaryAction {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  display: inline-flex;
+  gap: 0.45rem;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.aboutSecondaryAction:hover:not(:disabled) {
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.feedbackContent {
+  margin: 0 auto;
+  max-width: 820px;
+  width: min(100%, 820px);
+}
+
+.feedbackFormPanel {
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.feedbackSuccess {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.feedbackSuccess a {
+  color: #166534;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.16rem;
 }
 
 .closeSearchButton {
@@ -950,8 +1151,19 @@
     gap: 0.75rem;
   }
 
+  .aboutPrimaryAction {
+    white-space: normal;
+  }
+
+  .aboutFeedbackForm {
+    grid-template-columns: 1fr;
+  }
+
   .aboutIntro,
-  .aboutFeatureGrid article {
+  .aboutBetaNotice,
+  .aboutFeedbackPanel,
+  .aboutFeatureGrid article,
+  .aboutCallout {
     padding: 0.85rem;
   }
 

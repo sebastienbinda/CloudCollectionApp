@@ -12,6 +12,16 @@
  *
  * Description : page publique de presentation fonctionnelle de l'application.
  */
+import {
+  ArrowRight,
+  Code2,
+  HeartHandshake,
+  LockKeyhole,
+  Search,
+  Share2,
+  Smartphone,
+  UploadCloud,
+} from "lucide-react";
 import PageLayout from "./PageLayout";
 
 /**
@@ -34,6 +44,7 @@ function AboutView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenStatistics,
   onOpenConfiguration,
@@ -52,9 +63,9 @@ function AboutView({
         />
       )}
       eyebrow="CloudCollectionApp"
-      title="CloudApplicationApp"
+      title="Votre collection de jeux, toujours sous la main"
       subtitle={
-        "Transformez votre fichier de collection personnel en site en ligne, disponible a tout moment, avec un simple import. Votre collection reste privee, la base de jeux s'enrichit avec la communaute."
+        "Importez votre fichier, consultez vos jeux partout, gardez vos donnees privees et partagez seulement ce que vous choisissez."
       }
       isAuthenticated={isAuthenticated}
       canUseCollectionViews={canUseCollectionViews}
@@ -68,6 +79,7 @@ function AboutView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenStatistics={onOpenStatistics}
       onOpenConfiguration={onOpenConfiguration}
@@ -75,87 +87,106 @@ function AboutView({
     >
       {error ? <p className="error" role="alert">{error}</p> : null}
       <section className="aboutContent" aria-label="Fonctionnalites de l'application">
-        <div className="aboutIntro">
-          <h2>Ce que permet l'application</h2>
+        <div className="aboutIntro aboutLead">
+          <h2>Un espace simple pour ne plus perdre le fil</h2>
           <p>
-            CloudCollectionApp transforme un tableur local en espace web personnel. Apres
-            inscription, importez votre fichier de collection et retrouvez votre collection depuis
-            n'importe quel appareil. Vos jeux restent rattaches a votre compte, pendant que le
-            catalogue commun des plateformes, studios et jeux progresse grace aux imports de tous
-            les utilisateurs.
+            CloudCollectionApp transforme votre fichier de collection en espace personnel en ligne.
+            Vous retrouvez rapidement ce que vous possedez, ce que vous cherchez encore et les
+            informations utiles quand vous etes chez vous, en boutique ou en salon.
           </p>
         </div>
 
         <div className="aboutFeatureGrid">
-          <article>
-            <h3>Du fichier au site</h3>
+          <article className="aboutFeatureCard aboutFeatureCardBlue">
+            <span className="aboutFeatureIcon" aria-hidden="true">
+              <Smartphone size={24} strokeWidth={2.2} />
+            </span>
+            <h3>Disponible partout</h3>
             <p>
-              Importez votre fichier de collection une seule fois et accedez ensuite a vos
-              plateformes, jeux et indicateurs depuis une interface en ligne claire. Vous pouvez
-              ensuite telecharger un fichier mis a jour avec les modifications faites sur le site.
+              Votre collection vous suit sur ordinateur, tablette ou mobile. Plus besoin d'avoir
+              le bon fichier sous la main pour verifier un jeu ou une plateforme.
             </p>
           </article>
-          <article>
+          <article className="aboutFeatureCard aboutFeatureCardGreen">
+            <span className="aboutFeatureIcon" aria-hidden="true">
+              <UploadCloud size={24} strokeWidth={2.2} />
+            </span>
+            <h3>Import rapide</h3>
+            <p>
+              Repartez de votre tableur existant, importez-le, puis ajoutez de nouveaux fichiers
+              quand votre collection evolue.
+            </p>
+          </article>
+          <article className="aboutFeatureCard aboutFeatureCardAmber">
+            <span className="aboutFeatureIcon" aria-hidden="true">
+              <Search size={24} strokeWidth={2.2} />
+            </span>
+            <h3>Recherche claire</h3>
+            <p>
+              Retrouvez vos jeux par plateforme, consultez les details importants et gardez une
+              liste d'envies separee de votre collection.
+            </p>
+          </article>
+          <article className="aboutFeatureCard aboutFeatureCardRose">
+            <span className="aboutFeatureIcon" aria-hidden="true">
+              <LockKeyhole size={24} strokeWidth={2.2} />
+            </span>
             <h3>Collection privee</h3>
             <p>
-              Votre collection personnelle reste associee a votre compte. Elle n'est pas exposee aux
-              autres utilisateurs et les acces passent par votre session connectee.
+              Vos jeux restent rattaches a votre compte. Vous pouvez garder votre collection pour
+              vous ou partager un acces controle quand vous le decidez.
             </p>
           </article>
-          <article>
-            <h3>Base commune</h3>
+          <article className="aboutFeatureCard aboutFeatureCardTeal">
+            <span className="aboutFeatureIcon" aria-hidden="true">
+              <HeartHandshake size={24} strokeWidth={2.2} />
+            </span>
+            <h3>Esprit communautaire</h3>
             <p>
-              Chaque import aide a enrichir le referentiel commun des jeux, plateformes et studios,
-              pour rendre la recherche et les futures collections plus utiles.
+              Le catalogue commun des jeux, plateformes et studios s'ameliore avec les imports et
+              les validations, au benefice de tous les collectionneurs.
+            </p>
+          </article>
+          <article className="aboutFeatureCard aboutFeatureCardViolet">
+            <span className="aboutFeatureIcon" aria-hidden="true">
+              <Code2 size={24} strokeWidth={2.2} />
+            </span>
+            <h3>Open source</h3>
+            <p>
+              Le projet est libre et transparent. Il peut evoluer avec les besoins reels des
+              utilisateurs, sans enfermer votre collection dans une boite noire.
             </p>
           </article>
         </div>
 
-        <div className="aboutIntro">
-          <h2>Les points cles au quotidien</h2>
+        <div className="aboutBetaNotice">
+          <h2>Application en evolution</h2>
           <p>
-            Une fois la collection importee, l'application devient un tableau de bord personnel
-            pour consulter, suivre et faire evoluer votre collection sans revenir au fichier source
-            pour chaque action.
+            L'application est encore en cours de travail. Des fonctionnalites peuvent evoluer, et
+            les retours des utilisateurs aident a prioriser les prochaines ameliorations.
           </p>
+          <button type="button" className="aboutSecondaryAction" onClick={onOpenFeedback}>
+            Envoyer une remarque
+            <ArrowRight size={18} strokeWidth={2.3} aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="aboutFeatureGrid">
-          <article>
-            <h3>Explorer la collection</h3>
-            <p>
-              Parcourez vos jeux par plateforme et retrouvez rapidement une entree grace aux vues de
-              detail, aux filtres et a la recherche.
-            </p>
-          </article>
-          <article>
-            <h3>Suivre la liste des envies</h3>
-            <p>
-              Gardez une liste de souhaits separee pour preparer vos prochains ajouts et suivre les
-              jeux qui vous interessent.
-            </p>
-          </article>
-          <article>
-            <h3>Piloter les mises a jour</h3>
-            <p>
-              Ajoutez, modifiez ou transferez des jeux avec les actions autorisees par votre profil
-              et recuperez ensuite un fichier de collection coherent avec vos changements.
-            </p>
-          </article>
-          <article>
-            <h3>Afficher les statistiques</h3>
-            <p>
-              Consultez les indicateurs de collection pour garder une vision claire des plateformes,
-              volumes et informations importantes.
-            </p>
-          </article>
-          <article>
-            <h3>Libre et open source</h3>
-            <p>
-              Profitez d'une application gratuite, libre et open source, pensee pour rester
-              transparente et evoluer avec sa communaute.
-            </p>
-          </article>
+        <div className="aboutCallout">
+          <span className="aboutCalloutIcon" aria-hidden="true">
+            <Share2 size={26} strokeWidth={2.1} />
+          </span>
+          <h2>Pour commencer</h2>
+          <p>
+            Creez un compte, importez votre fichier, puis consultez votre collection en ligne. Vos
+            donnees restent privees par defaut, votre espace connecte garde vos parametres a jour
+            et les fonctions de partage restent sous votre controle.
+          </p>
+          {!isAuthenticated ? (
+            <button type="button" className="aboutPrimaryAction" onClick={onOpenAuth}>
+              Se connecter ou creer un compte
+              <ArrowRight size={18} strokeWidth={2.3} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       </section>
     </PageLayout>

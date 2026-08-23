@@ -31,6 +31,13 @@ const MENU_ICON_PATHS = {
       <path d="M8 10h6" />
     </>
   ),
+  feedback: (
+    <>
+      <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6.5A8 8 0 1 1 21 12Z" />
+      <path d="M8 10h8" />
+      <path d="M8 14h5" />
+    </>
+  ),
   configuration: (
     <>
       <path d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" />
@@ -109,6 +116,7 @@ function MainMenu({
   onOpenHome,
   onOpenStatistics,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
@@ -191,7 +199,13 @@ function MainMenu({
     0,
     Number.parseInt(libraryValidationBadgeCount, 10) || 0
   );
-  const { canOpenConfiguration, canOpenWishlist, canOpenHome, canOpenStatistics } = resolveMainMenuAccess({
+  const {
+    canOpenConfiguration,
+    canOpenWishlist,
+    canOpenHome,
+    canOpenStatistics,
+    canOpenFeedback,
+  } = resolveMainMenuAccess({
     isAuthenticated,
     canAccessConfiguration,
     canViewWishlist,
@@ -201,6 +215,7 @@ function MainMenu({
     onOpenWishlist,
     onOpenHome,
     onOpenStatistics,
+    onOpenFeedback,
   });
   const aboutItem = {
     key: "about",
@@ -218,6 +233,14 @@ function MainMenu({
     badgeCount: normalizedLibraryValidationBadgeCount,
     disabled: typeof onOpenLibrary !== "function",
     action: onOpenLibrary,
+  };
+  const feedbackItem = {
+    key: "feedback",
+    label: "Faire un retour",
+    shortLabel: "Retour",
+    icon: "feedback",
+    disabled: !canOpenFeedback,
+    action: onOpenFeedback,
   };
   const configurationItem = {
     key: "configuration",
@@ -254,6 +277,7 @@ function MainMenu({
   const anonymousNavigationItems = [
     aboutItem,
     libraryItem,
+    feedbackItem,
   ];
   const authenticatedNavigationItems = [
     canOpenHome ? collectionItem : null,
@@ -261,6 +285,7 @@ function MainMenu({
     canOpenStatistics ? statisticsItem : null,
     libraryItem,
     canOpenConfiguration ? configurationItem : null,
+    feedbackItem,
     aboutItem,
   ].filter(Boolean);
   const navigationItems = isAuthenticated ? authenticatedNavigationItems : anonymousNavigationItems;
@@ -273,10 +298,12 @@ function MainMenu({
   const mobileAnonymousPrimaryItems = [
     libraryItem,
     null,
+    feedbackItem,
     aboutItem,
   ];
   const mobileAuthenticatedSecondaryItems = [
     canOpenConfiguration ? configurationItem : null,
+    feedbackItem,
     aboutItem,
     null,
   ];
@@ -299,7 +326,7 @@ function MainMenu({
         action: onOpenAuth,
       };
   mobileAnonymousPrimaryItems[1] = sessionItem;
-  mobileAuthenticatedSecondaryItems[2] = sessionItem;
+  mobileAuthenticatedSecondaryItems[3] = sessionItem;
   const mobilePrimaryItems = (
     isAuthenticated ? mobileAuthenticatedPrimaryItems : mobileAnonymousPrimaryItems
   ).filter(Boolean);

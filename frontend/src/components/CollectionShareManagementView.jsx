@@ -82,6 +82,7 @@ function CollectionShareManagementView(props) {
       onOpenAuth={props.onOpenAuth}
       onOpenHome={props.onOpenHome}
       onOpenLibrary={props.onOpenLibrary}
+      onOpenFeedback={props.onOpenFeedback}
       onOpenWishlist={props.onOpenWishlist}
       onOpenStatistics={props.onOpenStatistics}
       onOpenConfiguration={props.onOpenConfiguration}

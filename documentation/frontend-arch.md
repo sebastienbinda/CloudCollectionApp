@@ -247,6 +247,10 @@ Use the following domain folders for new or modified hooks:
   automatic request loops.
 - Do not put React state in services.
 - Do not duplicate token logic outside existing auth/API services.
+- Keep beta feedback submission HTTP details in `FeedbackApi`. The dedicated
+  `FeedbackView` page may own the small local form state, but the service must
+  attach the Bearer token and call only the backend feedback endpoint; GitHub
+  tokens must never be present in frontend code.
 - Keep public link exchange isolated in `CollectionShareSessionApi`: it must not
   attach an existing Authorization header. Keep owner management HTTP calls in
   `CollectionSharesApi` with normal Bearer headers.

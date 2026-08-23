@@ -31,6 +31,7 @@ function AuthView({
   onOpenAuth,
   onOpenHome,
   onOpenLibrary,
+  onOpenFeedback,
   onOpenWishlist,
   onOpenConfiguration,
   onLogout,
@@ -255,6 +256,7 @@ function AuthView({
         onOpenAuth={onOpenAuth}
         onOpenHome={onOpenHome}
         onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
         onOpenWishlist={onOpenWishlist}
         onOpenConfiguration={onOpenConfiguration}
         onLogout={onLogout}
@@ -279,6 +281,7 @@ function AuthView({
         onOpenAuth={onOpenAuth}
         onOpenHome={onOpenHome}
         onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
         onOpenWishlist={onOpenWishlist}
         onOpenConfiguration={onOpenConfiguration}
         onLogout={onLogout}
@@ -316,6 +319,7 @@ function AuthView({
       onOpenAuth={onOpenAuth}
       onOpenHome={onOpenHome}
       onOpenLibrary={onOpenLibrary}
+      onOpenFeedback={onOpenFeedback}
       onOpenWishlist={onOpenWishlist}
       onOpenConfiguration={onOpenConfiguration}
       onLogout={onLogout}
