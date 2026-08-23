@@ -306,6 +306,7 @@
   border-radius: 8px;
   padding: 0.85rem;
 }
+.importSummary dl .importErrorCounterAccepted { background: #fffbeb; border-color: #fde68a; } .importSummary dl .importErrorCounterRefused { background: #fef2f2; border-color: #fecaca; }
 
 .importSummary dt {
   color: #475569;
@@ -377,9 +378,15 @@
   color: #431407;
 }
 
-.invalidImportedGames span {
+.invalidImportedGames span, .invalidRejectedValues {
   color: #7c2d12;
 }
+
+.invalidImportedGames .invalidAssociatedGames { list-style: disc; padding-left: 1.2rem; } .invalidImportedGames .invalidRejectedValues { list-style-type: "› "; }
+.invalidFieldWarning { display: grid; gap: 0.2rem; }
+.invalidFieldDetailsButton { justify-self: start; }
+.invalidFieldDetails { color: #7c2d12; display: grid; gap: 0.15rem; font-size: 0.9rem; font-weight: 600; }
+.invalidFieldDetailsError { color: #991b1b; font-size: 0.9rem; font-weight: 700; }
 
 .columnGrid {
   display: grid;

@@ -107,6 +107,7 @@ class CsvCollectionImportReaderTest(unittest.TestCase):
 
         self.assertEqual(["Mario"], [game.name for game in import_data.games])
         self.assertEqual([], import_data.warnings.invalid_games)
+        self.assertEqual(1, import_data.warnings.skipped_mandatory_games)
         self.assertEqual(0, import_data.warnings.invalid_wishlist)
 
     def test_read_reports_invalid_optional_values(self):

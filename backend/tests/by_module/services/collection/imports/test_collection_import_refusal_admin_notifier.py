@@ -77,6 +77,24 @@ class CollectionImportRefusalAdminNotifierTest(unittest.TestCase):
                             },
                             {"name": "Mario", "invalid_fields": [{"field": "condition"}]},
                         ],
+                        platform_matches=[
+                            {
+                                "game_name": "Legend of dragoon",
+                                "imported_platform": "La Playstation de la mort",
+                                "matched_platform": "PlayStation Portable",
+                                "score": 50,
+                            },
+                        ],
+                        skipped_games=[
+                            {
+                                "game_name": "Unknown Game",
+                                "imported_platform": "Unknown",
+                                "score": 0,
+                                "reason": "no_match",
+                            },
+                        ],
+                        skipped_mandatory_games=1,
+                        invalid_wishlist=1,
                     ),
                 ),
             )
@@ -91,8 +109,23 @@ class CollectionImportRefusalAdminNotifierTest(unittest.TestCase):
         self.assertIn("collection &lt;bad&gt;.csv", email["body"])
         self.assertIn("too_many_invalid_games", email["body"])
         self.assertIn("2/3", email["body"])
+        self.assertIn("<h2>Compteurs d'erreur</h2>", email["body"])
+        self.assertIn("Jeux avec erreur bloquante", email["body"])
+        self.assertIn("Jeux avec information invalide", email["body"])
+        self.assertIn("Jeux refuses ou ignores", email["body"])
+        self.assertIn("Lignes sans nom ou plateforme obligatoire", email["body"])
+        self.assertIn("Jeux avec plateforme a valider", email["body"])
+        self.assertIn("Lignes wishlist ignorees", email["body"])
+        self.assertIn("Total utilise pour refuser le fichier.", email["body"])
         self.assertIn("Zelda &lt;DX&gt;", email["body"])
         self.assertIn("release_date: 1900-01-01", email["body"])
+        self.assertIn("Plateformes à valider par l'admin", email["body"])
+        self.assertIn("La Playstation de la mort", email["body"])
+        self.assertIn("PlayStation Portable", email["body"])
+        self.assertIn("Legend of dragoon", email["body"])
+        self.assertIn("En attente de validation", email["body"])
+        self.assertNotIn("<h2>Warnings</h2>", email["body"])
+        self.assertNotIn("- Jeux invalides:", email["body"])
 
     def test_default_template_path_targets_backend_resource(self):
         """Verifie le nom du template par defaut.

@@ -203,7 +203,12 @@ class CsvCollectionImportReader:
     ) -> tuple[list[CollectionImportGame], CollectionImportWarnings]:
         games: list[CollectionImportGame] = []
         game_indexes_by_key: dict[tuple[str, str, str], int] = {}
-        warnings = {"invalid_wishlist": 0, "invalid_values": [], "invalid_games": []}
+        warnings = {
+            "invalid_wishlist": 0,
+            "invalid_values": [],
+            "invalid_games": [],
+            "skipped_mandatory_games": 0,
+        }
         for row_index, row in enumerate(rows, start=2):
             game = self._build_game(row, row_index, description, warnings)
             if game is not None:
@@ -212,6 +217,7 @@ class CsvCollectionImportReader:
             invalid_wishlist=warnings["invalid_wishlist"],
             invalid_wishlist_values_found=warnings["invalid_values"],
             invalid_games=warnings["invalid_games"],
+            skipped_mandatory_games=warnings["skipped_mandatory_games"],
         )
 
     def _build_game(
@@ -226,11 +232,13 @@ class CsvCollectionImportReader:
             self._field_value(row, column_information, CollectionImportField.NAME)
         )
         if not game_name or self.value_mapper.comparison_key(game_name) is None:
+            warnings["skipped_mandatory_games"] += 1
             return None
         platform_name = self.value_mapper.map_name(
             self._field_value(row, column_information, CollectionImportField.PLATFORM)
         )
         if platform_name is None:
+            warnings["skipped_mandatory_games"] += 1
             return None
         wishlist = self.value_mapper.map_wishlist(
             self._field_value(row, column_information, CollectionImportField.WISHLIST),

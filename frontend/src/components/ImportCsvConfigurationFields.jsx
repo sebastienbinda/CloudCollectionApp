@@ -17,11 +17,11 @@ import {
   OPTIONAL_CSV_FIELDS,
   REQUIRED_CSV_FIELDS,
 } from "../hooks/collection/csvImportConfigurationBuilder";
+import { IMPORT_FIELD_LABELS } from "../hooks/collection/importFieldLabels";
 import { hasCsvImportColumn } from "../hooks/collection/importGlobalOptionsVisibility";
 import { ImportGlobalOptions } from "./ImportGlobalOptions";
 import ImportCollapsibleSection from "./ImportCollapsibleSection";
 import ImportFieldHelp from "./ImportFieldHelp";
-import { FIELD_LABELS } from "./ImportLayoutFields";
 
 /**
  * Affiche les champs frontend de configuration CSV.
@@ -54,7 +54,7 @@ function ImportCsvConfigurationFields({
               return (
                 <label className={isRequired ? "requiredColumnField" : ""} key={fieldName}>
                   <span className="fieldLabelText">
-                    {FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
+                    {IMPORT_FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
                   </span>
                   <ColumnNameField
                     required={isRequired}

@@ -21,6 +21,7 @@ from .platform_image_controller import PlatformImageController
 from .route_controller import RouteController
 from .studio_controller import StudioController
 from .user_collection_import_controller import UserCollectionImportController
+from .user_collection_import_help_controller import UserCollectionImportHelpController
 from .user_controller import UserController
 
 __all__ = [
@@ -35,4 +36,5 @@ __all__ = [
     "StudioController",
     "UserController",
     "UserCollectionImportController",
+    "UserCollectionImportHelpController",
 ]

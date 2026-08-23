@@ -56,9 +56,12 @@ class UserCollectionImportResult:
                 "invalid_wishlist": 0,
                 "invalid_wishlist_values_found": [],
                 "invalid_games": [],
+                "skipped_mandatory_games": 0,
                 "platform_mappings": [],
                 "platform_matches": [],
                 "skipped_games": [],
+                "user_platform_matches": [],
+                "user_skipped_games": [],
                 "total_import_duration_seconds": 0.0,
             },
             "refusal": self.refusal or {

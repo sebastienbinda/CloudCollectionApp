@@ -329,8 +329,8 @@ class UserCollectionImportService:
                 file_read_started_at
             )
             import_data = self.date_validator.validate(import_data)
+            import_data = self.repository.prepare_import_data_for_policy(import_data)
             self._set_total_import_duration(import_data, import_started_at)
-            self.association_validator.ensure_games_read(import_data)
             refusal = self.refusal_policy.evaluate(import_data)
             if refusal.refused:
                 self.file_manager.delete_copied_file(copied_file_path)
@@ -347,6 +347,7 @@ class UserCollectionImportService:
                     import_data,
                 )
                 return self._map_refused_result(import_data, refusal_payload)
+            self.association_validator.ensure_games_read(import_data)
             persistence_result = self.repository.import_collection(
                 user_id,
                 str(import_file_path),
@@ -398,11 +399,8 @@ class UserCollectionImportService:
                 messages.append(cause_message)
         return [message for message in messages if message]
 
-    def _map_result(
-        self,
-        persistence_result: UserCollectionImportPersistenceResult,
-        import_data: CollectionImportData,
-    ) -> UserCollectionImportResult:
+    def _map_result(self, persistence_result: UserCollectionImportPersistenceResult,
+                    import_data: CollectionImportData) -> UserCollectionImportResult:
         return UserCollectionImportResult(
             linked_platforms=persistence_result.linked_platforms,
             created_studios=persistence_result.created_studios,
@@ -413,8 +411,10 @@ class UserCollectionImportService:
             refusal={
                 "refused": False,
                 "reason": "",
-                "invalid_games_count": len(import_data.warnings.invalid_games),
-                "total_games_count": len(import_data.games),
+                "invalid_games_count": (
+                    refusal := self.refusal_policy.evaluate(import_data)
+                ).invalid_games_count,
+                "total_games_count": refusal.total_games_count,
                 "message": "",
             },
         )

@@ -148,14 +148,10 @@ class SqlAlchemyUserCollectionImportRepository:
         with self.engine.connect() as connection:
             return self.user_file_repository.find_collection_file_description(connection, user_id)
 
-    def import_collection(
-        self,
-        user_id: int,
-        collection_file_path: str,
-        import_data: CollectionImportData,
-        collection_file_description: dict,
-        initial_game_validation_status: str = GAME_STATUS_WAITING_VALIDATION,
-    ) -> UserCollectionImportPersistenceResult:
+    def import_collection(self, user_id: int, collection_file_path: str,
+                          import_data: CollectionImportData, collection_file_description: dict,
+                          initial_game_validation_status: str = GAME_STATUS_WAITING_VALIDATION
+                          ) -> UserCollectionImportPersistenceResult:
         """Importe les donnees de collection dans une transaction SQL.
 
         Args:
@@ -237,6 +233,16 @@ class SqlAlchemyUserCollectionImportRepository:
             ),
         )
 
+    def prepare_import_data_for_policy(self, import_data: CollectionImportData) -> CollectionImportData:
+        """Prepare les donnees importees avant la politique de refus.
+
+        Args: import_data (CollectionImportData): Donnees lues depuis le fichier.
+        Returns: CollectionImportData: Donnees avec plateformes rattachees ou refusees.
+        """
+
+        with self.engine.connect() as connection:
+            return self._match_platforms(connection, import_data)
+
     def _lock_global_game_import_state(self, connection: Connection) -> None:
         """Serialise le matching et la creation des jeux globaux pendant l'import.
 
@@ -252,11 +258,10 @@ class SqlAlchemyUserCollectionImportRepository:
             {"lock_key": self.GLOBAL_GAME_IMPORT_LOCK_KEY},
         )
 
-    def _match_platforms(
-        self,
-        connection: Connection,
-        import_data: CollectionImportData,
-    ) -> CollectionImportData:
+    def _match_platforms(self, connection: Connection,
+                         import_data: CollectionImportData) -> CollectionImportData:
+        if import_data.warnings.platform_mappings:
+            return import_data
         platform_rows = self.platform_repository.load_catalog_rows(connection)
         matched_import_data = self.platform_matching_service.match_import_data(
             import_data,
@@ -301,11 +306,8 @@ class SqlAlchemyUserCollectionImportRepository:
             self.user_file_repository.clear_collection_file(connection, user_id)
             self.collection_file_remover.delete_collection_file(collection_file_path)
 
-    def _ensure_platforms(
-        self,
-        connection: Connection,
-        import_data: CollectionImportData,
-    ) -> tuple[dict[str, int], int]:
+    def _ensure_platforms(self, connection: Connection,
+                          import_data: CollectionImportData) -> tuple[dict[str, int], int]:
         """Retourne les plateformes du referentiel liees a l'import.
 
         Args:
@@ -324,11 +326,8 @@ class SqlAlchemyUserCollectionImportRepository:
         }
         return platform_ids, len(linked_keys.intersection(platform_ids))
 
-    def _ensure_studios(
-        self,
-        connection: Connection,
-        import_data: CollectionImportData,
-    ) -> tuple[dict[str, int], int, list[ImportedStudioMatchReport]]:
+    def _ensure_studios(self, connection: Connection, import_data: CollectionImportData
+                        ) -> tuple[dict[str, int], int, list[ImportedStudioMatchReport]]:
         """Cree les studios absents et retourne leurs identifiants.
 
         Args:

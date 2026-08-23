@@ -22,6 +22,12 @@
 <li>Jeux en liste de souhaits: ${wishlisted_games}</li>
 </ul>
 
+<h2>Compteurs d'erreur</h2>
+${error_counters}
+
+<h2>Plateformes à valider par l'admin</h2>
+${manual_platform_mappings}
+
 <h2>Studios importes</h2>
 ${imported_studio_match_reports}
 
@@ -37,13 +43,8 @@ ${imported_game_match_reports}
 </ul>
 
 <h2>Configuration d'import</h2>
-<pre>
+<pre style="background:#f8fafc;border:1px solid #d9e2ec;border-radius:6px;color:#1f2933;font-family:Menlo,Consolas,monospace;font-size:13px;line-height:1.45;padding:12px;white-space:pre-wrap;">
 ${collection_file_description}
-</pre>
-
-<h2>Warnings</h2>
-<pre>
-${warnings}
 </pre>
 </body>
 </html>

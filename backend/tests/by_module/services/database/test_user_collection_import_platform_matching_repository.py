@@ -246,6 +246,10 @@ class UserCollectionImportPlatformMatchingRepositoryTest(unittest.TestCase):
         self.assertEqual(1, result.linked_platforms)
         self.assertEqual(["Switch"], [game.platform_name for game in import_data.games])
         self.assertEqual("Sports", import_data.warnings.platform_matches[0]["game_name"])
+        self.assertEqual(
+            "Correspondance a verifier avec Switch",
+            import_data.warnings.user_platform_matches[0]["message"],
+        )
         self.assertEqual("Switch", import_data.warnings.platform_mappings[0]["matched_platform"])
 
     def test_ensure_games_reuses_existing_game_with_high_unique_score(self):

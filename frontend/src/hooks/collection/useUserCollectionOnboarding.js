@@ -16,10 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import UserCollectionApi from "../../services/UserCollectionApi";
 import getUserCollectionErrorMessage from "./userCollectionImportMessages";
 import updatedLayoutValue from "./importLayoutState";
-import {
-  buildImportConfigurationDescription, collectionRequiredFields,
-  createImportConfigurationFromDescription, createDefaultImportConfiguration,
-} from "./importConfigurationBuilder";
+import { buildImportConfigurationDescription, collectionRequiredFields, createImportConfigurationFromDescription, createDefaultImportConfiguration } from "./importConfigurationBuilder";
 import {
   buildIncompatibleSavedConfigurationMessage,
   normalizeImportFileType,
@@ -472,6 +469,7 @@ function useUserCollectionOnboarding(options) {
     isImportingCollection,
     handleAuthenticatedUser,
     markCollectionMissingAfterReinitialization,
+    prepareNewCollectionImport: resetOnboardingState,
     selectCollectionFile,
     updateImportConfiguration,
     updateImportLayout,

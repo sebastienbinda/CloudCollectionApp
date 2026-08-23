@@ -59,6 +59,11 @@ class FakeImportRepository:
 
         return UserCollectionImportPersistenceResult(1, 1, 2, len(import_data.games))
 
+    def prepare_import_data_for_policy(self, import_data):
+        """Retourne les donnees sans preparation supplementaire."""
+
+        return import_data
+
 
 class FakePlatformWarningImportRepository(FakeImportRepository):
     """Simule une persistance ajoutant des warnings de matching plateforme."""
@@ -190,9 +195,12 @@ class UserCollectionImportWishlistResultTest(unittest.TestCase):
                 "invalid_wishlist": 1,
                 "invalid_wishlist_values_found": ["Peut etre"],
                 "invalid_games": [],
+                "skipped_mandatory_games": 0,
                 "platform_mappings": [],
                 "platform_matches": [],
                 "skipped_games": [],
+                "user_platform_matches": [],
+                "user_skipped_games": [],
                 "total_import_duration_seconds": result.warnings[
                     "total_import_duration_seconds"
                 ],

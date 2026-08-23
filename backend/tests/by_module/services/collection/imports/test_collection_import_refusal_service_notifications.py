@@ -111,6 +111,11 @@ class FakeUserRepository:
         self.import_calls.append(import_data)
         return UserCollectionImportPersistenceResult(1, 1, 1, 1)
 
+    def prepare_import_data_for_policy(self, import_data):
+        """Retourne les donnees sans preparation supplementaire."""
+
+        return import_data
+
 
 class FakeAdminRepository:
     """Capture les appels de persistance admin."""

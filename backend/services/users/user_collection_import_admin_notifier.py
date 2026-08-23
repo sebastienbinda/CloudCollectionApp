@@ -13,6 +13,7 @@
 
 import json
 import os
+import re
 from html import escape
 from pathlib import Path
 
@@ -114,8 +115,6 @@ class UserCollectionImportAdminNotifier:
         return bool(self.admin_notification_email)
 
     def _build_email_body(self, context: UserCollectionImportReportContext) -> str:
-        warnings_lines = []
-        self._append_warnings(warnings_lines, context.warnings)
         return self.template_renderer.render(
             self.template_path,
             {
@@ -130,6 +129,10 @@ class UserCollectionImportAdminNotifier:
                 "created_games": context.created_games,
                 "associated_games": context.associated_games,
                 "wishlisted_games": context.wishlisted_games,
+                "error_counters": self._error_counters_html(context),
+                "manual_platform_mappings": self._manual_platform_mappings_html(
+                    list(getattr(context.warnings, "platform_matches", []) or []),
+                ),
                 "imported_game_match_reports": self._imported_game_match_reports_html(
                     context.imported_game_match_reports,
                 ),
@@ -151,43 +154,189 @@ class UserCollectionImportAdminNotifier:
                 "database_query_duration_seconds": self._format_duration(
                     context.database_query_duration_seconds
                 ),
-                "collection_file_description": escape(
-                    json.dumps(
-                        context.collection_file_description,
-                        ensure_ascii=False,
-                        sort_keys=True,
-                    )
+                "collection_file_description": self._collection_file_description_html(
+                    context.collection_file_description
                 ),
-                "warnings": escape("\n".join(warnings_lines)),
             },
         )
 
     def _format_duration(self, duration_seconds: object) -> str:
         return "{duration:.3f}".format(duration=float(duration_seconds or 0.0))
 
+    def _collection_file_description_html(self, collection_file_description: dict) -> str:
+        json_text = json.dumps(
+            collection_file_description,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        token_pattern = re.compile(
+            r'("(?:\\.|[^"\\])*")(\s*:)?'
+            r"|\b(true|false|null)\b"
+            r"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?"
+        )
+        html_parts = []
+        last_index = 0
+        for match in token_pattern.finditer(json_text):
+            html_parts.append(escape(json_text[last_index : match.start()]))
+            token = match.group(0)
+            if match.group(1) and match.group(2):
+                html_parts.append(self._json_span(token, "#0f5e9c", "600"))
+            elif match.group(1):
+                html_parts.append(self._json_span(token, "#277a3f", "400"))
+            elif match.group(3):
+                html_parts.append(self._json_span(token, "#8a4f00", "600"))
+            else:
+                html_parts.append(self._json_span(token, "#7c3aed", "600"))
+            last_index = match.end()
+        html_parts.append(escape(json_text[last_index:]))
+        return "".join(html_parts)
+
+    def _json_span(self, token: str, color: str, font_weight: str) -> str:
+        return (
+            f'<span style="color:{color};font-weight:{font_weight};">'
+            f"{escape(token)}</span>"
+        )
+
+    def _table_html(self, headers: list[str], rows: list[str]) -> str:
+        return (
+            '<table border="1" cellpadding="6" cellspacing="0" '
+            'style="border-collapse:collapse;width:100%;margin:8px 0 16px 0;'
+            'border:1px solid #cbd5e1;">'
+            + self._table_header_html(headers)
+            + "<tbody>"
+            + "".join(rows)
+            + "</tbody></table>"
+        )
+
+    def _table_header_html(self, headers: list[str]) -> str:
+        cells = []
+        for header in headers:
+            cells.append(
+                '<th style="background:#e8f1ff;color:#1e3a5f;'
+                'border:1px solid #cbd5e1;text-align:left;">'
+                f"{escape(header)}</th>"
+            )
+        return "<thead><tr>" + "".join(cells) + "</tr></thead>"
+
+    def _table_row_html(self, cells: list[str], background_color: str = "") -> str:
+        style = f' style="background:{background_color};"' if background_color else ""
+        return f"<tr{style}>" + "".join(cells) + "</tr>"
+
+    def _table_cell_html(self, html_value: str, extra_style: str = "") -> str:
+        style = "border:1px solid #cbd5e1;vertical-align:top;"
+        if extra_style:
+            style += extra_style
+        return f'<td style="{style}">{html_value}</td>'
+
+    def _created_status_cell_html(self, created: bool) -> str:
+        if created:
+            return self._table_cell_html(
+                '<strong style="color:#166534;">Oui</strong>',
+                "background:#dcfce7;",
+            )
+        return self._table_cell_html('<span style="color:#475569;">Non</span>')
+
+    def _error_counters_html(self, context: UserCollectionImportReportContext) -> str:
+        warnings = context.warnings
+        skipped_games_count = len(getattr(warnings, "skipped_games", []) or [])
+        skipped_mandatory_games_count = int(
+            getattr(warnings, "skipped_mandatory_games", 0) or 0
+        )
+        invalid_games_count = len(getattr(warnings, "invalid_games", []) or [])
+        blocking_errors_count = (
+            invalid_games_count + skipped_games_count + skipped_mandatory_games_count
+        )
+        total_games_count = (
+            int(context.associated_games or 0)
+            + skipped_games_count
+            + skipped_mandatory_games_count
+        )
+        counters = [
+            (
+                "Jeux avec erreur bloquante",
+                blocking_errors_count,
+                "Total qui aurait ete utilise pour refuser le fichier.",
+            ),
+            (
+                "Jeux lus dans le fichier",
+                total_games_count,
+                "Base de calcul du seuil de refus.",
+            ),
+            (
+                "Jeux avec information invalide",
+                invalid_games_count,
+                "Au moins une valeur refusee dans un champ importe.",
+            ),
+            (
+                "Jeux refuses ou ignores",
+                skipped_games_count,
+                "Jeux non importes, par exemple plateforme non reconnue.",
+            ),
+            (
+                "Lignes sans nom ou plateforme obligatoire",
+                skipped_mandatory_games_count,
+                "Lignes non importables car une information obligatoire manque.",
+            ),
+            (
+                "Jeux avec plateforme a valider",
+                len(getattr(warnings, "platform_matches", []) or []),
+                "Non bloquant: validation admin attendue.",
+            ),
+            (
+                "Lignes wishlist ignorees",
+                int(getattr(warnings, "invalid_wishlist", 0) or 0),
+                "Valeur wishlist invalide ou inexploitable.",
+            ),
+        ]
+        rows = []
+        for label, count, description in counters:
+            background_color = self._error_counter_background(label, int(count))
+            rows.append(
+                self._table_row_html(
+                    [
+                        self._table_cell_html(escape(label)),
+                        self._table_cell_html(str(count), "font-weight:600;"),
+                        self._table_cell_html(escape(description)),
+                    ],
+                    background_color,
+                )
+            )
+        return self._table_html(["Compteur", "Valeur", "Explication"], rows)
+
+    def _error_counter_background(self, label: str, count: int) -> str:
+        if count <= 0:
+            return ""
+        if "plateforme a valider" in label:
+            return "#fff7ed"
+        if "erreur" in label or "refuses" in label or "obligatoire" in label:
+            return "#fef2f2"
+        return "#f8fafc"
+
     def _imported_studio_match_reports_html(self, imported_studio_match_reports: tuple) -> str:
         if not imported_studio_match_reports:
             return "<p>Aucun studio importe.</p>"
         rows = []
         for report in imported_studio_match_reports:
+            created = bool(getattr(report, "created", False))
             rows.append(
-                "<tr>"
-                f"<td>{self._html_value(getattr(report, 'imported_studio_name', ''))}</td>"
-                f"<td>{'Oui' if getattr(report, 'created', False) else 'Non'}</td>"
-                f"<td>{self._html_value(getattr(report, 'associated_studio_name', ''))}</td>"
-                f"<td>{int(getattr(report, 'score', 0) or 0)}</td>"
-                "</tr>"
+                self._table_row_html(
+                    [
+                        self._table_cell_html(
+                            self._html_value(getattr(report, "imported_studio_name", ""))
+                        ),
+                        self._created_status_cell_html(created),
+                        self._table_cell_html(
+                            self._html_value(getattr(report, "associated_studio_name", ""))
+                        ),
+                        self._table_cell_html(str(int(getattr(report, "score", 0) or 0))),
+                    ],
+                    "#ecfdf3" if created else "",
+                )
             )
-        return (
-            '<table border="1" cellpadding="6" cellspacing="0">'
-            "<thead><tr>"
-            "<th>Nom du studio importé</th>"
-            "<th>Créé</th>"
-            "<th>Nom du Studio associé</th>"
-            "<th>Score de matching</th>"
-            "</tr></thead><tbody>"
-            + "".join(rows)
-            + "</tbody></table>"
+        return self._table_html(
+            ["Nom du studio importé", "Créé", "Nom du Studio associé", "Score de matching"],
+            rows,
         )
 
     def _imported_game_match_reports_html(self, imported_game_match_reports: tuple) -> str:
@@ -195,119 +344,105 @@ class UserCollectionImportAdminNotifier:
             return "<p>Aucun jeu importe.</p>"
         rows = []
         for report in imported_game_match_reports:
+            created = bool(getattr(report, "created", False))
+            decision = str(getattr(report, "decision", "") or "")
+            rejected_decision = self._is_rejected_game_decision(decision)
             rows.append(
-                "<tr>"
-                f"<td>{self._html_value(getattr(report, 'imported_game_name', ''))}</td>"
-                f"<td>{'Oui' if getattr(report, 'created', False) else 'Non'}</td>"
-                f"<td>{self._html_value(getattr(report, 'associated_game_name', ''))}</td>"
-                f"<td>{int(getattr(report, 'score', 0) or 0)}</td>"
-                f"<td>{self._html_value(getattr(report, 'decision', ''))}</td>"
-                f"<td>{self._html_value(getattr(report, 'rule', ''))}</td>"
-                f"<td>{self._html_value(getattr(report, 'reason', ''))}</td>"
-                "</tr>"
+                self._table_row_html(
+                    [
+                        self._table_cell_html(
+                            self._html_value(getattr(report, "imported_game_name", ""))
+                        ),
+                        self._created_status_cell_html(created),
+                        self._table_cell_html(
+                            self._html_value(getattr(report, "associated_game_name", ""))
+                        ),
+                        self._table_cell_html(str(int(getattr(report, "score", 0) or 0))),
+                        self._game_decision_cell_html(decision, rejected_decision),
+                        self._table_cell_html(self._html_value(getattr(report, "rule", ""))),
+                        self._table_cell_html(self._html_value(getattr(report, "reason", ""))),
+                    ],
+                    self._imported_game_row_background(created, rejected_decision),
+                )
             )
-        return (
-            '<table border="1" cellpadding="6" cellspacing="0">'
-            "<thead><tr>"
-            "<th>Nom</th>"
-            "<th>Créé</th>"
-            "<th>Jeu associé</th>"
-            "<th>Score</th>"
-            "<th>Decision</th>"
-            "<th>Rule</th>"
-            "<th>Raison</th>"
-            "</tr></thead><tbody>"
-            + "".join(rows)
-            + "</tbody></table>"
+        return self._table_html(
+            ["Nom", "Créé", "Jeu associé", "Score", "Decision", "Rule", "Raison"],
+            rows,
+        )
+
+    def _imported_game_row_background(self, created: bool, rejected_decision: bool) -> str:
+        if rejected_decision:
+            return "#fef2f2"
+        return "#ecfdf3" if created else ""
+
+    def _is_rejected_game_decision(self, decision: str) -> bool:
+        normalized_decision = (
+            decision.lower()
+            .replace("é", "e")
+            .replace("è", "e")
+            .replace("ê", "e")
+            .replace("à", "a")
+        )
+        rejected_markers = (
+            "refus",
+            "reject",
+            "rejected",
+            "valeur a verifier",
+            "a verifier",
+            "to_check",
+            "manual_check",
+        )
+        return any(marker in normalized_decision for marker in rejected_markers)
+
+    def _game_decision_cell_html(self, decision: str, rejected_decision: bool) -> str:
+        if not rejected_decision:
+            return self._table_cell_html(self._html_value(decision))
+        return self._table_cell_html(
+            f'<strong style="color:#991b1b;">{self._html_value(decision)}</strong>',
+            "background:#fee2e2;",
         )
 
     def _html_value(self, value) -> str:
         text = str(value or "")
         return escape(text) if text else "&nbsp;"
 
-    def _append_warnings(self, lines: list[str], warnings: object) -> None:
-        platform_mappings = list(getattr(warnings, "platform_mappings", []) or [])
-        manual_matches = list(getattr(warnings, "platform_matches", []) or [])
-        skipped_games = list(getattr(warnings, "skipped_games", []) or [])
-        invalid_games = list(getattr(warnings, "invalid_games", []) or [])
-        invalid_wishlist = int(getattr(warnings, "invalid_wishlist", 0) or 0)
-        invalid_wishlist_values = list(
-            getattr(warnings, "invalid_wishlist_values_found", []) or []
-        )
-        if not any(
-            [
-                platform_mappings,
-                manual_matches,
-                skipped_games,
-                invalid_games,
-                invalid_wishlist,
-            ]
-        ):
-            lines.append("Warnings: aucun warning detecte.")
-            return
-        lines.append("Warnings:")
-        self._append_platform_mappings(lines, platform_mappings)
-        self._append_manual_matches(lines, manual_matches)
-        self._append_skipped_games(lines, skipped_games)
-        self._append_invalid_games(lines, invalid_games)
-        self._append_invalid_wishlist(lines, invalid_wishlist, invalid_wishlist_values)
-
-    def _append_platform_mappings(self, lines: list[str], platform_mappings: list[dict]) -> None:
-        if not platform_mappings:
-            return
-        lines.append("Mappings plateformes:")
-        for mapping in platform_mappings:
-            alias_text = "oui" if mapping.get("matched_by_alias") else "non"
-            matched_alias = str(mapping.get("matched_alias") or "")
-            if matched_alias:
-                alias_text = f"{alias_text} ({matched_alias})"
-            lines.append(
-                "- Plateforme lue: {imported_platform} | Plateforme rattachee: "
-                "{matched_platform} | Score: {score} | Jeux: {games_count} | "
-                "Alias: {alias_text}".format(alias_text=alias_text, **mapping)
-            )
-
-    def _append_manual_matches(self, lines: list[str], manual_matches: list[dict]) -> None:
+    def _manual_platform_mappings_html(self, manual_matches: list[dict]) -> str:
         if not manual_matches:
-            return
-        lines.append("Warnings de verification manuelle:")
-        for match in manual_matches:
-            lines.append(
-                "- Jeu: {game_name} | Plateforme importee: {imported_platform} | "
-                "Plateforme rattachee: {matched_platform} | Score: {score}".format(
-                    **match
+            return "<p>Aucune plateforme en attente de validation admin.</p>"
+        rows = []
+        for mapping in self._manual_platform_mappings(manual_matches):
+            rows.append(
+                self._table_row_html(
+                    [
+                        self._table_cell_html(escape(mapping["imported_platform"])),
+                        self._table_cell_html(escape(mapping["matched_platform"])),
+                        self._table_cell_html(str(mapping["games_count"]), "font-weight:600;"),
+                        self._table_cell_html(escape(", ".join(mapping["game_names"]))),
+                        self._table_cell_html(
+                            '<strong style="color:#9a3412;">En attente de validation</strong>',
+                        ),
+                    ],
+                    "#fff7ed",
                 )
             )
-
-    def _append_skipped_games(self, lines: list[str], skipped_games: list[dict]) -> None:
-        if not skipped_games:
-            return
-        lines.append("Jeux ignores:")
-        for skipped_game in skipped_games:
-            lines.append(
-                "- Jeu: {game_name} | Plateforme importee: {imported_platform} | "
-                "Score: {score} | Raison: {reason}".format(**skipped_game)
-            )
-
-    def _append_invalid_games(self, lines: list[str], invalid_games: list[dict]) -> None:
-        if not invalid_games:
-            return
-        lines.append("Jeux importes avec informations invalides ignorees:")
-        for invalid_game in invalid_games:
-            lines.append("- Jeu: {name}".format(**invalid_game))
-
-    def _append_invalid_wishlist(
-        self,
-        lines: list[str],
-        invalid_wishlist: int,
-        invalid_wishlist_values: list[str],
-    ) -> None:
-        if invalid_wishlist <= 0:
-            return
-        lines.append(
-            "Wishlist invalide: {count} ligne(s) ignoree(s).".format(
-                count=invalid_wishlist,
-            )
+        return self._table_html(
+            ["Valeur dans le fichier", "Plateforme proposée", "Jeux", "Liste des jeux", "Statut"],
+            rows,
         )
-        if invalid_wishlist_values:
-            lines.append("Valeurs detectees: " + ", ".join(invalid_wishlist_values))
+
+    def _manual_platform_mappings(self, manual_matches: list[dict]) -> list[dict]:
+        mappings_by_key = {}
+        for match in manual_matches:
+            imported_platform = str(match.get("imported_platform") or "").strip()
+            matched_platform = str(match.get("matched_platform") or "").strip()
+            key = (imported_platform, matched_platform)
+            mapping = mappings_by_key.get(key) or {
+                "imported_platform": imported_platform or "-",
+                "matched_platform": matched_platform or "-",
+                "games_count": 0,
+                "game_names": [],
+            }
+            mapping["games_count"] += 1
+            mapping["game_names"].append(str(match.get("game_name") or "-"))
+            mappings_by_key[key] = mapping
+        return list(mappings_by_key.values())

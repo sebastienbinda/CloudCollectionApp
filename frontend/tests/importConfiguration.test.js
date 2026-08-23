@@ -109,6 +109,14 @@ test("l'onboarding d'import detecte le type de fichier et guide la configuration
     new URL("../src/components/ImportCsvConfigurationFields.jsx", import.meta.url),
     "utf8",
   );
+  const summarySource = readFileSync(
+    new URL("../src/components/ImportSummary.jsx", import.meta.url),
+    "utf8",
+  );
+  const fieldLabelsSource = readFileSync(
+    new URL("../src/hooks/collection/importFieldLabels.js", import.meta.url),
+    "utf8",
+  );
   const spreadsheetWishlistSource = readFileSync(
     new URL("../src/components/ImportSpreadsheetWishlistFields.jsx", import.meta.url),
     "utf8",
@@ -137,14 +145,16 @@ test("l'onboarding d'import detecte le type de fichier et guide la configuration
   assert.equal(layoutSource.includes("sans les notes ou totaux"), true);
   assert.equal(layoutSource.includes("<ImportFieldHelp fieldName={fieldName} />"), true);
   assert.equal(csvSource.includes("<ImportFieldHelp fieldName={fieldName} />"), true);
-  assert.equal(layoutSource.includes("FIELD_LABELS"), true);
+  assert.equal(layoutSource.includes("IMPORT_FIELD_LABELS"), true);
+  assert.equal(csvSource.includes("IMPORT_FIELD_LABELS"), true);
+  assert.equal(summarySource.includes("getImportFieldLabel"), true);
+  assert.equal(fieldLabelsSource.includes("Région"), true);
   assert.equal(configurationSource.includes("<span>Wishlist</span>"), false);
   assert.equal(csvSource.includes("<span>Wishlist</span>"), false);
   assert.equal(configurationSource.includes("ImportCollapsibleSection"), true);
   assert.equal(collapsibleSource.includes("<details"), true);
   assert.equal(spreadsheetWishlistSource.includes("wishlistConfigurationIntro"), true);
-  assert.equal(layoutSource.includes("Liste de souhaits"), true);
-  assert.equal(csvSource.includes("Liste de souhaits"), true);
+  assert.equal(fieldLabelsSource.includes("Liste de souhaits"), true);
   assert.equal(csvSource.includes("wishlistConfigurationIntro"), true);
   assert.equal(
     configurationSource.includes("Indiquez si les jeux sont dans un seul tableau"),

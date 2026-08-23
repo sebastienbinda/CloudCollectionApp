@@ -13,26 +13,8 @@
  * Description : champs reutilisables de layout tableur pour les imports.
  */
 
+import { IMPORT_FIELD_LABELS } from "../hooks/collection/importFieldLabels";
 import ImportFieldHelp from "./ImportFieldHelp";
-
-const FIELD_LABELS = Object.freeze({
-  name: "Nom du jeu",
-  platform: "Plateforme",
-  studio: "Studio",
-  release_date: "Date de sortie",
-  wishlist: "Liste de souhaits",
-  purchase_price: "Prix d'achat",
-  buy_location: "Lieu d'achat",
-  buy_date: "Date d'achat",
-  grade: "Note",
-  condition: "État",
-  has_manual: "Notice",
-  is_collector: "Collector",
-  has_steelbook: "Steelbook",
-  is_digital: "Version dématérialisée",
-  region: "Région",
-  description: "Description",
-});
 
 /**
  * Affiche un layout tableur configurable.
@@ -83,7 +65,7 @@ function ImportLayoutFields({
               key={fieldName}
             >
               <span className="fieldLabelText">
-                {FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
+                {IMPORT_FIELD_LABELS[fieldName]}{isRequired ? " *" : ""}
               </span>
               <input
                 type="text"
@@ -100,5 +82,4 @@ function ImportLayoutFields({
   );
 }
 
-export { FIELD_LABELS };
 export default ImportLayoutFields;
