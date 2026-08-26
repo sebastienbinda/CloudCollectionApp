@@ -46,6 +46,15 @@
   outline-offset: 2px;
 }
 
+.scrollBottomButton {
+  bottom: 7.9rem;
+}
+
+.importConfigurationSavedNotice {
+  color: #86efac;
+  margin: 0;
+}
+
 @media (hover: none) and (pointer: coarse) {
   input:not([type]),
   input[type="text"],
@@ -80,6 +89,10 @@
     height: 2.35rem;
     right: 0.85rem;
     width: 2.35rem;
+  }
+
+  .scrollBottomButton {
+    bottom: 9.75rem;
   }
 
   .pageHeader {
@@ -253,5 +266,223 @@
     font-size: 0.48rem;
     letter-spacing: -0.01rem;
     white-space: nowrap;
+  }
+
+  .collectionOnboardingShell {
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+  }
+
+  .collectionOnboardingContent,
+  .collectionImportForm,
+  .importFormStep,
+  .importCollapsibleContent,
+  .layoutFields,
+  .sheetConfigurationList {
+    gap: 0.65rem;
+  }
+
+  .collectionOnboardingSteps {
+    gap: 0.35rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .collectionOnboardingSteps article {
+    align-content: start;
+    justify-items: center;
+    gap: 0.22rem;
+    min-width: 0;
+    padding: 0.45rem 0.35rem;
+    text-align: center;
+  }
+
+  .collectionOnboardingSteps span {
+    font-size: 0.72rem;
+    height: 1.35rem;
+    line-height: 1;
+    width: 1.35rem;
+  }
+
+  .collectionOnboardingSteps h2 {
+    font-size: 0.78rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .collectionOnboardingSteps p {
+    display: none;
+  }
+
+  .collectionImportForm {
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+
+  .importFormStep {
+    background: #ffffff;
+    padding: 0.85rem;
+  }
+
+  .importCollapsibleSection {
+    border: 0;
+    border-radius: 0;
+    border-top: 1px solid #dbe4f0;
+    overflow: visible;
+  }
+
+  .importCollapsibleSection:first-of-type {
+    border-top: 0;
+  }
+
+  .importCollapsibleSection summary {
+    background: transparent;
+    gap: 0.18rem;
+    padding: 0.7rem 0;
+  }
+
+  .importCollapsibleSection summary span {
+    font-size: 0.95rem;
+  }
+
+  .importCollapsibleSection summary small {
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
+
+  .importCollapsibleContent {
+    padding: 0 0 0.75rem;
+  }
+
+  .importConfiguration,
+  .wishlistConfiguration,
+  .sheetConfiguration,
+  .segmentedField {
+    border: 0;
+    border-radius: 0;
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .collectionImportForm label,
+  .importConfigurationIntro,
+  .wishlistConfigurationIntro,
+  .fieldHelpText,
+  .segmentedFieldHelp {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .segmentedField {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .segmentedField > span,
+  .segmentedField label,
+  .segmentedFieldHelp {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .segmentedField > span {
+    margin-right: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .segmentedField label {
+    align-items: flex-start;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .segmentedField input[type="radio"] {
+    flex: 0 0 auto;
+    margin-top: 0.12rem;
+  }
+
+  .importConfiguration legend,
+  .wishlistConfiguration legend {
+    padding: 0;
+  }
+
+  .importConfigurationIntro,
+  .wishlistConfigurationIntro,
+  .segmentedFieldHelp {
+    background: transparent;
+    border: 0;
+    border-left: 3px solid #dbe4f0;
+    border-radius: 0;
+    padding: 0.15rem 0 0.15rem 0.55rem;
+  }
+
+  .requiredColumnField {
+    background: transparent;
+    border: 0;
+    border-left: 3px solid #bfdbfe;
+    border-radius: 0;
+    padding: 0 0 0 0.55rem;
+  }
+
+  .columnGrid label {
+    grid-template-rows: auto auto auto;
+  }
+
+  .sheetConfigurationTabs {
+    display: grid;
+    gap: 0.35rem;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .sheetConfigurationTabs button {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .collectionImportForm .importConfiguration,
+  .collectionImportForm .wishlistConfiguration,
+  .collectionImportForm .segmentedField {
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+  }
+
+  .collectionImportForm .segmentedField {
+    align-items: stretch;
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .collectionImportForm .segmentedField > span,
+  .collectionImportForm .segmentedField label,
+  .collectionImportForm .segmentedFieldHelp {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .collectionImportForm .segmentedField label {
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .collectionImportForm .segmentedFieldHelp {
+    flex-basis: auto;
+    justify-self: stretch;
+    overflow-wrap: anywhere;
   }
 }

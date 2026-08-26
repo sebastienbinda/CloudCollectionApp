@@ -114,9 +114,8 @@ function CsvWishlistFields({
     <fieldset className="wishlistConfiguration" disabled={disabled}>
       <legend>Liste de souhaits</legend>
       <p className="wishlistConfigurationIntro">
-        Indiquez si une colonne du CSV signale les jeux à placer dans votre liste
-        de souhaits. Sans colonne dédiée, toutes les lignes importées sont ajoutées
-        à votre collection.
+        Choisissez la colonne des jeux à ajouter dans la section Liste de souhaits.
+        Sans colonne dédiée, chaque ligne est importée dans votre collection.
       </p>
       <div className="segmentedField" role="group" aria-label="Mode liste de souhaits">
         <span>Source</span>

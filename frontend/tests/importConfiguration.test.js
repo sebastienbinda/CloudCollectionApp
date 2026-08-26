@@ -22,6 +22,8 @@ import { readFileSync } from "node:fs";
 test("expose les memes informations optionnelles pour la collection et la wishlist dediee", () => {
   const configuration = createDefaultImportConfiguration();
 
+  configuration.wishlist.mode = "column";
+  assert.equal(collectionColumnFields(configuration, true).includes("wishlist"), false);
   assert.deepEqual(wishlistSheetColumnFields(), [
     "name",
     "platform",

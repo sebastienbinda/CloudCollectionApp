@@ -101,6 +101,8 @@ function ImportConfigurationFields({
           configuration={configuration}
           availableSheetNames={availableSheetNames}
           disabled={disabled}
+          onLayoutColumnChange={onLayoutColumnChange}
+          onSheetColumnChange={onSheetColumnChange}
           onWishlistConfigurationChange={onWishlistConfigurationChange}
           onWishlistLayoutChange={onWishlistLayoutChange}
           onWishlistLayoutColumnChange={onWishlistLayoutColumnChange}

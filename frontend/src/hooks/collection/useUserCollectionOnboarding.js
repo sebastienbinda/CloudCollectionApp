@@ -12,11 +12,17 @@
  *
  * Description : hook React pilotant l'onboarding d'import de collection utilisateur.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import UserCollectionApi from "../../services/UserCollectionApi";
 import getUserCollectionErrorMessage from "./userCollectionImportMessages";
 import updatedLayoutValue from "./importLayoutState";
-import { buildImportConfigurationDescription, collectionRequiredFields, createImportConfigurationFromDescription, createDefaultImportConfiguration } from "./importConfigurationBuilder";
+import {
+  buildImportConfigurationDescription,
+  canSubmitImportConfiguration,
+  collectionRequiredFields,
+  createImportConfigurationFromDescription,
+  createDefaultImportConfiguration,
+} from "./importConfigurationBuilder";
 import {
   buildIncompatibleSavedConfigurationMessage,
   normalizeImportFileType,
@@ -25,6 +31,7 @@ import {
 import buildImportConfigurationAfterAnalysis from "./importAnalysisConfiguration";
 import canCurrentTokenUseCollectionViews from "./collectionSessionPolicy";
 import { synchronizePerSheetConfigurations } from "./importSheetSelection";
+import useUserCollectionOnboardingEffects from "./useUserCollectionOnboardingEffects";
 
 const defaultSheetConfiguration = createDefaultImportConfiguration().sheets[0];
 
@@ -52,6 +59,7 @@ function useUserCollectionOnboarding(options) {
   const [selectedCollectionFile, setSelectedCollectionFile] = useState(null);
   const [availableImportSheets, setAvailableImportSheets] = useState([]);
   const [hasAnalyzedImportFile, setHasAnalyzedImportFile] = useState(false);
+  const [hasReusableSavedImportConfiguration, setHasReusableSavedImportConfiguration] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importConfiguration, setImportConfiguration] = useState(
     createDefaultImportConfiguration
@@ -61,6 +69,10 @@ function useUserCollectionOnboarding(options) {
   const [isAnalyzingCollection, setIsAnalyzingCollection] = useState(false);
   const [isImportingCollection, setIsImportingCollection] = useState(false);
   const importInProgressRef = useRef(false);
+  const canSubmitImport = useMemo(
+    () => hasAnalyzedImportFile && canSubmitImportConfiguration(importConfiguration),
+    [hasAnalyzedImportFile, importConfiguration]
+  );
 
   const resetOnboardingState = useCallback(() => {
     setHasCollection(null);
@@ -68,6 +80,7 @@ function useUserCollectionOnboarding(options) {
     setSelectedCollectionFile(null);
     setAvailableImportSheets([]);
     setHasAnalyzedImportFile(false);
+    setHasReusableSavedImportConfiguration(false);
     setImportResult(null);
     setImportConfiguration(createDefaultImportConfiguration());
     setOnboardingError("");
@@ -113,6 +126,7 @@ function useUserCollectionOnboarding(options) {
     setSelectedCollectionFile(null);
     setAvailableImportSheets([]);
     setHasAnalyzedImportFile(false);
+    setHasReusableSavedImportConfiguration(false);
     setImportResult(null);
     setImportConfiguration(createDefaultImportConfiguration());
     setOnboardingError("");
@@ -156,11 +170,13 @@ function useUserCollectionOnboarding(options) {
       const selectedFileType = normalizeImportFileType(currentFileType);
       const savedFileType = normalizeImportFileType(savedImportConfiguration.file_type);
       if (savedFileType !== selectedFileType) {
+        setHasReusableSavedImportConfiguration(false);
         setOnboardingError(
           buildIncompatibleSavedConfigurationMessage(savedFileType, selectedFileType)
         );
         return;
       }
+      setHasReusableSavedImportConfiguration(true);
       const confirmed = window.confirm(
         "Une configuration d'import sauvegardee existe. Voulez-vous la reutiliser ?"
       );
@@ -179,6 +195,7 @@ function useUserCollectionOnboarding(options) {
     setSelectedCollectionFile(collectionFile || null);
     setAvailableImportSheets([]);
     setHasAnalyzedImportFile(false);
+    setHasReusableSavedImportConfiguration(false);
     setImportResult(null);
     setOnboardingError("");
     if (!collectionFile) {
@@ -408,52 +425,18 @@ function useUserCollectionOnboarding(options) {
     }
   }, [hasAnalyzedImportFile, importConfiguration, reloadGames, reloadOds, selectedCollectionFile]);
 
-  useEffect(() => {
-    if (hasAccessToken) {
-      return;
-    }
-    resetOnboardingState();
-  }, [hasAccessToken, resetOnboardingState]);
-
-  useEffect(() => {
-    if (!hasAccessToken || !authenticatedUsername || !canUseCollectionViews) {
-      return;
-    }
-    if (
-      currentView === "gameDetail" &&
-      options.selectedGameSource === "library"
-    ) {
-      return;
-    }
-    if ([
-      "about",
-      "feedback",
-      "auth",
-      "library",
-      "libraryPlatforms",
-      "libraryStudios",
-      "libraryGames",
-    ].includes(currentView)) {
-      return;
-    }
-    if (checkedUsername === authenticatedUsername) {
-      if (hasCollection === false && currentView !== "collectionOnboarding") {
-        openCollectionOnboarding();
-      }
-      return;
-    }
-
-    openOnboardingWhenCollectionIsMissing().catch(() => {});
-  }, [
-    checkedUsername,
+  useUserCollectionOnboardingEffects({
     authenticatedUsername,
-    currentView,
-    hasCollection,
-    hasAccessToken,
     canUseCollectionViews,
+    checkedUsername,
+    currentView,
+    hasAccessToken,
+    hasCollection,
     openCollectionOnboarding,
     openOnboardingWhenCollectionIsMissing,
-  ]);
+    resetOnboardingState,
+    selectedGameSource: options.selectedGameSource,
+  });
 
   return {
     hasCollection,
@@ -461,9 +444,11 @@ function useUserCollectionOnboarding(options) {
     selectedCollectionFile,
     availableImportSheets,
     hasAnalyzedImportFile,
+    hasReusableSavedImportConfiguration,
     selectedCollectionFileName: selectedCollectionFile?.name || "",
     importResult,
     importConfiguration,
+    canSubmitImport,
     onboardingError,
     isCheckingCollection,
     isAnalyzingCollection,
