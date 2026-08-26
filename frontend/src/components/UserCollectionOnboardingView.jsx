@@ -12,7 +12,7 @@
  *
  * Description : vue d'onboarding pour importer la collection utilisateur initiale.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ImportConfigurationFields from "./ImportConfigurationFields";
 import ImportSummary from "./ImportSummary";
 import PageLayout from "./PageLayout";
@@ -31,8 +31,10 @@ function UserCollectionOnboardingView({
   selectedCollectionFileName,
   availableImportSheets,
   hasAnalyzedImportFile,
+  hasReusableSavedImportConfiguration,
   importResult,
   importConfiguration,
+  canSubmitImport,
   onboardingError,
   isCheckingCollection,
   isAnalyzingCollection,
@@ -70,6 +72,8 @@ function UserCollectionOnboardingView({
   const isBusy = isCheckingCollection || isAnalyzingCollection || isImportingCollection;
   const isImportRefused = Boolean(importResult?.refusal?.refused);
   const [showFileExpectation, setShowFileExpectation] = useState(false);
+  const [isScrollBottomVisible, setIsScrollBottomVisible] = useState(false);
+  const importActionsRef = useRef(null);
 
   /**
    * Transmet le fichier selectionne au hook d'orchestration.
@@ -91,6 +95,47 @@ function UserCollectionOnboardingView({
     event.preventDefault();
     onSubmitImport();
   };
+
+  /**
+   * Deplace l'utilisateur vers les actions de fin de formulaire.
+   *
+   * @returns {void} Fait defiler la page vers le bouton d'import.
+   */
+  const scrollToImportActions = () => {
+    importActionsRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+
+  useEffect(() => {
+    if (!hasAnalyzedImportFile) {
+      setIsScrollBottomVisible(false);
+      return undefined;
+    }
+
+    /**
+     * Met a jour la visibilite du bouton d'acces rapide aux actions d'import.
+     *
+     * @returns {void} Affiche le bouton seulement si les actions sont loin du viewport.
+     */
+    const updateScrollBottomVisibility = () => {
+      const actionsElement = importActionsRef.current;
+      if (!actionsElement) {
+        setIsScrollBottomVisible(false);
+        return;
+      }
+      const hiddenBelowViewportOffset = 80;
+      const actionsBounds = actionsElement.getBoundingClientRect();
+      setIsScrollBottomVisible(actionsBounds.top > window.innerHeight + hiddenBelowViewportOffset);
+    };
+
+    updateScrollBottomVisibility();
+    window.addEventListener("scroll", updateScrollBottomVisibility, { passive: true });
+    window.addEventListener("resize", updateScrollBottomVisibility);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollBottomVisibility);
+      window.removeEventListener("resize", updateScrollBottomVisibility);
+    };
+  }, [hasAnalyzedImportFile, importConfiguration]);
 
   return (
     <PageLayout
@@ -217,6 +262,11 @@ function UserCollectionOnboardingView({
                     les informations de vos jeux. Les champs obligatoires sont
                     mis en évidence.
                   </p>
+                  {!hasReusableSavedImportConfiguration ? (
+                    <p className="success importConfigurationSavedNotice">
+                      Configuration sauvegardée pour les prochains imports : à faire une seule fois.
+                    </p>
+                  ) : null}
                 </div>
                 <ImportConfigurationFields
                   configuration={importConfiguration}
@@ -241,11 +291,22 @@ function UserCollectionOnboardingView({
             {isCheckingCollection ? <ProgressBar label="Verification de votre collection" /> : null}
             {isAnalyzingCollection ? <ProgressBar label="Analyse de votre fichier" /> : null}
             {isImportingCollection ? <ProgressBar label="Import de votre collection" /> : null}
-            <div className="formActions">
-              <button type="submit" disabled={isBusy || !selectedCollectionFileName || !hasAnalyzedImportFile}>
+            <div className="formActions" ref={importActionsRef}>
+              <button type="submit" disabled={isBusy || !selectedCollectionFileName || !canSubmitImport}>
                 {isImportingCollection ? "Import..." : "Importer"}
               </button>
             </div>
+            {isScrollBottomVisible ? (
+              <button
+                className="scrollTopButton scrollBottomButton"
+                type="button"
+                aria-label="Aller en bas du formulaire"
+                title="Aller en bas"
+                onClick={scrollToImportActions}
+              >
+                ↓
+              </button>
+            ) : null}
           </form>
         )}
       </section>

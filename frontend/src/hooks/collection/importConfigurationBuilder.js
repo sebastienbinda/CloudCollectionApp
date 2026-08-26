@@ -344,6 +344,17 @@ function buildImportConfigurationDescription(configuration) {
 }
 
 /**
+ * Indique si la configuration courante peut etre soumise au backend.
+ *
+ * @param {Object} configuration - Etat frontend de configuration.
+ * @returns {boolean} Vrai quand les champs obligatoires sont remplis.
+ */
+function canSubmitImportConfiguration(configuration) {
+  const { description, errors } = buildImportConfigurationDescription(configuration);
+  return Boolean(description) && errors.length === 0;
+}
+
+/**
  * Normalise le type de fichier tableur pour la description backend.
  *
  * @param {string} fileType - Type selectionne dans le formulaire.
@@ -460,6 +471,7 @@ export {
   collectionRequiredFields,
   createImportConfigurationFromDescription,
   createDefaultImportConfiguration,
+  canSubmitImportConfiguration,
   buildImportConfigurationDescription,
   wishlistSheetColumnFields,
 };

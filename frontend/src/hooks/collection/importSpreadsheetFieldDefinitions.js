@@ -58,9 +58,6 @@ function collectionColumnFields(configuration, includePlatformColumn) {
       ...REQUIRED_FIELDS.filter((field) => field !== SHEET_INFORMATION),
       ...REFERENCE_OPTIONAL_FIELDS,
     ];
-  if (configuration.wishlist.mode === "column") {
-    fields.push("wishlist");
-  }
   fields.push(...PRIVATE_INFORMATION_FIELDS);
   return fields;
 }

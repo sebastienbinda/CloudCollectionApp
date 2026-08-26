@@ -307,8 +307,10 @@ class AppViewSwitch {
         selectedCollectionFileName={props.selectedCollectionFileName}
         availableImportSheets={props.availableImportSheets}
         hasAnalyzedImportFile={props.hasAnalyzedImportFile}
+        hasReusableSavedImportConfiguration={props.hasReusableSavedImportConfiguration}
         importResult={props.importResult}
         importConfiguration={props.importConfiguration}
+        canSubmitImport={props.canSubmitImport}
         onboardingError={props.onboardingError}
         isCheckingCollection={props.isCheckingCollection}
         isAnalyzingCollection={props.isAnalyzingCollection}

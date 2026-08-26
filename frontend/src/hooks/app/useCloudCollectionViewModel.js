@@ -301,8 +301,12 @@ function useCloudCollectionViewModel() {
       selectedCollectionFileName: userCollectionOnboarding.selectedCollectionFileName,
       availableImportSheets: userCollectionOnboarding.availableImportSheets,
       hasAnalyzedImportFile: userCollectionOnboarding.hasAnalyzedImportFile,
+      hasReusableSavedImportConfiguration: (
+        userCollectionOnboarding.hasReusableSavedImportConfiguration
+      ),
       importResult: userCollectionOnboarding.importResult,
       importConfiguration: userCollectionOnboarding.importConfiguration,
+      canSubmitImport: userCollectionOnboarding.canSubmitImport,
       onboardingError: userCollectionOnboarding.onboardingError,
       isCheckingCollection: userCollectionOnboarding.isCheckingCollection,
       isAnalyzingCollection: userCollectionOnboarding.isAnalyzingCollection,
