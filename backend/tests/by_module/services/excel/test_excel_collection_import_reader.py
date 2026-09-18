@@ -166,6 +166,45 @@ class ExcelCollectionImportReaderTest(unittest.TestCase):
         self.assertEqual(date(2017, 3, 3), import_data.games[0].release_date)
         self.assertEqual(1, fake_reader.close_count)
 
+    def test_read_ignores_fully_empty_rows_without_rejected_game_warning(self):
+        """Verifie qu'une ligne Excel vide n'est pas comptabilisee en erreur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'import et les warnings.
+        """
+
+        fake_reader = FakeExcelReader(
+            ["Collection"],
+            {
+                "Collection": pd.DataFrame(
+                    [
+                        {
+                            "Nom du jeu": pd.NaT,
+                            "Plateforme": None,
+                            "Studio": "",
+                            "Date de sortie": None,
+                        },
+                        {
+                            "Nom du jeu": "Zelda",
+                            "Plateforme": "Switch",
+                            "Studio": "Nintendo",
+                            "Date de sortie": pd.NaT,
+                        },
+                    ],
+                    columns=["Nom du jeu", "Plateforme", "Studio", "Date de sortie"],
+                )
+            },
+        )
+        service = self._service_for_reader(fake_reader)
+
+        import_data = service.read("/tmp/empty-row.xlsx", self._single_sheet_description())
+
+        self.assertEqual(["Zelda"], [game.name for game in import_data.games])
+        self.assertEqual(0, import_data.warnings.skipped_mandatory_games)
+
     def test_read_rejects_empty_excel_workbook(self):
         """Verifie le refus d'un fichier Excel sans onglet importable.
 
