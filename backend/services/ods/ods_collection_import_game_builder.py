@@ -29,6 +29,7 @@ from services.collection.imports import (
 from services.collection.imports.spreadsheet_cell_reference import (
     SpreadsheetCellReferenceParser,
 )
+from services.formatting import SheetValueFormatter
 from .ods_import_error_context import OdsImportErrorContext
 
 
@@ -197,6 +198,8 @@ class OdsCollectionImportGameBuilder:
         price_unit: str | None,
         rating_base: int | None,
     ) -> Optional[CollectionImportGame]:
+        if self._is_empty_import_row(row, column_positions):
+            return None
         game_name = self.value_mapper.map_name(
             self._field_value(row, column_positions, CollectionImportField.NAME)
         )
@@ -296,3 +299,13 @@ class OdsCollectionImportGameBuilder:
             field,
         )
         return self.value_mapper.map_name(value)
+
+    def _is_empty_import_row(
+        self,
+        row,
+        column_positions: dict[CollectionImportField, int],
+    ) -> bool:
+        for position in column_positions.values():
+            if position < len(row) and SheetValueFormatter.clean_text(row.iloc[position]) is not None:
+                return False
+        return True

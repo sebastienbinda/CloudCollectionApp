@@ -70,6 +70,48 @@ class OdsCollectionImportEmptyGameNamesTest(unittest.TestCase):
 
         self.assertEqual(["Tomb Raider"], [game.name for game in import_data.games])
         self.assertIsNone(import_data.games[0].release_date)
+        self.assertEqual(2, import_data.warnings.skipped_mandatory_games)
+
+    def test_read_ignores_fully_empty_rows_without_rejected_game_warning(self):
+        """Verifie qu'une ligne totalement vide n'est pas comptabilisee en erreur.
+
+        Args:
+            Aucun.
+
+        Returns:
+            None: Les assertions valident l'absence de rejet obligatoire.
+        """
+
+        helper = OdsCollectionImportReaderTest()
+        service = helper._service_for_reader(
+            FakeOdsReader(
+                ["Switch"],
+                {
+                    "Switch": pd.DataFrame(
+                        [
+                            {
+                                "Nom du jeu": pd.NaT,
+                                "Plateforme": None,
+                                "Studio": "",
+                                "Date de sortie": None,
+                            },
+                            {
+                                "Nom du jeu": "Tomb Raider",
+                                "Plateforme": "Switch",
+                                "Studio": "Core Design",
+                                "Date de sortie": pd.NaT,
+                            },
+                        ],
+                        columns=["Nom du jeu", "Plateforme", "Studio", "Date de sortie"],
+                    )
+                },
+            )
+        )
+
+        import_data = service.read("/tmp/empty-row.ods", helper._single_sheet_description())
+
+        self.assertEqual(["Tomb Raider"], [game.name for game in import_data.games])
+        self.assertEqual(0, import_data.warnings.skipped_mandatory_games)
 
     def test_read_accepts_configured_optional_columns_with_empty_cells(self):
         """Verifie que les cellules optionnelles vides ne bloquent pas l'import.
