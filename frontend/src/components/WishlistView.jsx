@@ -14,6 +14,7 @@
  */
 import CollectionGamesTable from "./CollectionGamesTable";
 import PageLayout from "./PageLayout";
+import isWishlistPurchaseInProgress from "../hooks/games/wishlistBuyStatus";
 
 /**
  * Affiche la page routee de liste de souhaits.
@@ -142,6 +143,10 @@ function WishlistView({
         sortableColumns={wishlistPage?.wishlistSortableColumns || []}
         tableClassName="wishlistGamesTable"
         onToggleSort={wishlistPage?.toggleWishlistSort}
+        actionColumnLabel="Statut"
+        renderRowActions={(game) => isWishlistPurchaseInProgress(game) ? (
+          <span className="wishlistPurchaseStatusBadge">Achat en cours</span>
+        ) : null}
         onRowClick={onOpenGameDetail}
       />
     </PageLayout>
