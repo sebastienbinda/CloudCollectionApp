@@ -70,6 +70,19 @@
   font-size: 0.82rem;
 }
 
+.wishlistPurchaseStatusBadge {
+  background: #fff7ed;
+  border: 1px solid #fb923c;
+  border-radius: 999px;
+  color: #9a3412;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.35rem 0.55rem;
+  white-space: nowrap;
+}
+
 @media (min-width: 761px) {
   .tableWrapper table.collectionGamesTable td.gameNameColumn,
   .tableWrapper table.libraryGamesTable td.gameNameColumn,
@@ -86,6 +99,11 @@
   .tableWrapper table.wishlistGamesTable th[data-column="Studio"],
   .tableWrapper table.wishlistGamesTable td[data-column="Studio"] {
     width: 20%;
+  }
+
+  .tableWrapper table.wishlistGamesTable .actionColumn {
+    min-width: 7.5rem;
+    width: 7.5rem;
   }
 }
 
@@ -202,6 +220,21 @@
 
   .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow {
     grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  }
+
+  .tableWrapper table.wishlistGamesTable:has(.clickableTableRow) .clickableTableRow .actionColumn {
+    grid-column: 3;
+    min-width: 0;
+  }
+
+  .tableWrapper table.wishlistGamesTable:has(.clickableTableRow) .clickableTableRow td[data-column="Version"] {
+    grid-column: 4;
+    justify-self: end;
+  }
+
+  .tableWrapper table.wishlistGamesTable .wishlistPurchaseStatusBadge {
+    font-size: 0.62rem;
+    padding: 0.28rem 0.42rem;
   }
 
   .tableWrapper table.collectionGamesTable:has(.clickableTableRow) .clickableTableRow td {

@@ -33,6 +33,7 @@ import TableComponent from "./TableComponent";
  * @param {Function} props.onToggleSort - Callback de tri.
  * @param {Function|null} props.getRowClassName - Callback de classe de ligne.
  * @param {Function|null} props.renderRowActions - Callback de rendu des actions.
+ * @param {string} props.actionColumnLabel - Libelle de la colonne d'action ou de statut.
  * @param {Function|null} props.onRowClick - Callback d'ouverture d'une ligne.
  * @param {Object|null} props.columnLabels - Libelles visibles par colonne technique.
  * @param {string|null} props.tableClassName - Classe CSS specifique du tableau.
@@ -53,6 +54,7 @@ function CollectionGamesTable({
   onToggleSort,
   getRowClassName = null,
   renderRowActions = null,
+  actionColumnLabel = "Action",
   onRowClick = null,
   columnLabels = null,
   tableClassName = null,
@@ -77,6 +79,7 @@ function CollectionGamesTable({
           onToggleSort={onToggleSort}
           getRowClassName={getRowClassName}
           renderRowActions={renderRowActions}
+          actionColumnLabel={actionColumnLabel}
           onRowClick={onRowClick}
           columnLabels={columnLabels}
           tableClassName={tableClassName}
