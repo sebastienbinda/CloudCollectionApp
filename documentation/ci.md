@@ -81,9 +81,10 @@ build. Docker images and the deployment archive must not be published if tests,
 audit or frontend build fail. Branch pushes never publish Docker images or
 deployment archives.
 
-Backend tests run through `./scripts/test_backend.sh`, which prepares the Python
-environment and then executes the backend test suite. ODS fixtures are now
-loaded directly by import tests when needed.
+Backend tests select Python `3.12` through `actions/setup-python`, pass the
+resolved interpreter path to `./scripts/test_backend.sh` through `PYTHON_BIN`,
+then let the script prepare the virtual environment and execute the backend
+test suite. ODS fixtures are loaded directly by import tests when needed.
 
 Backend dependency audit runs through `pip-audit` against
 `backend/requirements.txt`. The job uses Python `3.12`, installs `pip-audit`

@@ -118,8 +118,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
       - name: Run backend tests
-        run: ./scripts/test_backend.sh
+        run: PYTHON_BIN="$(command -v python)" ./scripts/test_backend.sh
 
   backend-audit:
     name: Backend dependency audit
